@@ -44,7 +44,7 @@
 
   /* ---- results ---- */
   #count{font-size:11px;color:var(--dimmer);letter-spacing:.06em;
-         text-transform:uppercase;margin:16px 0 4px}
+         text-transform:uppercase;margin:14px 0 4px}
   .rt{display:flex;align-items:center;gap:12px;padding:13px 2px;
       border-bottom:1px solid #202024}
   .rt:active{background:var(--panel)}
@@ -64,9 +64,12 @@
      Moonboard-Guidebook renders with. Everything below is those as percentages,
      so the overlay scales with the image. Column letters and row numbers are
      already printed on the photo. */
-  /* The wall is 450x692, so width drives height x1.54 — keep it to ~32vh wide
-     (~49vh tall) so the whole board plus the action bar fit one phone screen. */
-  #board{position:relative;width:min(100%,32vh);margin:0 auto;
+  /* The wall is 450x692, so width drives height x1.54 — 28vh wide is ~43vh
+     tall, which leaves room underneath for a few rows of the list. The board
+     sticks under the header so it stays put while the list scrolls. */
+  #boardWrap{position:sticky;top:calc(env(safe-area-inset-top) + 57px);z-index:10;
+             background:var(--bg);padding-bottom:12px;margin-bottom:0}
+  #board{position:relative;width:min(100%,28vh);margin:0 auto;
          border-radius:6px;overflow:hidden}
   #board img{display:block;width:100%;height:auto}   /* beat the height attribute */
   #marks{position:absolute;inset:0}
@@ -76,7 +79,7 @@
   .mark.P{border-color:#2563eb}
   .mark.E{border-color:#ef4444}
   .mark.g{width:6.4%;border-width:2px}
-  .key{display:flex;gap:14px;margin-top:12px;justify-content:center;
+  .key{display:flex;gap:14px;margin-top:10px;justify-content:center;
        font-size:11px;color:var(--dimmer)}
   .key i{display:inline-block;width:9px;height:9px;border-radius:50%;
          border:2px solid;margin-right:5px;vertical-align:-1px}
@@ -905,7 +908,6 @@ function loadRoute(r){
   $('barTxt').querySelector('span').textContent =
     GRADES[r[2]] + ' · V' + VGRADE[r[2]] + ' · ' + r[1];
   $('send').disabled = !rx;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
   log('loaded "' + r[0] + '" — ' + GRADES[r[2]] + ' (V' + VGRADE[r[2]] + '), set by ' + r[1]);
   if ($('auto').checked && rx) write(buildPayload());
 }
