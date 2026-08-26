@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MoonBoard Direct</title>
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#161a22; --edge:#252b38; --ink:#e8ecf4; --dim:#8a94a8;
+    --start:#22c55e; --move:#3b82f6; --end:#ef4444; --warn:#f59e0b;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+       padding:env(safe-area-inset-top) 12px calc(env(safe-area-inset-bottom) + 12px)}
+  header{display:flex;align-items:center;gap:10px;padding:14px 2px 10px}
+  h1{font-size:17px;margin:0;font-weight:650;letter-spacing:-.01em}
+  #dot{width:10px;height:10px;border-radius:50%;background:#555;flex:none}
+  #dot.on{background:var(--start);box-shadow:0 0 8px var(--start)}
+  #dot.busy{background:var(--warn)}
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  button{flex:1;min-width:88px;padding:12px 10px;border-radius:11px;border:1px solid var(--edge);
+         background:var(--panel);color:var(--ink);font-size:14px;font-weight:560;font-family:inherit}
+  button:active{background:#222836}
+  button:disabled{opacity:.4}
+  button.pri{background:#2563eb;border-color:#2563eb}
+  button.danger{background:#3a1d1d;border-color:#5b2a2a}
+  .panel{background:var(--panel);border:1px solid var(--edge);border-radius:13px;padding:11px;margin-bottom:10px}
+  .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin-bottom:7px}
+  select,input[type=text],input[type=number]{width:100%;padding:10px;border-radius:9px;border:1px solid var(--edge);
+    background:#0f131a;color:var(--ink);font:14px ui-monospace,SFMono-Regular,Menlo,monospace}
+  .grid{display:grid;grid-template-columns:22px repeat(11,1fr);gap:3px;margin:2px 0}
+  .cell{aspect-ratio:1;border-radius:50%;border:1px solid #2b3242;background:#12161e;
+        display:flex;align-items:center;justify-content:center;font-size:8px;color:#4d566b}
+  .cell{color:#4d566b}
+  .cell.S{background:var(--start);border-color:var(--start);color:#03260f}
+  .cell.P{background:var(--move);border-color:var(--move);color:#04193c}
+  .cell.E{background:var(--end);border-color:var(--end);color:#3a0505}
+  .rl{display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--dim)}
+  .cols{display:grid;grid-template-columns:22px repeat(11,1fr);gap:3px;font-size:9px;color:var(--dim);text-align:center;margin-top:3px}
+  code{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;color:#9fd0ff;word-break:break-all}
+  #log{font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--dim);
+       max-height:170px;overflow:auto;white-space:pre-wrap;word-break:break-all}
+  .hint{font-size:12px;color:var(--dim);margin:6px 2px}
+  .two{display:flex;gap:8px}.two>*{flex:1}
+</style>
+</head>
+<body>
+
+<header><span id="dot"></span><h1>MoonBoard Direct</h1></header>
+
+<div class="row">
+  <button id="connect" class="pri">Connect</button>
+  <button id="disconnect" disabled>Disconnect</button>
+</div>
+<div class="row">
+  <button id="send" disabled>Light it up</button>
+  <button id="clear" disabled class="danger">Clear wall</button>
+</div>
+
+<div class="panel">
+  <div class="lbl">Payload</div>
+  <code id="payload">l##</code>
+</div>
+
+<div class="panel">
+  <div class="lbl">Board — tap: start → move → end → off</div>
+  <div id="grid" class="grid"></div>
+  <div id="cols" class="cols"></div>
+  <div class="hint">Numbers shown are what we'd send. If the wall lights a different hold, change the ordering below.</div>
+</div>
+
+<div class="panel">
+  <div class="lbl">Hold numbering (unverified — calibrate against the wall)</div>
+  <select id="order">
+    <option value="colUp">Column-major, bottom→top (A1=1, A18=18, B1=19)</option>
+    <option value="colSerp">Column-major serpentine (LED-strip style)</option>
+    <option value="rowUp">Row-major, bottom→top (A1=1, B1=2, … K1=11)</option>
+    <option value="rowDown">Row-major, top→bottom (A18=1, B18=2, …)</option>
+  </select>
+  <div class="two" style="margin-top:8px">
+    <div><div class="lbl">Offset</div><input type="number" id="offset" value="1" min="0" max="1"></div>
+    <div><div class="lbl">Chunk bytes</div><input type="number" id="chunk" value="20" min="8" max="200"></div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="lbl">Calibration — light one hold at a time</div>
+  <div class="two">
+    <input type="number" id="single" value="1" min="1" max="198">
+    <button id="sendSingle" disabled>Send #</button>
+  </div>
+  <div class="hint">Walk 1 → 2 → 3 and watch which physical hold lights. That tells us the real ordering.</div>
+</div>
+
+<div class="panel">
+  <div class="lbl">Raw string</div>
+  <input type="text" id="raw" value="l#S5,P9,P13,E18#" spellcheck="false" autocapitalize="off">
+  <div class="row" style="margin-top:8px"><button id="sendRaw" disabled>Send raw</button></div>
+</div>
+
+<div class="panel">
+  <div class="lbl">Log</div>
+  <div id="log">idle.</div>
+  <div class="row" style="margin-top:8px">
+    <button id="copy">Copy log</button>
+    <button id="probe" disabled>Probe services</button>
+  </div>
+</div>
+
+<script>
+const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
+const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+const COLS = 11, ROWS = 18;
+const LETTERS = 'ABCDEFGHIJK'.split('');
+
+// Nordic DFU / bootloader — never write here.
+const BLOCKED = ['0000fe59','00001530-1212-efde-1523-785feabcd123'];
+
+let device = null, rx = null, tx = null;
+const state = {};                      // "col,row" -> 'S' | 'P' | 'E'
+const $ = id => document.getElementById(id);
+
+function log(msg){
+  const t = new Date().toLocaleTimeString();
+  $('log').textContent = `[${t}] ${msg}\n` + $('log').textContent;
+}
+function setLive(on, busy){
+  $('dot').className = busy ? 'busy' : (on ? 'on' : '');
+  ['send','clear','sendSingle','sendRaw','probe'].forEach(i => $(i).disabled = !on);
+  $('disconnect').disabled = !on;
+  $('connect').disabled = on;
+}
+
+/* ---------- hold numbering ---------- */
+function holdNum(col, row){                       // col 1..11 left→right, row 1..18 bottom→top
+  const off = parseInt($('offset').value, 10);
+  const mode = $('order').value;
+  let n;
+  if (mode === 'colUp')        n = (col - 1) * ROWS + (row - 1);
+  else if (mode === 'colSerp') n = (col - 1) * ROWS + ((col % 2) ? (row - 1) : (ROWS - row));
+  else if (mode === 'rowUp')   n = (row - 1) * COLS + (col - 1);
+  else                         n = (ROWS - row) * COLS + (col - 1);
+  return n + off;
+}
+
+/* ---------- grid ---------- */
+function buildGrid(){
+  const g = $('grid'); g.innerHTML = '';
+  for (let row = ROWS; row >= 1; row--){
+    const rl = document.createElement('div');
+    rl.className = 'rl'; rl.textContent = row;
+    g.appendChild(rl);
+    for (let col = 1; col <= COLS; col++){
+      const c = document.createElement('div');
+      c.className = 'cell';
+      c.dataset.key = col + ',' + row;
+      c.addEventListener('click', () => cycle(col, row));
+      g.appendChild(c);
+    }
+  }
+  const cw = $('cols'); cw.innerHTML = '<div></div>';
+  LETTERS.forEach(L => { const d = document.createElement('div'); d.textContent = L; cw.appendChild(d); });
+  paint();
+}
+function cycle(col, row){
+  const k = col + ',' + row;
+  const next = { undefined:'S', S:'P', P:'E', E:undefined }[state[k]];
+  if (next) state[k] = next; else delete state[k];
+  paint();
+}
+function paint(){
+  document.querySelectorAll('.cell').forEach(c => {
+    const v = state[c.dataset.key];
+    const [col, row] = c.dataset.key.split(',').map(Number);
+    c.className = 'cell' + (v ? ' ' + v : '');
+    c.textContent = v ? holdNum(col, row) : '';
+  });
+  $('payload').textContent = buildPayload();
+}
+function buildPayload(){
+  const parts = [];
+  for (const k in state){
+    const [col, row] = k.split(',').map(Number);
+    parts.push(state[k] + holdNum(col, row));
+  }
+  parts.sort((a, b) => 'SPE'.indexOf(a[0]) - 'SPE'.indexOf(b[0]) || (+a.slice(1)) - (+b.slice(1)));
+  return 'l#' + parts.join(',') + '#';
+}
+
+/* ---------- BLE ---------- */
+async function connect(){
+  if (!navigator.bluetooth){
+    log('No Web Bluetooth. On iPhone you must open this page in Bluefy, not Safari.');
+    return;
+  }
+  try{
+    setLive(false, true);
+    log('requesting device …');
+    device = await navigator.bluetooth.requestDevice({
+      filters: [{ services: [NUS] }, { namePrefix: 'Moon' }],
+      optionalServices: [NUS]
+    });
+    device.addEventListener('gattserverdisconnected', () => { setLive(false); log('disconnected.'); });
+    log('connecting to ' + (device.name || '(unnamed)') + ' …');
+    const server = await device.gatt.connect();
+    const svc = await server.getPrimaryService(NUS);
+    rx = await svc.getCharacteristic(NUS_RX);
+    try{
+      tx = await svc.getCharacteristic(NUS_TX);
+      await tx.startNotifications();
+      tx.addEventListener('characteristicvaluechanged', e => {
+        log('box → ' + new TextDecoder().decode(e.target.value));
+      });
+    }catch(e){ log('no notify channel (fine): ' + e.message); }
+    setLive(true);
+    log('connected. Nordic UART found.');
+  }catch(e){
+    setLive(false);
+    log('connect failed: ' + e.message);
+    log('If the picker was empty: box powered? MoonBoard app force-quit?');
+  }
+}
+
+async function write(str){
+  if (!rx) return log('not connected.');
+  if (!(str.startsWith('l#') && str.endsWith('#'))) return log('refusing — payload must be l#…#');
+  if (BLOCKED.some(b => rx.uuid.toLowerCase().includes(b))) return log('refusing — DFU characteristic.');
+  const bytes = new TextEncoder().encode(str);
+  const size = Math.max(8, parseInt($('chunk').value, 10) || 20);
+  log('→ ' + str + '  (' + bytes.length + 'B, ' + Math.ceil(bytes.length / size) + ' chunk(s))');
+  try{
+    for (let i = 0; i < bytes.length; i += size){
+      const part = bytes.slice(i, i + size);
+      if (rx.writeValueWithoutResponse) await rx.writeValueWithoutResponse(part);
+      else await rx.writeValue(part);
+      await new Promise(r => setTimeout(r, 30));
+    }
+    log('written.');
+  }catch(e){ log('write failed: ' + e.message); }
+}
+
+async function probe(){
+  if (!device || !device.gatt.connected) return log('not connected.');
+  log('probing (Web Bluetooth only shows allow-listed services) …');
+  try{
+    const svcs = await device.gatt.getPrimaryServices();
+    for (const s of svcs){
+      log('SERVICE ' + s.uuid);
+      for (const c of await s.getCharacteristics()){
+        const p = Object.entries(c.properties).filter(([, v]) => v).map(([k]) => k).join(',');
+        log('  char ' + c.uuid + ' [' + p + ']');
+      }
+    }
+  }catch(e){ log('probe failed: ' + e.message); }
+}
+
+/* ---------- wiring ---------- */
+$('connect').onclick = connect;
+$('disconnect').onclick = () => { if (device && device.gatt.connected) device.gatt.disconnect(); };
+$('send').onclick = () => write(buildPayload());
+$('clear').onclick = () => { for (const k in state) delete state[k]; paint(); write('l##'); };
+$('sendSingle').onclick = () => write('l#S' + (parseInt($('single').value, 10) || 1) + '#');
+$('sendRaw').onclick = () => write($('raw').value.trim());
+$('probe').onclick = probe;
+$('order').onchange = paint;
+$('offset').oninput = paint;
+$('copy').onclick = async () => {
+  try{ await navigator.clipboard.writeText($('log').textContent); log('log copied.'); }
+  catch(e){ log('copy blocked — select the text manually.'); }
+};
+
+buildGrid();
+setLive(false);
+if (!navigator.bluetooth) log('⚠︎ No Web Bluetooth here. On iPhone, open this page in Bluefy.');
+else log('ready. Power the box, force-quit the MoonBoard app, then Connect.');
+</script>
+</body>
+</html>
