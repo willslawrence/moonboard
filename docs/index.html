@@ -73,13 +73,13 @@
 <div class="panel">
   <div class="lbl">Hold numbering (unverified — calibrate against the wall)</div>
   <select id="order">
+    <option value="colSerp">Column-major serpentine, 0-based (A1=0, A18=17, B18=18) — confirmed</option>
     <option value="colUp">Column-major, bottom→top (A1=1, A18=18, B1=19)</option>
-    <option value="colSerp">Column-major serpentine (LED-strip style)</option>
     <option value="rowUp">Row-major, bottom→top (A1=1, B1=2, … K1=11)</option>
     <option value="rowDown">Row-major, top→bottom (A18=1, B18=2, …)</option>
   </select>
   <div class="two" style="margin-top:8px">
-    <div><div class="lbl">Offset</div><input type="number" id="offset" value="1" min="0" max="1"></div>
+    <div><div class="lbl">Offset</div><input type="number" id="offset" value="0" min="0" max="1"></div>
     <div><div class="lbl">Chunk bytes</div><input type="number" id="chunk" value="20" min="8" max="200"></div>
   </div>
 </div>
@@ -87,7 +87,7 @@
 <div class="panel">
   <div class="lbl">Calibration — light one hold at a time</div>
   <div class="two">
-    <input type="number" id="single" value="1" min="1" max="198">
+    <input type="number" id="single" value="0" min="0" max="197">
     <button id="sendSingle" disabled>Send #</button>
   </div>
   <div class="hint">Walk 1 → 2 → 3 and watch which physical hold lights. That tells us the real ordering.</div>
@@ -269,13 +269,24 @@ $('clear').onclick = () => { for (const k in state) delete state[k]; paint(); wr
 $('sendSingle').onclick = () => write('l#S' + (parseInt($('single').value, 10) || 1) + '#');
 $('sendRaw').onclick = () => write($('raw').value.trim());
 $('probe').onclick = probe;
-$('order').onchange = paint;
-$('offset').oninput = paint;
+function saveCal(){
+  try{ localStorage.setItem('mb-cal', JSON.stringify({o:$('order').value, f:$('offset').value, c:$('chunk').value})); }catch(e){}
+}
+function loadCal(){
+  try{
+    const c = JSON.parse(localStorage.getItem('mb-cal') || 'null');
+    if (c){ $('order').value = c.o; $('offset').value = c.f; if (c.c) $('chunk').value = c.c; }
+  }catch(e){}
+}
+$('order').onchange = () => { saveCal(); paint(); };
+$('offset').oninput = () => { saveCal(); paint(); };
+$('chunk').oninput = saveCal;
 $('copy').onclick = async () => {
   try{ await navigator.clipboard.writeText($('log').textContent); log('log copied.'); }
   catch(e){ log('copy blocked — select the text manually.'); }
 };
 
+loadCal();
 buildGrid();
 setLive(false);
 if (!navigator.bluetooth) log('⚠︎ No Web Bluetooth here. On iPhone, open this page in Bluefy.');
