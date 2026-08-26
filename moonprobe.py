@@ -6,6 +6,7 @@ moonprobe.py - probe and drive a MoonBoard LED controller over BLE.
     python3 moonprobe.py scan               # just list what's visible
     python3 moonprobe.py probe <addr|name>
     python3 moonprobe.py send  "l#S5,P9,P13,E18#"
+    python3 moonprobe.py bigtest                    # 5 S + 5 P + 5 E, one column each
     python3 moonprobe.py colors [hold]              # same hold as S, then P, then E
     python3 moonprobe.py walk  [count]              # light #1, #2, #3 ... one at a time
     python3 moonprobe.py walk  [count] [addr|name]  # ... on a specific device
@@ -150,6 +151,18 @@ async def cmd_go():
     await dump(addr, name)
 
 
+CHUNK = 20   # default BLE MTU payload; the page chunks the same way
+
+
+async def write_payload(client, payload):
+    """Write in 20-byte chunks, same as the web page does."""
+    data = payload.encode("utf-8")
+    say(f"  -> {payload}   ({len(data)}B, {-(-len(data)//CHUNK)} chunk(s))")
+    for i in range(0, len(data), CHUNK):
+        await client.write_gatt_char(NUS_RX, data[i:i + CHUNK], response=True)
+        await asyncio.sleep(0.03)
+
+
 def notify_handler(_, data: bytearray):
     say(f"  <- box sent: {data!r}")
 
@@ -169,8 +182,7 @@ async def cmd_send(target, payload):
             await client.start_notify(NUS_TX, notify_handler)
         except Exception as e:
             say(f"  (no notify channel: {e})")
-        say(f"  -> writing: {payload}")
-        await client.write_gatt_char(NUS_RX, payload.encode("utf-8"), response=True)
+        await write_payload(client, payload)
         say("  written. watching 5s - look at the wall.")
         await asyncio.sleep(5.0)
     say("done.")
@@ -219,6 +231,39 @@ async def cmd_colors(target, hold):
     say("done. Report: did l## go dark, and the colour for S / P / E.")
 
 
+def idx(col, row):
+    """0-based serpentine: odd columns bottom->top, even columns top->bottom."""
+    return (col - 1) * 18 + ((row - 1) if col % 2 else (18 - row))
+
+
+async def cmd_bigtest(target):
+    """5 starts, 5 moves, 5 ends - one vertical bar per type, easy to read back."""
+    bars = [("S", 1, "A"), ("P", 3, "C"), ("E", 5, "E")]
+    parts, legend = [], []
+    for kind, col, letter in bars:
+        holds = [idx(col, r) for r in range(2, 7)]
+        parts += [f"{kind}{h}" for h in holds]
+        legend.append(f"  {kind} -> column {letter}, rows 2-6  (indices {holds[0]}-{holds[-1]})")
+    payload = "l#" + ",".join(parts) + "#"
+
+    hit = await find(target)
+    if not hit:
+        return
+    name, addr = hit
+    say(f"\nconnecting to {name} @ {addr} ...")
+    async with BleakClient(addr, timeout=20.0) as client:
+        say("connected.\n")
+        try:
+            await client.start_notify(NUS_TX, notify_handler)
+        except Exception as e:
+            say(f"  (no notify channel: {e})")
+        await write_payload(client, payload)
+    say("\nexpected layout - three vertical bars of 5, rows 2-6:")
+    for l in legend:
+        say(l)
+    say("\nRead back the colour of each bar. Wall stays lit until the next command.")
+
+
 def main():
     args = sys.argv[1:]
     if not args:
@@ -235,6 +280,8 @@ def main():
             if hit:
                 await dump(hit[1], hit[0])
         asyncio.run(r())
+    elif cmd == "bigtest":
+        asyncio.run(cmd_bigtest(args[1] if len(args) > 1 else None))
     elif cmd == "colors":
         rest = args[1:]
         target, hold = None, 0
