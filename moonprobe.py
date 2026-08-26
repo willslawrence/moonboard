@@ -205,11 +205,13 @@ async def cmd_colors(target, hold):
     async with BleakClient(addr, timeout=20.0) as client:
         say("connected.\n")
 
-        async def w(payload, note):
+        async def w(payload, note, dwell=8.0):
             say(f"  -> {payload}   <-- {note}")
             await client.write_gatt_char(NUS_RX, payload.encode("utf-8"), response=True)
-            await asyncio.sleep(5.0)
+            await asyncio.sleep(dwell)
 
+        say(f"  LOOK AT HOLD {hold}. Starting in 3s ...")
+        await asyncio.sleep(3.0)
         await w("l##", "wall should now be DARK - does it clear?")
         for kind, label in (("S", "start"), ("P", "move"), ("E", "end")):
             await w(f"l#{kind}{hold}#", f"'{kind}' ({label}) - what colour is that hold?")
