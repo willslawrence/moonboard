@@ -6,7 +6,8 @@ moonprobe.py - probe and drive a MoonBoard LED controller over BLE.
     python3 moonprobe.py scan               # just list what's visible
     python3 moonprobe.py probe <addr|name>
     python3 moonprobe.py send  "l#S5,P9,P13,E18#"
-    python3 moonprobe.py say "WILL WALL"            # scrolling marquee
+    python3 moonprobe.py say "WILL WALL" [delay]    # scrolling marquee (default 0.07s/frame)
+    python3 moonprobe.py sign                       # WILL / WALL, static, stays lit
     python3 moonprobe.py flag                       # stars and stripes, hung vertically
     python3 moonprobe.py bigtest                    # 5 S + 5 P + 5 E, one column each
     python3 moonprobe.py colors [hold]              # same hold as S, then P, then E
@@ -260,6 +261,52 @@ def text_columns(text):
     return cols
 
 
+FONT3 = {
+    "W": ["X...X", "X.X.X", ".X.X."],
+    "I": ["XXX", ".X.", "XXX"],
+    "L": ["X..", "X..", "XXX"],
+    "A": [".X.", "XXX", "X.X"],
+}
+
+
+def sign_cells():
+    """WILL over WALL, two letters per line - the only way 4 letters fit in 11 columns.
+    WILL green (S), WALL blue (P); S+P with no E is a proven-good combination."""
+    lines = [("W", "I", 16, "S"), ("L", "L", 12, "S"),
+             ("W", "A", 6, "P"),  ("L", "L", 2, "P")]
+    cells = {}
+    for a, b, base, kind in lines:
+        rows = [FONT3[a][y] + "." + FONT3[b][y] for y in range(3)]
+        for y, line in enumerate(rows):
+            for x, ch in enumerate(line):
+                if ch == "X":
+                    cells[(x + 1, base + 2 - y)] = kind
+    return cells
+
+
+async def cmd_sign(target):
+    cells = sign_cells()
+    for r in range(18, 0, -1):
+        say(f"{r:>2} " + " ".join("#" if (c, r) in cells else "." for c in range(1, 12)))
+    say("   " + " ".join("ABCDEFGHIJK"))
+
+    parts = [f"{k}{idx(c, r)}" for (c, r), k in
+             sorted(cells.items(), key=lambda kv: "SPE".index(kv[1]))]
+    payload = "l#" + ",".join(parts) + "#"
+    say(f"\n{len(cells)} holds, {len(payload)} bytes "
+        f"(125B worked, 562B did not - this is the in-between test)")
+
+    hit = await find(target)
+    if not hit:
+        return
+    name, addr = hit
+    say(f"\nconnecting to {name} @ {addr} ...")
+    async with BleakClient(addr, timeout=20.0) as client:
+        say("connected.")
+        await write_payload(client, payload)
+    say("\ndone - it stays lit until the next command.")
+
+
 async def cmd_say(target, text, base_row, delay):
     """Scroll text across the board. Small per-frame payloads stay under the box's buffer."""
     cols = text_columns(text)
@@ -399,10 +446,18 @@ def main():
             if hit:
                 await dump(hit[1], hit[0])
         asyncio.run(r())
+    elif cmd == "sign":
+        asyncio.run(cmd_sign(args[1] if len(args) > 1 else None))
     elif cmd == "say":
         rest = args[1:]
         text = rest[0] if rest else "WILL WALL"
-        asyncio.run(cmd_say(None, text, 7, 0.35))
+        delay = 0.07
+        for a in rest[1:]:
+            try:
+                delay = float(a)
+            except ValueError:
+                pass
+        asyncio.run(cmd_say(None, text, 7, delay))
     elif cmd == "flag":
         asyncio.run(cmd_flag(args[1] if len(args) > 1 else None))
     elif cmd == "bigtest":

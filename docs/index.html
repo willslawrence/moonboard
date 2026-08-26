@@ -3,150 +3,192 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e0e0f">
 <title>MoonBoard Direct</title>
 <style>
   :root{
-    --bg:#0d0f14; --panel:#161a22; --edge:#252b38; --ink:#e8ecf4; --dim:#8a94a8;
-    --start:#22c55e; --move:#3b82f6; --end:#ef4444; --warn:#f59e0b;
+    --bg:#0e0e0f; --panel:#171719; --panel2:#1e1e21; --edge:#2a2a2e;
+    --ink:#e9e9ec; --dim:#8b8b93; --dimmer:#5c5c65;
   }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
-  body{margin:0;background:var(--bg);color:var(--ink);
-       font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
-       padding:env(safe-area-inset-top) 12px calc(env(safe-area-inset-bottom) + 12px)}
-  header{display:flex;align-items:center;gap:10px;padding:14px 2px 10px}
-  h1{font-size:17px;margin:0;font-weight:650;letter-spacing:-.01em}
-  #dot{width:10px;height:10px;border-radius:50%;background:#555;flex:none}
-  #dot.on{background:var(--start);box-shadow:0 0 8px var(--start)}
-  #dot.busy{background:var(--warn)}
-  .row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
-  button{flex:1;min-width:88px;padding:12px 10px;border-radius:11px;border:1px solid var(--edge);
-         background:var(--panel);color:var(--ink);font-size:14px;font-weight:560;font-family:inherit}
-  button:active{background:#222836}
-  button:disabled{opacity:.4}
-  button.pri{background:#2563eb;border-color:#2563eb}
-  button.danger{background:#3a1d1d;border-color:#5b2a2a}
-  .panel{background:var(--panel);border:1px solid var(--edge);border-radius:13px;padding:11px;margin-bottom:10px}
-  .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin-bottom:7px}
-  select,input[type=text],input[type=number]{width:100%;padding:10px;border-radius:9px;border:1px solid var(--edge);
-    background:#0f131a;color:var(--ink);font:14px ui-monospace,SFMono-Regular,Menlo,monospace}
-  .grid{display:grid;grid-template-columns:22px repeat(11,1fr);gap:3px;margin:2px 0}
-  .cell{aspect-ratio:1;border-radius:50%;border:1px solid #2b3242;background:#12161e;
-        display:flex;align-items:center;justify-content:center;font-size:8px;color:#4d566b}
-  .cell{color:#4d566b}
-  .cell.S{background:var(--start);border-color:var(--start);color:#03260f}
-  .cell.P{background:var(--move);border-color:var(--move);color:#04193c}
-  .cell.E{background:var(--end);border-color:var(--end);color:#3a0505}
-  .rl{display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--dim)}
-  .cols{display:grid;grid-template-columns:22px repeat(11,1fr);gap:3px;font-size:9px;color:var(--dim);text-align:center;margin-top:3px}
-  code{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;color:#9fd0ff;word-break:break-all}
-  #log{font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--dim);
-       max-height:170px;overflow:auto;white-space:pre-wrap;word-break:break-all}
-  .hint{font-size:12px;color:var(--dim);margin:6px 2px}
-  .two{display:flex;gap:8px}.two>*{flex:1}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink)}
+  body{font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+       padding:0 14px calc(env(safe-area-inset-bottom) + 96px);}
+
+  header{position:sticky;top:0;z-index:20;background:var(--bg);
+         display:flex;align-items:center;gap:10px;
+         padding:calc(env(safe-area-inset-top) + 14px) 0 12px;
+         border-bottom:1px solid var(--edge);margin-bottom:14px}
+  h1{flex:1;font-size:13px;margin:0;font-weight:700;letter-spacing:.18em;text-transform:uppercase}
+  #dot{width:7px;height:7px;border-radius:50%;background:var(--dimmer);flex:none}
+  #dot.on{background:var(--ink)}
+  #dot.busy{background:var(--dim);animation:pulse 1s infinite}
+  @keyframes pulse{50%{opacity:.25}}
+  #connect{flex:none;width:auto;padding:7px 14px;font-size:12px;letter-spacing:.04em}
+
+  button{width:100%;padding:13px 12px;border-radius:8px;border:1px solid var(--edge);
+         background:var(--panel2);color:var(--ink);font:600 14px inherit;font-family:inherit}
+  button:active{background:#2a2a2e}
+  button:disabled{opacity:.35}
+  button.solid{background:var(--ink);border-color:var(--ink);color:#0e0e0f}
+  button.ghost{background:transparent;color:var(--dim)}
+
+  input[type=text],select,input[type=number]{width:100%;padding:12px;border-radius:8px;
+    border:1px solid var(--edge);background:var(--panel);color:var(--ink);
+    font:14px -apple-system,system-ui,sans-serif;appearance:none}
+  input::placeholder{color:var(--dimmer)}
+  select{background-image:none}
+  .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--dimmer);margin-bottom:6px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-  #results{max-height:270px;overflow:auto;margin-top:9px;border-top:1px solid var(--edge)}
-  .rt{display:flex;align-items:center;gap:9px;padding:9px 4px;border-bottom:1px solid #1e2432}
-  .rt:active{background:#1b2130}
-  .rt .nm{flex:1;min-width:0}
-  .rt .nm b{display:block;font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .rt .nm span{font-size:11px;color:var(--dim)}
-  .gd{flex:none;min-width:42px;text-align:center;padding:3px 6px;border-radius:7px;
-      background:#1d2a44;color:#9fd0ff;font:600 12px ui-monospace,Menlo,monospace}
-  .rt.sel{background:#16233a}
-  .rt.sel .gd{background:#2563eb;color:#fff}
-  .cell.G{background:#1b3a6b;border-color:#3b82f6;border-style:dashed;color:#8fb6f0}
-  #count{font-size:11px;color:var(--dim);margin-top:7px}
-  #now{font-size:12px;color:var(--ink);margin-top:8px;min-height:1.2em}
-  #now b{color:#9fd0ff}
-  label.ck{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--dim);margin-top:9px}
-  label.ck input{width:16px;height:16px;accent-color:#2563eb}
+
+  /* ---- results ---- */
+  #count{font-size:11px;color:var(--dimmer);letter-spacing:.06em;
+         text-transform:uppercase;margin:16px 0 4px}
+  .rt{display:flex;align-items:center;gap:12px;padding:13px 2px;
+      border-bottom:1px solid #202024}
+  .rt:active{background:var(--panel)}
+  .gd{flex:none;width:44px;font:700 13px ui-monospace,Menlo,monospace;color:var(--dim)}
+  .nm{flex:1;min-width:0}
+  .nm b{display:block;font-weight:600;font-size:15px;
+        white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nm span{font-size:12px;color:var(--dimmer)}
+  .rt.sel .gd,.rt.sel .nm b{color:#fff}
+  .rt.sel{background:var(--panel)}
+  .chev{flex:none;color:var(--dimmer);font-size:13px}
+
+  /* ---- board ---- */
+  .grid{display:grid;grid-template-columns:repeat(11,1fr);gap:4px}
+  .cell{aspect-ratio:1;border-radius:50%;border:1.5px solid #232327;background:transparent}
+  .cell.S{border-color:var(--ink);border-width:2.5px}
+  .cell.P{background:#4a4a52;border-color:#4a4a52}
+  .cell.E{background:var(--ink);border-color:var(--ink)}
+  .cell.G{border-color:var(--dimmer);border-style:dotted}
+  .cols{display:grid;grid-template-columns:repeat(11,1fr);gap:4px;margin-top:5px;
+        font:10px ui-monospace,Menlo,monospace;color:var(--dimmer);text-align:center}
+  .key{display:flex;gap:14px;margin-top:12px;font-size:11px;color:var(--dimmer)}
+  .key i{display:inline-block;width:9px;height:9px;border-radius:50%;
+         border:1.5px solid #232327;margin-right:5px;vertical-align:-1px}
+  .key .S i{border-color:var(--ink);border-width:2px}
+  .key .P i{background:#4a4a52;border-color:#4a4a52}
+  .key .E i{background:var(--ink);border-color:var(--ink)}
+
+  /* ---- selected route bar ---- */
+  #bar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--panel);
+       border-top:1px solid var(--edge);padding:11px 14px calc(env(safe-area-inset-bottom) + 11px);
+       display:none;gap:11px;align-items:center}
+  #bar.show{display:flex}
+  #barTxt{flex:1;min-width:0}
+  #barTxt b{display:block;font-size:14px;font-weight:600;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #barTxt span{font-size:11px;color:var(--dimmer)}
+  #bar button{width:auto;flex:none;padding:11px 16px;font-size:13px}
+
+  section{margin-bottom:22px}
+  details{border-top:1px solid var(--edge);padding-top:14px;margin-top:26px}
+  summary{font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+          color:var(--dimmer);list-style:none;cursor:pointer}
+  summary::-webkit-details-marker{display:none}
+  details[open] summary{margin-bottom:14px;color:var(--dim)}
+  details .lbl{margin-top:14px}
+  .hint{font-size:12px;color:var(--dimmer);margin-top:8px;line-height:1.5}
+  code{font:12px ui-monospace,Menlo,monospace;color:var(--dim);word-break:break-all}
+  #log{font:11px/1.6 ui-monospace,Menlo,monospace;color:var(--dimmer);
+       max-height:150px;overflow:auto;white-space:pre-wrap;word-break:break-all;margin-top:8px}
+  label.ck{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--dim);margin-top:12px}
+  label.ck input{width:17px;height:17px;flex:none;accent-color:#8b8b93}
 </style>
 </head>
 <body>
 
-<header><span id="dot"></span><h1>MoonBoard Direct</h1></header>
+<header>
+  <span id="dot"></span>
+  <h1>MoonBoard</h1>
+  <button id="connect">Connect</button>
+</header>
 
-<div class="row">
-  <button id="connect" class="pri">Connect</button>
-  <button id="disconnect" disabled>Disconnect</button>
-</div>
-<div class="row">
-  <button id="send" disabled>Light it up</button>
-  <button id="clear" disabled class="danger">Clear wall</button>
-</div>
-
-<div class="panel">
-  <div class="lbl">Payload</div>
-  <code id="payload">l##</code>
-</div>
-
-<div class="panel">
-  <div class="lbl">Benchmarks — MoonBoard 2016 setup</div>
-  <input type="text" id="q" placeholder="Search name or setter…" spellcheck="false"
-         autocapitalize="off" autocomplete="off">
-  <div class="two" style="margin-top:8px">
-    <div><div class="lbl">Min grade</div><select id="gmin"></select></div>
-    <div><div class="lbl">Max grade</div><select id="gmax"></select></div>
+<section>
+  <input type="text" id="q" placeholder="Search problem or setter"
+         spellcheck="false" autocapitalize="off" autocomplete="off">
+  <div class="three" style="margin-top:8px">
+    <div><div class="lbl">From</div><select id="gmin"></select></div>
+    <div><div class="lbl">To</div><select id="gmax"></select></div>
+    <div><div class="lbl">Sort</div><select id="sort">
+      <option value="repeats">Popular</option>
+      <option value="stars">Best</option>
+      <option value="gradeUp">Easiest</option>
+      <option value="gradeDown">Hardest</option>
+      <option value="name">A–Z</option>
+    </select></div>
   </div>
-  <div style="margin-top:8px">
-    <div class="lbl">Sort</div><select id="sort">
-      <option value="repeats">Most repeated</option>
-      <option value="stars">Best rated</option>
-      <option value="gradeUp">Grade ↑</option>
-      <option value="gradeDown">Grade ↓</option>
-      <option value="name">Name A–Z</option>
-    </select>
-  </div>
-  <div id="results"></div>
-  <div id="count"></div>
-  <div id="now">No problem loaded.</div>
-  <label class="ck"><input type="checkbox" id="auto" checked> Light it up as soon as I pick one</label>
-  <label class="ck"><input type="checkbox" id="gbar" checked> Show the grade on row 1 — one light per V-grade</label>
-</div>
+</section>
 
-<div class="panel">
-  <div class="lbl">Board — tap: start → move → end → off</div>
+<section id="boardWrap" style="display:none">
+  <div class="lbl">Board</div>
   <div id="grid" class="grid"></div>
   <div id="cols" class="cols"></div>
-  <div class="hint">Numbers shown are what we'd send. If the wall lights a different hold, change the ordering below. Tapping a hold edits the loaded problem.</div>
-</div>
+  <div class="key">
+    <span class="S"><i></i>Start</span>
+    <span class="P"><i></i>Move</span>
+    <span class="E"><i></i>Finish</span>
+    <span class="G" style="opacity:.7"><i style="border-style:dotted"></i>Grade</span>
+  </div>
+</section>
 
-<div class="panel">
-  <div class="lbl">Hold numbering (unverified — calibrate against the wall)</div>
+<section>
+  <div id="count"></div>
+  <div id="results"></div>
+</section>
+
+<details>
+  <summary>Settings &amp; calibration</summary>
+
+  <label class="ck"><input type="checkbox" id="auto" checked>
+    Light the wall as soon as I pick a problem</label>
+  <label class="ck"><input type="checkbox" id="gbar" checked>
+    Show the grade on row 1 — one light per V-grade</label>
+  <div class="hint">Row 1 carries no holds on any benchmark, so it reads out the grade:
+    first three lights green, next three blue, the rest red.</div>
+
+  <div class="lbl">Hold numbering</div>
   <select id="order">
-    <option value="colSerp">Column-major serpentine, 0-based (A1=0, A18=17, B18=18) — confirmed</option>
+    <option value="colSerp">Column serpentine, 0-based (A1=0, A18=17, B18=18) — confirmed</option>
     <option value="colUp">Column-major, bottom→top (A1=1, A18=18, B1=19)</option>
     <option value="rowUp">Row-major, bottom→top (A1=1, B1=2, … K1=11)</option>
     <option value="rowDown">Row-major, top→bottom (A18=1, B18=2, …)</option>
   </select>
-  <div class="two" style="margin-top:8px">
+
+  <div class="two" style="margin-top:10px">
     <div><div class="lbl">Offset</div><input type="number" id="offset" value="0" min="0" max="1"></div>
     <div><div class="lbl">Chunk bytes</div><input type="number" id="chunk" value="20" min="8" max="200"></div>
   </div>
-</div>
 
-<div class="panel">
-  <div class="lbl">Calibration — light one hold at a time</div>
+  <div class="lbl">Light one hold</div>
   <div class="two">
     <input type="number" id="single" value="0" min="0" max="197">
     <button id="sendSingle" disabled>Send #</button>
   </div>
   <div class="hint">Walk 1 → 2 → 3 and watch which physical hold lights. That tells us the real ordering.</div>
-</div>
 
-<div class="panel">
   <div class="lbl">Raw string</div>
   <input type="text" id="raw" value="l#S5,P9,P13,E18#" spellcheck="false" autocapitalize="off">
-  <div class="row" style="margin-top:8px"><button id="sendRaw" disabled>Send raw</button></div>
-</div>
+  <div style="margin-top:8px"><button id="sendRaw" disabled>Send raw</button></div>
 
-<div class="panel">
+  <div class="lbl">Payload</div>
+  <code id="payload">l##</code>
+
   <div class="lbl">Log</div>
   <div id="log">idle.</div>
-  <div class="row" style="margin-top:8px">
-    <button id="copy">Copy log</button>
-    <button id="probe" disabled>Probe services</button>
+  <div class="two" style="margin-top:10px">
+    <button id="copy" class="ghost">Copy log</button>
+    <button id="probe" class="ghost" disabled>Probe services</button>
   </div>
+</details>
+
+<div id="bar">
+  <div id="barTxt"><b></b><span></span></div>
+  <button id="clear" class="ghost">Clear</button>
+  <button id="send" class="solid" disabled>Light up</button>
 </div>
 
 <script>
@@ -161,6 +203,7 @@ const BLOCKED = ['0000fe59','00001530-1212-efde-1523-785feabcd123'];
 
 let device = null, rx = null, tx = null;
 const state = {};                      // "col,row" -> 'S' | 'P' | 'E'
+let gradeCells = {};                   // "col,1"   -> the row-1 grade meter
 const $ = id => document.getElementById(id);
 
 function log(msg){
@@ -169,13 +212,13 @@ function log(msg){
 }
 function setLive(on, busy){
   $('dot').className = busy ? 'busy' : (on ? 'on' : '');
-  ['send','clear','sendSingle','sendRaw','probe'].forEach(i => $(i).disabled = !on);
-  $('disconnect').disabled = !on;
-  $('connect').disabled = on;
+  ['sendSingle','sendRaw','probe'].forEach(i => $(i).disabled = !on);
+  $('send').disabled = !on || !current;
+  $('connect').textContent = on ? 'Disconnect' : 'Connect';
 }
 
 /* ---------- hold numbering ---------- */
-function holdNum(col, row){                       // col 1..11 left→right, row 1..18 bottom→top
+function holdNum(col, row){            // col 1..11 left→right, row 1..18 bottom→top
   const off = parseInt($('offset').value, 10);
   const mode = $('order').value;
   let n;
@@ -190,33 +233,21 @@ function holdNum(col, row){                       // col 1..11 left→right, row
 function buildGrid(){
   const g = $('grid'); g.innerHTML = '';
   for (let row = ROWS; row >= 1; row--){
-    const rl = document.createElement('div');
-    rl.className = 'rl'; rl.textContent = row;
-    g.appendChild(rl);
     for (let col = 1; col <= COLS; col++){
       const c = document.createElement('div');
       c.className = 'cell';
       c.dataset.key = col + ',' + row;
-      c.addEventListener('click', () => cycle(col, row));
       g.appendChild(c);
     }
   }
-  const cw = $('cols'); cw.innerHTML = '<div></div>';
+  const cw = $('cols'); cw.innerHTML = '';
   LETTERS.forEach(L => { const d = document.createElement('div'); d.textContent = L; cw.appendChild(d); });
-  paint();
-}
-function cycle(col, row){
-  const k = col + ',' + row;
-  const next = { undefined:'S', S:'P', P:'E', E:undefined }[state[k]];
-  if (next) state[k] = next; else delete state[k];
   paint();
 }
 function paint(){
   document.querySelectorAll('.cell').forEach(c => {
     const k = c.dataset.key, v = state[k], g = !v && gradeCells[k];
-    const [col, row] = k.split(',').map(Number);
     c.className = 'cell' + (v ? ' ' + v : (g ? ' G' : ''));
-    c.textContent = (v || g) ? holdNum(col, row) : '';
   });
   $('payload').textContent = buildPayload();
 }
@@ -231,84 +262,11 @@ function buildPayload(){
   return 'l#' + parts.join(',') + '#';
 }
 
-/* ---------- BLE ---------- */
-async function connect(){
-  if (!navigator.bluetooth){
-    log('No Web Bluetooth. On iPhone you must open this page in Bluefy, not Safari.');
-    return;
-  }
-  try{
-    setLive(false, true);
-    log('requesting device …');
-    device = await navigator.bluetooth.requestDevice({
-      filters: [{ services: [NUS] }, { namePrefix: 'Moon' }],
-      optionalServices: [NUS]
-    });
-    device.addEventListener('gattserverdisconnected', () => { setLive(false); log('disconnected.'); });
-    log('connecting to ' + (device.name || '(unnamed)') + ' …');
-    const server = await device.gatt.connect();
-    const svc = await server.getPrimaryService(NUS);
-    rx = await svc.getCharacteristic(NUS_RX);
-    try{
-      tx = await svc.getCharacteristic(NUS_TX);
-      await tx.startNotifications();
-      tx.addEventListener('characteristicvaluechanged', e => {
-        log('box → ' + new TextDecoder().decode(e.target.value));
-      });
-    }catch(e){ log('no notify channel (fine): ' + e.message); }
-    setLive(true);
-    const p = Object.entries(rx.properties || {}).filter(([, v]) => v).map(([k]) => k).join(',');
-    log('connected. Nordic UART found. RX props: [' + p + ']');
-  }catch(e){
-    setLive(false);
-    log('connect failed: ' + e.message);
-    log('If the picker was empty: box powered? MoonBoard app force-quit?');
-  }
-}
-
-async function write(str){
-  if (!rx) return log('not connected.');
-  if (!(str.startsWith('l#') && str.endsWith('#'))) return log('refusing — payload must be l#…#');
-  if (BLOCKED.some(b => rx.uuid.toLowerCase().includes(b))) return log('refusing — DFU characteristic.');
-  const bytes = new TextEncoder().encode(str);
-  const size = Math.max(8, parseInt($('chunk').value, 10) || 20);
-  log('→ ' + str + '  (' + bytes.length + 'B, ' + Math.ceil(bytes.length / size) + ' chunk(s))');
-  try{
-    for (let i = 0; i < bytes.length; i += size){
-      const part = bytes.slice(i, i + size);
-      // The v1 box's RX characteristic is [write] only - no write-without-response.
-      if (rx.properties && rx.properties.write && rx.writeValueWithResponse)
-        await rx.writeValueWithResponse(part);
-      else if (rx.properties && rx.properties.writeWithoutResponse && rx.writeValueWithoutResponse)
-        await rx.writeValueWithoutResponse(part);
-      else await rx.writeValue(part);
-      await new Promise(r => setTimeout(r, 30));
-    }
-    log('written.');
-  }catch(e){ log('write failed: ' + e.message); }
-}
-
-async function probe(){
-  if (!device || !device.gatt.connected) return log('not connected.');
-  log('probing (Web Bluetooth only shows allow-listed services) …');
-  try{
-    const svcs = await device.gatt.getPrimaryServices();
-    for (const s of svcs){
-      log('SERVICE ' + s.uuid);
-      for (const c of await s.getCharacteristics()){
-        const p = Object.entries(c.properties).filter(([, v]) => v).map(([k]) => k).join(',');
-        log('  char ' + c.uuid + ' [' + p + ']');
-      }
-    }
-  }catch(e){ log('probe failed: ' + e.message); }
-}
-
 /* ---------- benchmarks (2016 setup) ---------- */
 const GRADES = ['5+','6A','6A+','6B','6B+','6C','6C+','7A','7A+','7B','7B+',
                 '7C','7C+','8A','8A+','8B','8B+','8C'];
 // V-grade equivalents, same table the MoonBoard app shows.
 const VGRADE = [2,3,3,4,4,5,5,6,7,8,8,9,10,11,12,13,14,15];
-let gradeCells = {};              // "col,1" -> 'P', the bottom-row grade meter
 // [name, setter, gradeIdx, repeats, avgStars, startHolds, midHolds, endHolds]
 const BENCH=[
 ["An easy problem","Brett Duffield",4,54494,4.0,"F5","E8,H10,G13,E15","G18"],
@@ -864,12 +822,11 @@ const BENCH=[
 let current = null;
 
 function fillGradeSelects(){
-  const lo = $('gmin'), hi = $('gmax');
   GRADES.forEach((g, i) => {
-    lo.appendChild(new Option(g, i));
-    hi.appendChild(new Option(g, i));
+    $('gmin').appendChild(new Option(g, i));
+    $('gmax').appendChild(new Option(g, i));
   });
-  lo.value = 0; hi.value = GRADES.length - 1;
+  $('gmin').value = 0; $('gmax').value = GRADES.length - 1;
 }
 
 function filtered(){
@@ -890,21 +847,30 @@ function renderResults(){
   const hits = filtered();
   const box = $('results');
   box.innerHTML = '';
-  hits.slice(0, 60).forEach(r => {
+  hits.slice(0, 80).forEach(r => {
     const row = document.createElement('div');
     row.className = 'rt' + (r === current ? ' sel' : '');
-    const stars = r[4] ? ' · ' + r[4].toFixed(1) + '★' : '';
-    row.innerHTML = '<div class="gd"></div><div class="nm"><b></b><span></span></div>';
+    row.innerHTML = '<div class="gd"></div>' +
+                    '<div class="nm"><b></b><span></span></div><div class="chev">›</div>';
     row.querySelector('.gd').textContent = GRADES[r[2]];
     row.querySelector('b').textContent = r[0];
-    row.querySelector('span').textContent = r[1] + stars + ' · ' + r[3].toLocaleString() + ' repeats';
+    row.querySelector('span').textContent =
+      r[1] + (r[4] ? ' · ' + r[4].toFixed(1) + '★' : '') + ' · ' + r[3].toLocaleString();
     row.addEventListener('click', () => loadRoute(r));
     box.appendChild(row);
   });
   $('count').textContent = hits.length
-    ? hits.length + ' problem' + (hits.length === 1 ? '' : 's') +
-      (hits.length > 60 ? ' — showing first 60' : '')
-    : 'Nothing matches.';
+    ? hits.length + (hits.length > 80 ? ' problems — first 80' : ' problems')
+    : 'Nothing matches';
+}
+
+/* Row 1 reads out the grade: first three green, next three blue, rest red. */
+function applyGradeBar(){
+  gradeCells = {};
+  if (!current || !$('gbar').checked) return;
+  const lights = Math.min(VGRADE[current[2]], COLS);
+  for (let i = 0; i < lights; i++)
+    gradeCells[(i + 1) + ',1'] = i < 3 ? 'S' : (i < 6 ? 'P' : 'E');
 }
 
 function parseHolds(str, tag){
@@ -917,36 +883,113 @@ function parseHolds(str, tag){
   });
 }
 
-function applyGradeBar(){
-  gradeCells = {};
-  if (!current || !$('gbar').checked) return;
-  const lights = Math.min(VGRADE[current[2]], COLS);
-  for (let col = 1; col <= lights; col++) gradeCells[col + ',1'] = 'P';
-}
-
 function loadRoute(r){
   for (const k in state) delete state[k];
   parseHolds(r[5], 'S'); parseHolds(r[6], 'P'); parseHolds(r[7], 'E');
   current = r;
   applyGradeBar();
+  $('boardWrap').style.display = '';
   paint();
   renderResults();
-  $('now').innerHTML = '';
-  const b = document.createElement('b'); b.textContent = r[0];
-  $('now').appendChild(b);
-  $('now').appendChild(document.createTextNode(
-    '  ' + GRADES[r[2]] + ' · V' + VGRADE[r[2]] + ' · ' + r[1] +
-    (r[4] ? ' · ' + r[4].toFixed(1) + '★' : '')));
+  $('bar').className = 'show';
+  $('barTxt').querySelector('b').textContent = r[0];
+  $('barTxt').querySelector('span').textContent =
+    GRADES[r[2]] + ' · V' + VGRADE[r[2]] + ' · ' + r[1];
+  $('send').disabled = !rx;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
   log('loaded "' + r[0] + '" — ' + GRADES[r[2]] + ' (V' + VGRADE[r[2]] + '), set by ' + r[1]);
   if ($('auto').checked && rx) write(buildPayload());
 }
 
+function clearRoute(){
+  for (const k in state) delete state[k];
+  current = null; gradeCells = {};
+  $('boardWrap').style.display = 'none';
+  $('bar').className = '';
+  paint();
+  renderResults();
+  if (rx) write('l##');
+}
+
+/* ---------- BLE ---------- */
+async function connect(){
+  if (!navigator.bluetooth){
+    log('No Web Bluetooth. On iPhone you must open this page in Bluefy, not Safari.');
+    return;
+  }
+  try{
+    setLive(false, true);
+    log('requesting device …');
+    device = await navigator.bluetooth.requestDevice({
+      filters: [{ services: [NUS] }, { namePrefix: 'Moon' }],
+      optionalServices: [NUS]
+    });
+    device.addEventListener('gattserverdisconnected', () => { rx = null; setLive(false); log('disconnected.'); });
+    log('connecting to ' + (device.name || '(unnamed)') + ' …');
+    const server = await device.gatt.connect();
+    const svc = await server.getPrimaryService(NUS);
+    rx = await svc.getCharacteristic(NUS_RX);
+    try{
+      tx = await svc.getCharacteristic(NUS_TX);
+      await tx.startNotifications();
+      tx.addEventListener('characteristicvaluechanged', e => {
+        log('box → ' + new TextDecoder().decode(e.target.value));
+      });
+    }catch(e){ log('no notify channel (fine): ' + e.message); }
+    setLive(true);
+    const p = Object.entries(rx.properties || {}).filter(([, v]) => v).map(([k]) => k).join(',');
+    log('connected. Nordic UART found. RX props: [' + p + ']');
+  }catch(e){
+    rx = null;
+    setLive(false);
+    log('connect failed: ' + e.message);
+    log('If the picker was empty: box powered? MoonBoard app force-quit?');
+  }
+}
+
+async function write(str){
+  if (!rx) return log('not connected.');
+  if (!(str.startsWith('l#') && str.endsWith('#'))) return log('refusing — payload must be l#…#');
+  if (BLOCKED.some(b => rx.uuid.toLowerCase().includes(b))) return log('refusing — DFU characteristic.');
+  const bytes = new TextEncoder().encode(str);
+  const size = Math.max(8, parseInt($('chunk').value, 10) || 20);
+  log('→ ' + str + '  (' + bytes.length + 'B, ' + Math.ceil(bytes.length / size) + ' chunk(s))');
+  try{
+    for (let i = 0; i < bytes.length; i += size){
+      const part = bytes.slice(i, i + size);
+      // The v1 box's RX characteristic is [write] only - no write-without-response.
+      if (rx.properties && rx.properties.write && rx.writeValueWithResponse)
+        await rx.writeValueWithResponse(part);
+      else if (rx.properties && rx.properties.writeWithoutResponse && rx.writeValueWithoutResponse)
+        await rx.writeValueWithoutResponse(part);
+      else await rx.writeValue(part);
+      await new Promise(r => setTimeout(r, 30));
+    }
+    log('written.');
+  }catch(e){ log('write failed: ' + e.message); }
+}
+
+async function probe(){
+  if (!device || !device.gatt.connected) return log('not connected.');
+  log('probing (Web Bluetooth only shows allow-listed services) …');
+  try{
+    const svcs = await device.gatt.getPrimaryServices();
+    for (const s of svcs){
+      log('SERVICE ' + s.uuid);
+      for (const c of await s.getCharacteristics()){
+        const p = Object.entries(c.properties).filter(([, v]) => v).map(([k]) => k).join(',');
+        log('  char ' + c.uuid + ' [' + p + ']');
+      }
+    }
+  }catch(e){ log('probe failed: ' + e.message); }
+}
+
 /* ---------- wiring ---------- */
-$('connect').onclick = connect;
-$('disconnect').onclick = () => { if (device && device.gatt.connected) device.gatt.disconnect(); };
-$('send').onclick = () => write(buildPayload());
-$('clear').onclick = () => { for (const k in state) delete state[k]; current = null; gradeCells = {};
-  $('now').textContent = 'No problem loaded.'; paint(); renderResults(); write('l##'); };
+$('connect').onclick = () => {
+  if (device && device.gatt.connected) device.gatt.disconnect(); else connect();
+};
+$('send').onclick  = () => write(buildPayload());
+$('clear').onclick = clearRoute;
 $('sendSingle').onclick = () => write('l#S' + (parseInt($('single').value, 10) || 1) + '#');
 $('sendRaw').onclick = () => write($('raw').value.trim());
 $('probe').onclick = probe;
@@ -955,6 +998,7 @@ $('gmin').onchange = () => { if (+$('gmax').value < +$('gmin').value) $('gmax').
 $('gmax').onchange = () => { if (+$('gmax').value < +$('gmin').value) $('gmin').value = $('gmax').value; renderResults(); };
 $('sort').onchange = renderResults;
 $('gbar').onchange = () => { applyGradeBar(); paint(); if (rx && current) write(buildPayload()); };
+
 function saveCal(){
   try{ localStorage.setItem('mb-cal', JSON.stringify({o:$('order').value, f:$('offset').value, c:$('chunk').value})); }catch(e){}
 }
@@ -977,7 +1021,7 @@ buildGrid();
 fillGradeSelects();
 renderResults();
 setLive(false);
-if (!navigator.bluetooth) log('⚠︎ No Web Bluetooth here. On iPhone, open this page in Bluefy.');
+if (!navigator.bluetooth) log('No Web Bluetooth here. On iPhone, open this page in Bluefy.');
 else log('ready. Power the box, force-quit the MoonBoard app, then Connect.');
 </script>
 </body>
