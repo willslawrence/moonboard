@@ -5,8 +5,9 @@ moonprobe.py - probe and drive a MoonBoard LED controller over BLE.
     python3 moonprobe.py go                 # scan + auto-find + full probe (safe, read-only)
     python3 moonprobe.py scan               # just list what's visible
     python3 moonprobe.py probe <addr|name>
-    python3 moonprobe.py send  <addr|name> "l#S5,P9,P13,E18#"
-    python3 moonprobe.py walk  <addr|name> [count]   # light #1, #2, #3 ... one at a time
+    python3 moonprobe.py send  "l#S5,P9,P13,E18#"
+    python3 moonprobe.py walk  [count]              # light #1, #2, #3 ... one at a time
+    python3 moonprobe.py walk  [count] [addr|name]  # ... on a specific device
 
 Everything is also appended to probe.log next to this file.
 Read-only except `send`, which writes one ASCII string - the same thing the
@@ -103,7 +104,24 @@ async def dump(addr, name):
             say("RESULT: no Nordic UART and nothing writable found.")
 
 
+async def autofind():
+    """Scan and auto-pick the MoonBoard, same logic as `go`."""
+    rows = await scan_all()
+    if not rows:
+        say("\nnothing found. Bluetooth on? box powered? app force-quit?")
+        return None
+    hit = pick(rows)
+    if not hit:
+        say("\nno obvious MoonBoard in that list.")
+        return None
+    name, addr, why = hit
+    say(f"\npicked: {name} @ {addr}  ({why})")
+    return name, addr
+
+
 async def find(target):
+    if target is None:
+        return await autofind()
     rows = await scan_all()
     t = target.lower()
     for name, addr, rssi, uuids in rows:
@@ -186,17 +204,28 @@ def main():
         asyncio.run(cmd_go())
     elif cmd == "scan":
         asyncio.run(scan_all())
-    elif cmd == "probe" and len(args) == 2:
+    elif cmd == "probe":
         async def r():
-            hit = await find(args[1])
+            hit = await find(args[1] if len(args) > 1 else None)
             if hit:
                 await dump(hit[1], hit[0])
         asyncio.run(r())
-    elif cmd == "walk" and len(args) in (2, 3):
-        n = int(args[2]) if len(args) == 3 else 3
-        asyncio.run(cmd_walk(args[1], n))
-    elif cmd == "send" and len(args) == 3:
-        asyncio.run(cmd_send(args[1], args[2]))
+    elif cmd == "walk":
+        rest = args[1:]
+        target = None
+        n = 3
+        for a in rest:
+            if a.isdigit():
+                n = int(a)
+            else:
+                target = a
+        asyncio.run(cmd_walk(target, n))
+    elif cmd == "send" and len(args) >= 2:
+        # target optional:  send "l#...#"   or   send <name> "l#...#"
+        if len(args) == 2:
+            asyncio.run(cmd_send(None, args[1]))
+        else:
+            asyncio.run(cmd_send(args[1], args[2]))
     else:
         print(__doc__)
 
