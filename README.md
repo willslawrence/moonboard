@@ -25,6 +25,15 @@ so it can be calibrated against the physical wall.
 Read-only except the one ASCII write. Nordic DFU/bootloader UUIDs are hard-blocked
 in both the script and the page.
 
+## Board image
+
+`docs/board-2016.png` is the 2016 wall photo from Moonboard-Guidebook (MIT), with
+rings drawn over it the way the official app does. Hold centres on the 450x692
+source are `x = 65 + (col-1)*34.6`, `y = 60 + (18-row)*34.6`, `r = 20`; the page
+stores those as percentages so the overlay scales with the image. Column letters
+and row numbers are printed on the photo. The wall artwork itself is Moon
+Climbing's — fine for a personal page, not for anything you ship.
+
 ## Benchmark data
 
 The 549 problems are the 2016-40 subset of

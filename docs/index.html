@@ -57,24 +57,30 @@
   .rt.sel{background:var(--panel)}
   .chev{flex:none;color:var(--dimmer);font-size:13px}
 
-  /* ---- board ---- */
-  /* 11 wide x 18 high - cap the width so the whole board fits one screen */
-  .grid{display:grid;grid-template-columns:repeat(11,1fr);gap:4px;
-        width:min(100%,40vh);margin:0 auto}
-  .cell{aspect-ratio:1;border-radius:50%;border:1.5px solid #232327;background:transparent}
-  .cell.S{border-color:var(--ink);border-width:2.5px}
-  .cell.P{background:#4a4a52;border-color:#4a4a52}
-  .cell.E{background:var(--ink);border-color:var(--ink)}
-  .cell.G{border-color:var(--dimmer);border-style:dotted}
-  .cols{display:grid;grid-template-columns:repeat(11,1fr);gap:4px;
-        width:min(100%,40vh);margin:5px auto 0;
-        font:10px ui-monospace,Menlo,monospace;color:var(--dimmer);text-align:center}
-  .key{display:flex;gap:14px;margin-top:12px;justify-content:center;font-size:11px;color:var(--dimmer)}
+  /* ---- board ----
+     Photo of the real 2016 wall with rings over the holds, the way the
+     MoonBoard app draws it. Hold centres on the 450x692 source image are
+     x = 65 + (col-1)*34.6, y = 60 + (18-row)*34.6, r = 20 — the same numbers
+     Moonboard-Guidebook renders with. Everything below is those as percentages,
+     so the overlay scales with the image. Column letters and row numbers are
+     already printed on the photo. */
+  #board{position:relative;width:min(100%,44vh);margin:0 auto;
+         border-radius:6px;overflow:hidden}
+  #board img{display:block;width:100%}
+  #marks{position:absolute;inset:0}
+  .mark{position:absolute;width:8.9%;aspect-ratio:1;box-sizing:border-box;
+        border:3px solid;border-radius:50%;transform:translate(-50%,-50%)}
+  .mark.S{border-color:#22c55e}
+  .mark.P{border-color:#2563eb}
+  .mark.E{border-color:#ef4444}
+  .mark.g{width:6.4%;border-width:2.5px}
+  .key{display:flex;gap:14px;margin-top:12px;justify-content:center;
+       font-size:11px;color:var(--dimmer)}
   .key i{display:inline-block;width:9px;height:9px;border-radius:50%;
-         border:1.5px solid #232327;margin-right:5px;vertical-align:-1px}
-  .key .S i{border-color:var(--ink);border-width:2px}
-  .key .P i{background:#4a4a52;border-color:#4a4a52}
-  .key .E i{background:var(--ink);border-color:var(--ink)}
+         border:2px solid;margin-right:5px;vertical-align:-1px}
+  .key .S i{border-color:#22c55e}
+  .key .P i{border-color:#2563eb}
+  .key .E i{border-color:#ef4444}
 
   /* ---- selected route bar ---- */
   #bar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--panel);
@@ -127,14 +133,15 @@
 </section>
 
 <section id="boardWrap" style="display:none">
-  <div class="lbl">Board</div>
-  <div id="grid" class="grid"></div>
-  <div id="cols" class="cols"></div>
+  <div id="board">
+    <img src="board-2016.png" alt="MoonBoard 2016 wall" width="450" height="692">
+    <div id="marks"></div>
+  </div>
   <div class="key">
     <span class="S"><i></i>Start</span>
     <span class="P"><i></i>Move</span>
     <span class="E"><i></i>Finish</span>
-    <span class="G" style="opacity:.7"><i style="border-style:dotted"></i>Grade</span>
+    <span>Small rings on row 1 = grade</span>
   </div>
 </section>
 
@@ -232,26 +239,23 @@ function holdNum(col, row){            // col 1..11 left→right, row 1..18 bott
   return n + off;
 }
 
-/* ---------- grid ---------- */
-function buildGrid(){
-  const g = $('grid'); g.innerHTML = '';
-  for (let row = ROWS; row >= 1; row--){
-    for (let col = 1; col <= COLS; col++){
-      const c = document.createElement('div');
-      c.className = 'cell';
-      c.dataset.key = col + ',' + row;
-      g.appendChild(c);
-    }
-  }
-  const cw = $('cols'); cw.innerHTML = '';
-  LETTERS.forEach(L => { const d = document.createElement('div'); d.textContent = L; cw.appendChild(d); });
-  paint();
-}
+/* ---------- board ---------- */
+// Hold centres on the 450x692 board photo, as percentages of it.
+const markX = col => 100 * (65 + (col - 1) * 34.6) / 450;
+const markY = row => 100 * (60 + (ROWS - row) * 34.6) / 692;
+
 function paint(){
-  document.querySelectorAll('.cell').forEach(c => {
-    const k = c.dataset.key, v = state[k], g = !v && gradeCells[k];
-    c.className = 'cell' + (v ? ' ' + v : (g ? ' G' : ''));
-  });
+  const m = $('marks');
+  m.innerHTML = '';
+  const all = Object.assign({}, gradeCells, state);   // a real hold always wins
+  for (const k in all){
+    const [col, row] = k.split(',').map(Number);
+    const d = document.createElement('div');
+    d.className = 'mark ' + all[k] + (state[k] ? '' : ' g');
+    d.style.left = markX(col) + '%';
+    d.style.top  = markY(row) + '%';
+    m.appendChild(d);
+  }
   $('payload').textContent = buildPayload();
 }
 function buildPayload(){
@@ -1020,7 +1024,7 @@ $('copy').onclick = async () => {
 };
 
 loadCal();
-buildGrid();
+paint();
 fillGradeSelects();
 renderResults();
 setLive(false);
