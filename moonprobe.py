@@ -6,6 +6,7 @@ moonprobe.py - probe and drive a MoonBoard LED controller over BLE.
     python3 moonprobe.py scan               # just list what's visible
     python3 moonprobe.py probe <addr|name>
     python3 moonprobe.py send  "l#S5,P9,P13,E18#"
+    python3 moonprobe.py colors [hold]              # same hold as S, then P, then E
     python3 moonprobe.py walk  [count]              # light #1, #2, #3 ... one at a time
     python3 moonprobe.py walk  [count] [addr|name]  # ... on a specific device
 
@@ -194,6 +195,28 @@ async def cmd_walk(target, count):
     say("done. Tell Claude which physical hold lit for each number.")
 
 
+async def cmd_colors(target, hold):
+    """Light ONE hold as each type in turn, so the real colour map can be read off."""
+    hit = await find(target)
+    if not hit:
+        return
+    name, addr = hit
+    say(f"\nconnecting to {name} @ {addr} ...")
+    async with BleakClient(addr, timeout=20.0) as client:
+        say("connected.\n")
+
+        async def w(payload, note):
+            say(f"  -> {payload}   <-- {note}")
+            await client.write_gatt_char(NUS_RX, payload.encode("utf-8"), response=True)
+            await asyncio.sleep(5.0)
+
+        await w("l##", "wall should now be DARK - does it clear?")
+        for kind, label in (("S", "start"), ("P", "move"), ("E", "end")):
+            await w(f"l#{kind}{hold}#", f"'{kind}' ({label}) - what colour is that hold?")
+        await w("l##", "clearing again")
+    say("done. Report: did l## go dark, and the colour for S / P / E.")
+
+
 def main():
     args = sys.argv[1:]
     if not args:
@@ -210,6 +233,15 @@ def main():
             if hit:
                 await dump(hit[1], hit[0])
         asyncio.run(r())
+    elif cmd == "colors":
+        rest = args[1:]
+        target, hold = None, 0
+        for a in rest:
+            if a.isdigit():
+                hold = int(a)
+            else:
+                target = a
+        asyncio.run(cmd_colors(target, hold))
     elif cmd == "walk":
         rest = args[1:]
         target = None
