@@ -6,6 +6,7 @@ moonprobe.py - probe and drive a MoonBoard LED controller over BLE.
     python3 moonprobe.py scan               # just list what's visible
     python3 moonprobe.py probe <addr|name>
     python3 moonprobe.py send  <addr|name> "l#S5,P9,P13,E18#"
+    python3 moonprobe.py walk  <addr|name> [count]   # light #1, #2, #3 ... one at a time
 
 Everything is also appended to probe.log next to this file.
 Read-only except `send`, which writes one ASCII string - the same thing the
@@ -150,10 +151,29 @@ async def cmd_send(target, payload):
         except Exception as e:
             say(f"  (no notify channel: {e})")
         say(f"  -> writing: {payload}")
-        await client.write_gatt_char(NUS_RX, payload.encode("utf-8"), response=False)
+        await client.write_gatt_char(NUS_RX, payload.encode("utf-8"), response=True)
         say("  written. watching 5s - look at the wall.")
         await asyncio.sleep(5.0)
     say("done.")
+
+
+async def cmd_walk(target, count):
+    """Calibration: light one hold at a time so the numbering can be read off the wall."""
+    hit = await find(target)
+    if not hit:
+        return
+    name, addr = hit
+    say(f"\nconnecting to {name} @ {addr} ...")
+    async with BleakClient(addr, timeout=20.0) as client:
+        say("connected.\n")
+        for n in range(1, count + 1):
+            payload = f"l#S{n}#"
+            say(f"  -> {payload}   <-- which hold lit?")
+            await client.write_gatt_char(NUS_RX, payload.encode("utf-8"), response=True)
+            await asyncio.sleep(4.0)
+        say("\nclearing.")
+        await client.write_gatt_char(NUS_RX, b"l##", response=True)
+    say("done. Tell Claude which physical hold lit for each number.")
 
 
 def main():
@@ -172,6 +192,9 @@ def main():
             if hit:
                 await dump(hit[1], hit[0])
         asyncio.run(r())
+    elif cmd == "walk" and len(args) in (2, 3):
+        n = int(args[2]) if len(args) == 3 else 3
+        asyncio.run(cmd_walk(args[1], n))
     elif cmd == "send" and len(args) == 3:
         asyncio.run(cmd_send(args[1], args[2]))
     else:

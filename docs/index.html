@@ -215,7 +215,8 @@ async function connect(){
       });
     }catch(e){ log('no notify channel (fine): ' + e.message); }
     setLive(true);
-    log('connected. Nordic UART found.');
+    const p = Object.entries(rx.properties || {}).filter(([, v]) => v).map(([k]) => k).join(',');
+    log('connected. Nordic UART found. RX props: [' + p + ']');
   }catch(e){
     setLive(false);
     log('connect failed: ' + e.message);
@@ -233,7 +234,11 @@ async function write(str){
   try{
     for (let i = 0; i < bytes.length; i += size){
       const part = bytes.slice(i, i + size);
-      if (rx.writeValueWithoutResponse) await rx.writeValueWithoutResponse(part);
+      // The v1 box's RX characteristic is [write] only - no write-without-response.
+      if (rx.properties && rx.properties.write && rx.writeValueWithResponse)
+        await rx.writeValueWithResponse(part);
+      else if (rx.properties && rx.properties.writeWithoutResponse && rx.writeValueWithoutResponse)
+        await rx.writeValueWithoutResponse(part);
       else await rx.writeValue(part);
       await new Promise(r => setTimeout(r, 30));
     }
