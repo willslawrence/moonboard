@@ -7,6 +7,7 @@ moonprobe.py - probe and drive a MoonBoard LED controller over BLE.
     python3 moonprobe.py probe <addr|name>
     python3 moonprobe.py send  "l#S5,P9,P13,E18#"
     python3 moonprobe.py say "WILL WALL" [delay]    # scrolling marquee (default 0.07s/frame)
+    python3 moonprobe.py show                       # USA -> KSA -> HI (held)
     python3 moonprobe.py finale                     # fast HI WILL scroll -> Will's layout, held
     python3 moonprobe.py sign                       # WILL / WALL, static, stays lit
     python3 moonprobe.py flag                       # stars and stripes, hung vertically
@@ -301,6 +302,61 @@ WILL_HI = [
 ]
 
 
+FONT7 = {
+    "U": ["X.X", "X.X", "X.X", "X.X", "X.X", "X.X", "XXX"],
+    "S": ["XXX", "X..", "X..", "XXX", "..X", "..X", "XXX"],
+    "A": [".X.", "X.X", "X.X", "XXX", "X.X", "X.X", "X.X"],
+    "K": ["X.X", "X.X", "XX.", "X..", "XX.", "X.X", "X.X"],
+    "H": ["X.X", "X.X", "X.X", "XXX", "X.X", "X.X", "X.X"],
+    "I": ["XXX", ".X.", ".X.", ".X.", ".X.", ".X.", "XXX"],
+}
+WORD_TOP = 12          # 7 rows tall -> occupies rows 6..12
+
+
+def word_cells(word, kinds):
+    """3-wide glyphs with 1-column gaps. Three letters fill all 11 columns exactly."""
+    cells = {}
+    span = len(word) * 4 - 1
+    left = (11 - span) // 2 + 1
+    for i, ch in enumerate(word.upper()):
+        glyph = FONT7[ch]
+        for y, line in enumerate(glyph):
+            for x, c in enumerate(line):
+                if c == "X":
+                    cells[(left + i * 4 + x, WORD_TOP - y)] = kinds[i % len(kinds)]
+    return cells
+
+
+async def cmd_show(target):
+    """USA red/blue -> KSA green -> HI blue, held."""
+    seq = [("USA", ["E", "P", "E"], 2.5),
+           ("KSA", ["S"],            2.5),
+           ("HI",  ["P"],            None)]
+    for word, kinds, _ in seq:
+        cells = word_cells(word, kinds)
+        say(f"\n{word}  ({len(cells)} holds)")
+        for r in range(13, 4, -1):
+            say("   " + " ".join("#" if (c, r) in cells else "." for c in range(1, 12)))
+
+    hit = await find(target)
+    if not hit:
+        return
+    name, addr = hit
+    say(f"\nconnecting to {name} @ {addr} ...")
+    async with BleakClient(addr, timeout=20.0) as client:
+        say("connected.")
+        for word, kinds, hold in seq:
+            cells = word_cells(word, kinds)
+            parts = [f"{k}{idx(c, r)}" for (c, r), k in
+                     sorted(cells.items(), key=lambda kv: "SPE".index(kv[1]))]
+            payload = "l#" + ",".join(parts) + "#"
+            say(f"  {word}: {len(payload)}B")
+            await write_payload(client, payload)
+            if hold:
+                await asyncio.sleep(hold)
+    say("\ndone - HI stays lit.")
+
+
 async def cmd_finale(target):
     """Scroll HI WILL fast, then land on Will's own layout and hold it."""
     payload = "l#" + ",".join(f"S{idx(c, r)}" for c, r in WILL_HI) + "#"
@@ -503,6 +559,8 @@ def main():
             if hit:
                 await dump(hit[1], hit[0])
         asyncio.run(r())
+    elif cmd == "show":
+        asyncio.run(cmd_show(args[1] if len(args) > 1 else None))
     elif cmd == "finale":
         asyncio.run(cmd_finale(args[1] if len(args) > 1 else None))
     elif cmd == "sign":
