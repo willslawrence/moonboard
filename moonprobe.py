@@ -7,6 +7,7 @@ moonprobe.py - probe and drive a MoonBoard LED controller over BLE.
     python3 moonprobe.py probe <addr|name>
     python3 moonprobe.py send  "l#S5,P9,P13,E18#"
     python3 moonprobe.py say "WILL WALL" [delay]    # scrolling marquee (default 0.07s/frame)
+    python3 moonprobe.py finale                     # fast HI WILL scroll -> Will's layout, held
     python3 moonprobe.py sign                       # WILL / WALL, static, stays lit
     python3 moonprobe.py flag                       # stars and stripes, hung vertically
     python3 moonprobe.py bigtest                    # 5 S + 5 P + 5 E, one column each
@@ -244,6 +245,7 @@ FONT = {
     "I": ["XXX", ".X.", ".X.", ".X.", "XXX"],
     "L": ["X..", "X..", "X..", "X..", "XXX"],
     "A": [".X.", "X.X", "XXX", "X.X", "X.X"],
+    "H": ["X.X", "X.X", "XXX", "X.X", "X.X"],
     " ": ["..", "..", "..", "..", ".."],
 }
 
@@ -282,6 +284,61 @@ def sign_cells():
                 if ch == "X":
                     cells[(x + 1, base + 2 - y)] = kind
     return cells
+
+
+# Will's own layout, read off his screenshot: WILL across the top, HI below.
+WILL_HI = [
+    (7, 18), (9, 18), (11, 18),
+    (9, 17), (11, 17),
+    (1, 16), (5, 16), (7, 16), (9, 16), (11, 16),
+    (1, 15), (3, 15), (5, 15), (7, 15), (9, 15), (11, 15),
+    (2, 14), (4, 14), (7, 14), (9, 14), (11, 14),
+    (2, 11), (5, 11), (7, 11), (8, 11), (9, 11), (10, 11), (11, 11),
+    (2, 10), (5, 10), (9, 10),
+    (2, 9), (3, 9), (4, 9), (5, 9), (9, 9),
+    (2, 8), (5, 8), (9, 8),
+    (2, 7), (5, 7), (7, 7), (8, 7), (9, 7), (10, 7), (11, 7),
+]
+
+
+async def cmd_finale(target):
+    """Scroll HI WILL fast, then land on Will's own layout and hold it."""
+    payload = "l#" + ",".join(f"S{idx(c, r)}" for c, r in WILL_HI) + "#"
+    say(f"\nfinal frame: {len(WILL_HI)} holds, {len(payload)} bytes")
+    for r in range(18, 0, -1):
+        say(f"{r:>2} " + " ".join("#" if (c, r) in WILL_HI else "." for c in range(1, 12)))
+    say("   " + " ".join("ABCDEFGHIJK"))
+
+    hit = await find(target)
+    if not hit:
+        return
+    name, addr = hit
+    say(f"\nconnecting to {name} @ {addr} ...")
+    async with BleakClient(addr, timeout=20.0) as client:
+        say("connected. scrolling ...")
+        cols = text_columns("HI WILL")
+        for shift in range(-11, len(cols) + 1):
+            cells = {}
+            for sc in range(1, 12):
+                src = sc - 1 + shift
+                if 0 <= src < len(cols):
+                    rows, letter = cols[src]
+                    for fy in rows:
+                        br = 7 + (4 - fy)
+                        if 1 <= br <= 18:
+                            cells[(sc, br)] = "SPE"[letter % 3]
+            parts = [f"{k}{idx(c, r)}" for (c, r), k in
+                     sorted(cells.items(), key=lambda kv: "SPE".index(kv[1]))]
+            data = ("l#" + ",".join(parts) + "#").encode()
+            for i in range(0, len(data), CHUNK):
+                await client.write_gatt_char(NUS_RX, data[i:i + CHUNK], response=True)
+            await asyncio.sleep(0.03)
+
+        await client.write_gatt_char(NUS_RX, b"l##", response=True)
+        await asyncio.sleep(0.4)
+        say("landing on WILL / HI ...")
+        await write_payload(client, payload)
+    say("\ndone - stays lit.")
 
 
 async def cmd_sign(target):
@@ -446,6 +503,8 @@ def main():
             if hit:
                 await dump(hit[1], hit[0])
         asyncio.run(r())
+    elif cmd == "finale":
+        asyncio.run(cmd_finale(args[1] if len(args) > 1 else None))
     elif cmd == "sign":
         asyncio.run(cmd_sign(args[1] if len(args) > 1 else None))
     elif cmd == "say":
