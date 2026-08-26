@@ -272,7 +272,10 @@ function buildPayload(withGrade){
     const [col, row] = k.split(',').map(Number);
     parts.push(all[k] + holdNum(col, row));
   }
-  parts.sort((a, b) => 'SPE'.indexOf(a[0]) - 'SPE'.indexOf(b[0]) || (+a.slice(1)) - (+b.slice(1)));
+  // Holds MUST be listed in ascending index order. Grouping them by type
+  // (all S, then all P, then all E) makes the box mis-colour holds and light
+  // strays next to isolated moves. Verified on the wall 2026-08-27.
+  parts.sort((a, b) => (+a.slice(1)) - (+b.slice(1)));
   return 'l#' + parts.join(',') + '#';
 }
 

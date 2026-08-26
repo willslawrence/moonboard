@@ -403,7 +403,7 @@ async def cmd_show(target):
         for word, kinds, hold in seq:
             cells = word_cells(word, kinds)
             parts = [f"{k}{idx(c, r)}" for (c, r), k in
-                     sorted(cells.items(), key=lambda kv: "SPE".index(kv[1]))]
+                     sorted(cells.items(), key=lambda kv: idx(*kv[0]))]
             payload = "l#" + ",".join(parts) + "#"
             say(f"  {word}: {len(payload)}B")
             await write_payload(client, payload)
@@ -439,7 +439,7 @@ async def cmd_finale(target):
                         if 1 <= br <= 18:
                             cells[(sc, br)] = "SPE"[letter % 3]
             parts = [f"{k}{idx(c, r)}" for (c, r), k in
-                     sorted(cells.items(), key=lambda kv: "SPE".index(kv[1]))]
+                     sorted(cells.items(), key=lambda kv: idx(*kv[0]))]
             data = ("l#" + ",".join(parts) + "#").encode()
             for i in range(0, len(data), CHUNK):
                 await client.write_gatt_char(NUS_RX, data[i:i + CHUNK], response=True)
@@ -459,7 +459,7 @@ async def cmd_sign(target):
     say("   " + " ".join("ABCDEFGHIJK"))
 
     parts = [f"{k}{idx(c, r)}" for (c, r), k in
-             sorted(cells.items(), key=lambda kv: "SPE".index(kv[1]))]
+             sorted(cells.items(), key=lambda kv: idx(*kv[0]))]
     payload = "l#" + ",".join(parts) + "#"
     say(f"\n{len(cells)} holds, {len(payload)} bytes "
         f"(125B worked, 562B did not - this is the in-between test)")
@@ -503,7 +503,7 @@ async def cmd_say(target, text, base_row, delay):
         for shift in range(-11, len(cols) + 1):
             cells = frame(shift)
             parts = [f"{k}{idx(c, r)}" for (c, r), k in
-                     sorted(cells.items(), key=lambda kv: "SPE".index(kv[1]))]
+                     sorted(cells.items(), key=lambda kv: idx(*kv[0]))]
             payload = "l#" + ",".join(parts) + "#"
             peak = max(peak, len(payload))
             data = payload.encode()
@@ -555,7 +555,7 @@ async def cmd_flag(target):
     cells = flag_cells()
     say("\n" + flag_preview(cells))
     parts = [f"{kind}{idx(c, r)}" for (c, r), kind in
-             sorted(cells.items(), key=lambda kv: "SPE".index(kv[1]))]
+             sorted(cells.items(), key=lambda kv: idx(*kv[0]))]
     payload = "l#" + ",".join(parts) + "#"
     say(f"\n{len(cells)} holds, {len(payload)} bytes")
 

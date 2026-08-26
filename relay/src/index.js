@@ -24,6 +24,7 @@ export class Relay {
   constructor(state) {
     this.state = state;
     this.sockets = new Set();
+    this.pending = new Map();      // command id -> resolver waiting on the bridge
   }
 
   async fetch(request) {
@@ -39,9 +40,14 @@ export class Relay {
       server.addEventListener("close", () => this.sockets.delete(server));
       server.addEventListener("error", () => this.sockets.delete(server));
       server.addEventListener("message", (e) => {
-        // bridge reporting back: {ok:true} / {error:"..."} - fan out so
-        // whoever sent the command can see what the wall did with it
-        this.broadcast(typeof e.data === "string" ? e.data : "", server);
+        // bridge reporting back: {type:"result", id, ok|error}
+        let m = null;
+        try { m = JSON.parse(typeof e.data === "string" ? e.data : "{}"); } catch { return; }
+        if (!m || m.type !== "result") return;
+        if (m.id && this.pending.has(m.id)) return this.pending.get(m.id)(m);
+        // Older bridges answer without an id - resolve the oldest waiter.
+        const first = this.pending.keys().next();
+        if (!first.done) this.pending.get(first.value)(m);
       });
       server.send(JSON.stringify({ type: "hello", bridges: this.sockets.size }));
       return new Response(null, { status: 101, webSocket: client });
@@ -56,12 +62,27 @@ export class Relay {
       if (this.sockets.size === 0) {
         return json({ error: "no bridge connected", bridges: 0 }, 409);
       }
-      const msg = JSON.stringify({ type: "write", payload });
+      const id = crypto.randomUUID();
+      const msg = JSON.stringify({ type: "write", payload, id });
       let sent = 0;
       for (const ws of [...this.sockets]) {
         try { ws.send(msg); sent++; } catch { this.sockets.delete(ws); }
       }
-      return json({ ok: true, bridges: sent });
+      if (sent === 0) return json({ error: "no bridge connected", bridges: 0 }, 409);
+
+      // Wait for the bridge to say what the wall actually did. Reporting
+      // "sent" when the phone is not connected to the board hides real failures.
+      const result = await new Promise((resolve) => {
+        const timer = setTimeout(() => { this.pending.delete(id); resolve(null); }, 8000);
+        this.pending.set(id, (r) => { clearTimeout(timer); this.pending.delete(id); resolve(r); });
+      });
+
+      if (!result) {
+        return json({ ok: true, bridges: sent, ack: false,
+                      note: "bridge did not confirm - it may be on an older build" });
+      }
+      if (result.error) return json({ error: result.error, bridges: sent }, 502);
+      return json({ ok: true, bridges: sent, wrote: payload });
     }
 
     if (url.pathname === "/status") {
