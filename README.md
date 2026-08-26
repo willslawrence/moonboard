@@ -7,7 +7,9 @@ controller, no Raspberry Pi. We act as the BLE central and write the same
 - **`docs/index.html`** — single-page control UI, with all **549 MoonBoard 2016
   benchmarks** built in: search by name or setter, filter by grade, tap one to
   light it. Row 1 doubles as a grade meter — one light per V-grade, left to
-  right (no benchmark uses row 1, so it's free). iPhone: open in
+  right, first three green, next three blue, the rest red (no benchmark uses
+  row 1, so it's free). The page is search-and-light only; log your sends in
+  the real MoonBoard app. iPhone: open in
   [Bluefy](https://apps.apple.com/app/id1492822055) (iOS Safari has no Web Bluetooth).
 - **`moonprobe.py`** — macOS BLE probe. `python3 moonprobe.py go` scans, finds the
   box, and dumps its GATT services. Read-only.
