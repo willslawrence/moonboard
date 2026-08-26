@@ -49,3 +49,19 @@ hand-tapped problems, so the calibration dropdown still governs the payload.
 python3 -m venv .venv && ./.venv/bin/pip install bleak
 ./go.sh
 ```
+
+## Relay (drive the wall remotely)
+
+`relay/` is a Cloudflare Worker at `moonboard-relay.willslawrence.workers.dev`.
+The phone opens a WebSocket to `/ws?room=<code>` and acts as the BLE bridge;
+anything POSTed to `/send?room=<code>` is written to the wall.
+
+The **room code is the only secret** and is never committed — it lives in
+`.relay-room` (gitignored) or `$MOONBOARD_ROOM`.
+
+```bash
+./relay.sh "l#S36,P37,E38#"     # one payload
+./go.sh --relay show            # any command, over the relay
+```
+
+Deploy: `cd relay && npx wrangler deploy`

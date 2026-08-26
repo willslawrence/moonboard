@@ -22,8 +22,12 @@ official MoonBoard app does. Firmware/DFU characteristics are hard-blocked.
 """
 
 import asyncio
+import json
+import os
 import sys
 import datetime
+import urllib.request
+import urllib.error
 from pathlib import Path
 
 from bleak import BleakScanner, BleakClient
@@ -80,7 +84,7 @@ def pick(rows):
 
 async def dump(addr, name):
     say(f"\nconnecting to {name} @ {addr} ...")
-    async with BleakClient(addr, timeout=20.0) as client:
+    async with open_client(addr) as client:
         say("connected.\n")
         found_nus = writable = None
         for service in client.services:
@@ -127,6 +131,8 @@ async def autofind():
 
 
 async def find(target):
+    if RELAY_ROOM:
+        return ("relay", "relay")
     if target is None:
         return await autofind()
     rows = await scan_all()
@@ -158,6 +164,55 @@ async def cmd_go():
 
 CHUNK = 20   # default BLE MTU payload; the page chunks the same way
 
+RELAY_HOST = "https://moonboard-relay.willslawrence.workers.dev"
+RELAY_ROOM = None            # set by --relay; when set, every write goes over HTTP
+
+
+class RelayClient:
+    """Duck-types the bit of BleakClient we use, but POSTs to the relay Worker
+    instead of writing over Bluetooth. The phone on the other end does the BLE."""
+
+    def __init__(self, room):
+        self.room = room
+        self.buf = b""
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *exc):
+        return False
+
+    async def start_notify(self, *a, **k):
+        pass
+
+    async def write_gatt_char(self, _uuid, data, response=True):
+        # Callers chunk at 20 bytes; reassemble and post whole payloads.
+        self.buf += bytes(data)
+        if not self.buf.endswith(b"#"):
+            return
+        payload, self.buf = self.buf.decode("utf-8", "replace"), b""
+        body = json.dumps({"payload": payload}).encode()
+        req = urllib.request.Request(
+            f"{RELAY_HOST}/send?room={self.room}",
+            data=body, headers={"Content-Type": "application/json"}, method="POST")
+
+        def post():
+            try:
+                with urllib.request.urlopen(req, timeout=15) as r:
+                    return r.status, r.read().decode()
+            except urllib.error.HTTPError as e:
+                return e.code, e.read().decode()
+            except Exception as e:
+                return 0, str(e)
+
+        status, text = await asyncio.to_thread(post)
+        if status != 200:
+            say(f"  relay error {status}: {text}")
+
+
+def open_client(addr):
+    return RelayClient(RELAY_ROOM) if RELAY_ROOM else BleakClient(addr, timeout=20.0)
+
 
 async def write_payload(client, payload):
     """Write in 20-byte chunks, same as the web page does."""
@@ -181,7 +236,7 @@ async def cmd_send(target, payload):
         return
     name, addr = hit
     say(f"\nconnecting to {name} @ {addr} ...")
-    async with BleakClient(addr, timeout=20.0) as client:
+    async with open_client(addr) as client:
         say("connected.")
         try:
             await client.start_notify(NUS_TX, notify_handler)
@@ -200,7 +255,7 @@ async def cmd_walk(target, count):
         return
     name, addr = hit
     say(f"\nconnecting to {name} @ {addr} ...")
-    async with BleakClient(addr, timeout=20.0) as client:
+    async with open_client(addr) as client:
         say("connected.\n")
         for n in range(1, count + 1):
             payload = f"l#S{n}#"
@@ -219,7 +274,7 @@ async def cmd_colors(target, hold):
         return
     name, addr = hit
     say(f"\nconnecting to {name} @ {addr} ...")
-    async with BleakClient(addr, timeout=20.0) as client:
+    async with open_client(addr) as client:
         say("connected.\n")
 
         async def w(payload, note, dwell=8.0):
@@ -343,7 +398,7 @@ async def cmd_show(target):
         return
     name, addr = hit
     say(f"\nconnecting to {name} @ {addr} ...")
-    async with BleakClient(addr, timeout=20.0) as client:
+    async with open_client(addr) as client:
         say("connected.")
         for word, kinds, hold in seq:
             cells = word_cells(word, kinds)
@@ -370,7 +425,7 @@ async def cmd_finale(target):
         return
     name, addr = hit
     say(f"\nconnecting to {name} @ {addr} ...")
-    async with BleakClient(addr, timeout=20.0) as client:
+    async with open_client(addr) as client:
         say("connected. scrolling ...")
         cols = text_columns("HI WILL")
         for shift in range(-11, len(cols) + 1):
@@ -414,7 +469,7 @@ async def cmd_sign(target):
         return
     name, addr = hit
     say(f"\nconnecting to {name} @ {addr} ...")
-    async with BleakClient(addr, timeout=20.0) as client:
+    async with open_client(addr) as client:
         say("connected.")
         await write_payload(client, payload)
     say("\ndone - it stays lit until the next command.")
@@ -442,7 +497,7 @@ async def cmd_say(target, text, base_row, delay):
         return
     name, addr = hit
     say(f"\nconnecting to {name} @ {addr} ...")
-    async with BleakClient(addr, timeout=20.0) as client:
+    async with open_client(addr) as client:
         say(f"connected. scrolling {text!r} ...\n")
         peak = 0
         for shift in range(-11, len(cols) + 1):
@@ -509,7 +564,7 @@ async def cmd_flag(target):
         return
     name, addr = hit
     say(f"\nconnecting to {name} @ {addr} ...")
-    async with BleakClient(addr, timeout=20.0) as client:
+    async with open_client(addr) as client:
         say("connected.")
         await write_payload(client, payload)
     say("\n\U0001f1fa\U0001f1f8 done - go look at the wall.")
@@ -530,7 +585,7 @@ async def cmd_bigtest(target):
         return
     name, addr = hit
     say(f"\nconnecting to {name} @ {addr} ...")
-    async with BleakClient(addr, timeout=20.0) as client:
+    async with open_client(addr) as client:
         say("connected.\n")
         try:
             await client.start_notify(NUS_TX, notify_handler)
@@ -544,7 +599,20 @@ async def cmd_bigtest(target):
 
 
 def main():
+    global RELAY_ROOM
     args = sys.argv[1:]
+    if args and args[0] == "--relay":
+        args = args[1:]
+        COMMANDS = {"go", "scan", "probe", "send", "walk", "colors",
+                    "bigtest", "flag", "say", "sign", "finale", "show"}
+        RELAY_ROOM = (args.pop(0) if args and args[0] not in COMMANDS else None) \
+            or os.environ.get("MOONBOARD_ROOM") \
+            or (Path(__file__).with_name(".relay-room").read_text().strip()
+                if Path(__file__).with_name(".relay-room").exists() else None)
+        if not RELAY_ROOM:
+            print("no room code: pass it, set MOONBOARD_ROOM, or create .relay-room")
+            return
+        say(f"(relay mode - room {RELAY_ROOM[:9]}…)")
     if not args:
         print(__doc__)
         return

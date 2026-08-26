@@ -1,3 +1,6 @@
 .venv/
 probe.log
 __pycache__/
+.relay-room
+relay/node_modules/
+relay/.wrangler/
