@@ -989,33 +989,13 @@ async function write(str, quiet){
   }catch(e){ log('write failed: ' + e.message); }
 }
 
-/* Flash the grade bar three times so it reads as a grade, not as holds, then
-   leave it lit. A newer send bumps the token and abandons the one in flight.
-
-   Observed at the wall on Klingon Easy (V4, one blue): flashes 1 and 3 were
-   right, flash 2 dropped the blue and lit the hold above it red instead. Same
-   bytes each time, so the box mis-renders now and then when frames arrive
-   close together. Hence the slower gap and the re-assert at the end — the
-   final state gets written twice, so a bad frame can't be the one you're left
-   looking at. */
-let blinkToken = 0;
-const wait = ms => new Promise(r => setTimeout(r, ms));
-
+/* One write puts the whole wall up. There is no partial update in the protocol,
+   so the grade bar can't be flashed on its own — every frame redraws the problem
+   too, and the route visibly flickers. Tried at the wall on 2026-08-27 and it
+   read as the problem changing, so the blink is gone: send once, leave it lit. */
 async function sendProblem(){
   if (!rx) return;
-  const mine = ++blinkToken;
-  const full = buildPayload();
-  if (!current || !$('gbar').checked || !Object.keys(gradeCells).length)
-    return write(full);
-
-  const bare = buildPayload(false);                   // problem, no grade bar
-  for (let i = 0; i < 3; i++){
-    await write(bare, true);  if (blinkToken !== mine) return;
-    await wait(450);          if (blinkToken !== mine) return;
-    await write(full, true);  if (blinkToken !== mine) return;
-    await wait(450);          if (blinkToken !== mine) return;
-  }
-  await write(full);                                  // re-assert the final state
+  return write(buildPayload());
 }
 
 async function probe(){
