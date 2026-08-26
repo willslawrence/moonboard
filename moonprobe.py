@@ -6,6 +6,7 @@ moonprobe.py - probe and drive a MoonBoard LED controller over BLE.
     python3 moonprobe.py scan               # just list what's visible
     python3 moonprobe.py probe <addr|name>
     python3 moonprobe.py send  "l#S5,P9,P13,E18#"
+    python3 moonprobe.py flag                       # stars and stripes, hung vertically
     python3 moonprobe.py bigtest                    # 5 S + 5 P + 5 E, one column each
     python3 moonprobe.py colors [hold]              # same hold as S, then P, then E
     python3 moonprobe.py walk  [count]              # light #1, #2, #3 ... one at a time
@@ -236,6 +237,61 @@ def idx(col, row):
     return (col - 1) * 18 + ((row - 1) if col % 2 else (18 - row))
 
 
+def flag_cells():
+    """US flag hung vertically: union top-left, stripes running down.
+    S=green (stars), P=blue (union field), E=red (stripes). No white LED exists."""
+    CANTON_COLS, CANTON_ROWS = range(1, 7), range(12, 19)   # cols A-F, rows 12-18
+    cells = {}
+
+    # stripes: every other column red, full height outside the canton
+    for col in range(1, 12):
+        if col % 2 == 0:
+            continue                                        # the "white" stripes stay dark
+        for row in range(1, 19):
+            if col in CANTON_COLS and row in CANTON_ROWS:
+                continue
+            cells[(col, row)] = "E"
+
+    # union field + staggered stars
+    for row in CANTON_ROWS:
+        for col in CANTON_COLS:
+            # stars on alternate rows only, staggered - a full checkerboard
+            # reads as a checkerboard, not a star field
+            star = row % 2 == 0 and ((col % 2 == 1) if (row % 4 == 2) else (col % 2 == 0))
+            cells[(col, row)] = "S" if star else "P"
+    return cells
+
+
+def flag_preview(cells):
+    glyph = {"S": "*", "P": "#", "E": "=", None: "."}
+    out = []
+    for row in range(18, 0, -1):
+        line = f"{row:>2} " + " ".join(glyph[cells.get((c, row))] for c in range(1, 12))
+        out.append(line)
+    out.append("   " + " ".join("ABCDEFGHIJK"))
+    out.append("   * green star   # blue field   = red stripe   . unlit")
+    return "\n".join(out)
+
+
+async def cmd_flag(target):
+    cells = flag_cells()
+    say("\n" + flag_preview(cells))
+    parts = [f"{kind}{idx(c, r)}" for (c, r), kind in
+             sorted(cells.items(), key=lambda kv: "SPE".index(kv[1]))]
+    payload = "l#" + ",".join(parts) + "#"
+    say(f"\n{len(cells)} holds, {len(payload)} bytes")
+
+    hit = await find(target)
+    if not hit:
+        return
+    name, addr = hit
+    say(f"\nconnecting to {name} @ {addr} ...")
+    async with BleakClient(addr, timeout=20.0) as client:
+        say("connected.")
+        await write_payload(client, payload)
+    say("\n\U0001f1fa\U0001f1f8 done - go look at the wall.")
+
+
 async def cmd_bigtest(target):
     """5 starts, 5 moves, 5 ends - one vertical bar per type, easy to read back."""
     bars = [("S", 1, "A"), ("P", 3, "C"), ("E", 5, "E")]
@@ -280,6 +336,8 @@ def main():
             if hit:
                 await dump(hit[1], hit[0])
         asyncio.run(r())
+    elif cmd == "flag":
+        asyncio.run(cmd_flag(args[1] if len(args) > 1 else None))
     elif cmd == "bigtest":
         asyncio.run(cmd_bigtest(args[1] if len(args) > 1 else None))
     elif cmd == "colors":
