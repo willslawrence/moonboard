@@ -79,13 +79,7 @@
   .mark.P{border-color:#2563eb}
   .mark.E{border-color:#ef4444}
   .mark.g{width:6.4%;border-width:2px}
-  .key{display:flex;gap:14px;margin-top:10px;justify-content:center;
-       font-size:11px;color:var(--dimmer)}
-  .key i{display:inline-block;width:9px;height:9px;border-radius:50%;
-         border:2px solid;margin-right:5px;vertical-align:-1px}
-  .key .S i{border-color:#22c55e}
-  .key .P i{border-color:#2563eb}
-  .key .E i{border-color:#ef4444}
+  #gnote{margin-top:9px;text-align:center;font-size:12px;color:var(--dimmer)}
 
   /* ---- selected route bar ---- */
   #bar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--panel);
@@ -142,12 +136,7 @@
     <img src="board-2016.png" alt="MoonBoard 2016 wall" width="450" height="692">
     <div id="marks"></div>
   </div>
-  <div class="key">
-    <span class="S"><i></i>Start</span>
-    <span class="P"><i></i>Move</span>
-    <span class="E"><i></i>Finish</span>
-    <span>Small rings on row 1 = grade</span>
-  </div>
+  <div id="gnote"></div>
 </section>
 
 <section>
@@ -163,7 +152,8 @@
   <label class="ck"><input type="checkbox" id="gbar" checked>
     Show the grade on row 1 — one light per V-grade</label>
   <div class="hint">Row 1 carries no holds on any benchmark, so it reads out the grade:
-    first three lights green, next three blue, the rest red.</div>
+    B1 onward, first five green then red. A1 is skipped — it is index 0 and this
+    controller will not light it.</div>
 
   <div class="lbl">Hold numbering</div>
   <select id="order">
@@ -880,9 +870,14 @@ function renderResults(){
 function applyGradeBar(){
   gradeCells = {};
   if (!current || !$('gbar').checked) return;
-  const lights = Math.min(VGRADE[current[2]], COLS);
+  // Two box quirks shape this bar:
+  //   A1 is index 0 and does not light on this controller, so the bar runs B1..K1.
+  //   An ISOLATED blue P hold makes the box also light the next index red, so the
+  //   bar uses green and red only - no blue.
+  const slots = COLS - 1;                       // columns 2..11 = ten lights
+  const lights = Math.min(VGRADE[current[2]], slots);
   for (let i = 0; i < lights; i++)
-    gradeCells[(i + 1) + ',1'] = i < 3 ? 'S' : (i < 6 ? 'P' : 'E');
+    gradeCells[(i + 2) + ',1'] = i < 5 ? 'S' : 'E';
 }
 
 function parseHolds(str, tag){
@@ -908,6 +903,9 @@ function loadRoute(r){
   $('barTxt').querySelector('span').textContent =
     GRADES[r[2]] + ' · V' + VGRADE[r[2]] + ' · ' + r[1];
   $('send').disabled = !rx;
+  $('gnote').textContent = $('gbar').checked
+    ? 'Bottom row = grade · V' + VGRADE[r[2]]
+    : '';
   log('loaded "' + r[0] + '" — ' + GRADES[r[2]] + ' (V' + VGRADE[r[2]] + '), set by ' + r[1]);
   if ($('auto').checked && rx) write(buildPayload());
 }
@@ -962,6 +960,7 @@ async function write(str){
   if (!rx) return log('not connected.');
   if (!(str.startsWith('l#') && str.endsWith('#'))) return log('refusing — payload must be l#…#');
   if (BLOCKED.some(b => rx.uuid.toLowerCase().includes(b))) return log('refusing — DFU characteristic.');
+  if (/[SPE]0(,|#)/.test(str)) log('note: hold 0 (A1) does not light on this box — skipping it.');
   const bytes = new TextEncoder().encode(str);
   const size = Math.max(8, parseInt($('chunk').value, 10) || 20);
   log('→ ' + str + '  (' + bytes.length + 'B, ' + Math.ceil(bytes.length / size) + ' chunk(s))');
@@ -1008,7 +1007,12 @@ $('q').oninput = renderResults;
 $('gmin').onchange = () => { if (+$('gmax').value < +$('gmin').value) $('gmax').value = $('gmin').value; renderResults(); };
 $('gmax').onchange = () => { if (+$('gmax').value < +$('gmin').value) $('gmin').value = $('gmax').value; renderResults(); };
 $('sort').onchange = renderResults;
-$('gbar').onchange = () => { applyGradeBar(); paint(); if (rx && current) write(buildPayload()); };
+$('gbar').onchange = () => {
+  applyGradeBar(); paint();
+  $('gnote').textContent = (current && $('gbar').checked)
+    ? 'Bottom row = grade · V' + VGRADE[current[2]] : '';
+  if (rx && current) write(buildPayload());
+};
 
 function saveCal(){
   try{ localStorage.setItem('mb-cal', JSON.stringify({o:$('order').value, f:$('offset').value, c:$('chunk').value})); }catch(e){}
