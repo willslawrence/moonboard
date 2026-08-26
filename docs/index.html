@@ -182,6 +182,16 @@
   <div class="lbl">Payload</div>
   <code id="payload">l##</code>
 
+  <div class="lbl">Remote control (relay)</div>
+  <div class="hint">Lets Claude drive the wall while this page stays connected over
+    Bluetooth. The room code is the only secret — it is never stored in this page.</div>
+  <div class="two" style="margin-top:8px">
+    <input type="text" id="room" placeholder="room code" spellcheck="false"
+           autocapitalize="off" autocomplete="off">
+    <button id="relayBtn" class="ghost">Connect relay</button>
+  </div>
+  <div class="hint" id="relayState">relay off</div>
+
   <div class="lbl">Log</div>
   <div id="log">idle.</div>
   <div class="two" style="margin-top:10px">
@@ -994,6 +1004,71 @@ async function probe(){
   }catch(e){ log('probe failed: ' + e.message); }
 }
 
+/* ---------- relay ---------- */
+const RELAY_HOST = 'moonboard-relay.willslawrence.workers.dev';
+let relayWS = null, relayWant = false, relayTries = 0, wakeLock = null;
+
+function relayState(msg){ $('relayState').textContent = msg; }
+
+async function keepAwake(){
+  try{ if (!wakeLock && navigator.wakeLock) wakeLock = await navigator.wakeLock.request('screen'); }
+  catch(e){ /* Bluefy may not support it; the page still works while visible */ }
+}
+
+function relayConnect(){
+  const room = $('room').value.trim();
+  if (room.length < 6) return log('relay: room code must be at least 6 characters.');
+  try{ localStorage.setItem('mb-room', room); }catch(e){}
+  relayWant = true;
+  keepAwake();
+  openRelay(room);
+}
+
+function openRelay(room){
+  if (relayWS) { try{ relayWS.close(); }catch(e){} }
+  relayState('connecting …');
+  const ws = new WebSocket('wss://' + RELAY_HOST + '/ws?room=' + encodeURIComponent(room));
+  relayWS = ws;
+
+  ws.onopen = () => {
+    relayTries = 0;
+    relayState('relay connected — Claude can drive the wall');
+    log('relay connected as bridge.');
+    $('relayBtn').textContent = 'Disconnect relay';
+  };
+
+  ws.onmessage = async (e) => {
+    let m; try{ m = JSON.parse(e.data); }catch(err){ return; }
+    if (m.type !== 'write') return;
+    if (!rx){
+      ws.send(JSON.stringify({ type: 'result', error: 'page is not connected to the board' }));
+      return log('relay asked for a write, but the board is not connected.');
+    }
+    log('relay → ' + m.payload);
+    await write(m.payload);
+    ws.send(JSON.stringify({ type: 'result', ok: true, payload: m.payload }));
+  };
+
+  ws.onclose = () => {
+    $('relayBtn').textContent = 'Connect relay';
+    if (!relayWant) return relayState('relay off');
+    const wait = Math.min(30000, 1000 * Math.pow(2, relayTries++));
+    relayState('relay dropped — retrying in ' + Math.round(wait / 1000) + 's');
+    setTimeout(() => { if (relayWant) openRelay(room); }, wait);
+  };
+
+  ws.onerror = () => relayState('relay error');
+}
+
+function relayDisconnect(){
+  relayWant = false;
+  if (relayWS) { try{ relayWS.close(); }catch(e){} }
+  relayWS = null;
+  relayState('relay off');
+  $('relayBtn').textContent = 'Connect relay';
+  if (wakeLock){ try{ wakeLock.release(); }catch(e){} wakeLock = null; }
+}
+
 /* ---------- wiring ---------- */
 $('connect').onclick = () => {
   if (device && device.gatt.connected) device.gatt.disconnect(); else connect();
@@ -1026,12 +1101,21 @@ function loadCal(){
 $('order').onchange = () => { saveCal(); paint(); };
 $('offset').oninput = () => { saveCal(); paint(); };
 $('chunk').oninput = saveCal;
+$('relayBtn').onclick = () => relayWant ? relayDisconnect() : relayConnect();
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && relayWant) keepAwake();
+});
 $('copy').onclick = async () => {
   try{ await navigator.clipboard.writeText($('log').textContent); log('log copied.'); }
   catch(e){ log('copy blocked — select the text manually.'); }
 };
 
 loadCal();
+try{
+  const savedRoom = localStorage.getItem('mb-room');
+  const hashRoom = (location.hash.match(/room=([\w-]+)/) || [])[1];
+  if (hashRoom || savedRoom) $('room').value = hashRoom || savedRoom;
+}catch(e){}
 paint();
 fillGradeSelects();
 renderResults();
