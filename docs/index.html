@@ -64,16 +64,18 @@
      Moonboard-Guidebook renders with. Everything below is those as percentages,
      so the overlay scales with the image. Column letters and row numbers are
      already printed on the photo. */
-  #board{position:relative;width:min(100%,44vh);margin:0 auto;
+  /* The wall is 450x692, so width drives height x1.54 — keep it to ~32vh wide
+     (~49vh tall) so the whole board plus the action bar fit one phone screen. */
+  #board{position:relative;width:min(100%,32vh);margin:0 auto;
          border-radius:6px;overflow:hidden}
   #board img{display:block;width:100%}
   #marks{position:absolute;inset:0}
   .mark{position:absolute;width:8.9%;aspect-ratio:1;box-sizing:border-box;
-        border:3px solid;border-radius:50%;transform:translate(-50%,-50%)}
+        border:2.5px solid;border-radius:50%;transform:translate(-50%,-50%)}
   .mark.S{border-color:#22c55e}
   .mark.P{border-color:#2563eb}
   .mark.E{border-color:#ef4444}
-  .mark.g{width:6.4%;border-width:2.5px}
+  .mark.g{width:6.4%;border-width:2px}
   .key{display:flex;gap:14px;margin-top:12px;justify-content:center;
        font-size:11px;color:var(--dimmer)}
   .key i{display:inline-block;width:9px;height:9px;border-radius:50%;

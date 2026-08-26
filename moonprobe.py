@@ -328,10 +328,10 @@ def word_cells(word, kinds):
 
 
 async def cmd_show(target):
-    """USA red/blue -> KSA green -> HI blue, held."""
-    seq = [("USA", ["E", "P", "E"], 2.5),
+    """HI blue -> KSA green -> USA red/blue, held."""
+    seq = [("HI",  ["P"],            2.5),
            ("KSA", ["S"],            2.5),
-           ("HI",  ["P"],            None)]
+           ("USA", ["E", "P", "E"],  None)]
     for word, kinds, _ in seq:
         cells = word_cells(word, kinds)
         say(f"\n{word}  ({len(cells)} holds)")
@@ -354,7 +354,7 @@ async def cmd_show(target):
             await write_payload(client, payload)
             if hold:
                 await asyncio.sleep(hold)
-    say("\ndone - HI stays lit.")
+    say("\ndone - USA stays lit.")
 
 
 async def cmd_finale(target):
