@@ -263,9 +263,11 @@ function paint(){
   }
   $('payload').textContent = buildPayload();
 }
-function buildPayload(){
+function buildPayload(withGrade){
   const parts = [];
-  const all = Object.assign({}, gradeCells, state);   // a real hold always wins
+  const all = (withGrade === false)
+    ? Object.assign({}, state)
+    : Object.assign({}, gradeCells, state);           // a real hold always wins
   for (const k in all){
     const [col, row] = k.split(',').map(Number);
     parts.push(all[k] + holdNum(col, row));
@@ -880,14 +882,12 @@ function renderResults(){
 function applyGradeBar(){
   gradeCells = {};
   if (!current || !$('gbar').checked) return;
-  // Two box quirks shape this bar:
-  //   A1 is index 0 and does not light on this controller, so the bar runs B1..K1.
-  //   An ISOLATED blue P hold makes the box also light the next index red, so the
-  //   bar uses green and red only - no blue.
+  // A1 is index 0 and does not light on this controller, so the bar runs B1..K1.
+  // Three green, three blue, the rest red.
   const slots = COLS - 1;                       // columns 2..11 = ten lights
   const lights = Math.min(VGRADE[current[2]], slots);
   for (let i = 0; i < lights; i++)
-    gradeCells[(i + 2) + ',1'] = i < 5 ? 'S' : 'E';
+    gradeCells[(i + 2) + ',1'] = i < 3 ? 'S' : (i < 6 ? 'P' : 'E');
 }
 
 function parseHolds(str, tag){
@@ -917,7 +917,7 @@ function loadRoute(r){
     ? 'Bottom row = grade · V' + VGRADE[r[2]]
     : '';
   log('loaded "' + r[0] + '" — ' + GRADES[r[2]] + ' (V' + VGRADE[r[2]] + '), set by ' + r[1]);
-  if ($('auto').checked && rx) write(buildPayload());
+  if ($('auto').checked && rx) sendProblem();
 }
 
 function clearRoute(){
@@ -966,14 +966,14 @@ async function connect(){
   }
 }
 
-async function write(str){
+async function write(str, quiet){
   if (!rx) return log('not connected.');
   if (!(str.startsWith('l#') && str.endsWith('#'))) return log('refusing — payload must be l#…#');
   if (BLOCKED.some(b => rx.uuid.toLowerCase().includes(b))) return log('refusing — DFU characteristic.');
   if (/[SPE]0(,|#)/.test(str)) log('note: hold 0 (A1) does not light on this box — skipping it.');
   const bytes = new TextEncoder().encode(str);
   const size = Math.max(8, parseInt($('chunk').value, 10) || 20);
-  log('→ ' + str + '  (' + bytes.length + 'B, ' + Math.ceil(bytes.length / size) + ' chunk(s))');
+  if (!quiet) log('→ ' + str + '  (' + bytes.length + 'B, ' + Math.ceil(bytes.length / size) + ' chunk(s))');
   try{
     for (let i = 0; i < bytes.length; i += size){
       const part = bytes.slice(i, i + size);
@@ -985,8 +985,29 @@ async function write(str){
       else await rx.writeValue(part);
       await new Promise(r => setTimeout(r, 30));
     }
-    log('written.');
+    if (!quiet) log('written.');
   }catch(e){ log('write failed: ' + e.message); }
+}
+
+/* Flash the grade bar three times so it reads as a grade, not as holds, then
+   leave it lit. A newer send bumps the token and abandons the one in flight. */
+let blinkToken = 0;
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+async function sendProblem(){
+  if (!rx) return;
+  const mine = ++blinkToken;
+  const full = buildPayload();
+  if (!current || !$('gbar').checked || !Object.keys(gradeCells).length)
+    return write(full);
+
+  const bare = buildPayload(false);                   // problem, no grade bar
+  for (let i = 0; i < 3; i++){
+    await write(bare, true);  if (blinkToken !== mine) return;
+    await wait(300);          if (blinkToken !== mine) return;
+    await write(full, i < 2); if (blinkToken !== mine) return;
+    if (i < 2){ await wait(300); if (blinkToken !== mine) return; }
+  }
 }
 
 async function probe(){
@@ -1073,7 +1094,7 @@ function relayDisconnect(){
 $('connect').onclick = () => {
   if (device && device.gatt.connected) device.gatt.disconnect(); else connect();
 };
-$('send').onclick  = () => write(buildPayload());
+$('send').onclick  = sendProblem;
 $('clear').onclick = clearRoute;
 $('sendSingle').onclick = () => write('l#S' + (parseInt($('single').value, 10) || 1) + '#');
 $('sendRaw').onclick = () => write($('raw').value.trim());
@@ -1086,7 +1107,7 @@ $('gbar').onchange = () => {
   applyGradeBar(); paint();
   $('gnote').textContent = (current && $('gbar').checked)
     ? 'Bottom row = grade · V' + VGRADE[current[2]] : '';
-  if (rx && current) write(buildPayload());
+  if (rx && current) sendProblem();
 };
 
 function saveCal(){
