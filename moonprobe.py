@@ -6,6 +6,7 @@ moonprobe.py - probe and drive a MoonBoard LED controller over BLE.
     python3 moonprobe.py scan               # just list what's visible
     python3 moonprobe.py probe <addr|name>
     python3 moonprobe.py send  "l#S5,P9,P13,E18#"
+    python3 moonprobe.py say "WILL WALL"            # scrolling marquee
     python3 moonprobe.py flag                       # stars and stripes, hung vertically
     python3 moonprobe.py bigtest                    # 5 S + 5 P + 5 E, one column each
     python3 moonprobe.py colors [hold]              # same hold as S, then P, then E
@@ -237,6 +238,68 @@ def idx(col, row):
     return (col - 1) * 18 + ((row - 1) if col % 2 else (18 - row))
 
 
+FONT = {
+    "W": ["X...X", "X...X", "X.X.X", "XX.XX", "X...X"],
+    "I": ["XXX", ".X.", ".X.", ".X.", "XXX"],
+    "L": ["X..", "X..", "X..", "X..", "XXX"],
+    "A": [".X.", "X.X", "XXX", "X.X", "X.X"],
+    " ": ["..", "..", "..", "..", ".."],
+}
+
+
+def text_columns(text):
+    """Render text to a list of columns; each column is (set_of_font_rows, letter_index)."""
+    cols = []
+    for i, ch in enumerate(text.upper()):
+        glyph = FONT.get(ch, FONT[" "])
+        width = len(glyph[0])
+        for x in range(width):
+            rows = {y for y in range(5) if glyph[y][x] == "X"}
+            cols.append((rows, i))
+        cols.append((set(), i))          # 1-column gap after each letter
+    return cols
+
+
+async def cmd_say(target, text, base_row, delay):
+    """Scroll text across the board. Small per-frame payloads stay under the box's buffer."""
+    cols = text_columns(text)
+    types = "SPE"                        # each letter a different colour, keeps strings well-formed
+
+    def frame(shift):
+        cells = {}
+        for screen_col in range(1, 12):
+            src = screen_col - 1 + shift
+            if 0 <= src < len(cols):
+                rows, letter = cols[src]
+                for fy in rows:
+                    board_row = base_row + (4 - fy)
+                    if 1 <= board_row <= 18:
+                        cells[(screen_col, board_row)] = types[letter % 3]
+        return cells
+
+    hit = await find(target)
+    if not hit:
+        return
+    name, addr = hit
+    say(f"\nconnecting to {name} @ {addr} ...")
+    async with BleakClient(addr, timeout=20.0) as client:
+        say(f"connected. scrolling {text!r} ...\n")
+        peak = 0
+        for shift in range(-11, len(cols) + 1):
+            cells = frame(shift)
+            parts = [f"{k}{idx(c, r)}" for (c, r), k in
+                     sorted(cells.items(), key=lambda kv: "SPE".index(kv[1]))]
+            payload = "l#" + ",".join(parts) + "#"
+            peak = max(peak, len(payload))
+            data = payload.encode()
+            for i in range(0, len(data), CHUNK):
+                await client.write_gatt_char(NUS_RX, data[i:i + CHUNK], response=True)
+            await asyncio.sleep(delay)
+        await client.write_gatt_char(NUS_RX, b"l##", response=True)
+        say(f"largest frame: {peak} bytes")
+    say("done.")
+
+
 def flag_cells():
     """US flag hung vertically: union top-left, stripes running down.
     S=green (stars), P=blue (union field), E=red (stripes). No white LED exists."""
@@ -336,6 +399,10 @@ def main():
             if hit:
                 await dump(hit[1], hit[0])
         asyncio.run(r())
+    elif cmd == "say":
+        rest = args[1:]
+        text = rest[0] if rest else "WILL WALL"
+        asyncio.run(cmd_say(None, text, 7, 0.35))
     elif cmd == "flag":
         asyncio.run(cmd_flag(args[1] if len(args) > 1 else None))
     elif cmd == "bigtest":
