@@ -393,10 +393,11 @@
 
   <div class="lbl">On connect</div>
   <select id="standby">
-    <option value="moon">Scroll MOON, settle on the moon</option>
     <option value="will">Show Will Wall</option>
+    <option value="moon">Show the moon</option>
     <option value="climber">Show a climber</option>
     <option value="frame">Show a frame</option>
+    <option value="moonScroll">Scroll MOON, settle on the moon</option>
     <option value="">Leave the wall dark</option>
   </select>
 
@@ -1557,7 +1558,7 @@ async function connect(){
     const p = Object.entries(rx.properties || {}).filter(([, v]) => v).map(([k]) => k).join(',');
     log('connected. Nordic UART found. RX props: [' + p + ']');
     if (current) sendProblem();          // pick up whatever was already chosen
-    else if ($('standby').value === 'moon') moonIntro();
+    else if ($('standby').value === 'moonScroll') moonIntro();
     else standby();
   }catch(e){
     rx = null;
@@ -2051,7 +2052,7 @@ async function moonIntro(){
     write('l#' + lit.sort((a, b) => a - b).map(n => 'S' + n).join(',') + '#', true);
     await new Promise(r => setTimeout(r, 70));
   }
-  if (rx && introToken === mine) write(standbyPayload());
+  if (rx && introToken === mine) write(payloadFrom(artCells(ART.moon)));
 }
 
 /* Patterns come straight out of the sketchpad, which writes # for green, o for
@@ -2085,7 +2086,11 @@ function frameCells(){                // dashed - a solid perimeter is 54 LEDs
 
 function standbyPayload(){
   const kind = $('standby').value;
-  const cells = kind === 'frame' ? frameCells() : artCells(ART[kind] || ART.moon);
+  if (kind === 'frame') return payloadFrom(frameCells());
+  return payloadFrom(artCells(ART[kind] || ART.will));
+}
+
+function payloadFrom(cells){
   return 'l#' + cells.sort((a, b) => a.n - b.n).map(c => c.tag + c.n).join(',') + '#';
 }
 
@@ -2644,6 +2649,12 @@ try{
   // Before these were split, picking a name in the view filter was how you said
   // who you were - carry that over rather than asking again.
   $('hideDone').value = localStorage.getItem('mb-hide') || '';
+  // The default changed to Will Wall; shift anyone still holding the old one.
+  if (!localStorage.getItem('mb-standby-v2')){
+    localStorage.setItem('mb-standby-v2', '1');
+    if ((localStorage.getItem('mb-standby') || 'moon') === 'moon')
+      localStorage.removeItem('mb-standby');
+  }
   const sb = localStorage.getItem('mb-standby');
   if (sb !== null) $('standby').value = sb;
   const m = localStorage.getItem('mb-me') || w;
