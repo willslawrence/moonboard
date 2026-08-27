@@ -36,6 +36,19 @@ Durable Object with everyone's lists — `GET /lists`, `POST /lists/person`, `/l
 and Abdu each keep a list and all three can see the others'. Problems are keyed by their
 MoonBoard id. Anyone with the page can write; that's the point.
 
+## Logbook
+
+**Try** logs one attempt, **Climbed** asks how it went. Because the attempts are counted, the
+app works out the grade for you: no tries logged means flash, one means 2nd go, three or more
+means 4+. The chooser arrives with that already picked and you tap to confirm, or pick another
+if it's wrong. **Undo my last entry** walks back a mis-tap.
+
+Rows live in the relay Worker as an append-only `log:` prefix, with a per-person `stats:`
+index carrying the attempt count and last result. `/lists` returns the index; the rows
+themselves are only fetched when the **Logbook** panel opens, so the log can grow without
+slowing the page. `done:` is still the chip and filter index and is kept in step by the same
+write.
+
 **Hide what I've climbed** in the filter panel drops anything you've ticked, so a session
 list is what's actually left. The filter button carries a green dot whenever it or the grade
 range is filtering, so a short list never looks like a bug.

@@ -113,7 +113,20 @@ export class Relay {
  *   list:<person>   -> [problemId, ...]                their projects
  *   done:<id>       -> ["Will", ...]                   who has sent it
  *   wins            -> {"Will": 3, ...}                 connect four record
+ *   log:<iso>-<r>   -> {t, person, id, result}           one row per tap, append only
+ *   stats:<person>  -> {<id>: {a, r, d}}                 attempts / last result / last date
+ *
+ * result is one of: try flash 2nd 3rd 4+
+ *
+ * stats is what the page reads constantly - the attempt count and the derived
+ * send grade - so it stays in the snapshot. The log rows are only read when the
+ * logbook panel opens, which keeps /lists small as the log grows.
  */
+const RESULTS = ["try", "flash", "2nd", "3rd", "4+"];
+
+// Timestamp-prefixed so storage.list() comes back in chronological order.
+const logKey = (iso) => "log:" + iso + "-" + Math.random().toString(36).slice(2, 8);
+
 export class Lists {
   constructor(state) {
     this.state = state;
@@ -127,7 +140,49 @@ export class Lists {
     const doneRows = await this.state.storage.list({ prefix: "done:" });
     for (const [k, v] of doneRows) if (v && v.length) done[k.slice(5)] = v;
     const wins = (await this.state.storage.get("wins")) || {};
-    return { people, lists, done, wins };
+    const stats = {};
+    for (const p of people) {
+      const st = await this.state.storage.get("stats:" + p);
+      if (st && Object.keys(st).length) stats[p] = st;
+    }
+    return { people, lists, done, wins, stats };
+  }
+
+  /* Fold one log row into the indexes, or peel it back off with dir = -1.
+     A send resets the attempt count so a repeat project starts clean; undoing a
+     send has to put the count back and drop the name from done, or the chips
+     beside the board would claim something that isn't true any more. */
+  async applyRow(row, dir) {
+    const key = "stats:" + row.person;
+    const st = (await this.state.storage.get(key)) || {};
+    const cur = st[row.id] || { a: 0, r: null, d: null };
+
+    if (row.result === "try") {
+      cur.a = Math.max(0, cur.a + dir);
+    } else if (dir > 0) {
+      cur.before = cur.a;                    // so an undo can restore it
+      cur.a = 0;
+      cur.r = row.result;
+    } else {
+      cur.a = cur.before || 0;
+      delete cur.before;
+      cur.r = null;
+    }
+    cur.d = dir > 0 ? row.t : cur.d;
+    // Undoing back to nothing should leave nothing behind.
+    if (cur.a === 0 && !cur.r) delete st[row.id];
+    else st[row.id] = cur;
+    await this.state.storage.put(key, st);
+
+    if (row.result !== "try") {
+      const dk = "done:" + row.id;
+      let who = (await this.state.storage.get(dk)) || [];
+      who = dir > 0
+        ? (who.includes(row.person) ? who : [...who, row.person])
+        : who.filter((x) => x !== row.person);
+      if (who.length) await this.state.storage.put(dk, who);
+      else await this.state.storage.delete(dk);
+    }
   }
 
   async fetch(request) {
@@ -136,6 +191,20 @@ export class Lists {
 
     if (path === "/lists" && request.method === "GET") {
       return json(await this.snapshot());
+    }
+
+    if (path === "/lists/log" && request.method === "GET") {
+      const person = url.searchParams.get("person") || "";
+      const limit = Math.min(500, Math.max(1, Number(url.searchParams.get("limit")) || 100));
+      const rows = await this.state.storage.list({ prefix: "log:", reverse: true, limit: 500 });
+      const out = [];
+      for (const [, row] of rows) {
+        if (!row) continue;
+        if (person && row.person !== person) continue;
+        out.push(row);
+        if (out.length >= limit) break;
+      }
+      return json({ entries: out });
     }
 
     const body = request.method === "POST"
@@ -183,6 +252,35 @@ export class Lists {
       return json(await this.snapshot());
     }
 
+    if (path === "/lists/log") {
+      const person = clean(body.person);
+      const id = Number(body.id);
+      const result = clean(body.result);
+      if (!person || !Number.isFinite(id)) return json({ error: "person and id required" }, 400);
+      if (!RESULTS.includes(result)) return json({ error: "bad result" }, 400);
+      const people = (await this.state.storage.get("people")) || [];
+      if (!people.includes(person)) return json({ error: "unknown person" }, 404);
+
+      const row = { t: new Date().toISOString(), person, id, result };
+      await this.state.storage.put(logKey(row.t), row);
+      await this.applyRow(row, 1);
+      return json(await this.snapshot());
+    }
+
+    if (path === "/lists/log/undo") {
+      const person = clean(body.person);
+      if (!person) return json({ error: "person required" }, 400);
+      // Newest first, so the first row belonging to this person is theirs to undo.
+      const rows = await this.state.storage.list({ prefix: "log:", reverse: true, limit: 200 });
+      for (const [key, row] of rows) {
+        if (!row || row.person !== person) continue;
+        await this.state.storage.delete(key);
+        await this.applyRow(row, -1);
+        return json(await this.snapshot());
+      }
+      return json({ error: "nothing to undo" }, 404);
+    }
+
     if (path === "/lists/win") {
       const person = clean(body.winner);
       if (!person) return json({ error: "winner required" }, 400);
@@ -205,7 +303,7 @@ export default {
 
     const url = new URL(request.url);
     if (url.pathname === "/") {
-      return json({ service: "moonboard-relay", routes: ["/ws?room=", "/send?room=", "/status?room=", "/lists"] });
+      return json({ service: "moonboard-relay", routes: ["/ws?room=", "/send?room=", "/status?room=", "/lists", "/lists/log"] });
     }
 
     if (url.pathname === "/lists" || url.pathname.startsWith("/lists/")) {
