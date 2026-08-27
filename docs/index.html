@@ -115,6 +115,11 @@
   #c4 div.a{background:#22c55e;border-color:#22c55e}
   #c4 div.b{background:#2563eb;border-color:#2563eb}
   #c4 div.win{background:#ef4444;border-color:#ef4444}
+  #c4turn{display:flex;align-items:center;gap:9px;margin-top:10px;font-size:13px}
+  #c4turn i{width:15px;height:15px;border-radius:50%;background:#3a3a40;flex:none;
+            animation:turnPulse 1.2s ease-in-out infinite}
+  #c4turn.over i,#c4turn.idle i{animation:none}
+  @keyframes turnPulse{0%,100%{opacity:1}50%{opacity:.12}}
 
   section{margin-bottom:22px}
   #controls{margin-bottom:8px}
@@ -248,7 +253,9 @@
     <button id="c4new" class="ghost mini">New game</button>
     <button id="c4off" class="ghost mini">Back to problems</button>
   </div>
-  <div class="hint" id="c4state">not started</div>
+  <div id="c4turn"><i></i><span>not started</span></div>
+  <label class="ck"><input type="checkbox" id="c4flash" checked>
+    Pulse the turn colour on the wall (row 14)</label>
 
   <div class="lbl">Log</div>
   <div id="log">idle.</div>
@@ -1288,12 +1295,31 @@ function c4Draw(){
       d.addEventListener('click', () => c4Drop(c));
       box.appendChild(d);
     }
-  $('c4state').textContent = !c4 ? 'not started'
-    : c4.win ? (c4.win.who === 1 ? 'green wins' : 'blue wins')
-    : (c4.turn === 1 ? 'green to play' : 'blue to play');
+  const turn = $('c4turn'), dot = turn.querySelector('i');
+  if (!c4){
+    turn.className = 'idle'; dot.style.background = '#3a3a40';
+    turn.querySelector('span').textContent = 'not started';
+  } else if (c4.win){
+    turn.className = 'over';
+    dot.style.background = c4.win.who === 1 ? '#22c55e' : '#2563eb';
+    turn.querySelector('span').textContent =
+      (c4.win.who === 1 ? 'Green' : 'Blue') + ' wins';
+  } else {
+    turn.className = '';
+    dot.style.background = c4.turn === 1 ? '#22c55e' : '#2563eb';
+    turn.querySelector('span').textContent =
+      (c4.turn === 1 ? 'Green' : 'Blue') + ' to play';
+  }
 }
 
-function c4Send(){
+/* Row 14 sits clear above the grid and carries whose turn it is. There is no
+   partial update in the protocol, so pulsing it rewrites the whole board each
+   frame - the pieces wink with it. Slow enough (1.2s) to read as a pulse rather
+   than a glitch, and the switch turns it off for a steady marker instead. */
+const C4_MARK_ROW = 14;
+let c4Timer = null;
+
+function c4Frame(markerOn){
   if (!c4 || !rx) return;
   const parts = [];
   for (let c = 0; c < C4_COLS; c++)
@@ -1302,11 +1328,26 @@ function c4Send(){
       const tag = won ? 'E' : (c4.grid[c][r] === 1 ? 'S' : 'P');
       parts.push({ tag, n: holdNum(C4_X + c, C4_Y + r) });
     }
+  if (markerOn && !c4.win){
+    const tag = c4.turn === 1 ? 'S' : 'P';
+    for (let c = 0; c < C4_COLS; c++)
+      parts.push({ tag, n: holdNum(C4_X + c, C4_MARK_ROW) });
+  }
   parts.sort((a, b) => a.n - b.n);
-  write('l#' + parts.map(p => p.tag + p.n).join(',') + '#');
+  write('l#' + parts.map(p => p.tag + p.n).join(',') + '#', true);
+}
+
+function c4Send(){
+  clearInterval(c4Timer); c4Timer = null;
+  if (!c4 || !rx) return;
+  c4Frame(true);
+  if (c4.win || !$('c4flash').checked) return;   // steady marker, or none once won
+  let on = true;
+  c4Timer = setInterval(() => { on = !on; c4Frame(on); }, 1200);
 }
 
 function c4Stop(){
+  clearInterval(c4Timer); c4Timer = null;
   c4 = null;
   c4Draw();
   if (rx) write(current ? buildPayload() : 'l##');
@@ -1333,6 +1374,7 @@ $('who').onchange = () => {
 $('addWho').onclick = addPerson;
 $('c4new').onclick = c4New;
 $('c4off').onclick = c4Stop;
+$('c4flash').onchange = c4Send;
 $('tick').onclick = () => {
   const who = whoNow(); if (!who || !current) return;
   listsCall('/lists/tick', { person: who, id: current.id,

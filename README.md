@@ -42,6 +42,11 @@ wall, clear of the dead A2 and A4 holds. Green plays first, blue second, and a w
 line goes red. One write per move, which suits a protocol that only does whole-wall
 rewrites.
 
+Whose turn it is shows two ways: a pulsing coloured dot in the page, and row 14 on the
+wall lit in that player's colour. The wall marker pulses at 1.2s, which rewrites the whole
+board each frame - the pieces wink along with it, so there's a switch to leave the marker
+steady instead.
+
 ## Board image
 
 `docs/board-2016.png` is the 2016 wall photo from Moonboard-Guidebook (MIT), with
