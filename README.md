@@ -28,12 +28,12 @@ in both the script and the page.
 
 ## Tick lists
 
-Shared projects, no logins. The relay Worker holds one Durable Object with everyone's
-lists — `GET /lists`, `POST /lists/person`, `/lists/tick`, `/lists/done` — so Will, Sara
+Shared projects, no logins. **Climbing as** is who you are - set once, remembered on the
+device - and **Show tick list** is whose list you're looking at. They're deliberately
+separate: saving a problem shouldn't change what's on screen. The relay Worker holds one
+Durable Object with everyone's lists — `GET /lists`, `POST /lists/person`, `/lists/tick`, `/lists/done` — so Will, Sara
 and Abdu each keep a list and all three can see the others'. Problems are keyed by their
-MoonBoard id. Whoever is picked in the **Tick list** filter is both the list you're looking
-at and the name a save or a tick is recorded against. Anyone with the page can write; that's
-the point.
+MoonBoard id. Anyone with the page can write; that's the point.
 
 ## Connect four
 

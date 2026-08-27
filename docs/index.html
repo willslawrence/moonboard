@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0e0e0f">
 <title>MoonBoard Direct</title>
 <style>
@@ -11,14 +11,19 @@
     --ink:#e9e9ec; --dim:#8b8b93; --dimmer:#5c5c65;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;background:var(--bg);color:var(--ink)}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+            overflow-x:hidden;overscroll-behavior:none;touch-action:pan-y;
+            -webkit-text-size-adjust:100%}
   body{font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
        padding:0 14px calc(env(safe-area-inset-bottom) + 24px);}
 
   /* Everything above the problem list rides in one sticky block, so the board
      and the search stay put while only the list scrolls. */
   #top{position:sticky;top:0;z-index:20;background:var(--bg);
-       border-bottom:1px solid var(--edge);margin-bottom:6px}
+       border-bottom:1px solid var(--edge);margin-bottom:6px;
+       max-height:86vh;overflow-y:auto}   /* filters open on a short phone would
+                                             otherwise outgrow the viewport and
+                                             break the pin entirely */
   header{display:flex;align-items:center;gap:10px;
          padding:calc(env(safe-area-inset-top) + 14px) 0 12px;
          border-bottom:1px solid var(--edge)}
@@ -36,9 +41,10 @@
   button.solid{background:var(--ink);border-color:var(--ink);color:#0e0e0f}
   button.ghost{background:transparent;color:var(--dim)}
 
-  input[type=text],select,input[type=number]{width:100%;padding:12px;border-radius:8px;
+  /* 16px is the floor - anything smaller and iOS zooms the page on focus. */
+  input[type=text],select,input[type=number]{width:100%;padding:10px;border-radius:8px;
     border:1px solid var(--edge);background:var(--panel);color:var(--ink);
-    font:14px -apple-system,system-ui,sans-serif;appearance:none}
+    font:16px -apple-system,system-ui,sans-serif;appearance:none}
   input::placeholder{color:var(--dimmer)}
   select{background-image:none}
   .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--dimmer);margin-bottom:6px}
@@ -105,10 +111,10 @@
   button.on{background:var(--ink);border-color:var(--ink);color:#0e0e0f}
 
   /* compact search + collapsible filters */
-  #q{padding:9px 10px;font-size:13px}
+  #q{padding:9px 10px;font-size:16px}
   #filters{border:0;border-top:1px solid var(--edge);padding-top:7px;margin-top:7px}
   #filters summary{font-size:10px}
-  #filters select{padding:8px;font-size:12px}
+  #filters select{padding:7px 8px;font-size:16px}
   #filters .lbl{margin-bottom:4px;margin-top:0}
   #filters .two{grid-template-columns:1fr auto}
   #filters button.mini{padding:8px 10px;white-space:nowrap}
@@ -184,11 +190,13 @@
 
   <details id="filters">
     <summary>Filters</summary>
-    <div class="lbl">Tick list</div>
+    <div class="lbl">Climbing as</div>
     <div class="two">
-      <select id="who"></select>
+      <select id="me"></select>
       <button id="addWho" class="ghost mini">+ New climber</button>
     </div>
+    <div class="lbl" style="margin-top:8px">Show tick list</div>
+    <select id="who"></select>
     <div class="three" style="margin-top:8px">
       <div><div class="lbl">From</div><select id="gmin"></select></div>
       <div><div class="lbl">To</div><select id="gmax"></select></div>
@@ -938,7 +946,9 @@ let current = null;
 const LISTS_API = 'https://moonboard-relay.willslawrence.workers.dev';
 let people = [], lists = {}, done = {};
 
-const whoNow = () => $('who').value || '';
+const whoNow = () => $('who').value || '';   // whose list is on screen
+const meNow  = () => $('me').value  || '';   // who a save or a tick belongs to
+let pending = null;                          // action waiting on a name
 
 // Two people can share an initial (both Abdullahs), so an emoji in the name wins.
 function chipFor(name){
@@ -979,19 +989,32 @@ function fillWho(){
   sel.appendChild(new Option('All problems', ''));
   people.forEach(p => sel.appendChild(new Option(p + ' \u2014 ' + (lists[p] || []).length, p)));
   sel.value = people.includes(keep) ? keep : '';
-  try{ localStorage.setItem('mb-who', sel.value); }catch(e){}
+
+  const me = $('me'), keepMe = me.value;
+  me.innerHTML = '';
+  me.appendChild(new Option('\u2014 pick your name \u2014', ''));
+  people.forEach(p => me.appendChild(new Option(p, p)));
+  me.value = people.includes(keepMe) ? keepMe : '';
+  try{
+    localStorage.setItem('mb-who', sel.value);
+    localStorage.setItem('mb-me', me.value);
+  }catch(e){}
 }
 
 async function addPerson(){
   const name = (prompt('Name for the new tick list?') || '').trim();
   if (!name) return;
+  const wasEmpty = !meNow();
   await listsCall('/lists/person', { name });
-  if (people.includes(name)){ $('who').value = name; renderResults(); paintBar(); }
+  if (people.includes(name) && wasEmpty){    // first name added is probably you
+    $('me').value = name;
+    fillWho(); paintBar(); runPending();
+  }
 }
 
 /* The bar's Tick and Done buttons act as whoever is picked in the filter. */
 function paintBar(){
-  const who = whoNow();
+  const who = meNow();
   const on  = !!(current && who);
   const listed = on && (lists[who] || []).includes(current.id);
   const sent   = on && (done[current.id] || []).includes(who);
@@ -1003,17 +1026,35 @@ function paintBar(){
   $('done').className   = 'mini' + (sent ? ' on' : '');
 }
 
-/* + List and Done record against whoever is picked in the Tick list filter.
-   With nobody picked they used to sit there disabled doing nothing, which just
-   reads as broken - so now they open the filter and ask for a name. */
-function needName(){
-  if (whoNow()) return false;
+/* + List and Done record against you, whatever list you happen to be looking
+   at - saving a problem is not the same as filtering to someone. If we don't
+   know who you are yet, ask once, remember the answer, and then carry out the
+   tap that prompted the question. The view never changes. */
+function needName(action){
+  if (meNow()) return false;
+  pending = action;
   $('filters').open = true;
-  $('who').focus();
-  $('who').scrollIntoView({ block: 'center' });
-  $('count').textContent = 'Pick a name under Tick list first';
-  log('pick a climber under Filters \u2192 Tick list, then tap again.');
+  $('me').focus();
+  $('me').scrollIntoView({ block: 'center' });
+  $('count').textContent = 'Pick your name under \u201cClimbing as\u201d';
+  log('pick your name under Filters \u2192 Climbing as.');
   return true;
+}
+
+function doTick(){
+  const me = meNow(); if (!me || !current) return;
+  listsCall('/lists/tick', { person: me, id: current.id,
+                             on: !(lists[me] || []).includes(current.id) });
+}
+function doDone(){
+  const me = meNow(); if (!me || !current) return;
+  listsCall('/lists/done', { person: me, id: current.id,
+                             on: !(done[current.id] || []).includes(me) });
+}
+function runPending(){
+  const a = pending; pending = null;
+  if (a === 'tick') doTick();
+  else if (a === 'done') doDone();
 }
 
 function fillGradeSelects(){
@@ -1041,8 +1082,11 @@ function filtered(){
   return out;
 }
 
+let lastHits = [];
+
 function renderResults(){
   const hits = filtered();
+  lastHits = hits;
   const box = $('results');
   box.innerHTML = '';
   hits.slice(0, 80).forEach(r => {
@@ -1069,7 +1113,7 @@ function renderResults(){
   const me = whoNow();
   $('count').textContent = hits.length
     ? (me ? me + "'s list \u2014 " : '') + hits.length +
-      (hits.length > 80 ? ' problems, first 80' : ' problems')
+      (hits.length > 80 ? ' benchmarked problems, first 80' : ' benchmarked problems')
     : (me ? 'Nothing saved here yet' : 'Nothing matches');
 }
 
@@ -1279,6 +1323,34 @@ function relayDisconnect(){
   if (wakeLock){ try{ wakeLock.release(); }catch(e){} wakeLock = null; }
 }
 
+/* ---------- swipe the board for the next problem ----------
+   The list is right there but the board is what you're looking at, so a flick
+   across it steps through whatever the list currently shows. */
+function stepProblem(delta){
+  if (!lastHits.length) return;
+  let i = current ? lastHits.indexOf(current) : -1;
+  if (i === -1) i = delta > 0 ? -1 : 0;         // not in this list - start at an end
+  const next = lastHits[i + delta];
+  if (next) loadRoute(next);
+}
+
+(function boardSwipe(){
+  const el = $('board');
+  let x0 = null, y0 = null;
+  el.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1) return;
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+  }, { passive: true });
+  el.addEventListener('touchend', e => {
+    if (x0 === null) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - x0, dy = t.clientY - y0;
+    x0 = null;
+    if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy)) return;
+    stepProblem(dx < 0 ? 1 : -1);               // flick left for the next one
+  }, { passive: true });
+})();
+
 /* ---------- connect four ----------
    Seven columns on C..I, six rows on 7..12 - middle of the wall, clear of the
    dead A2 and A4 holds. Green is player one, blue player two, and a winning
@@ -1416,17 +1488,11 @@ $('addWho').onclick = addPerson;
 $('c4new').onclick = c4New;
 $('c4off').onclick = c4Stop;
 $('c4flash').onchange = c4Send;
-$('tick').onclick = () => {
-  if (needName()) return;
-  const who = whoNow(); if (!who || !current) return;
-  listsCall('/lists/tick', { person: who, id: current.id,
-                             on: !(lists[who] || []).includes(current.id) });
-};
-$('done').onclick = () => {
-  if (needName()) return;
-  const who = whoNow(); if (!who || !current) return;
-  listsCall('/lists/done', { person: who, id: current.id,
-                             on: !(done[current.id] || []).includes(who) });
+$('tick').onclick = () => { if (!needName('tick')) doTick(); };
+$('done').onclick = () => { if (!needName('done')) doDone(); };
+$('me').onchange = () => {
+  try{ localStorage.setItem('mb-me', $('me').value); }catch(e){}
+  fillWho(); paintBar(); runPending();
 };
 $('gbar').onchange = () => {
   applyGradeBar(); paint();
@@ -1465,8 +1531,14 @@ try{
 paint();
 fillGradeSelects();
 c4Draw();
-try{ const w = localStorage.getItem('mb-who');
-     if (w){ $('who').appendChild(new Option(w, w)); $('who').value = w; } }catch(e){}
+try{
+  const w = localStorage.getItem('mb-who');
+  if (w){ $('who').appendChild(new Option(w, w)); $('who').value = w; }
+  // Before these were split, picking a name in the view filter was how you said
+  // who you were - carry that over rather than asking again.
+  const m = localStorage.getItem('mb-me') || w;
+  if (m){ $('me').appendChild(new Option(m, m)); $('me').value = m; }
+}catch(e){}
 renderResults();
 listsCall('/lists');
 setLive(false);
