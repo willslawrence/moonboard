@@ -99,8 +99,6 @@
   .mark.P{border-color:#2563eb}
   .mark.E{border-color:#ef4444}
   .mark.g{width:6.4%;border-width:2px}
-  #clear{margin-top:8px}
-  #gnote{margin-top:7px;text-align:center;font-size:12px;color:var(--dimmer)}
 
   /* ---- selected route bar: pinned directly under the header ---- */
   #bar{background:var(--bg);border-bottom:1px solid var(--edge);
@@ -117,9 +115,10 @@
   /* the four actions stack down the space beside the board */
   /* An empty column mirrors the button column, so the board sits dead centre
      on the page rather than centred in whatever is left over. */
-  #boardRow{display:grid;grid-template-columns:72px 1fr 72px;gap:8px;align-items:start}
+  #boardRow{display:grid;grid-template-columns:72px 1fr 72px;gap:8px;align-items:stretch}
   #boardCol{min-width:0}
   #barBtns{display:flex;flex-direction:column;gap:6px}
+  #clear{margin-top:auto}   /* sits at the foot of the column, clear of the rest */
   #climbers{display:flex;flex-direction:column;gap:5px;min-width:0}
   #climbers .hd{font-size:9px;letter-spacing:.1em;text-transform:uppercase;
                 color:var(--dimmer);margin-bottom:1px}
@@ -325,14 +324,13 @@
         <img src="board-2016.png" alt="MoonBoard 2016 wall" width="450" height="692">
         <div id="marks"></div>
       </div>
-      <div id="gnote"></div>
-      <button id="clear" class="mini ghost">Hide</button>
     </div>
     <div id="barBtns">
       <button id="send" class="mini solid" disabled>Light up</button>
       <button id="tick" class="mini" disabled>+ List</button>
       <button id="try" class="mini" disabled>Try</button>
       <button id="done" class="mini" disabled>Climbed</button>
+      <button id="clear" class="mini ghost">Hide</button>
     </div>
   </div>
 </section>
@@ -395,7 +393,7 @@
 
   <div class="lbl">On connect</div>
   <select id="standby">
-    <option value="moon">Show the moon</option>
+    <option value="moon">Scroll MOON, settle on the moon</option>
     <option value="climber">Show a climber</option>
     <option value="frame">Show a frame</option>
     <option value="">Leave the wall dark</option>
@@ -1500,6 +1498,7 @@ function parseHolds(str, tag){
 }
 
 function loadRoute(r){
+  introToken++;                          // a pick beats the intro
   for (const k in state) delete state[k];
   parseHolds(r.s, 'S'); parseHolds(r.m, 'P'); parseHolds(r.e, 'E');
   current = r;
@@ -1511,9 +1510,6 @@ function loadRoute(r){
   $('barTxt').querySelector('b').textContent = r.name;
   paintPill($('barTxt').querySelector('.pill'), r.grade);
   $('send').disabled = !rx;
-  $('gnote').textContent = $('gbar').checked
-    ? 'Bottom row = grade \u00b7 V' + VGRADE[r.grade]
-    : '';
   paintBar();
   log('loaded "' + r.name + '" \u2014 ' + GRADES[r.grade] + ' (V' + VGRADE[r.grade] + '), set by ' + r.setter);
   if ($('auto').checked && rx) sendProblem();
@@ -1560,6 +1556,7 @@ async function connect(){
     const p = Object.entries(rx.properties || {}).filter(([, v]) => v).map(([k]) => k).join(',');
     log('connected. Nordic UART found. RX props: [' + p + ']');
     if (current) sendProblem();          // pick up whatever was already chosen
+    else if ($('standby').value === 'moon') moonIntro();
     else standby();
   }catch(e){
     rx = null;
@@ -1998,6 +1995,53 @@ const ART = {
     '...........', '...........', '...........',
   ],
 };
+
+/* MOON, scrolled. Four 4-wide letters with a column between them is nineteen
+   columns of content against an eleven wide wall, which is why the word can't
+   sit still here - but it can walk past. One frame every 70ms, which the box
+   keeps up with (30ms garbles it), and it settles on the static moon.
+
+   This runs once, on connect. Everything else that draws standby draws the moon
+   directly - an animation every time you cleared a problem would be the flicker
+   all over again. */
+const FONT = {
+  M: ['#..#', '####', '####', '#..#', '#..#'],
+  O: ['.##.', '#..#', '#..#', '#..#', '.##.'],
+  N: ['#..#', '##.#', '#.##', '#..#', '#..#'],
+};
+const WORD = 'MOON';
+const WORD_ROW = 11;                    // top row of the 5-tall letters
+
+function wordColumns(){                 // [col][row-offset] as a flat cell list
+  const cells = [];
+  let x = 0;
+  for (const ch of WORD){
+    FONT[ch].forEach((line, i) =>
+      [...line].forEach((c, j) => { if (c === '#') cells.push({ x: x + j, y: i }); }));
+    x += FONT[ch][0].length + 1;
+  }
+  return { cells, width: x - 1 };
+}
+
+let introToken = 0;
+
+async function moonIntro(){
+  const mine = ++introToken;
+  const { cells, width } = wordColumns();
+  for (let off = COLS; off >= -width; off--){
+    if (!rx || introToken !== mine) return;
+    const lit = [];
+    for (const c of cells){
+      const col = c.x + off + 1, row = WORD_ROW - c.y;
+      if (col < 1 || col > COLS) continue;
+      if (ART_DEAD.has(col + ',' + row)) continue;
+      lit.push(holdNum(col, row));
+    }
+    write('l#' + lit.sort((a, b) => a - b).map(n => 'S' + n).join(',') + '#', true);
+    await new Promise(r => setTimeout(r, 70));
+  }
+  if (rx && introToken === mine) write(standbyPayload());
+}
 
 function artCells(rows){
   const out = [];
@@ -2541,8 +2585,6 @@ $('me').onchange = () => {
 };
 $('gbar').onchange = () => {
   applyGradeBar(); paint();
-  $('gnote').textContent = (current && $('gbar').checked)
-    ? 'Bottom row = grade \u00b7 V' + VGRADE[current.grade] : '';
   if (rx && current) sendProblem();
 };
 

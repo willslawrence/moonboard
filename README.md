@@ -30,8 +30,13 @@ in both the script and the page.
 
 Connecting a phone puts something on the wall, and it comes back whenever nothing is loaded.
 It answers the only question you have at that moment - is this thing actually talking to the
-box - without picking a problem to find out. Choose the moon, a climber, a dashed frame, or
-nothing, in Settings.
+box - without picking a problem to find out. Choose the scrolling MOON, a climber, a dashed frame, or nothing, in Settings.
+
+The word can't sit still on the wall - four 4-wide letters want nineteen columns against
+eleven - but it can walk past. MOON scrolls right to left over about two seconds, a frame
+every 70ms, and settles on the static moon. It runs once, on connect; everything else that
+draws standby draws the moon directly, because an animation on every clear would be the
+flicker all over again. Picking a problem mid-scroll cancels it.
 
 MOON as letters doesn't fit: four letters need fifteen columns and the wall is eleven. The
 moon itself does. All three drawings step around the dead A2 and A4 holds and stay inside the
