@@ -113,8 +113,14 @@ export class Relay {
  *   list:<person>   -> [problemId, ...]                their projects
  *   done:<id>       -> ["Will", ...]                   who has sent it
  *   wins            -> {"Will": 3, ...}                 connect four record
+ *   snake           -> {"Will": 24, ...}                best snake length
  *   log:<iso>-<r>   -> {t, person, id, result}           one row per tap, append only
- *   stats:<person>  -> {<id>: {a, r, d}}                 attempts / last result / last date
+ *   stats:<person>  -> {<id>: {a, r, s, d}}              attempts / last result /
+ *                                                       sends in order / last date
+ *
+ * s is the ordered list of sends. MoonBoard scores the FIRST successful ascent,
+ * not the best one, so s[0] is what counts - send it second go and flash it later
+ * and the second go still scores.
  *
  * result is one of: try flash 2nd 3rd 4+
  *
@@ -140,12 +146,13 @@ export class Lists {
     const doneRows = await this.state.storage.list({ prefix: "done:" });
     for (const [k, v] of doneRows) if (v && v.length) done[k.slice(5)] = v;
     const wins = (await this.state.storage.get("wins")) || {};
+    const snake = (await this.state.storage.get("snake")) || {};
     const stats = {};
     for (const p of people) {
       const st = await this.state.storage.get("stats:" + p);
       if (st && Object.keys(st).length) stats[p] = st;
     }
-    return { people, lists, done, wins, stats };
+    return { people, lists, done, wins, snake, stats };
   }
 
   /* Fold one log row into the indexes, or peel it back off with dir = -1.
@@ -163,10 +170,13 @@ export class Lists {
       cur.before = cur.a;                    // so an undo can restore it
       cur.a = 0;
       cur.r = row.result;
+      cur.s = [...(cur.s || []), row.result];
     } else {
       cur.a = cur.before || 0;
       delete cur.before;
-      cur.r = null;
+      cur.s = (cur.s || []).slice(0, -1);
+      cur.r = cur.s.length ? cur.s[cur.s.length - 1] : null;
+      if (!cur.s.length) delete cur.s;
     }
     cur.d = dir > 0 ? row.t : cur.d;
     // Undoing back to nothing should leave nothing behind.
@@ -279,6 +289,25 @@ export class Lists {
         return json(await this.snapshot());
       }
       return json({ error: "nothing to undo" }, 404);
+    }
+
+    if (path === "/lists/snake") {
+      const person = clean(body.person);
+      const score = Number(body.score);
+      if (!person || !Number.isFinite(score)) return json({ error: "person and score required" }, 400);
+      const people = (await this.state.storage.get("people")) || [];
+      if (!people.includes(person)) return json({ error: "unknown person" }, 404);
+      const snake = (await this.state.storage.get("snake")) || {};
+      // Normally a personal best only ever goes up; set:true forces it, which is
+      // the only way to clear a score that shouldn't be there.
+      if (body.set) {
+        if (score > 0) snake[person] = score; else delete snake[person];
+        await this.state.storage.put("snake", snake);
+      } else if (score > (snake[person] || 0)) {
+        snake[person] = score;
+        await this.state.storage.put("snake", snake);
+      }
+      return json(await this.snapshot());
     }
 
     if (path === "/lists/win") {

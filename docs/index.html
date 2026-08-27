@@ -168,11 +168,11 @@
              padding:calc(env(safe-area-inset-top) + 16px) 16px
                      calc(env(safe-area-inset-bottom) + 16px)}
   #gamePanel[hidden]{display:none}
-  #sendPanel,#logPanel{position:fixed;inset:0;z-index:60;background:var(--bg);
+  #sendPanel,#logPanel,#snakePanel{position:fixed;inset:0;z-index:60;background:var(--bg);
              display:flex;flex-direction:column;gap:12px;overflow-y:auto;
              padding:calc(env(safe-area-inset-top) + 16px) 16px
                      calc(env(safe-area-inset-bottom) + 16px)}
-  #sendPanel[hidden],#logPanel[hidden]{display:none}
+  #sendPanel[hidden],#logPanel[hidden],#snakePanel[hidden]{display:none}
   #sendFor{font-size:15px;font-weight:600}
   #sendFor span{display:block;font-size:12px;color:var(--dimmer);font-weight:400;margin-top:2px}
   #sendPicks{display:grid;gap:8px}
@@ -190,6 +190,16 @@
                   background:#22252b;color:var(--dim)}
   #logRows .e.sent .rs{background:#22c55e;color:#06240e}
   #logRows .none{font-size:12px;color:var(--dimmer);padding:8px 2px}
+  #ptsRank .r{display:flex;align-items:center;gap:9px;padding:7px 2px;
+              border-bottom:1px solid #1e2024;font-size:13px}
+  #ptsRank .r .pos{flex:none;width:20px;color:var(--dimmer);
+                   font:700 11px ui-monospace,Menlo,monospace}
+  #ptsRank .r b{flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #ptsRank .r .n{flex:none;color:var(--dimmer);font-size:11px}
+  #ptsRank .r span.p{flex:none;font:700 13px ui-monospace,Menlo,monospace;color:var(--ink)}
+  #ptsRank .me{background:#16181c}
+  #ptsRank .r.lead b{color:#f5c542}
+  #ptsRank .none{font-size:12px;color:var(--dimmer);padding:6px 2px}
   #gameHead{display:flex;align-items:center;gap:12px}
   #gameHead b{flex:1;font-size:13px;font-weight:700;letter-spacing:.13em;
               text-transform:uppercase}
@@ -218,6 +228,24 @@
   #c4rank .r span{color:var(--dimmer);font:700 12px ui-monospace,Menlo,monospace}
   #c4rank .king b{color:#f5c542}
   #c4rank .none{font-size:12px;color:var(--dimmer);padding:6px 2px}
+
+  /* snake - the wall is 10 wide by 18 tall once column A sits out, so the grid
+     is sized off height rather than width or it would run off the screen */
+  #sn{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;
+      width:min(100%,26vh);margin:0 auto;touch-action:none}
+  #sn div{aspect-ratio:1;border-radius:2px;background:#191b1f}
+  #sn div.s{background:#22c55e}
+  #sn div.h{background:#2563eb}
+  #sn div.f{background:#ef4444}
+  #snScore{text-align:center;font-size:17px;font-weight:600}
+  #snPad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:320px;
+         margin:0 auto;width:100%}
+  #snPad button{padding:14px 0;font-size:19px;line-height:1}
+  #snRank .r{display:flex;gap:9px;padding:5px 2px;border-bottom:1px solid #1e2024;font-size:13px}
+  #snRank .r b{flex:1;font-weight:600}
+  #snRank .r span{color:var(--dimmer);font:700 12px ui-monospace,Menlo,monospace}
+  #snRank .top b{color:#f5c542}
+  #snRank .none{font-size:12px;color:var(--dimmer);padding:6px 2px}
   #c4turn{display:flex;align-items:center;justify-content:center;gap:10px;
           font-size:17px;font-weight:600}
   #c4turn i{width:20px;height:20px;border-radius:50%;background:#3a3a40;flex:none;
@@ -313,6 +341,7 @@
 
 <div id="footBtns">
   <button id="logBtn" class="ghost mini">Logbook</button>
+  <button id="snakeBtn" class="ghost mini">Snake</button>
   <button id="gameBtn" class="ghost mini">Connect four</button>
   <button id="setBtn" class="ghost mini">Settings</button>
 </div>
@@ -402,6 +431,31 @@
   <select id="logWho"></select>
   <div id="logSum"></div>
   <div id="logRows"></div>
+
+  <div class="lbl" style="margin-top:18px">Points</div>
+  <div id="ptsRank"></div>
+  <div class="hint" id="ptsNote"></div>
+</div>
+
+<div id="snakePanel" hidden>
+  <div id="gameHead">
+    <b>Snake</b>
+    <button id="snClose" class="ghost mini">Close</button>
+  </div>
+  <div id="snScore">–</div>
+  <div id="sn"></div>
+  <div id="snPad">
+    <button data-d="up">↑</button>
+    <button data-d="left">←</button>
+    <button data-d="down">↓</button>
+    <button data-d="right">→</button>
+  </div>
+  <button id="snNew" class="ghost mini">New game</button>
+  <div class="lbl" style="margin-top:6px">Best lengths</div>
+  <div id="snRank"></div>
+  <div class="hint">Played on B–K, the whole height of the wall. Swipe the grid or use
+    the arrows. Green is the snake, blue its head, red the food. Column A sits out —
+    A1 doesn't light and A2 and A4 are dead.</div>
 </div>
 
 <div id="gamePanel" hidden>
@@ -1093,7 +1147,7 @@ let current = null;
    Shared through the relay Worker, no logins: whoever is picked in the Tick list
    filter is who a save or a tick is recorded against, and everyone sees everyone. */
 const LISTS_API = 'https://moonboard-relay.willslawrence.workers.dev';
-let people = [], lists = {}, done = {}, wins = {}, stats = {};
+let people = [], lists = {}, done = {}, wins = {}, stats = {}, snakeBest = {};
 
 const NEW_CLIMBER = '\u0000new';             // sentinel option inside the name picker
 const whoNow = () => $('who').value || '';   // whose list is on screen
@@ -1121,9 +1175,12 @@ function applyLists(data){
   done   = data.done   || {};
   wins   = data.wins   || {};
   stats  = data.stats  || {};
+  snakeBest = data.snake || {};
   fillWho();
   c4Fill();
   c4Rank();
+  snRank();
+  if (!$('logPanel').hidden) ptsRank();
   renderResults();
   paintBar();
 }
@@ -1219,7 +1276,7 @@ function paintClimbers(){
     const dot = document.createElement('i');
     dot.textContent = chipFor(n);
     dot.style.background = personColor(n);
-    const r = stats[n] && stats[n][current.id] && stats[n][current.id].r;
+    const r = firstSend(stats[n] && stats[n][current.id]);
     const res = document.createElement('span');
     res.className = 'res';
     res.textContent = r ? (r === 'flash' ? '\u26a1' : r) : '\u2713';
@@ -1574,12 +1631,102 @@ function relayDisconnect(){
 /* ---------- logbook ----------
    Rows are fetched when the panel opens rather than riding in every snapshot,
    so the log can grow without slowing the rest of the app down. */
+/* Scoring - MoonBoard's own scheme.
+     Base runs 350 for 5+ and climbs 50 a grade, to 1200 for 8C, off the SETTER
+     grade rather than the user grade. Bonus is added on top for a quick ascent:
+     flash +53, second try +2, third try +1, nothing beyond that.
+     Benchmarks only, and only the FIRST successful ascent counts - send it second
+     go and flash it later and the second go is still what scores.
+   The ticks that predate the logbook have no recorded result, so they score base
+   with no bonus rather than being guessed at. */
+const PTS_BONUS = { flash: 53, '2nd': 2, '3rd': 1, '4+': 0 };
+const ptsBase = gradeIdx => 350 + 50 * gradeIdx;
+
+function firstSend(entry){
+  if (!entry) return null;
+  return (entry.s && entry.s[0]) || entry.r || null;
+}
+
+function scoreFor(person){
+  let total = 0, sends = 0, flashes = 0;
+  const seen = new Set();
+  const st = stats[person] || {};
+  for (const id in st){
+    const p = byId[id];
+    const first = firstSend(st[id]);
+    if (!p || !first) continue;
+    seen.add(+id);
+    total += ptsBase(p.grade) + (PTS_BONUS[first] || 0);
+    if (first === 'flash') flashes++;
+    sends++;
+  }
+  for (const id in done){                    // ticks logged before the logbook
+    if (seen.has(+id) || !done[id].includes(person)) continue;
+    const p = byId[id];
+    if (!p) continue;
+    total += ptsBase(p.grade);
+    sends++;
+  }
+  return { total, sends, flashes };
+}
+
+function ptsRank(){
+  const box = $('ptsRank');
+  box.innerHTML = '';
+  const me = meNow();
+  const rows = people.map(n => ({ n, ...scoreFor(n) }))
+                     .filter(r => r.total > 0)
+                     .sort((a, b) => b.total - a.total);
+  $('ptsNote').textContent = rows.length
+    ? 'MoonBoard scoring: 350 at 5+, +50 a grade off the setter grade, plus ' +
+      'flash +53, 2nd +2, 3rd +1. Benchmarks only, first ascent counts.'
+    : '';
+  if (!rows.length){
+    const d = document.createElement('div');
+    d.className = 'none';
+    d.textContent = 'No sends logged yet.';
+    box.appendChild(d);
+    return;
+  }
+  rows.slice(0, 10).forEach((r, i) => {
+    const el = document.createElement('div');
+    el.className = 'r' + (i === 0 ? ' lead' : '') + (r.n === me ? ' me' : '');
+    const pos = document.createElement('div');
+    pos.className = 'pos';
+    pos.textContent = (i + 1) + '.';
+    const b = document.createElement('b');
+    b.textContent = r.n;
+    const n = document.createElement('div');
+    n.className = 'n';
+    n.textContent = r.sends + (r.sends === 1 ? ' send' : ' sends');
+    const p = document.createElement('span');
+    p.className = 'p';
+    p.textContent = r.total.toLocaleString();
+    el.append(pos, b, n, p);
+    box.appendChild(el);
+  });
+  const mine = rows.findIndex(r => r.n === me);
+  if (me && mine >= 10){
+    const el = document.createElement('div');
+    el.className = 'r me';
+    const pos = document.createElement('div');
+    pos.className = 'pos';
+    pos.textContent = (mine + 1) + '.';
+    const b = document.createElement('b'); b.textContent = me;
+    const p = document.createElement('span');
+    p.className = 'p'; p.textContent = rows[mine].total.toLocaleString();
+    el.append(pos, b, p);
+    box.appendChild(el);
+  }
+}
+
 async function openLog(){
   const sel = $('logWho'), keep = sel.value || meNow();
   sel.innerHTML = '';
   people.forEach(p => sel.appendChild(new Option(p, p)));
   sel.value = people.includes(keep) ? keep : (people[0] || '');
   showPanel('log');
+  ptsRank();
   loadLog();
 }
 
@@ -1668,6 +1815,139 @@ function stepProblem(delta){
     }, { passive: true });
   }
 })();
+
+/* ---------- snake ----------
+   Column A sits out: A1 is index 0 and doesn't light, A2 is dim and A4 is dead.
+   That leaves B..K by the full 18 rows. A snake is only ever a few dozen cells,
+   so unlike Tetris the payload never grows past what the box will take, and a
+   full redraw every move reads as movement rather than flicker. */
+const SN_W = 10, SN_H = 18, SN_X = 2, SN_Y = 1;   // grid col 2 = B, row 1 = bottom
+let sn = null, snTimer = null, snDir = null, snNext = null;
+
+const snCell = (x, y) => ({ x, y });
+const snEq = (a, b) => a.x === b.x && a.y === b.y;
+
+function snFood(){
+  const free = [];
+  for (let x = 0; x < SN_W; x++)
+    for (let y = 0; y < SN_H; y++)
+      if (!sn.body.some(c => c.x === x && c.y === y)) free.push(snCell(x, y));
+  return free.length ? free[Math.floor(Math.random() * free.length)] : null;
+}
+
+function snSpeed(){ return Math.max(260, 520 - (sn ? sn.body.length * 8 : 0)); }
+
+function snNew(){
+  clearInterval(snTimer); snTimer = null;
+  sn = { body: [snCell(4, 3), snCell(4, 2), snCell(4, 1)], food: null, over: false };
+  sn.food = snFood();
+  snDir = { dx: 0, dy: 1 };                       // heading up the wall
+  snNext = snDir;
+  snDraw(); snSend();
+  snTimer = setInterval(snTick, snSpeed());
+  log('snake: new game.');
+}
+
+function snTick(){
+  if (!sn || sn.over) return;
+  snDir = snNext;
+  const h = sn.body[0];
+  const nx = h.x + snDir.dx, ny = h.y + snDir.dy;
+  const hitWall = nx < 0 || nx >= SN_W || ny < 0 || ny >= SN_H;
+  const hitSelf = sn.body.slice(0, -1).some(c => c.x === nx && c.y === ny);
+  if (hitWall || hitSelf) return snOver();
+
+  const head = snCell(nx, ny);
+  sn.body.unshift(head);
+  if (sn.food && snEq(head, sn.food)){
+    sn.food = snFood();
+    clearInterval(snTimer);                       // it speeds up as it grows
+    snTimer = setInterval(snTick, snSpeed());
+  } else {
+    sn.body.pop();
+  }
+  snDraw(); snSend();
+}
+
+function snOver(){
+  clearInterval(snTimer); snTimer = null;
+  sn.over = true;
+  snDraw();
+  const me = meNow(), score = sn.body.length;
+  if (me){
+    listsCall('/lists/snake', { person: me, score });
+    log('snake: ' + me + ' finished on ' + score + '.');
+  } else {
+    log('snake: finished on ' + score + '. Pick a name in the header to record it.');
+  }
+}
+
+function snTurn(d){
+  if (!sn || sn.over) return;
+  const map = { up: { dx: 0, dy: 1 }, down: { dx: 0, dy: -1 },
+                left: { dx: -1, dy: 0 }, right: { dx: 1, dy: 0 } };
+  const n = map[d];
+  if (!n) return;
+  if (n.dx === -snDir.dx && n.dy === -snDir.dy) return;   // no reversing into yourself
+  snNext = n;
+}
+
+function snDraw(){
+  const box = $('sn');
+  if (box.children.length !== SN_W * SN_H){
+    box.innerHTML = '';
+    for (let i = 0; i < SN_W * SN_H; i++) box.appendChild(document.createElement('div'));
+  }
+  const at = (x, y) => box.children[(SN_H - 1 - y) * SN_W + x];
+  [...box.children].forEach(c => c.className = '');
+  if (!sn){ $('snScore').textContent = '\u2013'; return; }
+  sn.body.forEach((c, i) => { at(c.x, c.y).className = i === 0 ? 'h' : 's'; });
+  if (sn.food) at(sn.food.x, sn.food.y).className = 'f';
+  $('snScore').textContent = sn.over
+    ? 'Finished \u2014 length ' + sn.body.length
+    : 'Length ' + sn.body.length;
+}
+
+function snSend(){
+  if (!sn || !rx) return;
+  const parts = [];
+  sn.body.forEach((c, i) =>
+    parts.push({ tag: i === 0 ? 'P' : 'S', n: holdNum(SN_X + c.x, SN_Y + c.y) }));
+  if (sn.food) parts.push({ tag: 'E', n: holdNum(SN_X + sn.food.x, SN_Y + sn.food.y) });
+  parts.sort((a, b) => a.n - b.n);
+  write('l#' + parts.map(p => p.tag + p.n).join(',') + '#', true);
+}
+
+function snStop(){
+  clearInterval(snTimer); snTimer = null;
+  sn = null;
+  snDraw();
+  if (rx) write(current ? buildPayload() : 'l##');
+}
+
+function snRank(){
+  const box = $('snRank');
+  box.innerHTML = '';
+  const rows = Object.entries(snakeBest).sort((a, b) => b[1] - a[1]);
+  if (!rows.length){
+    const d = document.createElement('div');
+    d.className = 'none';
+    d.textContent = 'No games yet.';
+    box.appendChild(d);
+    return;
+  }
+  const top = rows[0][1];
+  rows.forEach(([name, n]) => {
+    const r = document.createElement('div');
+    r.className = 'r' + (n === top ? ' top' : '');
+    const b = document.createElement('b');
+    b.textContent = (n === top ? '\u265b ' : '') + name;
+    const c = document.createElement('span');
+    c.textContent = n;
+    r.append(b, c);
+    box.appendChild(r);
+  });
+}
 
 /* ---------- connect four ----------
    Seven columns on C..I, six rows on 7..12 - middle of the wall, clear of the
@@ -1927,9 +2207,12 @@ function showPanel(which){          // 'game' | 'set' | 'log' | 'send' | null
   $('setPanel').hidden  = which !== 'set';
   $('logPanel').hidden  = which !== 'log';
   $('sendPanel').hidden = which !== 'send';
+  $('snakePanel').hidden = which !== 'snake';
+  if (which !== 'snake' && snTimer) snStop();     // don't leave it running unseen
   $('gameBtn').className = 'ghost mini' + (which === 'game' ? ' on' : '');
   $('setBtn').className  = 'ghost mini' + (which === 'set'  ? ' on' : '');
   $('logBtn').className  = 'ghost mini' + (which === 'log'  ? ' on' : '');
+  $('snakeBtn').className = 'ghost mini' + (which === 'snake' ? ' on' : '');
   if (which === 'set') $('setPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 $('gameBtn').onclick = () => {
@@ -1941,6 +2224,28 @@ $('setBtn').onclick = () => showPanel($('setPanel').hidden ? 'set' : null);
 $('c4close').onclick = () => showPanel(null);
 $('logBtn').onclick = () => ($('logPanel').hidden ? openLog() : showPanel(null));
 $('logClose').onclick = () => showPanel(null);
+$('snakeBtn').onclick = () => {
+  const open = $('snakePanel').hidden;
+  showPanel(open ? 'snake' : null);
+  if (open && !sn) snNew();
+};
+$('snClose').onclick = () => showPanel(null);
+$('snNew').onclick = snNew;
+document.querySelectorAll('#snPad button').forEach(b =>
+  b.onclick = () => snTurn(b.dataset.d));
+(function snakeSwipe(){
+  const el = $('sn');
+  let x0 = null, y0 = null;
+  el.addEventListener('pointerdown', e => { x0 = e.clientX; y0 = e.clientY; });
+  el.addEventListener('pointerup', e => {
+    if (x0 === null) return;
+    const dx = e.clientX - x0, dy = e.clientY - y0;
+    x0 = null;
+    if (Math.abs(dx) < 20 && Math.abs(dy) < 20) return;
+    snTurn(Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'left' : 'right')
+                                       : (dy < 0 ? 'up' : 'down'));
+  });
+})();
 $('logWho').onchange = loadLog;
 $('sendClose').onclick = () => showPanel(null);
 document.querySelectorAll('#sendPicks .res').forEach(el =>
@@ -2004,6 +2309,7 @@ try{
 paint();
 fillGradeSelects();
 c4Draw();
+snDraw();
 try{
   const w = localStorage.getItem('mb-who');
   if (w){ $('who').appendChild(new Option(w, w)); $('who').value = w; }

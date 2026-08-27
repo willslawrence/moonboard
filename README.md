@@ -58,6 +58,30 @@ it globally against your name — everyone sees it. Who has climbed the selected
 down the gutter left of the board, and each list row carries the same names as coloured
 chips.
 
+## Points
+
+MoonBoard's own scheme: base 350 at 5+ climbing 50 a grade to 1200 at 8C, off the **setter**
+grade, plus a bonus for a quick ascent - flash +53, second try +2, third try +1, nothing
+beyond. Benchmarks only, and only the **first** successful ascent counts, so sending something
+second go and flashing it later still scores the second go. That's why `stats` keeps the sends
+in order rather than just the latest one. Ticks that predate the logbook have no recorded
+result and score base with no bonus.
+
+The top ten sits under the logbook; your own row is highlighted and pinned below if you're
+outside it. Scores are worked out in the page from data it already has - no extra endpoint.
+
+## Snake
+
+Behind the **Snake** button. Played on B-K by the full 18 rows: column A sits out because A1
+is index 0 and won't light, and A2 and A4 are dead. Green body, blue head, red food; swipe the
+grid or use the arrows. It speeds up as it grows.
+
+Snake suits this box in a way Tetris doesn't. Every write redraws the whole wall, and the safe
+payload is about 250 bytes - roughly 49 lit LEDs. A Tetris stack passes that at four or five
+rows and the string starts truncating. A snake is a few dozen cells however long the game runs,
+and constant movement makes a full redraw read as animation rather than flicker. Best lengths
+are kept per climber.
+
 ## Connect four
 
 Behind the **Connect four** button at the bottom right, beside Settings. Opens as a full screen sheet and starts a game.
