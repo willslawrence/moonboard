@@ -51,8 +51,8 @@
   .rt{display:flex;align-items:center;gap:12px;padding:13px 2px;
       border-bottom:1px solid #202024}
   .rt:active{background:var(--panel)}
-  .gd{flex:none;padding:3px 7px;border-radius:6px;
-       font:700 12px ui-monospace,Menlo,monospace}
+  .gd{flex:none;padding:2px 6px;border-radius:5px;
+       font:700 10px ui-monospace,Menlo,monospace;letter-spacing:-.02em}
   .nm{flex:1;min-width:0}
   .nm b{display:block;font-weight:600;font-size:15px;
         white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -90,12 +90,12 @@
        padding:8px 0;display:none}
   #bar.show{display:block}
   #barTxt{display:flex;align-items:center;gap:9px;min-width:0}
-  #barTxt b{font-size:15px;font-weight:600;
+  #barTxt b{flex:1;min-width:0;font-size:15px;font-weight:600;
             white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
   /* grade pill - colour band by V-grade, same idea in the bar and the list */
-  .pill{flex:none;padding:3px 8px;border-radius:6px;
-        font:700 12px ui-monospace,Menlo,monospace}
+  .pill{flex:none;padding:2px 6px;border-radius:5px;
+        font:700 10px ui-monospace,Menlo,monospace;letter-spacing:-.02em}
 
   /* the four actions stack down the space beside the board */
   #boardRow{display:flex;gap:12px;align-items:flex-start}
@@ -157,7 +157,7 @@
 </header>
 
 <div id="bar">
-  <div id="barTxt"><span class="pill"></span><b></b></div>
+  <div id="barTxt"><b></b><span class="pill"></span></div>
 </div>
 
 <section id="boardWrap" style="display:none">
@@ -1036,8 +1036,8 @@ function renderResults(){
   hits.slice(0, 80).forEach(r => {
     const row = document.createElement('div');
     row.className = 'rt' + (r === current ? ' sel' : '');
-    row.innerHTML = '<div class="gd"></div>' +
-                    '<div class="nm"><b></b><span></span></div>' +
+    row.innerHTML = '<div class="nm"><b></b><span></span></div>' +
+                    '<div class="gd"></div>' +
                     '<div class="who"></div><div class="chev">\u203a</div>';
     paintPill(row.querySelector('.gd'), r.grade);
     row.querySelector('b').textContent = r.name;
