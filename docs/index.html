@@ -99,6 +99,7 @@
   .mark.P{border-color:#2563eb}
   .mark.E{border-color:#ef4444}
   .mark.g{width:6.4%;border-width:2px}
+  #clear{margin-top:8px}
   #gnote{margin-top:7px;text-align:center;font-size:12px;color:var(--dimmer)}
 
   /* ---- selected route bar: pinned directly under the header ---- */
@@ -122,10 +123,14 @@
   #climbers{display:flex;flex-direction:column;gap:5px;min-width:0}
   #climbers .hd{font-size:9px;letter-spacing:.1em;text-transform:uppercase;
                 color:var(--dimmer);margin-bottom:1px}
-  #climbers .p{display:flex;align-items:center;gap:5px;min-width:0}
+  /* 72px is not enough for a dot, a result and a long name on one line, and the
+     result is the bit that was getting cut. Result first, name underneath. */
+  #climbers .p{min-width:0}
+  #climbers .p .top{display:flex;align-items:center;gap:5px}
   #climbers .p i{flex:none;display:grid;place-items:center;width:17px;height:17px;
                  border-radius:50%;font-size:9px;font-weight:700;color:#0e0e0f}
-  #climbers .p span{font-size:11px;color:var(--dim);
+  #climbers .p .res{flex:none;font:700 11px ui-monospace,Menlo,monospace;color:var(--ink)}
+  #climbers .p .nm2{display:block;font-size:10px;color:var(--dimmer);margin-top:1px;
                     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   button.mini{padding:5px 6px;font-size:12px;font-weight:600;border-radius:6px;
               white-space:nowrap}
@@ -149,7 +154,11 @@
   #filters button.mini{padding:8px 10px;white-space:nowrap}
 
   /* who has sent it - a coloured initial per climber */
-  .who{display:flex;gap:3px;flex:none}
+  /* Pill keeps the top right corner whatever happens; the climber chips stack
+     under it and wrap leftwards, where there's room. */
+  .rside{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:5px;
+         max-width:58%}
+  .who{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:3px}
   .who b{display:grid;place-items:center;width:19px;height:19px;border-radius:50%;
          font-size:10px;font-weight:700;color:#0e0e0f}
 
@@ -257,13 +266,13 @@
         <div id="marks"></div>
       </div>
       <div id="gnote"></div>
+      <button id="clear" class="mini ghost">Hide</button>
     </div>
     <div id="barBtns">
       <button id="send" class="mini solid" disabled>Light up</button>
       <button id="tick" class="mini" disabled>+ List</button>
       <button id="try" class="mini" disabled>Try</button>
       <button id="done" class="mini" disabled>Climbed</button>
-      <button id="clear" class="mini ghost">Clear</button>
     </div>
   </div>
 </section>
@@ -1205,14 +1214,21 @@ function paintClimbers(){
   who.forEach(n => {
     const row = document.createElement('div');
     row.className = 'p';
+    const top = document.createElement('div');
+    top.className = 'top';
     const dot = document.createElement('i');
     dot.textContent = chipFor(n);
     dot.style.background = personColor(n);
-    const label = document.createElement('span');
     const r = stats[n] && stats[n][current.id] && stats[n][current.id].r;
-    label.textContent = n + (r ? ' \u00b7 ' + (r === 'flash' ? '\u26a1' : r) : '');
-    row.append(dot, label);
-    row.title = n;
+    const res = document.createElement('span');
+    res.className = 'res';
+    res.textContent = r ? (r === 'flash' ? '\u26a1' : r) : '\u2713';
+    top.append(dot, res);
+    const nm = document.createElement('span');
+    nm.className = 'nm2';
+    nm.textContent = n;
+    row.append(top, nm);
+    row.title = n + (r ? ' \u2014 ' + r : '');
     box.appendChild(row);
   });
 }
@@ -1319,8 +1335,8 @@ function renderResults(){
     const row = document.createElement('div');
     row.className = 'rt' + (r === current ? ' sel' : '');
     row.innerHTML = '<div class="nm"><b></b><span></span></div>' +
-                    '<div class="gd"></div>' +
-                    '<div class="who"></div><div class="chev">\u203a</div>';
+                    '<div class="rside"><div class="gd"></div><div class="who"></div></div>' +
+                    '<div class="chev">\u203a</div>';
     paintPill(row.querySelector('.gd'), r.grade);
     row.querySelector('b').textContent = r.name;
     row.querySelector('span').textContent =
