@@ -230,9 +230,7 @@
   </div>
 
   <div id="filters" hidden>
-    <div class="lbl">Tick lists</div>
-    <button id="addWho" class="ghost mini">+ New climber</button>
-    <div class="three" style="margin-top:10px">
+    <div class="three">
       <div><div class="lbl">From</div><select id="gmin"></select></div>
       <div><div class="lbl">To</div><select id="gmax"></select></div>
       <div><div class="lbl">Sort</div><select id="sort">
@@ -999,8 +997,12 @@ let current = null;
 const LISTS_API = 'https://moonboard-relay.willslawrence.workers.dev';
 let people = [], lists = {}, done = {};
 
+const NEW_CLIMBER = '\u0000new';             // sentinel option inside the name picker
 const whoNow = () => $('who').value || '';   // whose list is on screen
-const meNow  = () => $('me').value  || '';   // who a save or a tick belongs to
+const meNow  = () => {                       // who a save or a tick belongs to
+  const v = $('me').value;
+  return (!v || v === NEW_CLIMBER) ? '' : v;
+};
 let pending = null;                          // action waiting on a name
 
 // Two people can share an initial (both Abdullahs), so an emoji in the name wins.
@@ -1047,6 +1049,7 @@ function fillWho(){
   me.innerHTML = '';
   me.appendChild(new Option('Climber?', ''));
   people.forEach(p => me.appendChild(new Option(p, p)));
+  me.appendChild(new Option('+ New climber\u2026', NEW_CLIMBER));
   me.value = people.includes(keepMe) ? keepMe : '';
   try{
     localStorage.setItem('mb-who', sel.value);
@@ -1054,15 +1057,15 @@ function fillWho(){
   }catch(e){}
 }
 
-async function addPerson(){
-  const name = (prompt('Name for the new tick list?') || '').trim();
-  if (!name) return;
-  const wasEmpty = !meNow();
+/* Reached only from the last option of the name picker, so a new name means
+   "this is me" - select it. Pick someone else from the list to switch back. */
+async function addPerson(previous){
+  const name = (prompt('Your name?') || '').trim();
+  if (!name){ $('me').value = previous; return; }
   await listsCall('/lists/person', { name });
-  if (people.includes(name) && wasEmpty){    // first name added is probably you
-    $('me').value = name;
-    fillWho(); paintBar(); runPending();
-  }
+  $('me').value = people.includes(name) ? name : previous;
+  try{ localStorage.setItem('mb-me', $('me').value); }catch(e){}
+  fillWho(); paintBar(); renderResults(); runPending();
 }
 
 /* The bar's Tick and Done buttons act as whoever is picked in the filter. */
@@ -1595,15 +1598,18 @@ $('gameBtn').onclick = () => {
 };
 $('setBtn').onclick = () => showPanel($('setPanel').hidden ? 'set' : null);
 $('c4close').onclick = () => showPanel(null);
-$('addWho').onclick = addPerson;
+
 $('c4new').onclick = c4New;
 $('c4off').onclick = c4Stop;
 $('c4flash').onchange = c4Send;
 $('tick').onclick = () => { if (!needName('tick')) doTick(); };
 $('done').onclick = () => { if (!needName('done')) doDone(); };
+let lastMe = '';
 $('me').onchange = () => {
-  try{ localStorage.setItem('mb-me', $('me').value); }catch(e){}
-  fillWho(); paintBar(); runPending();
+  if ($('me').value === NEW_CLIMBER) return addPerson(lastMe);
+  lastMe = $('me').value;
+  try{ localStorage.setItem('mb-me', lastMe); }catch(e){}
+  fillWho(); paintBar(); renderResults(); runPending();
 };
 $('gbar').onchange = () => {
   applyGradeBar(); paint();
@@ -1648,7 +1654,7 @@ try{
   // Before these were split, picking a name in the view filter was how you said
   // who you were - carry that over rather than asking again.
   const m = localStorage.getItem('mb-me') || w;
-  if (m){ $('me').appendChild(new Option(m, m)); $('me').value = m; }
+  if (m){ $('me').appendChild(new Option(m, m)); $('me').value = m; lastMe = m; }
 }catch(e){}
 renderResults();
 listsCall('/lists');
