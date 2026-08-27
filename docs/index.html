@@ -115,7 +115,16 @@
   #boardRow{display:grid;grid-template-columns:72px 1fr 72px;gap:8px;align-items:start}
   #boardCol{min-width:0}
   #barBtns{display:flex;flex-direction:column;gap:6px}
-  button.mini{padding:5px 6px;font-size:12px;font-weight:600;border-radius:6px}
+  #climbers{display:flex;flex-direction:column;gap:5px;min-width:0}
+  #climbers .hd{font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+                color:var(--dimmer);margin-bottom:1px}
+  #climbers .p{display:flex;align-items:center;gap:5px;min-width:0}
+  #climbers .p i{flex:none;display:grid;place-items:center;width:17px;height:17px;
+                 border-radius:50%;font-size:9px;font-weight:700;color:#0e0e0f}
+  #climbers .p span{font-size:11px;color:var(--dim);
+                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  button.mini{padding:5px 6px;font-size:12px;font-weight:600;border-radius:6px;
+              white-space:nowrap}
   button.on{background:var(--ink);border-color:var(--ink);color:#0e0e0f}
 
   /* search, tick-list picker and the filter toggle share one row */
@@ -180,7 +189,7 @@
 
 <section id="boardWrap" style="display:none">
   <div id="boardRow">
-    <div></div><!-- mirrors the button column so the board lands dead centre -->
+    <div id="climbers"></div><!-- who has climbed it; also centres the board -->
     <div id="boardCol">
       <div id="board">
         <img src="board-2016.png" alt="MoonBoard 2016 wall" width="450" height="692">
@@ -191,7 +200,7 @@
     <div id="barBtns">
       <button id="send" class="mini solid" disabled>Light up</button>
       <button id="tick" class="mini" disabled>+ List</button>
-      <button id="done" class="mini" disabled>Done</button>
+      <button id="done" class="mini" disabled>Climbed</button>
       <button id="clear" class="mini ghost">Clear</button>
     </div>
   </div>
@@ -1033,8 +1042,36 @@ function paintBar(){
   $('done').disabled = !current;
   $('tick').textContent = listed ? '\u2713 Listed' : '+ List';
   $('tick').className   = 'mini' + (listed ? ' on' : '');
-  $('done').textContent = sent ? '\u2713 Sent' : 'Done';
+  $('tick').title       = listed ? 'Tap to take it off your list' : 'Save to your list';
+  $('done').textContent = 'Climbed';        // the filled state says whether it's ticked
   $('done').className   = 'mini' + (sent ? ' on' : '');
+  $('done').title       = sent ? 'Tap to un-tick it' : 'Log it as climbed';
+  paintClimbers();
+}
+
+/* Who has climbed the selected problem, down the gutter left of the board.
+   Global - everyone's ticks, not just yours. */
+function paintClimbers(){
+  const box = $('climbers');
+  box.innerHTML = '';
+  const who = current ? (done[current.id] || []) : [];
+  if (!who.length) return;
+  const hd = document.createElement('div');
+  hd.className = 'hd';
+  hd.textContent = 'Climbed';
+  box.appendChild(hd);
+  who.forEach(n => {
+    const row = document.createElement('div');
+    row.className = 'p';
+    const dot = document.createElement('i');
+    dot.textContent = chipFor(n);
+    dot.style.background = personColor(n);
+    const label = document.createElement('span');
+    label.textContent = n;
+    row.append(dot, label);
+    row.title = n;
+    box.appendChild(row);
+  });
 }
 
 /* + List and Done record against you, whatever list you happen to be looking
@@ -1176,6 +1213,7 @@ function clearRoute(){
   paint();
   renderResults();
   paintBar();
+  paintClimbers();
   if (rx) write('l##');
 }
 

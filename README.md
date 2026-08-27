@@ -36,6 +36,11 @@ Durable Object with everyone's lists — `GET /lists`, `POST /lists/person`, `/l
 and Abdu each keep a list and all three can see the others'. Problems are keyed by their
 MoonBoard id. Anyone with the page can write; that's the point.
 
+**+ List** saves a problem to your list and tapping it again takes it off. **Climbed** logs
+it globally against your name — everyone sees it. Who has climbed the selected problem runs
+down the gutter left of the board, and each list row carries the same names as coloured
+chips.
+
 ## Connect four
 
 Tucked in the Settings section. Seven columns on C–I, six rows on 7–12 — middle of the
