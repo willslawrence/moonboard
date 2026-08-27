@@ -95,6 +95,11 @@ wall, clear of the dead A2 and A4 holds. Green plays first, blue second, and a w
 line goes red. One write per move, which suits a protocol that only does whole-wall
 rewrites.
 
+A red frame boxes the playfield in, with the top edge lit in whoever is to play. It steps
+down from solid to dashed to nothing as the board fills, because a full board plus a solid
+box overruns the payload the controller will render - solid holds to about 19 pieces and
+dashed to 29, which is past the end of most games.
+
 Whose turn it is shows two ways: a pulsing coloured dot in the page, and row 14 on the
 wall lit in that player's colour. The wall marker pulses at 1.2s, which rewrites the whole
 board each frame - the pieces wink along with it, so there's a switch to leave the marker
