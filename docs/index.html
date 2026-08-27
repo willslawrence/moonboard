@@ -137,6 +137,11 @@
   #searchRow #who{padding:9px 8px;font-size:16px;text-overflow:ellipsis}
   #filtBtn{width:44px;padding:9px 0;font-size:17px;line-height:1;border-radius:8px}
   #filtBtn.on{background:var(--panel2);color:var(--ink);border-color:#3a3a40}
+  #filtBtn.active{color:var(--ink);border-color:#4a4a52}
+  #filtBtn.active::after{content:'';position:absolute;top:5px;right:5px;
+                         width:6px;height:6px;border-radius:50%;background:#22c55e}
+  #searchRow{position:relative}
+  #filtBtn{position:relative}
   #filters{border-top:1px solid var(--edge);padding-top:9px;margin-top:9px}
   #filters select{padding:7px 8px;font-size:16px}
   #filters .lbl{margin-bottom:4px;margin-top:0}
@@ -249,7 +254,9 @@
   </div>
 
   <div id="filters" hidden>
-    <div class="three">
+    <label class="ck" style="margin-top:0"><input type="checkbox" id="hideDone">
+      Hide what I've climbed</label>
+    <div class="three" style="margin-top:10px">
       <div><div class="lbl">From</div><select id="gmin"></select></div>
       <div><div class="lbl">To</div><select id="gmax"></select></div>
       <div><div class="lbl">Sort</div><select id="sort">
@@ -1185,8 +1192,11 @@ function filtered(){
   const lo  = +$('gmin').value, hi = +$('gmax').value;
   const who = whoNow();
   const mine = who ? new Set(lists[who] || []) : null;
+  const me = meNow();
+  const hide = me && $('hideDone').checked;   // needs a name to know what's yours
   let out = PROBLEMS.filter(r => r.grade >= lo && r.grade <= hi &&
     (!mine || mine.has(r.id)) &&
+    !(hide && (done[r.id] || []).includes(me)) &&
     (!q || r.name.toLowerCase().includes(q) || r.setter.toLowerCase().includes(q)));
   const k = $('sort').value;
   if      (k === 'stars')     out.sort((a,b) => b.stars - a.stars || b.repeats - a.repeats);
@@ -1225,11 +1235,16 @@ function renderResults(){
     row.addEventListener('click', () => loadRoute(r));
     box.appendChild(row);
   });
-  const me = whoNow();
+  const view = whoNow(), me = meNow();
+  const hidden = (me && $('hideDone').checked)
+    ? Object.entries(done).filter(([, who]) => who.includes(me)).length : 0;
   $('count').textContent = hits.length
-    ? (me ? me + "'s list \u2014 " : '') + hits.length +
-      (hits.length > 80 ? ' benchmarked problems, first 80' : ' benchmarked problems')
-    : (me ? 'Nothing saved here yet' : 'Nothing matches');
+    ? (view ? view + "'s list \u2014 " : '') + hits.length +
+      (hits.length > 80 ? ' benchmarked problems, first 80' : ' benchmarked problems') +
+      (hidden ? ' \u00b7 hiding ' + hidden + " you've climbed" : '')
+    : (view ? 'Nothing saved here yet'
+            : hidden ? "You've climbed everything that matches" : 'Nothing matches');
+  markFilters();
 }
 
 /* Row 1 reads out the grade: first three green, next three blue, rest red. */
@@ -1708,13 +1723,26 @@ $('q').oninput = renderResults;
 $('gmin').onchange = () => { if (+$('gmax').value < +$('gmin').value) $('gmax').value = $('gmin').value; renderResults(); };
 $('gmax').onchange = () => { if (+$('gmax').value < +$('gmin').value) $('gmin').value = $('gmax').value; renderResults(); };
 $('sort').onchange = renderResults;
+$('hideDone').onchange = () => {
+  try{ localStorage.setItem('mb-hide', $('hideDone').checked ? '1' : ''); }catch(e){}
+  renderResults();
+};
 $('who').onchange = () => {
   try{ localStorage.setItem('mb-who', $('who').value); }catch(e){}
   renderResults(); paintBar();
 };
+/* The panel is collapsed most of the time, so the button carries a mark when
+   something in it is actually filtering - otherwise a short list looks like a
+   bug rather than a setting. */
+function markFilters(){
+  const narrowed = +$('gmin').value > 0 || +$('gmax').value < GRADES.length - 1;
+  const on = narrowed || (meNow() && $('hideDone').checked);
+  $('filtBtn').classList.toggle('active', !!on);
+}
 function showFilters(on){
   $('filters').hidden = !on;
   $('filtBtn').className = on ? 'ghost on' : 'ghost';
+  markFilters();
 }
 $('filtBtn').onclick = () => showFilters($('filters').hidden);
 
@@ -1790,6 +1818,7 @@ try{
   if (w){ $('who').appendChild(new Option(w, w)); $('who').value = w; }
   // Before these were split, picking a name in the view filter was how you said
   // who you were - carry that over rather than asking again.
+  $('hideDone').checked = !!localStorage.getItem('mb-hide');
   const m = localStorage.getItem('mb-me') || w;
   if (m){ $('me').appendChild(new Option(m, m)); $('me').value = m; lastMe = m; }
 }catch(e){}

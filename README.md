@@ -36,6 +36,10 @@ Durable Object with everyone's lists — `GET /lists`, `POST /lists/person`, `/l
 and Abdu each keep a list and all three can see the others'. Problems are keyed by their
 MoonBoard id. Anyone with the page can write; that's the point.
 
+**Hide what I've climbed** in the filter panel drops anything you've ticked, so a session
+list is what's actually left. The filter button carries a green dot whenever it or the grade
+range is filtering, so a short list never looks like a bug.
+
 **+ List** saves a problem to your list and tapping it again takes it off. **Climbed** logs
 it globally against your name — everyone sees it. Who has climbed the selected problem runs
 down the gutter left of the board, and each list row carries the same names as coloured
