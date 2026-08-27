@@ -100,10 +100,10 @@ down from solid to dashed to nothing as the board fills, because a full board pl
 box overruns the payload the controller will render - solid holds to about 19 pieces and
 dashed to 29, which is past the end of most games.
 
-Whose turn it is shows two ways: a pulsing coloured dot in the page, and row 14 on the
-wall lit in that player's colour. The wall marker pulses at 1.2s, which rewrites the whole
-board each frame - the pieces wink along with it, so there's a switch to leave the marker
-steady instead.
+Whose turn it is shows two ways: a coloured dot in the page and the frame's top edge on the
+wall, both steady. They used to pulse; every pulse frame rewrote the whole board and the
+pieces winked along with the marker, which made a mess of the lights for no gain. One write
+per move now, nothing on a timer.
 
 ## Board image
 
