@@ -26,6 +26,15 @@ so it can be calibrated against the physical wall.
 Read-only except the one ASCII write. Nordic DFU/bootloader UUIDs are hard-blocked
 in both the script and the page.
 
+## Tick lists
+
+Shared projects, no logins. The relay Worker holds one Durable Object with everyone's
+lists — `GET /lists`, `POST /lists/person`, `/lists/tick`, `/lists/done` — so Will, Sara
+and Abdu each keep a list and all three can see the others'. Problems are keyed by their
+MoonBoard id. Whoever is picked in the **Tick list** filter is both the list you're looking
+at and the name a save or a tick is recorded against. Anyone with the page can write; that's
+the point.
+
 ## Board image
 
 `docs/board-2016.png` is the 2016 wall photo from Moonboard-Guidebook (MIT), with

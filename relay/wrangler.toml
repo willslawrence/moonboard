@@ -6,6 +6,14 @@ compatibility_date = "2026-08-01"
 name = "RELAY"
 class_name = "Relay"
 
+[[durable_objects.bindings]]
+name = "LISTS"
+class_name = "Lists"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Relay"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["Lists"]
