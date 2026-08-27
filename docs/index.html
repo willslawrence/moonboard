@@ -390,13 +390,14 @@
   <label class="ck"><input type="checkbox" id="gbar" checked>
     Show the grade on row 1 — one light per V-grade</label>
   <div class="hint">Row 1 carries no holds on any benchmark, so it reads out the grade:
-    B1 onward, one light per V-grade — five green up to V5, two blue for V6–V7,
-    red from V8. A1 is skipped — it is index 0 and this controller will not
-    light it.</div>
+    A1 onward, one light per V-grade — five green up to V5, two blue for V6–V7,
+    red from V8, capping at eleven.</div>
 
   <div class="lbl">On connect</div>
   <select id="standby">
-    <option value="1">Show a standby frame</option>
+    <option value="moon">Show the moon</option>
+    <option value="climber">Show a climber</option>
+    <option value="frame">Show a frame</option>
     <option value="">Leave the wall dark</option>
   </select>
 
@@ -1481,12 +1482,11 @@ function renderResults(){
 function applyGradeBar(){
   gradeCells = {};
   if (!current || !$('gbar').checked) return;
-  // A1 is index 0 and does not light on this controller, so the bar runs B1..K1.
+  // A1 lights now that its LED has been reseated, so the bar runs the full A1..K1.
   // One light per V-grade: five green takes you to V5, two blue to V7, red above.
-  const slots = COLS - 1;                       // columns 2..11 = ten lights
-  const lights = Math.min(VGRADE[current.grade], slots);
+  const lights = Math.min(VGRADE[current.grade], COLS);   // columns 1..11
   for (let i = 0; i < lights; i++)
-    gradeCells[(i + 2) + ',1'] = i < 5 ? 'S' : (i < 7 ? 'P' : 'E');
+    gradeCells[(i + 1) + ',1'] = i < 5 ? 'S' : (i < 7 ? 'P' : 'E');
 }
 
 function parseHolds(str, tag){
@@ -1970,31 +1970,68 @@ function stepProblem(delta){
 })();
 
 /* ---------- standby ----------
-   A dashed green frame around the whole wall, written the moment a phone
-   connects and again whenever nothing is loaded. It answers the only question
-   you have at that point - is this thing actually talking to the box - without
-   having to pick a problem to find out.
+   Something on the wall the moment a phone connects, and again whenever nothing
+   is loaded. It answers the only question you have at that point - is this thing
+   actually talking to the box - without having to pick a problem to find out.
 
-   Dashed rather than solid because a solid perimeter is 54 LEDs, past the safe
-   payload; every other one is half that and reads the same from across a room.
-   Column A's first four rows sit out: A1 is index 0 and won't light, A2 is dim
-   and A4 is dead, and a frame with holes in one corner looks broken. */
-function standbyPayload(){
-  const cells = [];
-  const ok = (col, row) => !(col === 1 && row <= 4);
+   A2 and A4 are dead holds, so anything drawn here steps around them rather than
+   leaving two gaps that look like a fault. Everything stays inside the ~250 byte
+   payload the controller will render.
+
+   MOON as letters doesn't fit: four letters need fifteen columns and the wall has
+   eleven. The moon itself does, and reads from across the room. */
+const ART_DEAD = new Set(['1,2', '1,4']);
+
+// Rows top (18) down to bottom (1), eleven wide.
+const ART = {
+  frame: null,                       // drawn, not painted - see standbyPayload
+  moon: [
+    '...........', '....###....', '...##..##..', '..##.....#.', '..#........',
+    '.##........', '.#.........', '.#.........', '.#.........', '.#.........',
+    '.#.........', '.##........', '..#........', '..##.....#.', '...##..##..',
+    '....###....', '...........', '...........',
+  ],
+  climber: [
+    '...#.......', '...#.......', '...#.......', '...##......', '....##.....',
+    '....###....', '.....##....', '....###....', '...#..#....', '..#...#....',
+    '..#...##...', '.#.....#...', '.#......#..', '........#..', '........#..',
+    '...........', '...........', '...........',
+  ],
+};
+
+function artCells(rows){
+  const out = [];
+  rows.forEach((line, i) => {
+    const row = ROWS - i;
+    [...line].forEach((ch, j) => {
+      const col = j + 1;
+      if (ch === '#' && !ART_DEAD.has(col + ',' + row)) out.push(holdNum(col, row));
+    });
+  });
+  return out;
+}
+
+function frameCells(){                // dashed - a solid perimeter is 54 LEDs
+  const out = [];
   for (let col = 1; col <= COLS; col += 2){
-    if (ok(col, 1))    cells.push(holdNum(col, 1));
-    if (ok(col, ROWS)) cells.push(holdNum(col, ROWS));
+    out.push(holdNum(col, 1));
+    out.push(holdNum(col, ROWS));
   }
   for (let row = 3; row < ROWS; row += 2){
-    if (ok(1, row))    cells.push(holdNum(1, row));
-    if (ok(COLS, row)) cells.push(holdNum(COLS, row));
+    if (!ART_DEAD.has('1,' + row)) out.push(holdNum(1, row));
+    out.push(holdNum(COLS, row));
   }
+  return out;
+}
+
+function standbyPayload(){
+  const kind = $('standby').value;
+  const cells = kind === 'frame' ? frameCells() : artCells(ART[kind] || ART.moon);
   return 'l#' + cells.sort((a, b) => a - b).map(n => 'S' + n).join(',') + '#';
 }
 
 function standby(){
-  if (!rx || $('standby').value !== '1') return false;
+  if (!rx || !$('standby').value) return false;
   write(standbyPayload());
   return true;
 }

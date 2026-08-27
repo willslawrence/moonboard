@@ -7,8 +7,8 @@ controller, no Raspberry Pi. We act as the BLE central and write the same
 - **`docs/index.html`** — single-page control UI, with all **549 MoonBoard 2016
   benchmarks** built in: search by name or setter, filter by grade, tap one to
   light it. Row 1 doubles as a grade meter — one light per V-grade, left to
-  right (no benchmark uses row 1, so it's free). The bar runs B1..K1 - A1 is
-  index 0 and doesn't light - five green up to V5, two blue for V6-V7, red from
+  right (no benchmark uses row 1, so it's free). The bar runs A1..K1 -
+  five green up to V5, two blue for V6-V7, red from
   V8. The grade pill in the page uses the same thresholds. The page is search-and-light only; log your sends in
   the real MoonBoard app. iPhone: open in
   [Bluefy](https://apps.apple.com/app/id1492822055) (iOS Safari has no Web Bluetooth).
@@ -28,12 +28,14 @@ in both the script and the page.
 
 ## Standby
 
-Connecting a phone lights a dashed green frame round the whole wall, and it comes back
-whenever nothing is loaded. It answers the only question you have at that moment - is this
-thing actually talking to the box - without picking a problem to find out. Dashed because a
-solid perimeter is 54 LEDs, past the safe payload; every other one is half that and reads the
-same from across the room. Column A's bottom four rows sit out, since A1 is index 0 and A2 and
-A4 are dead. Switchable in Settings.
+Connecting a phone puts something on the wall, and it comes back whenever nothing is loaded.
+It answers the only question you have at that moment - is this thing actually talking to the
+box - without picking a problem to find out. Choose the moon, a climber, a dashed frame, or
+nothing, in Settings.
+
+MOON as letters doesn't fit: four letters need fifteen columns and the wall is eleven. The
+moon itself does. All three drawings step around the dead A2 and A4 holds and stay inside the
+payload the controller will render.
 
 ## Tick lists
 
