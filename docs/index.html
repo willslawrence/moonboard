@@ -17,8 +17,9 @@
   /* The app fills the screen and does not scroll; only the problem list does. */
   body{font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
        height:100dvh;display:flex;flex-direction:column;padding:0 14px;}
+  /* No -webkit-overflow-scrolling:touch here - on iOS it makes this a containing
+     block for position:fixed descendants, which trapped the game sheet inside it. */
   #scroll{flex:1 1 auto;min-height:110px;overflow-y:auto;overscroll-behavior:contain;
-          -webkit-overflow-scrolling:touch;
           padding-bottom:calc(env(safe-area-inset-bottom) + 20px)}
 
   /* Everything above the problem list rides in one sticky block, so the board
@@ -258,25 +259,6 @@
   <button id="setBtn" class="ghost mini">Settings</button>
 </div>
 
-<div id="gamePanel" hidden>
-  <div id="gameHead">
-    <b>Connect four</b>
-    <button id="c4close" class="ghost mini">Close</button>
-  </div>
-  <div id="c4turn"><i></i><span>not started</span></div>
-  <div id="c4"></div>
-  <div class="two">
-    <button id="c4new" class="ghost mini">New game</button>
-    <button id="c4off" class="ghost mini">Clear the wall</button>
-  </div>
-  <label class="ck"><input type="checkbox" id="c4flash" checked>
-    Pulse the turn colour on the wall (row 14)</label>
-  <div class="hint">Green drops first, then blue. Played on C–I, rows 7–12, which
-    keeps clear of the dead A2 and A4 holds.</div>
-</div>
-  <div id="c4turn"><i></i><span>not started</span></div>
-  <label class="ck"><input type="checkbox" id="c4flash" checked>
-    Pulse the turn colour on the wall (row 14)</label>
 
 </div>
 
@@ -337,6 +319,22 @@
 </div>
 
 </div><!-- /#scroll -->
+
+<div id="gamePanel" hidden>
+  <div id="gameHead">
+    <b>Connect four</b>
+    <button id="c4close" class="ghost mini">Close</button>
+  </div>
+  <div id="c4turn"><i></i><span>not started</span></div>
+  <div id="c4"></div>
+  <div class="two">
+    <button id="c4new" class="ghost mini">New game</button>
+    <button id="c4off" class="ghost mini">Clear the wall</button>
+  </div>
+  <label class="ck"><input type="checkbox" id="c4flash" checked>
+    Pulse the turn colour on the wall (row 14)</label>
+  <div class="hint">Green drops first, then blue. Played on C–I, rows 7–12, which
+    keeps clear of the dead A2 and A4 holds.</div>
 
 
 <script>
