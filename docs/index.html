@@ -12,18 +12,21 @@
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;background:var(--bg);color:var(--ink);
-            overflow-x:hidden;overscroll-behavior:none;touch-action:pan-y;
+            height:100%;overflow:hidden;overscroll-behavior:none;touch-action:pan-y;
             -webkit-text-size-adjust:100%}
+  /* The app fills the screen and does not scroll; only the problem list does. */
   body{font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
-       padding:0 14px calc(env(safe-area-inset-bottom) + 24px);}
+       height:100dvh;display:flex;flex-direction:column;padding:0 14px;}
+  #scroll{flex:1 1 auto;min-height:110px;overflow-y:auto;overscroll-behavior:contain;
+          -webkit-overflow-scrolling:touch;
+          padding-bottom:calc(env(safe-area-inset-bottom) + 20px)}
 
   /* Everything above the problem list rides in one sticky block, so the board
      and the search stay put while only the list scrolls. */
-  #top{position:sticky;top:0;z-index:20;background:var(--bg);
-       border-bottom:1px solid var(--edge);margin-bottom:6px;
-       max-height:86vh;overflow-y:auto}   /* filters open on a short phone would
-                                             otherwise outgrow the viewport and
-                                             break the pin entirely */
+  /* Fixed head of the app - no longer sticky, it simply never scrolls. Capped
+     so an open filter panel on a short phone can't squeeze the list to nothing. */
+  #top{flex:0 0 auto;background:var(--bg);border-bottom:1px solid var(--edge);
+       margin-bottom:6px;max-height:72vh;overflow-y:auto}
   header{display:flex;align-items:center;gap:10px;
          padding:calc(env(safe-area-inset-top) + 14px) 0 12px;
          border-bottom:1px solid var(--edge)}
@@ -156,7 +159,7 @@
   #c4turn.over i,#c4turn.idle i{animation:none}
   @keyframes turnPulse{0%,100%{opacity:1}50%{opacity:.12}}
 
-  section{margin-bottom:22px}
+  section{margin-bottom:18px}
   #controls{margin-bottom:8px}
   details{border-top:1px solid var(--edge);padding-top:14px;margin-top:26px}
   summary{font-size:11px;letter-spacing:.12em;text-transform:uppercase;
@@ -233,6 +236,8 @@
 
 </div><!-- /#top -->
 
+<div id="scroll">
+
 <section>
   <div id="count"></div>
   <div id="results"></div>
@@ -306,6 +311,8 @@
     <button id="probe" class="ghost" disabled>Probe services</button>
   </div>
 </details>
+
+</div><!-- /#scroll -->
 
 
 <script>
