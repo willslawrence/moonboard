@@ -112,6 +112,7 @@ export class Relay {
  *   people          -> ["Will", "Sara", ...]           insertion order
  *   list:<person>   -> [problemId, ...]                their projects
  *   done:<id>       -> ["Will", ...]                   who has sent it
+ *   wins            -> {"Will": 3, ...}                 connect four record
  */
 export class Lists {
   constructor(state) {
@@ -125,7 +126,8 @@ export class Lists {
     const done = {};
     const doneRows = await this.state.storage.list({ prefix: "done:" });
     for (const [k, v] of doneRows) if (v && v.length) done[k.slice(5)] = v;
-    return { people, lists, done };
+    const wins = (await this.state.storage.get("wins")) || {};
+    return { people, lists, done, wins };
   }
 
   async fetch(request) {
@@ -178,6 +180,18 @@ export class Lists {
       who = body.on ? (who.includes(person) ? who : [...who, person]) : who.filter((x) => x !== person);
       if (who.length) await this.state.storage.put(key, who);
       else await this.state.storage.delete(key);
+      return json(await this.snapshot());
+    }
+
+    if (path === "/lists/win") {
+      const person = clean(body.winner);
+      if (!person) return json({ error: "winner required" }, 400);
+      const people = (await this.state.storage.get("people")) || [];
+      if (!people.includes(person)) return json({ error: "unknown person" }, 404);
+      const wins = (await this.state.storage.get("wins")) || {};
+      wins[person] = (wins[person] || 0) + (body.undo ? -1 : 1);
+      if (wins[person] <= 0) delete wins[person];
+      await this.state.storage.put("wins", wins);
       return json(await this.snapshot());
     }
 

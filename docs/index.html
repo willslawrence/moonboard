@@ -164,6 +164,24 @@
   #c4 div.a{background:#22c55e;border-color:#22c55e}
   #c4 div.b{background:#2563eb;border-color:#2563eb}
   #c4 div.win{background:#ef4444;border-color:#ef4444}
+  #c4players{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  #c4players .side{border:1px solid var(--edge);border-radius:9px;padding:8px}
+  #c4players .side.g{border-color:#1e5233}
+  #c4players .side.b{border-color:#1d3a72}
+  #c4players .clk{margin-top:6px;text-align:center;
+                  font:700 20px ui-monospace,Menlo,monospace;color:var(--dim)}
+  #c4players .side.turn{background:#16181c}
+  #c4players .side.g.turn .clk{color:#22c55e}
+  #c4players .side.b.turn .clk{color:#5b8cf5}
+  #c4players .clk.low{color:#ef4444 !important}
+  #c4mins{width:56px;flex:none;padding:5px 6px;text-align:center;
+          font:600 15px ui-monospace,Menlo,monospace}
+  #c4rank .r{display:flex;align-items:center;gap:9px;padding:6px 2px;
+             border-bottom:1px solid #1e2024;font-size:13px}
+  #c4rank .r b{flex:1;font-weight:600}
+  #c4rank .r span{color:var(--dimmer);font:700 12px ui-monospace,Menlo,monospace}
+  #c4rank .king b{color:#f5c542}
+  #c4rank .none{font-size:12px;color:var(--dimmer);padding:6px 2px}
   #c4turn{display:flex;align-items:center;justify-content:center;gap:10px;
           font-size:17px;font-weight:600}
   #c4turn i{width:20px;height:20px;border-radius:50%;background:#3a3a40;flex:none;
@@ -325,16 +343,30 @@
     <b>Connect four</b>
     <button id="c4close" class="ghost mini">Close</button>
   </div>
+  <div id="c4players">
+    <div class="side g"><div class="lbl">Green</div><select id="c4pg"></select>
+      <div class="clk" id="c4clkg">–</div></div>
+    <div class="side b"><div class="lbl">Blue</div><select id="c4pb"></select>
+      <div class="clk" id="c4clkb">–</div></div>
+  </div>
+
   <div id="c4turn"><i></i><span>not started</span></div>
   <div id="c4"></div>
   <div class="two">
     <button id="c4new" class="ghost mini">New game</button>
     <button id="c4off" class="ghost mini">Clear the wall</button>
   </div>
+  <label class="ck"><input type="checkbox" id="c4timed" checked>
+    Chess clock — <input type="number" id="c4mins" value="2" min="1" max="30"> min each</label>
   <label class="ck"><input type="checkbox" id="c4flash" checked>
     Pulse the turn colour on the wall (row 14)</label>
+
+  <div class="lbl" style="margin-top:6px">Ranking</div>
+  <div id="c4rank"></div>
+
   <div class="hint">Green drops first, then blue. Played on C–I, rows 7–12, which
-    keeps clear of the dead A2 and A4 holds.</div>
+    keeps clear of the dead A2 and A4 holds. A win only counts towards the ranking
+    when both players are named.</div>
 
 
 <script>
@@ -993,7 +1025,7 @@ let current = null;
    Shared through the relay Worker, no logins: whoever is picked in the Tick list
    filter is who a save or a tick is recorded against, and everyone sees everyone. */
 const LISTS_API = 'https://moonboard-relay.willslawrence.workers.dev';
-let people = [], lists = {}, done = {};
+let people = [], lists = {}, done = {}, wins = {};
 
 const NEW_CLIMBER = '\u0000new';             // sentinel option inside the name picker
 const whoNow = () => $('who').value || '';   // whose list is on screen
@@ -1019,7 +1051,10 @@ function applyLists(data){
   people = data.people || [];
   lists  = data.lists  || {};
   done   = data.done   || {};
+  wins   = data.wins   || {};
   fillWho();
+  c4Fill();
+  c4Rank();
   renderResults();
   paintBar();
 }
@@ -1451,10 +1486,104 @@ function stepProblem(delta){
 const C4_COLS = 7, C4_ROWS = 6, C4_X = 3, C4_Y = 7;   // grid col 3 = C, row 7
 let c4 = null;                                        // [col][row] -> 1 | 2, row 0 at the bottom
 
-function c4New(){
-  c4 = { grid: Array.from({ length: C4_COLS }, () => []), turn: 1, win: null };
+function c4Fill(){                       // player pickers follow the climber list
+  [['c4pg', 1], ['c4pb', 2]].forEach(([id]) => {
+    const sel = $(id), keep = sel.value;
+    sel.innerHTML = '';
+    sel.appendChild(new Option('anyone', ''));
+    people.forEach(p => sel.appendChild(new Option(p, p)));
+    sel.value = people.includes(keep) ? keep : '';
+  });
+}
+
+function c4Rank(){
+  const box = $('c4rank');
+  box.innerHTML = '';
+  const rows = Object.entries(wins).sort((a, b) => b[1] - a[1]);
+  if (!rows.length){
+    const d = document.createElement('div');
+    d.className = 'none';
+    d.textContent = 'No games won yet.';
+    box.appendChild(d);
+    return;
+  }
+  const top = rows[0][1];
+  rows.forEach(([name, n]) => {
+    const r = document.createElement('div');
+    r.className = 'r' + (n === top ? ' king' : '');
+    const b = document.createElement('b');
+    b.textContent = (n === top ? '\u265b ' : '') + name +
+                    (n === top ? ' \u2014 king of the board' : '');
+    const c = document.createElement('span');
+    c.textContent = n + (n === 1 ? ' win' : ' wins');
+    r.append(b, c);
+    box.appendChild(r);
+  });
+}
+
+/* Chess clock: each side gets the same budget and only their own clock runs.
+   Run it out and you lose, same as over the board. */
+function c4Budget(){
+  return Math.max(1, Math.min(30, parseInt($('c4mins').value, 10) || 2)) * 60000;
+}
+function fmt(ms){
+  const t = Math.max(0, Math.ceil(ms / 1000));
+  return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0');
+}
+function c4Clocks(){
+  const on = c4 && c4.clock;
+  [['c4clkg', 1], ['c4clkb', 2]].forEach(([id, who]) => {
+    const el = $(id);
+    el.textContent = on ? fmt(c4.clock[who]) : '\u2013';
+    el.classList.toggle('low', !!on && c4.clock[who] <= 30000);
+  });
+  $('c4players').children[0].classList.toggle('turn', !!c4 && !c4.win && c4.turn === 1);
+  $('c4players').children[1].classList.toggle('turn', !!c4 && !c4.win && c4.turn === 2);
+}
+function c4StopClock(){ clearInterval(c4Tick); c4Tick = null; }
+let c4Tick = null;
+
+function c4RunClock(){
+  c4StopClock();
+  if (!c4 || !c4.clock || c4.win) return c4Clocks();
+  let last = performance.now();
+  c4Tick = setInterval(() => {
+    const now = performance.now();
+    c4.clock[c4.turn] -= now - last;
+    last = now;
+    if (c4.clock[c4.turn] <= 0){
+      c4.clock[c4.turn] = 0;
+      c4Flag(c4.turn === 1 ? 2 : 1);       // ran out - the other side takes it
+      return;
+    }
+    c4Clocks();
+  }, 200);
+  c4Clocks();
+}
+
+function c4Flag(winner){
+  c4StopClock();
+  c4.win = { who: winner, line: [], flagged: true };
   c4Draw();
   c4Send();
+  c4Award(winner);
+}
+
+/* A win only counts when both seats are filled - otherwise it's a knockabout. */
+function c4Award(winner){
+  const name = winner === 1 ? $('c4pg').value : $('c4pb').value;
+  const other = winner === 1 ? $('c4pb').value : $('c4pg').value;
+  if (!name || !other || name === other) return;
+  listsCall('/lists/win', { winner: name });
+  log('connect four: ' + name + ' beat ' + other + '.');
+}
+
+function c4New(){
+  c4 = { grid: Array.from({ length: C4_COLS }, () => []), turn: 1, win: null,
+         clock: $('c4timed').checked ? { 1: c4Budget(), 2: c4Budget() } : null };
+  c4Draw();
+  c4Send();
+  c4RunClock();
   log('connect four: new game, green to play.');
 }
 
@@ -1466,6 +1595,8 @@ function c4Drop(col){
   if (!c4.win) c4.turn = c4.turn === 1 ? 2 : 1;
   c4Draw();
   c4Send();
+  if (c4.win){ c4StopClock(); c4Clocks(); c4Award(c4.win.who); }
+  else c4RunClock();
 }
 
 function c4At(c, r){ return (c >= 0 && c < C4_COLS && r >= 0 && r < C4_ROWS) ? (c4.grid[c][r] || 0) : 0; }
@@ -1495,7 +1626,7 @@ function c4Draw(){
     for (let c = 0; c < C4_COLS; c++){
       const d = document.createElement('div');
       const v = c4 ? (c4.grid[c][r] || 0) : 0;
-      const won = c4 && c4.win && c4.win.line.some(([wc, wr]) => wc === c && wr === r);
+      const won = c4 && c4.win && (c4.win.line || []).some(([wc, wr]) => wc === c && wr === r);
       d.className = won ? 'win' : (v === 1 ? 'a' : v === 2 ? 'b' : '');
       d.addEventListener('click', () => c4Drop(c));
       box.appendChild(d);
@@ -1507,14 +1638,18 @@ function c4Draw(){
   } else if (c4.win){
     turn.className = 'over';
     dot.style.background = c4.win.who === 1 ? '#22c55e' : '#2563eb';
+    const seat = c4.win.who === 1 ? $('c4pg').value : $('c4pb').value;
     turn.querySelector('span').textContent =
-      (c4.win.who === 1 ? 'Green' : 'Blue') + ' wins';
+      (seat || (c4.win.who === 1 ? 'Green' : 'Blue')) + ' wins' +
+      (c4.win.flagged ? ' on time' : '');
   } else {
     turn.className = '';
     dot.style.background = c4.turn === 1 ? '#22c55e' : '#2563eb';
+    const seat = c4.turn === 1 ? $('c4pg').value : $('c4pb').value;
     turn.querySelector('span').textContent =
-      (c4.turn === 1 ? 'Green' : 'Blue') + ' to play';
+      (seat || (c4.turn === 1 ? 'Green' : 'Blue')) + ' to play';
   }
+  c4Clocks();
 }
 
 /* Row 14 sits clear above the grid and carries whose turn it is. There is no
@@ -1529,7 +1664,7 @@ function c4Frame(markerOn){
   const parts = [];
   for (let c = 0; c < C4_COLS; c++)
     for (let r = 0; r < c4.grid[c].length; r++){
-      const won = c4.win && c4.win.line.some(([wc, wr]) => wc === c && wr === r);
+      const won = c4.win && (c4.win.line || []).some(([wc, wr]) => wc === c && wr === r);
       const tag = won ? 'E' : (c4.grid[c][r] === 1 ? 'S' : 'P');
       parts.push({ tag, n: holdNum(C4_X + c, C4_Y + r) });
     }
@@ -1553,6 +1688,7 @@ function c4Send(){
 
 function c4Stop(){
   clearInterval(c4Timer); c4Timer = null;
+  c4StopClock();
   c4 = null;
   c4Draw();
   if (rx) write(current ? buildPayload() : 'l##');
@@ -1600,6 +1736,9 @@ $('c4close').onclick = () => showPanel(null);
 $('c4new').onclick = c4New;
 $('c4off').onclick = c4Stop;
 $('c4flash').onchange = c4Send;
+$('c4pg').onchange = $('c4pb').onchange = () => c4Draw();
+$('c4timed').onchange = () => { if (c4) c4New(); else c4Clocks(); };
+$('c4mins').onchange  = () => { if (c4) c4New(); };
 $('tick').onclick = () => { if (!needName('tick')) doTick(); };
 $('done').onclick = () => { if (!needName('done')) doDone(); };
 let lastMe = '';

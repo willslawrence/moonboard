@@ -43,7 +43,13 @@ chips.
 
 ## Connect four
 
-Behind the **Connect four** button at the bottom right, beside Settings. Opens as a full screen sheet and starts a game. Seven columns on C–I, six rows on 7–12 — middle of the
+Behind the **Connect four** button at the bottom right, beside Settings. Opens as a full screen sheet and starts a game.
+
+Each seat takes a climber from the tick-list roster, and a chess clock gives both the same
+budget - two minutes by default - counting down only on their own turn. Run out and you lose
+on time. A win is recorded against the winner's name and the ranking below the board shows
+who's ahead; top of the pile is king of the board. Wins only count when both seats are
+named, so a knockabout doesn't pollute the record. Seven columns on C–I, six rows on 7–12 — middle of the
 wall, clear of the dead A2 and A4 holds. Green plays first, blue second, and a winning
 line goes red. One write per move, which suits a protocol that only does whole-wall
 rewrites.
