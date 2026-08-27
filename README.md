@@ -8,8 +8,8 @@ controller, no Raspberry Pi. We act as the BLE central and write the same
   benchmarks** built in: search by name or setter, filter by grade, tap one to
   light it. Row 1 doubles as a grade meter — one light per V-grade, left to
   right (no benchmark uses row 1, so it's free). The bar runs B1..K1 - A1 is
-  index 0 and doesn't light - three green, three blue, then red, and it
-  flashes three times on send so it reads as a grade rather than as holds. The page is search-and-light only; log your sends in
+  index 0 and doesn't light - five green up to V5, two blue for V6-V7, red from
+  V8. The grade pill in the page uses the same thresholds. The page is search-and-light only; log your sends in
   the real MoonBoard app. iPhone: open in
   [Bluefy](https://apps.apple.com/app/id1492822055) (iOS Safari has no Web Bluetooth).
 - **`moonprobe.py`** — macOS BLE probe. `python3 moonprobe.py go` scans, finds the

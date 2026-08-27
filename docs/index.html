@@ -218,8 +218,9 @@
   <label class="ck"><input type="checkbox" id="gbar" checked>
     Show the grade on row 1 — one light per V-grade</label>
   <div class="hint">Row 1 carries no holds on any benchmark, so it reads out the grade:
-    B1 onward, first five green then red. A1 is skipped — it is index 0 and this
-    controller will not light it.</div>
+    B1 onward, one light per V-grade — five green up to V5, two blue for V6–V7,
+    red from V8. A1 is skipped — it is index 0 and this controller will not
+    light it.</div>
 
   <div class="lbl">Hold numbering</div>
   <select id="order">
@@ -355,14 +356,12 @@ function buildPayload(withGrade){
 /* ---------- benchmarks (2016 setup) ---------- */
 const GRADES = ['5+','6A','6A+','6B','6B+','6C','6C+','7A','7A+','7B','7B+',
                 '7C','7C+','8A','8A+','8B','8B+','8C'];
-/* Grade colour bands, three V-grades apiece. The first three follow the wall's
-   own green / blue / red, then it keeps climbing. */
+/* Same thresholds as the wall's grade bar, so the pill and the LEDs agree:
+   green to V5, blue for V6-V7, red from V8 up. */
 const GRADE_BANDS = [
-  { max: 3,  bg: '#22c55e', fg: '#06240e' },
-  { max: 6,  bg: '#2563eb', fg: '#eef4ff' },
-  { max: 9,  bg: '#ef4444', fg: '#fff1f1' },
-  { max: 12, bg: '#a855f7', fg: '#f6ecff' },
-  { max: 99, bg: '#e9e9ec', fg: '#0e0e0f' },
+  { max: 5,  bg: '#22c55e', fg: '#06240e' },
+  { max: 7,  bg: '#2563eb', fg: '#eef4ff' },
+  { max: 99, bg: '#ef4444', fg: '#fff1f1' },
 ];
 function paintPill(el, gradeIdx){
   const v = VGRADE[gradeIdx];
@@ -1079,11 +1078,11 @@ function applyGradeBar(){
   gradeCells = {};
   if (!current || !$('gbar').checked) return;
   // A1 is index 0 and does not light on this controller, so the bar runs B1..K1.
-  // Three green, three blue, the rest red.
+  // One light per V-grade: five green takes you to V5, two blue to V7, red above.
   const slots = COLS - 1;                       // columns 2..11 = ten lights
   const lights = Math.min(VGRADE[current.grade], slots);
   for (let i = 0; i < lights; i++)
-    gradeCells[(i + 2) + ',1'] = i < 3 ? 'S' : (i < 6 ? 'P' : 'E');
+    gradeCells[(i + 2) + ',1'] = i < 5 ? 'S' : (i < 7 ? 'P' : 'E');
 }
 
 function parseHolds(str, tag){
