@@ -147,14 +147,25 @@
   .who b{display:grid;place-items:center;width:19px;height:19px;border-radius:50%;
          font-size:10px;font-weight:700;color:#0e0e0f}
 
-  /* connect four */
-  #c4{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;max-width:250px;margin-top:8px}
-  #c4 div{aspect-ratio:1;border-radius:50%;border:1.5px solid #232327}
+  /* connect four - a full screen sheet, not a strip inside the scroller */
+  #gamePanel{position:fixed;inset:0;z-index:60;background:var(--bg);
+             display:flex;flex-direction:column;gap:12px;overflow-y:auto;
+             padding:calc(env(safe-area-inset-top) + 16px) 16px
+                     calc(env(safe-area-inset-bottom) + 16px)}
+  #gamePanel[hidden]{display:none}
+  #gameHead{display:flex;align-items:center;gap:12px}
+  #gameHead b{flex:1;font-size:13px;font-weight:700;letter-spacing:.13em;
+              text-transform:uppercase}
+  #gameHead button{width:auto;padding:8px 14px}
+  #c4{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;
+      width:min(100%,56vh);margin:0 auto}
+  #c4 div{aspect-ratio:1;border-radius:50%;border:2px solid #232327}
   #c4 div.a{background:#22c55e;border-color:#22c55e}
   #c4 div.b{background:#2563eb;border-color:#2563eb}
   #c4 div.win{background:#ef4444;border-color:#ef4444}
-  #c4turn{display:flex;align-items:center;gap:9px;margin-top:10px;font-size:13px}
-  #c4turn i{width:15px;height:15px;border-radius:50%;background:#3a3a40;flex:none;
+  #c4turn{display:flex;align-items:center;justify-content:center;gap:10px;
+          font-size:17px;font-weight:600}
+  #c4turn i{width:20px;height:20px;border-radius:50%;background:#3a3a40;flex:none;
             animation:turnPulse 1.2s ease-in-out infinite}
   #c4turn.over i,#c4turn.idle i{animation:none}
   @keyframes turnPulse{0%,100%{opacity:1}50%{opacity:.12}}
@@ -249,15 +260,22 @@
   <button id="setBtn" class="ghost mini">Settings</button>
 </div>
 
-<div id="gamePanel" class="panel" hidden>
-  <div class="lbl">Connect four</div>
-  <div class="hint">Two players on the wall — green drops first, then blue. Tap a column.
-    Played on C–I, rows 7–12, which keeps clear of the dead A2 and A4 holds.</div>
-  <div id="c4"></div>
-  <div class="two" style="margin-top:8px">
-    <button id="c4new" class="ghost mini">New game</button>
-    <button id="c4off" class="ghost mini">Back to problems</button>
+<div id="gamePanel" hidden>
+  <div id="gameHead">
+    <b>Connect four</b>
+    <button id="c4close" class="ghost mini">Close</button>
   </div>
+  <div id="c4turn"><i></i><span>not started</span></div>
+  <div id="c4"></div>
+  <div class="two">
+    <button id="c4new" class="ghost mini">New game</button>
+    <button id="c4off" class="ghost mini">Clear the wall</button>
+  </div>
+  <label class="ck"><input type="checkbox" id="c4flash" checked>
+    Pulse the turn colour on the wall (row 14)</label>
+  <div class="hint">Green drops first, then blue. Played on C–I, rows 7–12, which
+    keeps clear of the dead A2 and A4 holds.</div>
+</div>
   <div id="c4turn"><i></i><span>not started</span></div>
   <label class="ck"><input type="checkbox" id="c4flash" checked>
     Pulse the turn colour on the wall (row 14)</label>
@@ -1568,8 +1586,7 @@ function showPanel(which){          // 'game' | 'set' | null
   $('setPanel').hidden  = which !== 'set';
   $('gameBtn').className = 'ghost mini' + (which === 'game' ? ' on' : '');
   $('setBtn').className  = 'ghost mini' + (which === 'set'  ? ' on' : '');
-  if (which) $(which === 'game' ? 'gamePanel' : 'setPanel')
-    .scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (which === 'set') $('setPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 $('gameBtn').onclick = () => {
   const open = $('gamePanel').hidden;
@@ -1577,6 +1594,7 @@ $('gameBtn').onclick = () => {
   if (open && !c4) c4New();         // land on a playable board, not an empty one
 };
 $('setBtn').onclick = () => showPanel($('setPanel').hidden ? 'set' : null);
+$('c4close').onclick = () => showPanel(null);
 $('addWho').onclick = addPerson;
 $('c4new').onclick = c4New;
 $('c4off').onclick = c4Stop;
