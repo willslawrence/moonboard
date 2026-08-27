@@ -155,6 +155,38 @@ export class Lists {
     return { people, lists, done, wins, snake, stats };
   }
 
+  /* Rebuild the indexes for one person and problem by replaying what's left in
+     the log. Deleting an arbitrary old row can't be unwound arithmetically - the
+     attempt count and the order of sends both depend on everything around it -
+     so the only honest answer is to read the rows back. */
+  async recompute(person, id){
+    const rows = await this.state.storage.list({ prefix: "log:" });   // chronological
+    let a = 0, sends = [], d = null;
+    for (const [, row] of rows) {
+      if (!row || row.person !== person || Number(row.id) !== Number(id)) continue;
+      if (row.result === "try") a++;
+      else { sends.push(row.result); a = 0; }
+      d = row.t;
+    }
+    const key = "stats:" + person;
+    const st = (await this.state.storage.get(key)) || {};
+    if (!a && !sends.length) delete st[id];
+    else {
+      const e = { a, r: sends.length ? sends[sends.length - 1] : null, d };
+      if (sends.length) e.s = sends;
+      st[id] = e;
+    }
+    await this.state.storage.put(key, st);
+
+    const dk = "done:" + id;
+    let who = (await this.state.storage.get(dk)) || [];
+    who = sends.length
+      ? (who.includes(person) ? who : [...who, person])
+      : who.filter((x) => x !== person);
+    if (who.length) await this.state.storage.put(dk, who);
+    else await this.state.storage.delete(dk);
+  }
+
   /* Fold one log row into the indexes, or peel it back off with dir = -1.
      A send resets the attempt count so a repeat project starts clean; undoing a
      send has to put the count back and drop the name from done, or the chips
@@ -208,10 +240,10 @@ export class Lists {
       const limit = Math.min(500, Math.max(1, Number(url.searchParams.get("limit")) || 100));
       const rows = await this.state.storage.list({ prefix: "log:", reverse: true, limit: 500 });
       const out = [];
-      for (const [, row] of rows) {
+      for (const [key, row] of rows) {
         if (!row) continue;
         if (person && row.person !== person) continue;
-        out.push(row);
+        out.push({ ...row, k: key });
         if (out.length >= limit) break;
       }
       return json({ entries: out });
@@ -284,11 +316,99 @@ export class Lists {
       const rows = await this.state.storage.list({ prefix: "log:", reverse: true, limit: 200 });
       for (const [key, row] of rows) {
         if (!row || row.person !== person) continue;
+        if (row.lock) return json({ error: "that entry is locked" }, 409);
         await this.state.storage.delete(key);
-        await this.applyRow(row, -1);
+        await this.recompute(row.person, row.id);
         return json(await this.snapshot());
       }
       return json({ error: "nothing to undo" }, 404);
+    }
+
+    /* Locking is what stops a stray tap costing you a send you did months ago.
+       Climbed only ever adds a row now, so the only way to lose one is here. */
+    /* Replay the whole log and rewrite every derived index from it. The log is
+       the source of truth; stats and done are caches, and caches drift. Ticks
+       that have no log rows at all - the ones that predate the logbook - are
+       left alone rather than erased, because the log can't speak for them. */
+    if (path === "/lists/rebuild") {
+      const rows = await this.state.storage.list({ prefix: "log:" });
+      const byPerson = {};                 // person -> id -> {a, sends, d}
+      const touched = new Set();           // "person|id" seen in the log
+      for (const [, row] of rows) {
+        if (!row) continue;
+        const per = (byPerson[row.person] = byPerson[row.person] || {});
+        const e = (per[row.id] = per[row.id] || { a: 0, sends: [], d: null });
+        if (row.result === "try") e.a++;
+        else { e.sends.push(row.result); e.a = 0; }
+        e.d = row.t;
+        touched.add(row.person + "|" + row.id);
+      }
+
+      const people = (await this.state.storage.get("people")) || [];
+      for (const person of people) {
+        const st = {};
+        const per = byPerson[person] || {};
+        for (const id in per) {
+          const e = per[id];
+          if (!e.a && !e.sends.length) continue;
+          const row = { a: e.a, r: e.sends.length ? e.sends[e.sends.length - 1] : null, d: e.d };
+          if (e.sends.length) row.s = e.sends;
+          st[id] = row;
+        }
+        if (Object.keys(st).length) await this.state.storage.put("stats:" + person, st);
+        else await this.state.storage.delete("stats:" + person);
+      }
+
+      const existing = await this.state.storage.list({ prefix: "done:" });
+      const done = {};
+      for (const [k, v] of existing) {
+        const id = k.slice(5);
+        // keep names with no log rows for this problem - nothing to replay for them
+        const keep = (v || []).filter((n) => !touched.has(n + "|" + id));
+        if (keep.length) done[id] = keep;
+      }
+      for (const person in byPerson)
+        for (const id in byPerson[person])
+          if (byPerson[person][id].sends.length)
+            done[id] = [...new Set([...(done[id] || []), person])];
+
+      for (const [k] of existing) await this.state.storage.delete(k);
+      for (const id in done) await this.state.storage.put("done:" + id, done[id]);
+
+      return json(await this.snapshot());
+    }
+
+    if (path === "/lists/log/lock") {
+      const person = clean(body.person);
+      if (!person) return json({ error: "person required" }, 400);
+      const rows = await this.state.storage.list({ prefix: "log:" });
+      let n = 0;
+      for (const [key, row] of rows) {
+        if (!row || row.person !== person || row.lock) continue;
+        await this.state.storage.put(key, { ...row, lock: true });
+        n++;
+      }
+      return json({ ...(await this.snapshot()), locked: n });
+    }
+
+    if (path === "/lists/log/entry") {
+      const key = typeof body.key === "string" ? body.key : "";
+      const action = clean(body.action);
+      if (!key.startsWith("log:")) return json({ error: "bad key" }, 400);
+      const row = await this.state.storage.get(key);
+      if (!row) return json({ error: "no such entry" }, 404);
+
+      if (action === "lock" || action === "unlock") {
+        await this.state.storage.put(key, { ...row, lock: action === "lock" });
+        return json(await this.snapshot());
+      }
+      if (action === "delete") {
+        if (row.lock) return json({ error: "unlock it first" }, 409);
+        await this.state.storage.delete(key);
+        await this.recompute(row.person, row.id);
+        return json(await this.snapshot());
+      }
+      return json({ error: "action must be delete, lock or unlock" }, 400);
     }
 
     if (path === "/lists/snake") {

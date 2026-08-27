@@ -137,6 +137,8 @@
   button.on{background:var(--ink);border-color:var(--ink);color:#0e0e0f}
 
   /* search, tick-list picker and the filter toggle share one row */
+  /* every filter on one line - nothing tucked underneath when the panel opens */
+  .four{display:grid;grid-template-columns:1fr 1fr 1fr 1.15fr;gap:6px}
   #searchRow{display:grid;grid-template-columns:1fr 1fr 44px;gap:6px}
   #searchRow #q{padding:9px 10px;font-size:16px}
   #searchRow #who{padding:9px 8px;font-size:16px;text-overflow:ellipsis}
@@ -168,11 +170,13 @@
              padding:calc(env(safe-area-inset-top) + 16px) 16px
                      calc(env(safe-area-inset-bottom) + 16px)}
   #gamePanel[hidden]{display:none}
-  #sendPanel,#logPanel,#snakePanel{position:fixed;inset:0;z-index:60;background:var(--bg);
+  #snakePanel{gap:8px !important}
+  #snakePanel #snPad{margin-top:auto}      /* pushed to the bottom of the sheet */
+  #sendPanel,#logPanel,#snakePanel,#entryPanel{position:fixed;inset:0;z-index:60;background:var(--bg);
              display:flex;flex-direction:column;gap:12px;overflow-y:auto;
              padding:calc(env(safe-area-inset-top) + 16px) 16px
                      calc(env(safe-area-inset-bottom) + 16px)}
-  #sendPanel[hidden],#logPanel[hidden],#snakePanel[hidden]{display:none}
+  #sendPanel[hidden],#logPanel[hidden],#snakePanel[hidden],#entryPanel[hidden]{display:none}
   #sendFor{font-size:15px;font-weight:600}
   #sendFor span{display:block;font-size:12px;color:var(--dimmer);font-weight:400;margin-top:2px}
   #sendPicks{display:grid;gap:8px}
@@ -190,6 +194,13 @@
                   background:#22252b;color:var(--dim)}
   #logRows .e.sent .rs{background:#22c55e;color:#06240e}
   #logRows .none{font-size:12px;color:var(--dimmer);padding:8px 2px}
+  #logRows .e{user-select:none;-webkit-user-select:none}
+  #logRows .e.held{background:var(--panel)}
+  #logRows .e .lk{flex:none;font-size:10px;color:var(--dimmer)}
+  #enFor{font-size:15px;font-weight:600}
+  #enFor span{display:block;font-size:12px;color:var(--dimmer);font-weight:400;margin-top:2px}
+  #enPicks{display:grid;gap:8px}
+  #enPicks button:disabled{opacity:.35}
   #ptsRank .r{display:flex;align-items:center;gap:9px;padding:7px 2px;
               border-bottom:1px solid #1e2024;font-size:13px}
   #ptsRank .r .pos{flex:none;width:20px;color:var(--dimmer);
@@ -232,15 +243,22 @@
   /* snake - the wall is 10 wide by 18 tall once column A sits out, so the grid
      is sized off height rather than width or it would run off the screen */
   #sn{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;
-      width:min(100%,26vh);margin:0 auto;touch-action:none}
+      width:min(62%,22vh);margin:0 auto;touch-action:none}
   #sn div{aspect-ratio:1;border-radius:2px;background:#191b1f}
   #sn div.s{background:#22c55e}
   #sn div.h{background:#2563eb}
   #sn div.f{background:#ef4444}
   #snScore{text-align:center;font-size:17px;font-weight:600}
-  #snPad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:320px;
-         margin:0 auto;width:100%}
-  #snPad button{padding:14px 0;font-size:19px;line-height:1}
+  /* The wall is what you're watching, not the phone - so the pad is a real cross
+     you can hit without looking, filling the bottom of the screen. */
+  #sn{margin-bottom:2px}
+  #snPad{display:grid;gap:10px;margin:0 auto;width:min(100%,330px);
+         grid-template-areas:". u ." "l . r" ". d .";
+         grid-template-columns:1fr 1fr 1fr}
+  #snPad button{aspect-ratio:1;padding:0;font-size:30px;line-height:1;border-radius:16px;
+                background:var(--panel2);border-color:#33333a}
+  #snPad button:active{background:var(--ink);color:#0e0e0f}
+  #snRank[hidden]{display:none}
   #snRank .r{display:flex;gap:9px;padding:5px 2px;border-bottom:1px solid #1e2024;font-size:13px}
   #snRank .r b{flex:1;font-weight:600}
   #snRank .r span{color:var(--dimmer);font:700 12px ui-monospace,Menlo,monospace}
@@ -314,11 +332,13 @@
   </div>
 
   <div id="filters" hidden>
-    <label class="ck" style="margin-top:0"><input type="checkbox" id="hideDone">
-      Hide what I've climbed</label>
-    <div class="three" style="margin-top:10px">
+    <div class="four">
       <div><div class="lbl">From</div><select id="gmin"></select></div>
       <div><div class="lbl">To</div><select id="gmax"></select></div>
+      <div><div class="lbl">Sent</div><select id="hideDone">
+        <option value="">Show</option>
+        <option value="1">Hide</option>
+      </select></div>
       <div><div class="lbl">Sort</div><select id="sort">
         <option value="repeats">Popular</option>
         <option value="stars">Best</option>
@@ -429,6 +449,10 @@
     <button id="logClose" class="ghost mini">Close</button>
   </div>
   <select id="logWho"></select>
+  <div class="two">
+    <button id="logLock" class="ghost mini">Lock my entries</button>
+    <div class="hint" style="margin:0;align-self:center">Hold a row to delete it</div>
+  </div>
   <div id="logSum"></div>
   <div id="logRows"></div>
 
@@ -445,17 +469,29 @@
   <div id="snScore">–</div>
   <div id="sn"></div>
   <div id="snPad">
-    <button data-d="up">↑</button>
-    <button data-d="left">←</button>
-    <button data-d="down">↓</button>
-    <button data-d="right">→</button>
+    <button data-d="up" style="grid-area:u">↑</button>
+    <button data-d="left" style="grid-area:l">←</button>
+    <button data-d="right" style="grid-area:r">→</button>
+    <button data-d="down" style="grid-area:d">↓</button>
   </div>
-  <button id="snNew" class="ghost mini">New game</button>
-  <div class="lbl" style="margin-top:6px">Best lengths</div>
-  <div id="snRank"></div>
-  <div class="hint">Played on B–K, the whole height of the wall. Swipe the grid or use
-    the arrows. Green is the snake, blue its head, red the food. Column A sits out —
-    A1 doesn't light and A2 and A4 are dead.</div>
+  <div class="two">
+    <button id="snNew" class="ghost mini">New game</button>
+    <button id="snRankBtn" class="ghost mini">Best lengths</button>
+  </div>
+  <div id="snRank" hidden></div>
+</div>
+
+<div id="entryPanel" hidden>
+  <div id="gameHead">
+    <b>Log entry</b>
+    <button id="enClose" class="ghost mini">Cancel</button>
+  </div>
+  <div id="enFor"></div>
+  <div id="enPicks">
+    <button id="enUnlock" class="res">Unlock</button>
+    <button id="enDelete" class="res">Delete this entry</button>
+  </div>
+  <div class="hint" id="enHint"></div>
 </div>
 
 <div id="gamePanel" hidden>
@@ -479,7 +515,7 @@
   <label class="ck"><input type="checkbox" id="c4timed" checked>
     Chess clock — <input type="number" id="c4mins" value="2" min="1" max="30"> min each</label>
   <label class="ck"><input type="checkbox" id="c4flash" checked>
-    Pulse the turn colour on the wall (row 14)</label>
+    Pulse the turn edge on the wall</label>
 
   <div class="lbl" style="margin-top:6px">Ranking</div>
   <div id="c4rank"></div>
@@ -1253,7 +1289,7 @@ function paintBar(){
   $('tick').title       = listed ? 'Tap to take it off your list' : 'Save to your list';
   $('done').textContent = 'Climbed';        // the filled state says whether it's ticked
   $('done').className   = 'mini' + (sent ? ' on' : '');
-  $('done').title       = sent ? 'Tap to un-tick it' : 'Log it as climbed';
+  $('done').title       = sent ? 'Log another send' : 'Log it as climbed';
   paintClimbers();
 }
 
@@ -1315,12 +1351,12 @@ function doTry(){
 
 /* Climbed no longer writes straight away - it asks how it went, with the answer
    the attempt count implies already chosen. Confirming is one tap. */
+/* Climbed never removes anything. Tapping it on a problem you sent months ago
+   logs a fresh send rather than quietly undoing the old one - repeats are a
+   normal thing to want, and a stray tap should never cost you a tick. Deleting
+   happens in the logbook, where you can see what you're deleting. */
 function doDone(){
   const me = meNow(); if (!me || !current) return;
-  if ((done[current.id] || []).includes(me)){        // already sent - untick it
-    listsCall('/lists/done', { person: me, id: current.id, on: false });
-    return;
-  }
   openSend();
 }
 
@@ -1334,10 +1370,12 @@ function openSend(){
   $('sendFor').append(b, sub);
   document.querySelectorAll('#sendPicks .res').forEach(el =>
     el.className = 'res' + (el.dataset.r === pick ? ' pick' : ''));
-  $('sendHint').textContent = t
+  const already = (done[current.id] || []).includes(meNow());
+  $('sendHint').textContent = (t
     ? 'Your ' + t + ' logged ' + (t === 1 ? 'try makes' : 'tries make') + ' this a ' +
       pick + '. Tap another if that is not right.'
-    : 'No tries logged, so this counts as a flash. Tap another if that is not right.';
+    : 'No tries logged, so this counts as a flash. Tap another if that is not right.') +
+    (already ? ' You have sent this before - this adds another, it does not replace it.' : '');
   showPanel('send');
 }
 
@@ -1367,7 +1405,7 @@ function filtered(){
   const who = whoNow();
   const mine = who ? new Set(lists[who] || []) : null;
   const me = meNow();
-  const hide = me && $('hideDone').checked;   // needs a name to know what's yours
+  const hide = me && $('hideDone').value === '1';   // needs a name to know what's yours
   let out = PROBLEMS.filter(r => r.grade >= lo && r.grade <= hi &&
     (!mine || mine.has(r.id)) &&
     !(hide && (done[r.id] || []).includes(me)) &&
@@ -1410,7 +1448,7 @@ function renderResults(){
     box.appendChild(row);
   });
   const view = whoNow(), me = meNow();
-  const hidden = (me && $('hideDone').checked)
+  const hidden = (me && $('hideDone').value === '1')
     ? Object.entries(done).filter(([, who]) => who.includes(me)).length : 0;
   $('count').textContent = hits.length
     ? (view ? view + "'s list \u2014 " : '') + hits.length +
@@ -1720,6 +1758,51 @@ function ptsRank(){
   }
 }
 
+/* Hold a row for half a second to act on it. A tap does nothing, which is the
+   point - nothing in the logbook should be one stray finger away from deleting. */
+let heldEntry = null;
+
+function holdToEdit(row, e, p){
+  let timer = null;
+  const start = () => {
+    timer = setTimeout(() => {
+      timer = null;
+      row.classList.add('held');
+      setTimeout(() => row.classList.remove('held'), 250);
+      openEntry(e, p);
+    }, 500);
+  };
+  const cancel = () => { if (timer){ clearTimeout(timer); timer = null; } };
+  row.addEventListener('pointerdown', start);
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev =>
+    row.addEventListener(ev, cancel));
+}
+
+function openEntry(e, p){
+  heldEntry = e;
+  $('enFor').innerHTML = '';
+  const b = document.createElement('b');
+  b.textContent = p ? p.name : 'problem ' + e.id;
+  const sub = document.createElement('span');
+  sub.textContent = new Date(e.t).toLocaleString() + ' \u00b7 ' + e.result +
+    (e.lock ? ' \u00b7 locked' : '');
+  $('enFor').append(b, sub);
+  $('enUnlock').textContent = e.lock ? 'Unlock' : 'Lock';
+  $('enDelete').disabled = !!e.lock;
+  $('enHint').textContent = e.lock
+    ? 'Locked entries cannot be deleted. Unlock it first if you really mean to.'
+    : 'Deleting recalculates your attempts and score from what is left.';
+  showPanel('entry');
+}
+
+async function entryAction(action){
+  if (!heldEntry) return;
+  await listsCall('/lists/log/entry', { key: heldEntry.k, action });
+  heldEntry = null;
+  showPanel('log');
+  loadLog();
+}
+
 async function openLog(){
   const sel = $('logWho'), keep = sel.value || meNow();
   sel.innerHTML = '';
@@ -1772,7 +1855,11 @@ async function loadLog(){
     const rs = document.createElement('div');
     rs.className = 'rs';
     rs.textContent = e.result === 'try' ? 'try' : (e.result === 'flash' ? '\u26a1 flash' : e.result);
-    row.append(d, n, rs);
+    const lk = document.createElement('div');
+    lk.className = 'lk';
+    lk.textContent = e.lock ? '\ud83d\udd12' : '';
+    row.append(d, n, rs, lk);
+    holdToEdit(row, e, p);
     $('logRows').appendChild(row);
   });
 }
@@ -2123,11 +2210,17 @@ function c4Draw(){
   c4Clocks();
 }
 
-/* Row 14 sits clear above the grid and carries whose turn it is. There is no
-   partial update in the protocol, so pulsing it rewrites the whole board each
-   frame - the pieces wink with it. Slow enough (1.2s) to read as a pulse rather
-   than a glitch, and the switch turns it off for a steady marker instead. */
-const C4_MARK_ROW = 14;
+/* A red frame boxes the playfield in - bottom edge and both sides - and the top
+   edge doubles as the turn marker, lit in whoever is to play. Pulsing it rewrites
+   the whole board each frame, so it's slow (1.2s) enough to read as a pulse
+   rather than a glitch, and the switch turns it off for a steady frame.
+
+   The frame is the first thing dropped if a frame would run past the box's
+   payload ceiling: pieces matter, decoration doesn't. */
+const C4_FRAME_BOT = C4_Y - 1;                       // row 6, under the grid
+const C4_FRAME_TOP = C4_Y + C4_ROWS + 1;             // row 14, the turn edge
+const C4_FRAME_L = C4_X - 1, C4_FRAME_R = C4_X + C4_COLS;   // columns B and K
+const C4_MAX_BYTES = 250;                            // measured safe limit
 let c4Timer = null;
 
 function c4Frame(markerOn){
@@ -2139,13 +2232,37 @@ function c4Frame(markerOn){
       const tag = won ? 'E' : (c4.grid[c][r] === 1 ? 'S' : 'P');
       parts.push({ tag, n: holdNum(C4_X + c, C4_Y + r) });
     }
+
+  const trim = ps => 'l#' + ps.slice().sort((a, b) => a.n - b.n)
+                              .map(p => p.tag + p.n).join(',') + '#';
+
+  // The turn edge is the point of the top row, so it never thins out.
+  const edge = [];
   if (markerOn && !c4.win){
     const tag = c4.turn === 1 ? 'S' : 'P';
     for (let c = 0; c < C4_COLS; c++)
-      parts.push({ tag, n: holdNum(C4_X + c, C4_MARK_ROW) });
+      edge.push({ tag, n: holdNum(C4_X + c, C4_FRAME_TOP) });
   }
-  parts.sort((a, b) => a.n - b.n);
-  write('l#' + parts.map(p => p.tag + p.n).join(',') + '#', true);
+
+  const box = (step) => {
+    const out = [];
+    for (let col = C4_FRAME_L; col <= C4_FRAME_R; col += step)
+      out.push({ tag: 'E', n: holdNum(col, C4_FRAME_BOT) });
+    if (step > 1 && (C4_FRAME_R - C4_FRAME_L) % step)
+      out.push({ tag: 'E', n: holdNum(C4_FRAME_R, C4_FRAME_BOT) });   // keep the corner
+    for (let row = C4_Y; row <= C4_FRAME_TOP; row += step){
+      out.push({ tag: 'E', n: holdNum(C4_FRAME_L, row) });
+      out.push({ tag: 'E', n: holdNum(C4_FRAME_R, row) });
+    }
+    return out;
+  };
+
+  // Solid frame if it fits, dashed if it doesn't, none as a last resort - a full
+  // board plus a solid box runs past what the controller will render.
+  for (const candidate of [box(1), box(2), []]){
+    const str = trim([...parts, ...edge, ...candidate]);
+    if (str.length <= C4_MAX_BYTES || candidate.length === 0) return write(str, true);
+  }
 }
 
 function c4Send(){
@@ -2180,7 +2297,7 @@ $('gmin').onchange = () => { if (+$('gmax').value < +$('gmin').value) $('gmax').
 $('gmax').onchange = () => { if (+$('gmax').value < +$('gmin').value) $('gmin').value = $('gmax').value; renderResults(); };
 $('sort').onchange = renderResults;
 $('hideDone').onchange = () => {
-  try{ localStorage.setItem('mb-hide', $('hideDone').checked ? '1' : ''); }catch(e){}
+  try{ localStorage.setItem('mb-hide', $('hideDone').value); }catch(e){}
   renderResults();
 };
 $('who').onchange = () => {
@@ -2192,7 +2309,7 @@ $('who').onchange = () => {
    bug rather than a setting. */
 function markFilters(){
   const narrowed = +$('gmin').value > 0 || +$('gmax').value < GRADES.length - 1;
-  const on = narrowed || (meNow() && $('hideDone').checked);
+  const on = narrowed || (meNow() && $('hideDone').value === '1');
   $('filtBtn').classList.toggle('active', !!on);
 }
 function showFilters(on){
@@ -2208,7 +2325,8 @@ function showPanel(which){          // 'game' | 'set' | 'log' | 'send' | null
   $('logPanel').hidden  = which !== 'log';
   $('sendPanel').hidden = which !== 'send';
   $('snakePanel').hidden = which !== 'snake';
-  if (which !== 'snake' && snTimer) snStop();     // don't leave it running unseen
+  $('entryPanel').hidden = which !== 'entry';
+  if (which !== 'snake' && which !== 'entry' && snTimer) snStop();     // don't leave it running unseen
   $('gameBtn').className = 'ghost mini' + (which === 'game' ? ' on' : '');
   $('setBtn').className  = 'ghost mini' + (which === 'set'  ? ' on' : '');
   $('logBtn').className  = 'ghost mini' + (which === 'log'  ? ' on' : '');
@@ -2230,9 +2348,25 @@ $('snakeBtn').onclick = () => {
   if (open && !sn) snNew();
 };
 $('snClose').onclick = () => showPanel(null);
+$('enClose').onclick = () => { heldEntry = null; showPanel('log'); };
+$('enUnlock').onclick = () => entryAction(heldEntry && heldEntry.lock ? 'unlock' : 'lock');
+$('enDelete').onclick = () => entryAction('delete');
+$('logLock').onclick = async () => {
+  const me = meNow();
+  if (!me) return log('pick your name in the header first.');
+  await listsCall('/lists/log/lock', { person: me });
+  loadLog();
+};
 $('snNew').onclick = snNew;
-document.querySelectorAll('#snPad button').forEach(b =>
-  b.onclick = () => snTurn(b.dataset.d));
+document.querySelectorAll('#snPad button').forEach(b => {
+  // pointerdown, not click - at speed the difference is felt
+  b.addEventListener('pointerdown', e => { e.preventDefault(); snTurn(b.dataset.d); });
+});
+$('snRankBtn').onclick = () => {
+  const show = $('snRank').hidden;
+  $('snRank').hidden = !show;
+  $('snRankBtn').className = 'ghost mini' + (show ? ' on' : '');
+};
 (function snakeSwipe(){
   const el = $('sn');
   let x0 = null, y0 = null;
@@ -2315,7 +2449,7 @@ try{
   if (w){ $('who').appendChild(new Option(w, w)); $('who').value = w; }
   // Before these were split, picking a name in the view filter was how you said
   // who you were - carry that over rather than asking again.
-  $('hideDone').checked = !!localStorage.getItem('mb-hide');
+  $('hideDone').value = localStorage.getItem('mb-hide') || '';
   const m = localStorage.getItem('mb-me') || w;
   if (m){ $('me').appendChild(new Option(m, m)); $('me').value = m; lastMe = m; }
 }catch(e){}
