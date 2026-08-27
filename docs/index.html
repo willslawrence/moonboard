@@ -194,6 +194,17 @@
                   background:#22252b;color:var(--dim)}
   #logRows .e.sent .rs{background:#22c55e;color:#06240e}
   #logRows .none{font-size:12px;color:var(--dimmer);padding:8px 2px}
+  #logRows .day{display:flex;align-items:center;gap:8px;padding:11px 2px;cursor:pointer;
+                border-bottom:1px solid var(--edge);user-select:none;-webkit-user-select:none}
+  #logRows .day:active{background:var(--panel)}
+  #logRows .day .cv{flex:none;color:var(--dimmer);font-size:14px;
+                    transition:transform .12s;display:inline-block}
+  #logRows .day.open .cv{transform:rotate(90deg)}
+  #logRows .day b{flex:1;font-size:14px;font-weight:600}
+  #logRows .day .ds{flex:none;font-size:11px;color:var(--dimmer)}
+  #logRows .dayRows[hidden]{display:none}
+  #logRows .dayRows .e{padding-left:18px}
+  #logRows .dayRows .e .d{width:58px}
   #logRows .e{user-select:none;-webkit-user-select:none}
   #logRows .e.held{background:var(--panel)}
   #logRows .e .lk{flex:none;font-size:10px;color:var(--dimmer)}
@@ -243,20 +254,26 @@
   /* snake - the wall is 10 wide by 18 tall once column A sits out, so the grid
      is sized off height rather than width or it would run off the screen */
   #sn{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;
-      width:min(62%,22vh);margin:0 auto;touch-action:none}
+      width:min(52%,17vh);margin:0 auto;touch-action:none}
   #sn div{aspect-ratio:1;border-radius:2px;background:#191b1f}
   #sn div.s{background:#22c55e}
   #sn div.h{background:#2563eb}
   #sn div.f{background:#ef4444}
   #snScore{text-align:center;font-size:17px;font-weight:600}
-  /* The wall is what you're watching, not the phone - so the pad is a real cross
-     you can hit without looking, filling the bottom of the screen. */
+  /* The wall is what you're watching, not the phone - so the pad takes the whole
+     width and every press is a big flat target you can find without looking.
+     Up and down are full-width half moons, left and right split the middle band,
+     and the four together read as one rounded pad. */
   #sn{margin-bottom:2px}
-  #snPad{display:grid;gap:10px;margin:0 auto;width:min(100%,330px);
-         grid-template-areas:". u ." "l . r" ". d .";
-         grid-template-columns:1fr 1fr 1fr}
-  #snPad button{aspect-ratio:1;padding:0;font-size:30px;line-height:1;border-radius:16px;
+  #snPad{display:grid;gap:7px;width:100%;
+         grid-template-areas:"u u" "l r" "d d";
+         grid-template-columns:1fr 1fr}
+  #snPad button{padding:0;font-size:34px;line-height:1;height:min(14vh,108px);
                 background:var(--panel2);border-color:#33333a}
+  #snPad button[data-d="up"]{border-radius:999px 999px 12px 12px}
+  #snPad button[data-d="down"]{border-radius:12px 12px 999px 999px}
+  #snPad button[data-d="left"]{border-radius:999px 12px 12px 999px}
+  #snPad button[data-d="right"]{border-radius:12px 999px 999px 12px}
   #snPad button:active{background:var(--ink);color:#0e0e0f}
   #snRank[hidden]{display:none}
   #snRank .r{display:flex;gap:9px;padding:5px 2px;border-bottom:1px solid #1e2024;font-size:13px}
@@ -266,10 +283,7 @@
   #snRank .none{font-size:12px;color:var(--dimmer);padding:6px 2px}
   #c4turn{display:flex;align-items:center;justify-content:center;gap:10px;
           font-size:17px;font-weight:600}
-  #c4turn i{width:20px;height:20px;border-radius:50%;background:#3a3a40;flex:none;
-            animation:turnPulse 1.2s ease-in-out infinite}
-  #c4turn.over i,#c4turn.idle i{animation:none}
-  @keyframes turnPulse{0%,100%{opacity:1}50%{opacity:.12}}
+  #c4turn i{width:20px;height:20px;border-radius:50%;background:#3a3a40;flex:none}
 
   /* the two panel toggles sit bottom-right, under the list */
   #footBtns{display:flex;justify-content:flex-end;gap:8px;margin:4px 0 12px}
@@ -514,8 +528,6 @@
   </div>
   <label class="ck"><input type="checkbox" id="c4timed" checked>
     Chess clock — <input type="number" id="c4mins" value="2" min="1" max="30"> min each</label>
-  <label class="ck"><input type="checkbox" id="c4flash" checked>
-    Pulse the turn edge on the wall</label>
 
   <div class="lbl" style="margin-top:6px">Ranking</div>
   <div id="c4rank"></div>
@@ -1842,25 +1854,71 @@ async function loadLog(){
     $('logRows').appendChild(d);
     return;
   }
+
+  /* One block per day, newest first, with today's open and the rest folded away -
+     a session is the unit you actually think in, and a few months of tries is a
+     lot of rows to scroll past to reach them. */
+  const days = [];
   entries.forEach(e => {
-    const p = byId[e.id];
-    const row = document.createElement('div');
-    row.className = 'e' + (e.result !== 'try' ? ' sent' : '');
-    const d = document.createElement('div');
-    d.className = 'd';
-    d.textContent = new Date(e.t).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-    const n = document.createElement('div');
-    n.className = 'n';
-    n.textContent = p ? p.name : 'problem ' + e.id;
-    const rs = document.createElement('div');
-    rs.className = 'rs';
-    rs.textContent = e.result === 'try' ? 'try' : (e.result === 'flash' ? '\u26a1 flash' : e.result);
-    const lk = document.createElement('div');
-    lk.className = 'lk';
-    lk.textContent = e.lock ? '\ud83d\udd12' : '';
-    row.append(d, n, rs, lk);
-    holdToEdit(row, e, p);
-    $('logRows').appendChild(row);
+    const key = new Date(e.t).toDateString();
+    let day = days.find(d => d.key === key);
+    if (!day) days.push(day = { key, t: e.t, rows: [] });
+    day.rows.push(e);
+  });
+
+  days.forEach((day, i) => {
+    const sends = day.rows.filter(e => e.result !== 'try').length;
+    const tries = day.rows.length - sends;
+    const when = new Date(day.t);
+    const today = when.toDateString() === new Date().toDateString();
+
+    const head = document.createElement('div');
+    head.className = 'day' + (i === 0 ? ' open' : '');
+    const chev = document.createElement('span');
+    chev.className = 'cv';
+    chev.textContent = '\u203a';
+    const label = document.createElement('b');
+    label.textContent = today ? 'Today' : when.toLocaleDateString(undefined,
+      { weekday: 'short', day: 'numeric', month: 'short' });
+    const sum = document.createElement('span');
+    sum.className = 'ds';
+    sum.textContent = [sends && sends + (sends === 1 ? ' send' : ' sends'),
+                       tries && tries + (tries === 1 ? ' try' : ' tries')]
+                      .filter(Boolean).join(' \u00b7 ');
+    head.append(chev, label, sum);
+
+    const body = document.createElement('div');
+    body.className = 'dayRows';
+    if (i !== 0) body.hidden = true;
+
+    head.onclick = () => {
+      body.hidden = !body.hidden;
+      head.classList.toggle('open', !body.hidden);
+    };
+
+    day.rows.forEach(e => {
+      const p = byId[e.id];
+      const row = document.createElement('div');
+      row.className = 'e' + (e.result !== 'try' ? ' sent' : '');
+      const d = document.createElement('div');
+      d.className = 'd';
+      d.textContent = new Date(e.t).toLocaleTimeString(undefined,
+        { hour: 'numeric', minute: '2-digit' });
+      const n = document.createElement('div');
+      n.className = 'n';
+      n.textContent = p ? p.name : 'problem ' + e.id;
+      const rs = document.createElement('div');
+      rs.className = 'rs';
+      rs.textContent = e.result === 'try' ? 'try' : (e.result === 'flash' ? '\u26a1 flash' : e.result);
+      const lk = document.createElement('div');
+      lk.className = 'lk';
+      lk.textContent = e.lock ? '\ud83d\udd12' : '';
+      row.append(d, n, rs, lk);
+      holdToEdit(row, e, p);
+      body.appendChild(row);
+    });
+
+    $('logRows').append(head, body);
   });
 }
 
@@ -2211,9 +2269,12 @@ function c4Draw(){
 }
 
 /* A red frame boxes the playfield in - bottom edge and both sides - and the top
-   edge doubles as the turn marker, lit in whoever is to play. Pulsing it rewrites
-   the whole board each frame, so it's slow (1.2s) enough to read as a pulse
-   rather than a glitch, and the switch turns it off for a steady frame.
+   edge is the turn marker, lit steady in whoever is to play.
+
+   It used to pulse. It doesn't any more: there is no partial update in this
+   protocol, so every pulse frame rewrote the whole board and the pieces winked
+   along with the marker. Tried at the wall, and it made a mess of the lights for
+   no gain over a steady edge. One write per move, nothing on a timer.
 
    The frame is the first thing dropped if a frame would run past the box's
    payload ceiling: pieces matter, decoration doesn't. */
@@ -2221,7 +2282,6 @@ const C4_FRAME_BOT = C4_Y - 1;                       // row 6, under the grid
 const C4_FRAME_TOP = C4_Y + C4_ROWS + 1;             // row 14, the turn edge
 const C4_FRAME_L = C4_X - 1, C4_FRAME_R = C4_X + C4_COLS;   // columns B and K
 const C4_MAX_BYTES = 250;                            // measured safe limit
-let c4Timer = null;
 
 function c4Frame(markerOn){
   if (!c4 || !rx) return;
@@ -2266,16 +2326,11 @@ function c4Frame(markerOn){
 }
 
 function c4Send(){
-  clearInterval(c4Timer); c4Timer = null;
   if (!c4 || !rx) return;
-  c4Frame(true);
-  if (c4.win || !$('c4flash').checked) return;   // steady marker, or none once won
-  let on = true;
-  c4Timer = setInterval(() => { on = !on; c4Frame(on); }, 1200);
+  c4Frame(true);        // one write per move - see the note above c4Frame
 }
 
 function c4Stop(){
-  clearInterval(c4Timer); c4Timer = null;
   c4StopClock();
   c4 = null;
   c4Draw();
@@ -2392,7 +2447,6 @@ $('sendUndo').onclick = () => {
 
 $('c4new').onclick = c4New;
 $('c4off').onclick = c4Stop;
-$('c4flash').onchange = c4Send;
 $('c4pg').onchange = $('c4pb').onchange = () => c4Draw();
 $('c4timed').onchange = () => { if (c4) c4New(); else c4Clocks(); };
 $('c4mins').onchange  = () => { if (c4) c4New(); };
