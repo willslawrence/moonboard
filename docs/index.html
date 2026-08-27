@@ -100,8 +100,8 @@
   /* the four actions stack down the space beside the board */
   #boardRow{display:flex;gap:12px;align-items:flex-start}
   #boardCol{flex:none;width:min(58%,21vh)}          /* board column sizes the row */
-  #barBtns{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px}
-  button.mini{padding:11px 6px;font-size:13px;font-weight:600;border-radius:7px}
+  #barBtns{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+  button.mini{padding:5px 6px;font-size:12px;font-weight:600;border-radius:6px}
   button.on{background:var(--ink);border-color:var(--ink);color:#0e0e0f}
 
   /* compact search + collapsible filters */
@@ -996,12 +996,25 @@ function paintBar(){
   const on  = !!(current && who);
   const listed = on && (lists[who] || []).includes(current.id);
   const sent   = on && (done[current.id] || []).includes(who);
-  $('tick').disabled = !on;
-  $('done').disabled = !on;
+  $('tick').disabled = !current;
+  $('done').disabled = !current;
   $('tick').textContent = listed ? '\u2713 Listed' : '+ List';
   $('tick').className   = 'mini' + (listed ? ' on' : '');
   $('done').textContent = sent ? '\u2713 Sent' : 'Done';
   $('done').className   = 'mini' + (sent ? ' on' : '');
+}
+
+/* + List and Done record against whoever is picked in the Tick list filter.
+   With nobody picked they used to sit there disabled doing nothing, which just
+   reads as broken - so now they open the filter and ask for a name. */
+function needName(){
+  if (whoNow()) return false;
+  $('filters').open = true;
+  $('who').focus();
+  $('who').scrollIntoView({ block: 'center' });
+  $('count').textContent = 'Pick a name under Tick list first';
+  log('pick a climber under Filters \u2192 Tick list, then tap again.');
+  return true;
 }
 
 function fillGradeSelects(){
@@ -1405,11 +1418,13 @@ $('c4new').onclick = c4New;
 $('c4off').onclick = c4Stop;
 $('c4flash').onchange = c4Send;
 $('tick').onclick = () => {
+  if (needName()) return;
   const who = whoNow(); if (!who || !current) return;
   listsCall('/lists/tick', { person: who, id: current.id,
                              on: !(lists[who] || []).includes(current.id) });
 };
 $('done').onclick = () => {
+  if (needName()) return;
   const who = whoNow(); if (!who || !current) return;
   listsCall('/lists/done', { person: who, id: current.id,
                              on: !(done[current.id] || []).includes(who) });
