@@ -106,6 +106,13 @@
   .who b{display:grid;place-items:center;width:19px;height:19px;border-radius:50%;
          font-size:10px;font-weight:700;color:#0e0e0f}
 
+  /* connect four */
+  #c4{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;max-width:250px;margin-top:8px}
+  #c4 div{aspect-ratio:1;border-radius:50%;border:1.5px solid #232327}
+  #c4 div.a{background:#22c55e;border-color:#22c55e}
+  #c4 div.b{background:#2563eb;border-color:#2563eb}
+  #c4 div.win{background:#ef4444;border-color:#ef4444}
+
   section{margin-bottom:22px}
   details{border-top:1px solid var(--edge);padding-top:14px;margin-top:26px}
   summary{font-size:11px;letter-spacing:.12em;text-transform:uppercase;
@@ -222,6 +229,16 @@
     <button id="relayBtn" class="ghost">Connect relay</button>
   </div>
   <div class="hint" id="relayState">relay off</div>
+
+  <div class="lbl">Connect four</div>
+  <div class="hint">Two players on the wall — green drops first, then blue. Tap a column.
+    Played on C–I, rows 7–12, which keeps clear of the dead A2 and A4 holds.</div>
+  <div id="c4"></div>
+  <div class="two" style="margin-top:8px">
+    <button id="c4new" class="ghost mini">New game</button>
+    <button id="c4off" class="ghost mini">Back to problems</button>
+  </div>
+  <div class="hint" id="c4state">not started</div>
 
   <div class="lbl">Log</div>
   <div id="log">idle.</div>
@@ -877,6 +894,12 @@ let people = [], lists = {}, done = {};
 
 const whoNow = () => $('who').value || '';
 
+// Two people can share an initial (both Abdullahs), so an emoji in the name wins.
+function chipFor(name){
+  const m = name.match(/\p{Extended_Pictographic}/u);
+  return m ? m[0] : name[0].toUpperCase();
+}
+
 function personColor(name){
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360;
@@ -976,7 +999,7 @@ function renderResults(){
     const whoBox = row.querySelector('.who');
     (done[r.id] || []).forEach(n => {                 // who has sent it
       const chip = document.createElement('b');
-      chip.textContent = n[0].toUpperCase();
+      chip.textContent = chipFor(n);
       chip.title = n;
       chip.style.background = personColor(n);
       whoBox.appendChild(chip);
@@ -1198,6 +1221,88 @@ function relayDisconnect(){
   if (wakeLock){ try{ wakeLock.release(); }catch(e){} wakeLock = null; }
 }
 
+/* ---------- connect four ----------
+   Seven columns on C..I, six rows on 7..12 - middle of the wall, clear of the
+   dead A2 and A4 holds. Green is player one, blue player two, and a winning
+   line goes red. Every move rewrites the whole wall, which is all the protocol
+   offers, but the game is turn-based so that costs nothing. */
+const C4_COLS = 7, C4_ROWS = 6, C4_X = 3, C4_Y = 7;   // grid col 3 = C, row 7
+let c4 = null;                                        // [col][row] -> 1 | 2, row 0 at the bottom
+
+function c4New(){
+  c4 = { grid: Array.from({ length: C4_COLS }, () => []), turn: 1, win: null };
+  c4Draw();
+  c4Send();
+  log('connect four: new game, green to play.');
+}
+
+function c4Drop(col){
+  if (!c4 || c4.win) return;
+  if (c4.grid[col].length >= C4_ROWS) return;
+  c4.grid[col].push(c4.turn);
+  c4.win = c4Winner();
+  if (!c4.win) c4.turn = c4.turn === 1 ? 2 : 1;
+  c4Draw();
+  c4Send();
+}
+
+function c4At(c, r){ return (c >= 0 && c < C4_COLS && r >= 0 && r < C4_ROWS) ? (c4.grid[c][r] || 0) : 0; }
+
+function c4Winner(){
+  const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+  for (let c = 0; c < C4_COLS; c++)
+    for (let r = 0; r < C4_ROWS; r++){
+      const who = c4At(c, r);
+      if (!who) continue;
+      for (const [dc, dr] of dirs){
+        const line = [[c,r]];
+        for (let k = 1; k < 4; k++){
+          if (c4At(c + dc*k, r + dr*k) !== who) break;
+          line.push([c + dc*k, r + dr*k]);
+        }
+        if (line.length === 4) return { who, line };
+      }
+    }
+  return null;
+}
+
+function c4Draw(){
+  const box = $('c4');
+  box.innerHTML = '';
+  for (let r = C4_ROWS - 1; r >= 0; r--)
+    for (let c = 0; c < C4_COLS; c++){
+      const d = document.createElement('div');
+      const v = c4 ? (c4.grid[c][r] || 0) : 0;
+      const won = c4 && c4.win && c4.win.line.some(([wc, wr]) => wc === c && wr === r);
+      d.className = won ? 'win' : (v === 1 ? 'a' : v === 2 ? 'b' : '');
+      d.addEventListener('click', () => c4Drop(c));
+      box.appendChild(d);
+    }
+  $('c4state').textContent = !c4 ? 'not started'
+    : c4.win ? (c4.win.who === 1 ? 'green wins' : 'blue wins')
+    : (c4.turn === 1 ? 'green to play' : 'blue to play');
+}
+
+function c4Send(){
+  if (!c4 || !rx) return;
+  const parts = [];
+  for (let c = 0; c < C4_COLS; c++)
+    for (let r = 0; r < c4.grid[c].length; r++){
+      const won = c4.win && c4.win.line.some(([wc, wr]) => wc === c && wr === r);
+      const tag = won ? 'E' : (c4.grid[c][r] === 1 ? 'S' : 'P');
+      parts.push({ tag, n: holdNum(C4_X + c, C4_Y + r) });
+    }
+  parts.sort((a, b) => a.n - b.n);
+  write('l#' + parts.map(p => p.tag + p.n).join(',') + '#');
+}
+
+function c4Stop(){
+  c4 = null;
+  c4Draw();
+  if (rx) write(current ? buildPayload() : 'l##');
+  log('connect four: back to problems.');
+}
+
 /* ---------- wiring ---------- */
 $('connect').onclick = () => {
   if (device && device.gatt.connected) device.gatt.disconnect(); else connect();
@@ -1216,6 +1321,8 @@ $('who').onchange = () => {
   renderResults(); paintBar();
 };
 $('addWho').onclick = addPerson;
+$('c4new').onclick = c4New;
+$('c4off').onclick = c4Stop;
 $('tick').onclick = () => {
   const who = whoNow(); if (!who || !current) return;
   listsCall('/lists/tick', { person: who, id: current.id,
@@ -1262,6 +1369,7 @@ try{
 }catch(e){}
 paint();
 fillGradeSelects();
+c4Draw();
 try{ const w = localStorage.getItem('mb-who');
      if (w){ $('who').appendChild(new Option(w, w)); $('who').value = w; } }catch(e){}
 renderResults();

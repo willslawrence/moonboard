@@ -35,6 +35,13 @@ MoonBoard id. Whoever is picked in the **Tick list** filter is both the list you
 at and the name a save or a tick is recorded against. Anyone with the page can write; that's
 the point.
 
+## Connect four
+
+Tucked in the Settings section. Seven columns on C–I, six rows on 7–12 — middle of the
+wall, clear of the dead A2 and A4 holds. Green plays first, blue second, and a winning
+line goes red. One write per move, which suits a protocol that only does whole-wall
+rewrites.
+
 ## Board image
 
 `docs/board-2016.png` is the 2016 wall photo from Moonboard-Guidebook (MIT), with
