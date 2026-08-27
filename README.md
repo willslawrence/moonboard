@@ -26,6 +26,15 @@ so it can be calibrated against the physical wall.
 Read-only except the one ASCII write. Nordic DFU/bootloader UUIDs are hard-blocked
 in both the script and the page.
 
+## Standby
+
+Connecting a phone lights a dashed green frame round the whole wall, and it comes back
+whenever nothing is loaded. It answers the only question you have at that moment - is this
+thing actually talking to the box - without picking a problem to find out. Dashed because a
+solid perimeter is 54 LEDs, past the safe payload; every other one is half that and reads the
+same from across the room. Column A's bottom four rows sit out, since A1 is index 0 and A2 and
+A4 are dead. Switchable in Settings.
+
 ## Tick lists
 
 Shared projects, no logins. The name picker in the header is who you are - set once,

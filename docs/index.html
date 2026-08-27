@@ -394,6 +394,12 @@
     red from V8. A1 is skipped — it is index 0 and this controller will not
     light it.</div>
 
+  <div class="lbl">On connect</div>
+  <select id="standby">
+    <option value="1">Show a standby frame</option>
+    <option value="">Leave the wall dark</option>
+  </select>
+
   <div class="lbl">Hold numbering</div>
   <select id="order">
     <option value="colSerp">Column serpentine, 0-based (A1=0, A18=17, B18=18) — confirmed</option>
@@ -1522,7 +1528,7 @@ function clearRoute(){
   renderResults();
   paintBar();
   paintClimbers();
-  if (rx) write('l##');
+  if (rx && !standby()) write('l##');
 }
 
 /* ---------- BLE ---------- */
@@ -1553,6 +1559,8 @@ async function connect(){
     setLive(true);
     const p = Object.entries(rx.properties || {}).filter(([, v]) => v).map(([k]) => k).join(',');
     log('connected. Nordic UART found. RX props: [' + p + ']');
+    if (current) sendProblem();          // pick up whatever was already chosen
+    else standby();
   }catch(e){
     rx = null;
     setLive(false);
@@ -1961,6 +1969,36 @@ function stepProblem(delta){
   }
 })();
 
+/* ---------- standby ----------
+   A dashed green frame around the whole wall, written the moment a phone
+   connects and again whenever nothing is loaded. It answers the only question
+   you have at that point - is this thing actually talking to the box - without
+   having to pick a problem to find out.
+
+   Dashed rather than solid because a solid perimeter is 54 LEDs, past the safe
+   payload; every other one is half that and reads the same from across a room.
+   Column A's first four rows sit out: A1 is index 0 and won't light, A2 is dim
+   and A4 is dead, and a frame with holes in one corner looks broken. */
+function standbyPayload(){
+  const cells = [];
+  const ok = (col, row) => !(col === 1 && row <= 4);
+  for (let col = 1; col <= COLS; col += 2){
+    if (ok(col, 1))    cells.push(holdNum(col, 1));
+    if (ok(col, ROWS)) cells.push(holdNum(col, ROWS));
+  }
+  for (let row = 3; row < ROWS; row += 2){
+    if (ok(1, row))    cells.push(holdNum(1, row));
+    if (ok(COLS, row)) cells.push(holdNum(COLS, row));
+  }
+  return 'l#' + cells.sort((a, b) => a - b).map(n => 'S' + n).join(',') + '#';
+}
+
+function standby(){
+  if (!rx || $('standby').value !== '1') return false;
+  write(standbyPayload());
+  return true;
+}
+
 /* ---------- snake ----------
    Column A sits out: A1 is index 0 and doesn't light, A2 is dim and A4 is dead.
    That leaves B..K by the full 18 rows. A snake is only ever a few dozen cells,
@@ -2067,7 +2105,9 @@ function snStop(){
   clearInterval(snTimer); snTimer = null;
   sn = null;
   snDraw();
-  if (rx) write(current ? buildPayload() : 'l##');
+  if (!rx) return;
+  if (current) write(buildPayload());
+  else if (!standby()) write('l##');
 }
 
 function snRank(){
@@ -2334,7 +2374,9 @@ function c4Stop(){
   c4StopClock();
   c4 = null;
   c4Draw();
-  if (rx) write(current ? buildPayload() : 'l##');
+  if (!rx) return;
+  if (current) write(buildPayload());
+  else if (!standby()) write('l##');
   log('connect four: back to problems.');
 }
 
@@ -2477,6 +2519,10 @@ function loadCal(){
   }catch(e){}
 }
 $('order').onchange = () => { saveCal(); paint(); };
+$('standby').onchange = () => {
+  try{ localStorage.setItem('mb-standby', $('standby').value); }catch(e){}
+  if (!current && rx && !standby()) write('l##');
+};
 $('offset').oninput = () => { saveCal(); paint(); };
 $('chunk').oninput = saveCal;
 $('relayBtn').onclick = () => relayWant ? relayDisconnect() : relayConnect();
@@ -2504,6 +2550,8 @@ try{
   // Before these were split, picking a name in the view filter was how you said
   // who you were - carry that over rather than asking again.
   $('hideDone').value = localStorage.getItem('mb-hide') || '';
+  const sb = localStorage.getItem('mb-standby');
+  if (sb !== null) $('standby').value = sb;
   const m = localStorage.getItem('mb-me') || w;
   if (m){ $('me').appendChild(new Option(m, m)); $('me').value = m; lastMe = m; }
 }catch(e){}
