@@ -159,14 +159,15 @@
   #c4turn.over i,#c4turn.idle i{animation:none}
   @keyframes turnPulse{0%,100%{opacity:1}50%{opacity:.12}}
 
+  /* the two panel toggles sit bottom-right, under the list */
+  #footBtns{display:flex;justify-content:flex-end;gap:8px;margin:4px 0 12px}
+  #footBtns button{width:auto;padding:8px 14px}
+  #footBtns button.on{background:var(--panel2);color:var(--ink);border-color:#3a3a40}
+  .panel{border-top:1px solid var(--edge);padding-top:14px;margin-bottom:22px}
+
   section{margin-bottom:18px}
   #controls{margin-bottom:8px}
-  details{border-top:1px solid var(--edge);padding-top:14px;margin-top:26px}
-  summary{font-size:11px;letter-spacing:.12em;text-transform:uppercase;
-          color:var(--dimmer);list-style:none;cursor:pointer}
-  summary::-webkit-details-marker{display:none}
-  details[open] summary{margin-bottom:14px;color:var(--dim)}
-  details .lbl{margin-top:14px}
+  .panel .lbl{margin-top:14px}
   .hint{font-size:12px;color:var(--dimmer);margin-top:8px;line-height:1.5}
   code{font:12px ui-monospace,Menlo,monospace;color:var(--dim);word-break:break-all}
   #log{font:11px/1.6 ui-monospace,Menlo,monospace;color:var(--dimmer);
@@ -243,8 +244,27 @@
   <div id="results"></div>
 </section>
 
-<details>
-  <summary>Settings &amp; calibration</summary>
+<div id="footBtns">
+  <button id="gameBtn" class="ghost mini">Connect four</button>
+  <button id="setBtn" class="ghost mini">Settings</button>
+</div>
+
+<div id="gamePanel" class="panel" hidden>
+  <div class="lbl">Connect four</div>
+  <div class="hint">Two players on the wall — green drops first, then blue. Tap a column.
+    Played on C–I, rows 7–12, which keeps clear of the dead A2 and A4 holds.</div>
+  <div id="c4"></div>
+  <div class="two" style="margin-top:8px">
+    <button id="c4new" class="ghost mini">New game</button>
+    <button id="c4off" class="ghost mini">Back to problems</button>
+  </div>
+  <div id="c4turn"><i></i><span>not started</span></div>
+  <label class="ck"><input type="checkbox" id="c4flash" checked>
+    Pulse the turn colour on the wall (row 14)</label>
+
+</div>
+
+<div id="setPanel" class="panel" hidden>
 
   <label class="ck"><input type="checkbox" id="auto" checked>
     Light the wall as soon as I pick a problem</label>
@@ -292,25 +312,13 @@
   </div>
   <div class="hint" id="relayState">relay off</div>
 
-  <div class="lbl">Connect four</div>
-  <div class="hint">Two players on the wall — green drops first, then blue. Tap a column.
-    Played on C–I, rows 7–12, which keeps clear of the dead A2 and A4 holds.</div>
-  <div id="c4"></div>
-  <div class="two" style="margin-top:8px">
-    <button id="c4new" class="ghost mini">New game</button>
-    <button id="c4off" class="ghost mini">Back to problems</button>
-  </div>
-  <div id="c4turn"><i></i><span>not started</span></div>
-  <label class="ck"><input type="checkbox" id="c4flash" checked>
-    Pulse the turn colour on the wall (row 14)</label>
-
   <div class="lbl">Log</div>
   <div id="log">idle.</div>
   <div class="two" style="margin-top:10px">
     <button id="copy" class="ghost">Copy log</button>
     <button id="probe" class="ghost" disabled>Probe services</button>
   </div>
-</details>
+</div>
 
 </div><!-- /#scroll -->
 
@@ -1554,6 +1562,21 @@ function showFilters(on){
   $('filtBtn').className = on ? 'ghost on' : 'ghost';
 }
 $('filtBtn').onclick = () => showFilters($('filters').hidden);
+
+function showPanel(which){          // 'game' | 'set' | null
+  $('gamePanel').hidden = which !== 'game';
+  $('setPanel').hidden  = which !== 'set';
+  $('gameBtn').className = 'ghost mini' + (which === 'game' ? ' on' : '');
+  $('setBtn').className  = 'ghost mini' + (which === 'set'  ? ' on' : '');
+  if (which) $(which === 'game' ? 'gamePanel' : 'setPanel')
+    .scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+$('gameBtn').onclick = () => {
+  const open = $('gamePanel').hidden;
+  showPanel(open ? 'game' : null);
+  if (open && !c4) c4New();         // land on a playable board, not an empty one
+};
+$('setBtn').onclick = () => showPanel($('setPanel').hidden ? 'set' : null);
 $('addWho').onclick = addPerson;
 $('c4new').onclick = c4New;
 $('c4off').onclick = c4Stop;

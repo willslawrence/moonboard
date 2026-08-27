@@ -43,7 +43,7 @@ chips.
 
 ## Connect four
 
-Tucked in the Settings section. Seven columns on C–I, six rows on 7–12 — middle of the
+Behind the **Connect four** button at the bottom right, beside Settings — its own panel now, not buried in the settings list. Opening it starts a game. Seven columns on C–I, six rows on 7–12 — middle of the
 wall, clear of the dead A2 and A4 holds. Green plays first, blue second, and a winning
 line goes red. One write per move, which suits a protocol that only does whole-wall
 rewrites.
