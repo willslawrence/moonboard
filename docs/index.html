@@ -1996,7 +1996,7 @@ const ART = {
   ],
 };
 
-/* MOON, scrolled. Four 4-wide letters with a column between them is nineteen
+/* MOON, scrolled. Four 5-wide letters with a column between them is twenty-three
    columns of content against an eleven wide wall, which is why the word can't
    sit still here - but it can walk past. One frame every 70ms, which the box
    keeps up with (30ms garbles it), and it settles on the static moon.
@@ -2004,10 +2004,13 @@ const ART = {
    This runs once, on connect. Everything else that draws standby draws the moon
    directly - an animation every time you cleared a problem would be the flicker
    all over again. */
+/* Five wide, not four. In four columns M has nowhere to put its middle V and
+   comes out as an H with a thick bar - N has the same problem. Five gives both
+   a real diagonal. Twenty-three columns of content now, so the scroll is 2.5s. */
 const FONT = {
-  M: ['#..#', '####', '####', '#..#', '#..#'],
-  O: ['.##.', '#..#', '#..#', '#..#', '.##.'],
-  N: ['#..#', '##.#', '#.##', '#..#', '#..#'],
+  M: ['#...#', '##.##', '#.#.#', '#...#', '#...#'],
+  O: ['.###.', '#...#', '#...#', '#...#', '.###.'],
+  N: ['#...#', '##..#', '#.#.#', '#..##', '#...#'],
 };
 const WORD = 'MOON';
 const WORD_ROW = 11;                    // top row of the 5-tall letters
