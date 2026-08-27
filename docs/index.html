@@ -51,12 +51,13 @@
   .rt{display:flex;align-items:center;gap:12px;padding:13px 2px;
       border-bottom:1px solid #202024}
   .rt:active{background:var(--panel)}
-  .gd{flex:none;width:44px;font:700 13px ui-monospace,Menlo,monospace;color:var(--dim)}
+  .gd{flex:none;padding:3px 7px;border-radius:6px;
+       font:700 12px ui-monospace,Menlo,monospace}
   .nm{flex:1;min-width:0}
   .nm b{display:block;font-weight:600;font-size:15px;
         white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .nm span{font-size:12px;color:var(--dimmer)}
-  .rt.sel .gd,.rt.sel .nm b{color:#fff}
+  .rt.sel .nm b{color:#fff}
   .rt.sel{background:var(--panel)}
   .chev{flex:none;color:var(--dimmer);font-size:13px}
 
@@ -72,7 +73,7 @@
      list moves when you scroll. Keep this modest - if #top grows taller than
      the viewport, sticky can't pin it and the whole thing scrolls away. */
   #boardWrap{padding:6px 0;margin:0}
-  #board{position:relative;width:min(100%,21vh);margin:0 auto;
+  #board{position:relative;width:100%;margin:0;
          border-radius:6px;overflow:hidden}
   #board img{display:block;width:100%;height:auto}   /* beat the height attribute */
   #marks{position:absolute;inset:0}
@@ -82,17 +83,25 @@
   .mark.P{border-color:#2563eb}
   .mark.E{border-color:#ef4444}
   .mark.g{width:6.4%;border-width:2px}
-  #gnote{margin-top:7px;text-align:center;font-size:12px;color:var(--dimmer)}
+  #gnote{margin-top:7px;text-align:left;font-size:12px;color:var(--dimmer)}
 
   /* ---- selected route bar: pinned directly under the header ---- */
   #bar{background:var(--bg);border-bottom:1px solid var(--edge);
-       padding:7px 0 8px;display:none}
+       padding:8px 0;display:none}
   #bar.show{display:block}
-  #barTxt b{display:block;font-size:14px;font-weight:600;
+  #barTxt{display:flex;align-items:center;gap:9px;min-width:0}
+  #barTxt b{font-size:15px;font-weight:600;
             white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #barTxt span{font-size:11px;color:var(--dimmer)}
-  #barBtns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px}
-  button.mini{padding:8px 4px;font-size:12px;font-weight:600;border-radius:7px}
+
+  /* grade pill - colour band by V-grade, same idea in the bar and the list */
+  .pill{flex:none;padding:3px 8px;border-radius:6px;
+        font:700 12px ui-monospace,Menlo,monospace}
+
+  /* the four actions stack down the space beside the board */
+  #boardRow{display:flex;gap:12px;align-items:flex-start}
+  #boardCol{flex:none;width:min(58%,21vh)}          /* board column sizes the row */
+  #barBtns{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px}
+  button.mini{padding:11px 6px;font-size:13px;font-weight:600;border-radius:7px}
   button.on{background:var(--ink);border-color:var(--ink);color:#0e0e0f}
 
   /* compact search + collapsible filters */
@@ -148,21 +157,25 @@
 </header>
 
 <div id="bar">
-  <div id="barTxt"><b></b><span></span></div>
-  <div id="barBtns">
-    <button id="tick" class="mini" disabled>+ List</button>
-    <button id="done" class="mini" disabled>Done</button>
-    <button id="clear" class="mini ghost">Clear</button>
-    <button id="send" class="mini solid" disabled>Light up</button>
-  </div>
+  <div id="barTxt"><span class="pill"></span><b></b></div>
 </div>
 
 <section id="boardWrap" style="display:none">
-  <div id="board">
-    <img src="board-2016.png" alt="MoonBoard 2016 wall" width="450" height="692">
-    <div id="marks"></div>
+  <div id="boardRow">
+    <div id="boardCol">
+      <div id="board">
+        <img src="board-2016.png" alt="MoonBoard 2016 wall" width="450" height="692">
+        <div id="marks"></div>
+      </div>
+      <div id="gnote"></div>
+    </div>
+    <div id="barBtns">
+      <button id="send" class="mini solid" disabled>Light up</button>
+      <button id="tick" class="mini" disabled>+ List</button>
+      <button id="done" class="mini" disabled>Done</button>
+      <button id="clear" class="mini ghost">Clear</button>
+    </div>
   </div>
-  <div id="gnote"></div>
 </section>
 
 <section id="controls">
@@ -342,6 +355,23 @@ function buildPayload(withGrade){
 /* ---------- benchmarks (2016 setup) ---------- */
 const GRADES = ['5+','6A','6A+','6B','6B+','6C','6C+','7A','7A+','7B','7B+',
                 '7C','7C+','8A','8A+','8B','8B+','8C'];
+/* Grade colour bands, three V-grades apiece. The first three follow the wall's
+   own green / blue / red, then it keeps climbing. */
+const GRADE_BANDS = [
+  { max: 3,  bg: '#22c55e', fg: '#06240e' },
+  { max: 6,  bg: '#2563eb', fg: '#eef4ff' },
+  { max: 9,  bg: '#ef4444', fg: '#fff1f1' },
+  { max: 12, bg: '#a855f7', fg: '#f6ecff' },
+  { max: 99, bg: '#e9e9ec', fg: '#0e0e0f' },
+];
+function paintPill(el, gradeIdx){
+  const v = VGRADE[gradeIdx];
+  const band = GRADE_BANDS.find(b => v <= b.max);
+  el.textContent = GRADES[gradeIdx] + ' \u00b7 V' + v;
+  el.style.background = band.bg;
+  el.style.color = band.fg;
+}
+
 // V-grade equivalents, same table the MoonBoard app shows.
 const VGRADE = [2,3,3,4,4,5,5,6,7,8,8,9,10,11,12,13,14,15];
 // [name, setter, gradeIdx, repeats, avgStars, startHolds, midHolds, endHolds]
@@ -1009,10 +1039,10 @@ function renderResults(){
     row.innerHTML = '<div class="gd"></div>' +
                     '<div class="nm"><b></b><span></span></div>' +
                     '<div class="who"></div><div class="chev">\u203a</div>';
-    row.querySelector('.gd').textContent = GRADES[r.grade];
+    paintPill(row.querySelector('.gd'), r.grade);
     row.querySelector('b').textContent = r.name;
     row.querySelector('span').textContent =
-      'V' + VGRADE[r.grade] + ' \u00b7 ' + r.setter;
+      r.setter;
     const whoBox = row.querySelector('.who');
     (done[r.id] || []).forEach(n => {                 // who has sent it
       const chip = document.createElement('b');
@@ -1063,8 +1093,7 @@ function loadRoute(r){
   renderResults();
   $('bar').className = 'show';
   $('barTxt').querySelector('b').textContent = r.name;
-  $('barTxt').querySelector('span').textContent =
-    GRADES[r.grade] + ' \u00b7 V' + VGRADE[r.grade] + ' \u00b7 ' + r.setter;
+  paintPill($('barTxt').querySelector('.pill'), r.grade);
   $('send').disabled = !rx;
   $('gnote').textContent = $('gbar').checked
     ? 'Bottom row = grade \u00b7 V' + VGRADE[r.grade]
