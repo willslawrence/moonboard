@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Wall sketchpad</title>
+<style>
+ :root{--bg:#0e0e0f;--panel:#171719;--edge:#2a2a2e;--ink:#e9e9ec;--dim:#8b8b93;--dimmer:#5c5c65}
+ *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+ body{margin:0;background:var(--bg);color:var(--ink);padding:16px 14px 40px;
+      font:15px/1.45 -apple-system,system-ui,sans-serif}
+ h1{font-size:13px;letter-spacing:.16em;text-transform:uppercase;margin:0 0 4px}
+ .sub{font-size:12px;color:var(--dimmer);margin-bottom:14px}
+ .lbl{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dimmer);margin:14px 0 6px}
+ #grid{display:grid;grid-template-columns:18px repeat(11,1fr);gap:3px;
+       width:min(100%,300px);margin:0 auto}
+ .rl,.cl{display:flex;align-items:center;justify-content:center;
+         font:9px ui-monospace,Menlo,monospace;color:var(--dimmer)}
+ .c{aspect-ratio:1;border-radius:50%;border:1.5px solid #262a33;background:#12141a}
+ .c.S{background:#22c55e;border-color:#22c55e}
+ .c.P{background:#2563eb;border-color:#2563eb}
+ .c.E{background:#ef4444;border-color:#ef4444}
+ .c.dead{border-style:dashed;border-color:#4a2020}
+ button,select,input{font:inherit;color:var(--ink);background:var(--panel);
+   border:1px solid var(--edge);border-radius:8px;padding:9px 12px}
+ .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+ .row>*{flex:1;min-width:96px}
+ pre{background:var(--panel);border:1px solid var(--edge);border-radius:9px;padding:11px;
+     font:12px/1.5 ui-monospace,Menlo,monospace;color:#9fd0ff;white-space:pre;overflow:auto;margin:0}
+ .meta{font-size:12px;color:var(--dim);margin-top:8px}
+ .warn{color:#f59e0b}
+</style></head><body>
+
+<h1>Wall sketchpad</h1>
+<div class="sub">Tap a hold to cycle it: off → green → blue → red. A2 and A4 are dead —
+they're outlined and never included.</div>
+
+<div id="grid"></div>
+
+<div class="row">
+  <button id="clear">Clear</button>
+  <select id="paint">
+    <option value="cycle">Tap cycles colour</option>
+    <option value="S">Paint green</option>
+    <option value="P">Paint blue</option>
+    <option value="E">Paint red</option>
+  </select>
+</div>
+
+<div class="lbl">Send it to the wall</div>
+<div class="row">
+  <input id="room" placeholder="relay room code" autocapitalize="off" spellcheck="false">
+  <button id="send">Send</button>
+  <button id="off">Wall off</button>
+</div>
+<div class="meta" id="sendState">not sent</div>
+
+<div class="lbl">Payload</div>
+<pre id="payload">l##</pre>
+<div class="meta" id="bytes"></div>
+
+<div class="lbl">Pattern — paste this back to Claude</div>
+<pre id="art"></pre>
+<div class="row"><button id="copy">Copy pattern</button></div>
+
+<script>
+const COLS=11, ROWS=18, LETTERS='ABCDEFGHIJK'.split('');
+const DEAD=new Set(['1,2','1,4']);
+const RELAY='https://moonboard-relay.willslawrence.workers.dev';
+const state={};                                  // "col,row" -> S|P|E
+const $=id=>document.getElementById(id);
+
+// column-major serpentine, 0-based - the mapping the wall actually uses
+const holdNum=(col,row)=>(col-1)*ROWS+((col%2)?(row-1):(ROWS-row));
+
+function build(){
+  const g=$('grid'); g.innerHTML='';
+  for(let row=ROWS;row>=1;row--){
+    const rl=document.createElement('div'); rl.className='rl'; rl.textContent=row; g.appendChild(rl);
+    for(let col=1;col<=COLS;col++){
+      const c=document.createElement('div');
+      c.className='c'+(DEAD.has(col+','+row)?' dead':'');
+      c.dataset.k=col+','+row;
+      c.title=LETTERS[col-1]+row+'  #'+holdNum(col,row);
+      c.onclick=()=>tap(col,row);
+      g.appendChild(c);
+    }
+  }
+  const sp=document.createElement('div'); sp.className='cl'; g.appendChild(sp);
+  LETTERS.forEach(L=>{const d=document.createElement('div'); d.className='cl'; d.textContent=L; g.appendChild(d);});
+  paint();
+}
+
+function tap(col,row){
+  if(DEAD.has(col+','+row)) return;
+  const k=col+','+row, mode=$('paint').value;
+  if(mode==='cycle'){
+    const next={undefined:'S',S:'P',P:'E',E:undefined}[state[k]];
+    if(next) state[k]=next; else delete state[k];
+  } else {
+    if(state[k]===mode) delete state[k]; else state[k]=mode;
+  }
+  paint();
+}
+
+function payload(){
+  const parts=[];
+  for(const k in state){
+    const [col,row]=k.split(',').map(Number);
+    parts.push({t:state[k],n:holdNum(col,row)});
+  }
+  parts.sort((a,b)=>a.n-b.n);
+  return 'l#'+parts.map(p=>p.t+p.n).join(',')+'#';
+}
+
+function paint(){
+  document.querySelectorAll('.c').forEach(c=>{
+    const v=state[c.dataset.k];
+    c.className='c'+(DEAD.has(c.dataset.k)?' dead':'')+(v?' '+v:'');
+  });
+  const p=payload();
+  $('payload').textContent=p;
+  const n=Object.keys(state).length;
+  $('bytes').innerHTML=n+' lit · '+p.length+' bytes'+
+    (p.length>250?' <span class="warn">— past the ~250 byte safe limit, the box may truncate it</span>':'');
+  const rows=[];
+  for(let row=ROWS;row>=1;row--){
+    let line='';
+    for(let col=1;col<=COLS;col++){
+      const v=state[col+','+row];
+      line += v==='S'?'#':v==='P'?'o':v==='E'?'x':'.';
+    }
+    rows.push("'"+line+"',");
+  }
+  $('art').textContent=rows.join('\n');
+}
+
+$('clear').onclick=()=>{for(const k in state) delete state[k]; paint();};
+$('copy').onclick=async()=>{
+  try{ await navigator.clipboard.writeText($('art').textContent); $('sendState').textContent='pattern copied'; }
+  catch(e){ $('sendState').textContent='copy blocked — select it by hand'; }
+};
+try{ $('room').value=localStorage.getItem('sk-room')||''; }catch(e){}
+async function push(str){
+  const room=$('room').value.trim();
+  if(!room) return $('sendState').textContent='enter the relay room code first';
+  try{ localStorage.setItem('sk-room',room); }catch(e){}
+  $('sendState').textContent='sending…';
+  try{
+    const r=await fetch(RELAY+'/send?room='+encodeURIComponent(room),
+      {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payload:str})});
+    const d=await r.json();
+    $('sendState').textContent = d.error ? ('relay: '+d.error)
+      : ('sent to '+(d.bridges||0)+' bridge'+(d.bridges===1?'':'s'));
+  }catch(e){ $('sendState').textContent='relay unreachable: '+e.message; }
+}
+$('send').onclick=()=>push(payload());
+$('off').onclick=()=>push('l##');
+build();
+</script>
+</body></html>
