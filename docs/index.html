@@ -15,10 +15,13 @@
   body{font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
        padding:0 14px calc(env(safe-area-inset-bottom) + 24px);}
 
-  header{position:sticky;top:0;z-index:20;background:var(--bg);
-         display:flex;align-items:center;gap:10px;
+  /* Everything above the problem list rides in one sticky block, so the board
+     and the search stay put while only the list scrolls. */
+  #top{position:sticky;top:0;z-index:20;background:var(--bg);
+       border-bottom:1px solid var(--edge);margin-bottom:6px}
+  header{display:flex;align-items:center;gap:10px;
          padding:calc(env(safe-area-inset-top) + 14px) 0 12px;
-         border-bottom:1px solid var(--edge);margin-bottom:14px}
+         border-bottom:1px solid var(--edge)}
   h1{flex:1;font-size:13px;margin:0;font-weight:700;letter-spacing:.18em;text-transform:uppercase}
   #dot{width:7px;height:7px;border-radius:50%;background:var(--dimmer);flex:none}
   #dot.on{background:var(--ink)}
@@ -44,7 +47,7 @@
 
   /* ---- results ---- */
   #count{font-size:11px;color:var(--dimmer);letter-spacing:.06em;
-         text-transform:uppercase;margin:14px 0 4px}
+         text-transform:uppercase;margin:10px 0 4px}
   .rt{display:flex;align-items:center;gap:12px;padding:13px 2px;
       border-bottom:1px solid #202024}
   .rt:active{background:var(--panel)}
@@ -64,11 +67,12 @@
      Moonboard-Guidebook renders with. Everything below is those as percentages,
      so the overlay scales with the image. Column letters and row numbers are
      already printed on the photo. */
-  /* The wall is 450x692, so width drives height x1.54 — 24vh wide is ~37vh
-     tall. The board scrolls with the page - the search sits under it, so
-     pinning the board would hide the search. The action bar stays pinned. */
-  #boardWrap{padding-bottom:10px;margin-bottom:0}
-  #board{position:relative;width:min(100%,24vh);margin:0 auto;
+  /* The wall is 450x692, so width drives height x1.54 — 21vh wide is ~32vh
+     tall. Board, search and filters all live inside #top, so nothing above the
+     list moves when you scroll. Keep this modest - if #top grows taller than
+     the viewport, sticky can't pin it and the whole thing scrolls away. */
+  #boardWrap{padding:6px 0;margin:0}
+  #board{position:relative;width:min(100%,21vh);margin:0 auto;
          border-radius:6px;overflow:hidden}
   #board img{display:block;width:100%;height:auto}   /* beat the height attribute */
   #marks{position:absolute;inset:0}
@@ -78,23 +82,22 @@
   .mark.P{border-color:#2563eb}
   .mark.E{border-color:#ef4444}
   .mark.g{width:6.4%;border-width:2px}
-  #gnote{margin-top:9px;text-align:center;font-size:12px;color:var(--dimmer)}
+  #gnote{margin-top:7px;text-align:center;font-size:12px;color:var(--dimmer)}
 
   /* ---- selected route bar: pinned directly under the header ---- */
-  #bar{position:sticky;top:calc(env(safe-area-inset-top) + 57px);z-index:11;
-       background:var(--bg);border-bottom:1px solid var(--edge);
-       padding:9px 0 10px;display:none}
+  #bar{background:var(--bg);border-bottom:1px solid var(--edge);
+       padding:7px 0 8px;display:none}
   #bar.show{display:block}
   #barTxt b{display:block;font-size:14px;font-weight:600;
             white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #barTxt span{font-size:11px;color:var(--dimmer)}
-  #barBtns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
-  button.mini{padding:9px 4px;font-size:12px;font-weight:600;border-radius:7px}
+  #barBtns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px}
+  button.mini{padding:8px 4px;font-size:12px;font-weight:600;border-radius:7px}
   button.on{background:var(--ink);border-color:var(--ink);color:#0e0e0f}
 
   /* compact search + collapsible filters */
-  #q{padding:10px;font-size:13px}
-  #filters{border:0;border-top:1px solid var(--edge);padding-top:9px;margin-top:9px}
+  #q{padding:9px 10px;font-size:13px}
+  #filters{border:0;border-top:1px solid var(--edge);padding-top:7px;margin-top:7px}
   #filters summary{font-size:10px}
   #filters select{padding:8px;font-size:12px}
   #filters .lbl{margin-bottom:4px;margin-top:0}
@@ -114,6 +117,7 @@
   #c4 div.win{background:#ef4444;border-color:#ef4444}
 
   section{margin-bottom:22px}
+  #controls{margin-bottom:8px}
   details{border-top:1px solid var(--edge);padding-top:14px;margin-top:26px}
   summary{font-size:11px;letter-spacing:.12em;text-transform:uppercase;
           color:var(--dimmer);list-style:none;cursor:pointer}
@@ -129,6 +133,8 @@
 </style>
 </head>
 <body>
+
+<div id="top">
 
 <header>
   <span id="dot"></span>
@@ -154,7 +160,7 @@
   <div id="gnote"></div>
 </section>
 
-<section>
+<section id="controls">
   <input type="text" id="q" placeholder="Search problem or setter"
          spellcheck="false" autocapitalize="off" autocomplete="off">
 
@@ -177,7 +183,11 @@
       </select></div>
     </div>
   </details>
+</section>
 
+</div><!-- /#top -->
+
+<section>
   <div id="count"></div>
   <div id="results"></div>
 </section>
