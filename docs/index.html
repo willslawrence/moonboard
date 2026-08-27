@@ -1019,7 +1019,7 @@ function fillWho(){
 
   const me = $('me'), keepMe = me.value;
   me.innerHTML = '';
-  me.appendChild(new Option('Who?', ''));
+  me.appendChild(new Option('Climber?', ''));
   people.forEach(p => me.appendChild(new Option(p, p)));
   me.value = people.includes(keepMe) ? keepMe : '';
   try{
