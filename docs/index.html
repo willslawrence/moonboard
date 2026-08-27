@@ -27,12 +27,15 @@
   header{display:flex;align-items:center;gap:10px;
          padding:calc(env(safe-area-inset-top) + 14px) 0 12px;
          border-bottom:1px solid var(--edge)}
-  h1{flex:1;font-size:13px;margin:0;font-weight:700;letter-spacing:.18em;text-transform:uppercase}
+  h1{flex:1;min-width:0;font-size:11px;margin:0;font-weight:700;letter-spacing:.13em;
+     text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  header #me{flex:none;width:96px;padding:7px 8px;font-size:16px;
+             text-overflow:ellipsis;border-radius:8px}
   #dot{width:7px;height:7px;border-radius:50%;background:var(--dimmer);flex:none}
   #dot.on{background:var(--ink)}
   #dot.busy{background:var(--dim);animation:pulse 1s infinite}
   @keyframes pulse{50%{opacity:.25}}
-  #connect{flex:none;width:auto;padding:7px 14px;font-size:12px;letter-spacing:.04em}
+  #connect{flex:none;width:auto;padding:7px 11px;font-size:12px;letter-spacing:.02em}
 
   button{width:100%;padding:13px 12px;border-radius:8px;border:1px solid var(--edge);
          background:var(--panel2);color:var(--ink);font:600 14px inherit;font-family:inherit}
@@ -79,9 +82,12 @@
      list moves when you scroll. Keep this modest - if #top grows taller than
      the viewport, sticky can't pin it and the whole thing scrolls away. */
   #boardWrap{padding:6px 0;margin:0}
-  #board{position:relative;width:100%;margin:0;
-         border-radius:6px;overflow:hidden}
+  #board{position:relative;width:min(100%,26vh);margin:0 auto;
+         border-radius:6px;overflow:hidden;touch-action:pan-y}
+  /* iOS starts its own image drag on a sideways swipe, which eats the gesture */
+  #board img{-webkit-user-drag:none;user-select:none;pointer-events:none}
   #board img{display:block;width:100%;height:auto}   /* beat the height attribute */
+  #marks{pointer-events:none}
   #marks{position:absolute;inset:0}
   .mark{position:absolute;width:8.9%;aspect-ratio:1;box-sizing:border-box;
         border:2.5px solid;border-radius:50%;transform:translate(-50%,-50%)}
@@ -89,7 +95,7 @@
   .mark.P{border-color:#2563eb}
   .mark.E{border-color:#ef4444}
   .mark.g{width:6.4%;border-width:2px}
-  #gnote{margin-top:7px;text-align:left;font-size:12px;color:var(--dimmer)}
+  #gnote{margin-top:7px;text-align:center;font-size:12px;color:var(--dimmer)}
 
   /* ---- selected route bar: pinned directly under the header ---- */
   #bar{background:var(--bg);border-bottom:1px solid var(--edge);
@@ -104,19 +110,24 @@
         font:700 10px ui-monospace,Menlo,monospace;letter-spacing:-.02em}
 
   /* the four actions stack down the space beside the board */
-  #boardRow{display:flex;gap:12px;align-items:flex-start}
-  #boardCol{flex:none;width:min(58%,21vh)}          /* board column sizes the row */
-  #barBtns{flex:none;width:88px;display:flex;flex-direction:column;gap:6px}
+  /* An empty column mirrors the button column, so the board sits dead centre
+     on the page rather than centred in whatever is left over. */
+  #boardRow{display:grid;grid-template-columns:72px 1fr 72px;gap:8px;align-items:start}
+  #boardCol{min-width:0}
+  #barBtns{display:flex;flex-direction:column;gap:6px}
   button.mini{padding:5px 6px;font-size:12px;font-weight:600;border-radius:6px}
   button.on{background:var(--ink);border-color:var(--ink);color:#0e0e0f}
 
-  /* compact search + collapsible filters */
-  #q{padding:9px 10px;font-size:16px}
-  #filters{border:0;border-top:1px solid var(--edge);padding-top:7px;margin-top:7px}
-  #filters summary{font-size:10px}
+  /* search, tick-list picker and the filter toggle share one row */
+  #searchRow{display:grid;grid-template-columns:1fr 1fr 44px;gap:6px}
+  #searchRow #q{padding:9px 10px;font-size:16px}
+  #searchRow #who{padding:9px 8px;font-size:16px;text-overflow:ellipsis}
+  #filtBtn{width:44px;padding:9px 0;font-size:17px;line-height:1;border-radius:8px}
+  #filtBtn.on{background:var(--panel2);color:var(--ink);border-color:#3a3a40}
+  #filters{border-top:1px solid var(--edge);padding-top:9px;margin-top:9px}
   #filters select{padding:7px 8px;font-size:16px}
   #filters .lbl{margin-bottom:4px;margin-top:0}
-  #filters .two{grid-template-columns:1fr auto}
+
   #filters button.mini{padding:8px 10px;white-space:nowrap}
 
   /* who has sent it - a coloured initial per climber */
@@ -159,6 +170,7 @@
 <header>
   <span id="dot"></span>
   <h1>MoonBoard</h1>
+  <select id="me" aria-label="Climbing as"></select>
   <button id="connect">Connect</button>
 </header>
 
@@ -168,6 +180,7 @@
 
 <section id="boardWrap" style="display:none">
   <div id="boardRow">
+    <div></div><!-- mirrors the button column so the board lands dead centre -->
     <div id="boardCol">
       <div id="board">
         <img src="board-2016.png" alt="MoonBoard 2016 wall" width="450" height="692">
@@ -185,19 +198,17 @@
 </section>
 
 <section id="controls">
-  <input type="text" id="q" placeholder="Search problem or setter"
-         spellcheck="false" autocapitalize="off" autocomplete="off">
-
-  <details id="filters">
-    <summary>Filters</summary>
-    <div class="lbl">Climbing as</div>
-    <div class="two">
-      <select id="me"></select>
-      <button id="addWho" class="ghost mini">+ New climber</button>
-    </div>
-    <div class="lbl" style="margin-top:8px">Show tick list</div>
+  <div id="searchRow">
+    <input type="text" id="q" placeholder="Search"
+           spellcheck="false" autocapitalize="off" autocomplete="off">
     <select id="who"></select>
-    <div class="three" style="margin-top:8px">
+    <button id="filtBtn" class="ghost" aria-label="Filters">&#9776;</button>
+  </div>
+
+  <div id="filters" hidden>
+    <div class="lbl">Tick lists</div>
+    <button id="addWho" class="ghost mini">+ New climber</button>
+    <div class="three" style="margin-top:10px">
       <div><div class="lbl">From</div><select id="gmin"></select></div>
       <div><div class="lbl">To</div><select id="gmax"></select></div>
       <div><div class="lbl">Sort</div><select id="sort">
@@ -208,7 +219,7 @@
         <option value="name">A–Z</option>
       </select></div>
     </div>
-  </details>
+  </div>
 </section>
 
 </div><!-- /#top -->
@@ -992,7 +1003,7 @@ function fillWho(){
 
   const me = $('me'), keepMe = me.value;
   me.innerHTML = '';
-  me.appendChild(new Option('\u2014 pick your name \u2014', ''));
+  me.appendChild(new Option('Who?', ''));
   people.forEach(p => me.appendChild(new Option(p, p)));
   me.value = people.includes(keepMe) ? keepMe : '';
   try{
@@ -1033,11 +1044,9 @@ function paintBar(){
 function needName(action){
   if (meNow()) return false;
   pending = action;
-  $('filters').open = true;
   $('me').focus();
-  $('me').scrollIntoView({ block: 'center' });
-  $('count').textContent = 'Pick your name under \u201cClimbing as\u201d';
-  log('pick your name under Filters \u2192 Climbing as.');
+  $('count').textContent = 'Pick your name up in the header first';
+  log('pick your name from the header, next to Connect.');
   return true;
 }
 
@@ -1337,18 +1346,29 @@ function stepProblem(delta){
 (function boardSwipe(){
   const el = $('board');
   let x0 = null, y0 = null;
-  el.addEventListener('touchstart', e => {
-    if (e.touches.length !== 1) return;
-    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
-  }, { passive: true });
-  el.addEventListener('touchend', e => {
+
+  const start = (x, y) => { x0 = x; y0 = y; };
+  const end = (x, y) => {
     if (x0 === null) return;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - x0, dy = t.clientY - y0;
+    const dx = x - x0, dy = y - y0;
     x0 = null;
-    if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy)) return;
+    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
     stepProblem(dx < 0 ? 1 : -1);               // flick left for the next one
-  }, { passive: true });
+  };
+
+  if (window.PointerEvent){
+    el.addEventListener('pointerdown', e => start(e.clientX, e.clientY));
+    el.addEventListener('pointerup',   e => end(e.clientX, e.clientY));
+    el.addEventListener('pointercancel', () => { x0 = null; });
+  } else {
+    el.addEventListener('touchstart', e => {
+      if (e.touches.length === 1) start(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    el.addEventListener('touchend', e => {
+      const t = e.changedTouches[0];
+      end(t.clientX, t.clientY);
+    }, { passive: true });
+  }
 })();
 
 /* ---------- connect four ----------
@@ -1484,6 +1504,11 @@ $('who').onchange = () => {
   try{ localStorage.setItem('mb-who', $('who').value); }catch(e){}
   renderResults(); paintBar();
 };
+function showFilters(on){
+  $('filters').hidden = !on;
+  $('filtBtn').className = on ? 'ghost on' : 'ghost';
+}
+$('filtBtn').onclick = () => showFilters($('filters').hidden);
 $('addWho').onclick = addPerson;
 $('c4new').onclick = c4New;
 $('c4off').onclick = c4Stop;
