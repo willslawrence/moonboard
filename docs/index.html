@@ -394,6 +394,7 @@
   <div class="lbl">On connect</div>
   <select id="standby">
     <option value="moon">Scroll MOON, settle on the moon</option>
+    <option value="will">Show Will Wall</option>
     <option value="climber">Show a climber</option>
     <option value="frame">Show a frame</option>
     <option value="">Leave the wall dark</option>
@@ -1988,6 +1989,13 @@ const ART = {
     '.#.........', '.##........', '..#........', '..##.....#.', '...##..##..',
     '....###....', '...........', '...........',
   ],
+  // Will's own, drawn at the wall in the sketchpad - two overlapping Ws
+  will: [
+    '...........', '...........', '...........', '...........', '...........',
+    '#.....#....', '.#.x.#...o.', '..#.x.o.o..', '.....o.o...', '...........',
+    '...........', '...........', '...........', '...........', '...........',
+    '...........', '...........', '...........',
+  ],
   climber: [
     '...#.......', '...#.......', '...#.......', '...##......', '....##.....',
     '....###....', '.....##....', '....###....', '...#..#....', '..#...#....',
@@ -2046,13 +2054,17 @@ async function moonIntro(){
   if (rx && introToken === mine) write(standbyPayload());
 }
 
+/* Patterns come straight out of the sketchpad, which writes # for green, o for
+   blue and x for red - so the renderer speaks that rather than green-only. */
+const ART_TAG = { '#': 'S', o: 'P', x: 'E' };
+
 function artCells(rows){
   const out = [];
   rows.forEach((line, i) => {
     const row = ROWS - i;
     [...line].forEach((ch, j) => {
-      const col = j + 1;
-      if (ch === '#' && !ART_DEAD.has(col + ',' + row)) out.push(holdNum(col, row));
+      const col = j + 1, tag = ART_TAG[ch];
+      if (tag && !ART_DEAD.has(col + ',' + row)) out.push({ tag, n: holdNum(col, row) });
     });
   });
   return out;
@@ -2061,12 +2073,12 @@ function artCells(rows){
 function frameCells(){                // dashed - a solid perimeter is 54 LEDs
   const out = [];
   for (let col = 1; col <= COLS; col += 2){
-    out.push(holdNum(col, 1));
-    out.push(holdNum(col, ROWS));
+    out.push({ tag: 'S', n: holdNum(col, 1) });
+    out.push({ tag: 'S', n: holdNum(col, ROWS) });
   }
   for (let row = 3; row < ROWS; row += 2){
-    if (!ART_DEAD.has('1,' + row)) out.push(holdNum(1, row));
-    out.push(holdNum(COLS, row));
+    if (!ART_DEAD.has('1,' + row)) out.push({ tag: 'S', n: holdNum(1, row) });
+    out.push({ tag: 'S', n: holdNum(COLS, row) });
   }
   return out;
 }
@@ -2074,7 +2086,7 @@ function frameCells(){                // dashed - a solid perimeter is 54 LEDs
 function standbyPayload(){
   const kind = $('standby').value;
   const cells = kind === 'frame' ? frameCells() : artCells(ART[kind] || ART.moon);
-  return 'l#' + cells.sort((a, b) => a - b).map(n => 'S' + n).join(',') + '#';
+  return 'l#' + cells.sort((a, b) => a.n - b.n).map(c => c.tag + c.n).join(',') + '#';
 }
 
 function standby(){

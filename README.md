@@ -30,7 +30,11 @@ in both the script and the page.
 
 Connecting a phone puts something on the wall, and it comes back whenever nothing is loaded.
 It answers the only question you have at that moment - is this thing actually talking to the
-box - without picking a problem to find out. Choose the scrolling MOON, a climber, a dashed frame, or nothing, in Settings.
+box - without picking a problem to find out. Choose the scrolling MOON, Will Wall, a climber, a dashed frame, or nothing, in Settings.
+
+Patterns are stored as eighteen quoted rows using the sketchpad's own alphabet - `#` green,
+`o` blue, `x` red - so anything drawn at the wall in `sketch.html` pastes straight in. Will
+Wall came in that way: two overlapping Ws, twelve LEDs.
 
 The word can't sit still on the wall - four 4-wide letters want nineteen columns against
 eleven - but it can walk past. MOON scrolls right to left over about two seconds, a frame
