@@ -30,12 +30,14 @@ in both the script and the page.
 
 Connecting a phone puts something on the wall, and it comes back whenever nothing is loaded.
 It answers the only question you have at that moment - is this thing actually talking to the
-box - without picking a problem to find out. Will Wall by default - one write, straight up, stays there. The moon, a climber, a dashed
+box - without picking a problem to find out. WW by default - two overlapping Ws, twelve LEDs, one write, straight up, stays there.
+WILL WALL spells it out instead: WILL down the left in blue, WALL down the right in green,
+46 LEDs and 208 bytes. The moon, a climber, a dashed
 frame, the scrolling MOON, or nothing are all in Settings.
 
 Patterns are stored as eighteen quoted rows using the sketchpad's own alphabet - `#` green,
-`o` blue, `x` red - so anything drawn at the wall in `sketch.html` pastes straight in. Will
-Wall came in that way: two overlapping Ws, twelve LEDs.
+`o` blue, `x` red - so anything drawn at the wall in `sketch.html` pastes straight in. Both
+Will patterns came in that way.
 
 The scrolling MOON is its own option rather than the default. The word can't sit still on the
 wall - four letters want nineteen columns against eleven - but it can walk past, right to

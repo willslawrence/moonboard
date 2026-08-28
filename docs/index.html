@@ -393,7 +393,8 @@
 
   <div class="lbl">On connect</div>
   <select id="standby">
-    <option value="will">Show Will Wall</option>
+    <option value="will">Show WW</option>
+    <option value="willwall">Show WILL WALL</option>
     <option value="moon">Show the moon</option>
     <option value="climber">Show a climber</option>
     <option value="frame">Show a frame</option>
@@ -1990,12 +1991,20 @@ const ART = {
     '.#.........', '.##........', '..#........', '..##.....#.', '...##..##..',
     '....###....', '...........', '...........',
   ],
-  // Will's own, drawn at the wall in the sketchpad - two overlapping Ws
+  // Will's, drawn at the wall in the sketchpad. Two overlapping Ws.
   will: [
     '...........', '...........', '...........', '...........', '...........',
-    '#.....#....', '.#.x.#...o.', '..#.x.o.o..', '.....o.o...', '...........',
+    '...........', '#.....#....', '.#.#.#...o.', '..#.o.o.o..', '.....o.o...',
     '...........', '...........', '...........', '...........', '...........',
     '...........', '...........', '...........',
+  ],
+  // The same idea spelled out - WILL down the left in blue, WALL down the right
+  // in green, four letters apiece.
+  willwall: [
+    '...........', 'o...o.#...#', 'o.o.o.#.#.#', '.o.o...#.#.', '...........',
+    '.ooo....#..', '..o....#.#.', '.ooo...#.#.', '...........', '.o.....#...',
+    '.o.....#...', '.ooo...###.', '...........', '.o.....#...', '.o.....#...',
+    '.ooo...###.', '...........', '...........',
   ],
   climber: [
     '...#.......', '...#.......', '...#.......', '...##......', '....##.....',
