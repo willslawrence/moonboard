@@ -403,53 +403,21 @@
     <option value="">Leave the wall dark</option>
   </select>
 
-  <div class="lbl">Hold numbering</div>
-  <select id="order">
-    <option value="colSerp">Column serpentine, 0-based (A1=0, A18=17, B18=18) — confirmed</option>
-    <option value="colUp">Column-major, bottom→top (A1=1, A18=18, B1=19)</option>
-    <option value="rowUp">Row-major, bottom→top (A1=1, B1=2, … K1=11)</option>
-    <option value="rowDown">Row-major, top→bottom (A18=1, B18=2, …)</option>
-  </select>
-
-  <div class="two" style="margin-top:10px">
-    <div><div class="lbl">Offset</div><input type="number" id="offset" value="0" min="0" max="1"></div>
-    <div><div class="lbl">Chunk bytes</div><input type="number" id="chunk" value="20" min="8" max="200"></div>
-  </div>
-
-  <div class="lbl">Light one hold</div>
-  <div class="two">
-    <input type="number" id="single" value="0" min="0" max="197">
-    <button id="sendSingle" disabled>Send #</button>
-  </div>
-  <div class="hint">Walk 1 → 2 → 3 and watch which physical hold lights. That tells us the real ordering.</div>
-
-  <div class="lbl">Raw string</div>
-  <input type="text" id="raw" value="l#S5,P9,P13,E18#" spellcheck="false" autocapitalize="off">
-  <div style="margin-top:8px"><button id="sendRaw" disabled>Send raw</button></div>
-
-  <div class="lbl">Payload</div>
-  <code id="payload">l##</code>
-
-  <div class="lbl">Remote control (relay)</div>
-  <div class="hint">Lets Claude drive the wall while this page stays connected over
-    Bluetooth. The room code is the only secret — it is never stored in this page.</div>
+  <div class="lbl">Sharing the wall</div>
+  <div class="hint">The board takes one Bluetooth connection, so everyone shares the phone
+    that has it. Whoever taps Connect becomes the bridge automatically, and every other
+    phone sends what it lights through them. Nothing to set up — the code below is the same
+    on every phone, and only matters if you want a wall of your own.</div>
   <div class="two" style="margin-top:8px">
     <input type="text" id="room" placeholder="room code" spellcheck="false"
            autocapitalize="off" autocomplete="off">
     <button id="relayBtn" class="ghost">Connect relay</button>
   </div>
   <div class="hint" id="relayState">relay off</div>
-  <div class="hint">A room code does two jobs. If this phone is connected to the board,
-    <b>Connect relay</b> makes it the bridge. If it isn't, anything you light is posted to
-    the relay instead and written by whoever is bridging that code — which is how a second
-    phone puts problems up while someone else holds the Bluetooth link.</div>
 
   <div class="lbl">Log</div>
   <div id="log">idle.</div>
-  <div class="two" style="margin-top:10px">
-    <button id="copy" class="ghost">Copy log</button>
-    <button id="probe" class="ghost" disabled>Probe services</button>
-  </div>
+  <div style="margin-top:10px"><button id="copy" class="ghost">Copy log</button></div>
 </div>
 
 </div><!-- /#scroll -->
@@ -555,6 +523,10 @@ const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
 const COLS = 11, ROWS = 18;
+/* Settled against the wall on 2026-08-26 and unchanged since, so these are
+   constants rather than controls - the pickers were calibration scaffolding.
+   Column-major serpentine, 0-based: A1 = 0, A18 = 17, B18 = 18, K18 = 197. */
+const HOLD_ORDER = 'colSerp', HOLD_OFFSET = 0, CHUNK_BYTES = 20;
 const LETTERS = 'ABCDEFGHIJK'.split('');
 
 // Nordic DFU / bootloader — never write here.
@@ -565,21 +537,25 @@ const state = {};                      // "col,row" -> 'S' | 'P' | 'E'
 let gradeCells = {};                   // "col,1"   -> the row-1 grade meter
 const $ = id => document.getElementById(id);
 
+/* Capped. This grew without limit, and since it lives inside Settings the browser
+   only lays it out when you open that panel - so an evening's worth of lines made
+   opening Settings hang the app. Eighty is plenty to see what just happened. */
+const LOG_LINES = 80;
 function log(msg){
   const t = new Date().toLocaleTimeString();
-  $('log').textContent = `[${t}] ${msg}\n` + $('log').textContent;
+  const lines = ((`[${t}] ${msg}\n` + $('log').textContent).split('\n')).slice(0, LOG_LINES);
+  $('log').textContent = lines.join('\n');
 }
 function setLive(on, busy){
   $('dot').className = busy ? 'busy' : (on ? 'on' : (relayRoom() ? 'relay' : ''));
-  ['sendSingle','sendRaw','probe'].forEach(i => $(i).disabled = !on);   // Bluetooth only
   $('send').disabled = !canSend() || !current;
   $('connect').textContent = on ? 'Disconnect' : 'Connect';
 }
 
 /* ---------- hold numbering ---------- */
 function holdNum(col, row){            // col 1..11 left→right, row 1..18 bottom→top
-  const off = parseInt($('offset').value, 10);
-  const mode = $('order').value;
+  const off = HOLD_OFFSET;
+  const mode = HOLD_ORDER;
   let n;
   if (mode === 'colUp')        n = (col - 1) * ROWS + (row - 1);
   else if (mode === 'colSerp') n = (col - 1) * ROWS + ((col % 2) ? (row - 1) : (ROWS - row));
@@ -605,7 +581,6 @@ function paint(){
     d.style.top  = markY(row) + '%';
     m.appendChild(d);
   }
-  $('payload').textContent = buildPayload();
 }
 function buildPayload(withGrade){
   const parts = [];
@@ -1561,7 +1536,12 @@ async function connect(){
       filters: [{ services: [NUS] }, { namePrefix: 'Moon' }],
       optionalServices: [NUS]
     });
-    device.addEventListener('gattserverdisconnected', () => { rx = null; setLive(false); log('disconnected.'); });
+    device.addEventListener('gattserverdisconnected', () => {
+      rx = null;
+      if (relayWant) relayDisconnect();               // no board, nothing to bridge
+      setLive(false);
+      log('disconnected.');
+    });
     log('connecting to ' + (device.name || '(unnamed)') + ' …');
     const server = await device.gatt.connect();
     const svc = await server.getPrimaryService(NUS);
@@ -1576,6 +1556,9 @@ async function connect(){
     setLive(true);
     const p = Object.entries(rx.properties || {}).filter(([, v]) => v).map(([k]) => k).join(',');
     log('connected. Nordic UART found. RX props: [' + p + ']');
+    // Whoever holds the Bluetooth becomes the bridge automatically, so everyone
+    // else's phone can light the wall without being told to do anything.
+    if (relayRoom() && !relayWant) relayConnect();
     if (current) sendProblem();          // pick up whatever was already chosen
     else if ($('standby').value === 'moonScroll') moonIntro();
     else standby();
@@ -1625,7 +1608,7 @@ async function write(str, quiet){
   if (BLOCKED.some(b => rx.uuid.toLowerCase().includes(b))) return log('refusing — DFU characteristic.');
   if (/[SPE]0(,|#)/.test(str)) log('note: hold 0 (A1) does not light on this box — skipping it.');
   const bytes = new TextEncoder().encode(str);
-  const size = Math.max(8, parseInt($('chunk').value, 10) || 20);
+  const size = CHUNK_BYTES;
   if (!quiet) log('→ ' + str + '  (' + bytes.length + 'B, ' + Math.ceil(bytes.length / size) + ' chunk(s))');
   try{
     for (let i = 0; i < bytes.length; i += size){
@@ -1651,23 +1634,15 @@ async function sendProblem(){
   return write(buildPayload());
 }
 
-async function probe(){
-  if (!device || !device.gatt.connected) return log('not connected.');
-  log('probing (Web Bluetooth only shows allow-listed services) …');
-  try{
-    const svcs = await device.gatt.getPrimaryServices();
-    for (const s of svcs){
-      log('SERVICE ' + s.uuid);
-      for (const c of await s.getCharacteristics()){
-        const p = Object.entries(c.properties).filter(([, v]) => v).map(([k]) => k).join(',');
-        log('  char ' + c.uuid + ' [' + p + ']');
-      }
-    }
-  }catch(e){ log('probe failed: ' + e.message); }
-}
 
 /* ---------- relay ---------- */
 const RELAY_HOST = 'moonboard-relay.willslawrence.workers.dev';
+/* A shared default so nobody has to be told a code. It's in public source, so it
+   is not a secret any more - but the relay only does anything while a phone is
+   actively bridging, so the exposure is "someone could light the wall while we're
+   using it", not "someone could read our data". Change it in Settings on every
+   phone if that ever stops being fine. */
+const DEFAULT_ROOM = 'moonwall-crew';
 let relayWS = null, relayWant = false, relayTries = 0, wakeLock = null;
 
 function relayState(msg){ $('relayState').textContent = msg; }
@@ -2546,9 +2521,6 @@ $('connect').onclick = () => {
 };
 $('send').onclick  = sendProblem;
 $('clear').onclick = clearRoute;
-$('sendSingle').onclick = () => write('l#S' + (parseInt($('single').value, 10) || 1) + '#');
-$('sendRaw').onclick = () => write($('raw').value.trim());
-$('probe').onclick = probe;
 $('q').oninput = renderResults;
 $('gmin').onchange = () => { if (+$('gmax').value < +$('gmin').value) $('gmax').value = $('gmin').value; renderResults(); };
 $('gmax').onchange = () => { if (+$('gmax').value < +$('gmin').value) $('gmin').value = $('gmax').value; renderResults(); };
@@ -2667,22 +2639,10 @@ $('gbar').onchange = () => {
   if (canSend() && current) sendProblem();
 };
 
-function saveCal(){
-  try{ localStorage.setItem('mb-cal', JSON.stringify({o:$('order').value, f:$('offset').value, c:$('chunk').value})); }catch(e){}
-}
-function loadCal(){
-  try{
-    const c = JSON.parse(localStorage.getItem('mb-cal') || 'null');
-    if (c){ $('order').value = c.o; $('offset').value = c.f; if (c.c) $('chunk').value = c.c; }
-  }catch(e){}
-}
-$('order').onchange = () => { saveCal(); paint(); };
 $('standby').onchange = () => {
   try{ localStorage.setItem('mb-standby', $('standby').value); }catch(e){}
   if (!current && canSend() && !standby()) write('l##');
 };
-$('offset').oninput = () => { saveCal(); paint(); };
-$('chunk').oninput = saveCal;
 $('relayBtn').onclick = () => relayWant ? relayDisconnect() : relayConnect();
 $('room').oninput = () => {
   try{ localStorage.setItem('mb-room', $('room').value.trim()); }catch(e){}
@@ -2697,9 +2657,8 @@ $('copy').onclick = async () => {
   catch(e){ log('copy blocked — select the text manually.'); }
 };
 
-loadCal();
 try{
-  const savedRoom = localStorage.getItem('mb-room');
+  const savedRoom = localStorage.getItem('mb-room') || DEFAULT_ROOM;
   const hashRoom = (location.hash.match(/room=([\w-]+)/) || [])[1];
   if (hashRoom || savedRoom) $('room').value = hashRoom || savedRoom;
 }catch(e){}

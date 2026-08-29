@@ -31,11 +31,14 @@ in both the script and the page.
 The box takes a single Bluetooth connection, so only one phone can hold the link. Everyone
 else still gets the whole app - search, tick lists, logbook, points - with no Bluetooth at all.
 
-To light problems from a second phone, put the same **room code** in Settings on both. The
-connected phone taps **Connect relay** to become the bridge; the other one just needs the code
-typed in, and everything it lights is posted to the relay and written by the bridge. The
-header dot goes blue to say you're reaching the wall through someone else. Bluetooth always
-wins if this phone has it.
+Nothing to set up. Whoever taps **Connect** becomes the bridge automatically, and every other
+phone posts what it lights to the relay for that phone to write. The room code ships with a
+shared default, so a second phone just works. The header dot goes blue to say you're reaching
+the wall through someone else; Bluetooth always wins if this phone has it.
+
+The code is in public source, so it isn't a secret - but the relay only does anything while
+someone is actively bridging. Change it in Settings on every phone if you ever want a wall of
+your own.
 
 ## Standby
 
