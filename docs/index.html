@@ -172,11 +172,11 @@
   #gamePanel[hidden]{display:none}
   #snakePanel{gap:8px !important}
   #snakePanel #snPad{margin-top:auto}      /* pushed to the bottom of the sheet */
-  #sendPanel,#logPanel,#snakePanel,#entryPanel{position:fixed;inset:0;z-index:60;background:var(--bg);
+  #sendPanel,#logPanel,#snakePanel,#entryPanel,#setPanel{position:fixed;inset:0;z-index:60;background:var(--bg);
              display:flex;flex-direction:column;gap:12px;overflow-y:auto;
              padding:calc(env(safe-area-inset-top) + 16px) 16px
                      calc(env(safe-area-inset-bottom) + 16px)}
-  #sendPanel[hidden],#logPanel[hidden],#snakePanel[hidden],#entryPanel[hidden]{display:none}
+  #sendPanel[hidden],#logPanel[hidden],#snakePanel[hidden],#entryPanel[hidden],#setPanel[hidden]{display:none}
   #sendFor{font-size:15px;font-weight:600}
   #sendFor span{display:block;font-size:12px;color:var(--dimmer);font-weight:400;margin-top:2px}
   #sendPicks{display:grid;gap:8px}
@@ -222,7 +222,10 @@
   #ptsRank .me{background:#16181c}
   #ptsRank .r.lead b{color:#f5c542}
   #ptsRank .none{font-size:12px;color:var(--dimmer);padding:6px 2px}
-  #gameHead{display:flex;align-items:center;gap:12px}
+  /* Pinned. Settings is far taller than the screen, so a header that scrolled
+     away left you at the bottom of a full-screen sheet with no way out. */
+  #gameHead{position:sticky;top:0;z-index:2;background:var(--bg);
+            display:flex;align-items:center;gap:12px;padding-bottom:10px}
   #gameHead b{flex:1;font-size:13px;font-weight:700;letter-spacing:.13em;
               text-transform:uppercase}
   #gameHead button{width:auto;padding:8px 14px}
@@ -382,7 +385,14 @@
 
 </div>
 
-<div id="setPanel" class="panel" hidden>
+</div><!-- /#scroll -->
+
+<div id="setPanel" hidden>
+  <div id="gameHead">
+    <b>Settings</b>
+    <button id="setClose" class="ghost mini">Close</button>
+  </div>
+
 
   <label class="ck"><input type="checkbox" id="auto" checked>
     Light the wall as soon as I pick a problem</label>
@@ -419,8 +429,6 @@
   <div id="log">idle.</div>
   <div style="margin-top:10px"><button id="copy" class="ghost">Copy log</button></div>
 </div>
-
-</div><!-- /#scroll -->
 
 <div id="sendPanel" hidden>
   <div id="gameHead">
@@ -2548,7 +2556,10 @@ function showFilters(on){
 }
 $('filtBtn').onclick = () => showFilters($('filters').hidden);
 
-function showPanel(which){          // 'game' | 'set' | 'log' | 'send' | null
+const PANELS = { game: 'gamePanel', set: 'setPanel', log: 'logPanel',
+                 send: 'sendPanel', snake: 'snakePanel', entry: 'entryPanel' };
+
+function showPanel(which){          // a key of PANELS, or null for none
   $('gamePanel').hidden = which !== 'game';
   $('setPanel').hidden  = which !== 'set';
   $('logPanel').hidden  = which !== 'log';
@@ -2560,7 +2571,7 @@ function showPanel(which){          // 'game' | 'set' | 'log' | 'send' | null
   $('setBtn').className  = 'ghost mini' + (which === 'set'  ? ' on' : '');
   $('logBtn').className  = 'ghost mini' + (which === 'log'  ? ' on' : '');
   $('snakeBtn').className = 'ghost mini' + (which === 'snake' ? ' on' : '');
-  if (which === 'set') $('setPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (PANELS[which]) $(PANELS[which]).scrollTop = 0;   // open at the top, always
 }
 $('gameBtn').onclick = () => {
   const open = $('gamePanel').hidden;
@@ -2568,6 +2579,7 @@ $('gameBtn').onclick = () => {
   if (open && !c4) c4New();         // land on a playable board, not an empty one
 };
 $('setBtn').onclick = () => showPanel($('setPanel').hidden ? 'set' : null);
+$('setClose').onclick = () => showPanel(null);
 $('c4close').onclick = () => showPanel(null);
 $('logBtn').onclick = () => ($('logPanel').hidden ? openLog() : showPanel(null));
 $('logClose').onclick = () => showPanel(null);
