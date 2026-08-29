@@ -1531,9 +1531,22 @@ function clearRoute(){
 }
 
 /* ---------- BLE ---------- */
+/* Whose fault it is depends on the phone, and telling an Android user to install
+   an iOS browser is worse than saying nothing. */
+function noBluetoothAdvice(){
+  const ua = navigator.userAgent;
+  if (/Android/.test(ua))
+    return 'No Web Bluetooth in this browser. On Android use Chrome — Firefox has none. ' +
+           'Chrome will also ask for location permission: Android needs it to scan for Bluetooth.';
+  if (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1))
+    return 'No Web Bluetooth. On iPhone open this page in Bluefy — Safari and Chrome for ' +
+           'iOS have none.';
+  return 'No Web Bluetooth in this browser. Use Chrome or Edge.';
+}
+
 async function connect(){
   if (!navigator.bluetooth){
-    log('No Web Bluetooth. On iPhone you must open this page in Bluefy, not Safari.');
+    log(noBluetoothAdvice());
     return;
   }
   try{
@@ -2672,7 +2685,7 @@ try{
 renderResults();
 listsCall('/lists');
 setLive(false);
-if (!navigator.bluetooth) log('No Web Bluetooth here. On iPhone, open this page in Bluefy.');
+if (!navigator.bluetooth) log(noBluetoothAdvice());
 else log('ready. Power the box, force-quit the MoonBoard app, then Connect.');
 </script>
 </body>
