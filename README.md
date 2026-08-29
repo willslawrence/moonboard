@@ -26,6 +26,17 @@ so it can be calibrated against the physical wall.
 Read-only except the one ASCII write. Nordic DFU/bootloader UUIDs are hard-blocked
 in both the script and the page.
 
+## Two phones, one wall
+
+The box takes a single Bluetooth connection, so only one phone can hold the link. Everyone
+else still gets the whole app - search, tick lists, logbook, points - with no Bluetooth at all.
+
+To light problems from a second phone, put the same **room code** in Settings on both. The
+connected phone taps **Connect relay** to become the bridge; the other one just needs the code
+typed in, and everything it lights is posted to the relay and written by the bridge. The
+header dot goes blue to say you're reaching the wall through someone else. Bluetooth always
+wins if this phone has it.
+
 ## Standby
 
 Connecting a phone puts something on the wall, and it comes back whenever nothing is loaded.

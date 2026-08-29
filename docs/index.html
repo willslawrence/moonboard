@@ -37,6 +37,7 @@
              text-overflow:ellipsis;border-radius:8px}
   #dot{width:7px;height:7px;border-radius:50%;background:var(--dimmer);flex:none}
   #dot.on{background:var(--ink)}
+  #dot.relay{background:#2563eb}   /* reaching the wall through someone else */
   #dot.busy{background:var(--dim);animation:pulse 1s infinite}
   @keyframes pulse{50%{opacity:.25}}
   #connect{flex:none;width:auto;padding:7px 11px;font-size:12px;letter-spacing:.02em}
@@ -438,6 +439,10 @@
     <button id="relayBtn" class="ghost">Connect relay</button>
   </div>
   <div class="hint" id="relayState">relay off</div>
+  <div class="hint">A room code does two jobs. If this phone is connected to the board,
+    <b>Connect relay</b> makes it the bridge. If it isn't, anything you light is posted to
+    the relay instead and written by whoever is bridging that code — which is how a second
+    phone puts problems up while someone else holds the Bluetooth link.</div>
 
   <div class="lbl">Log</div>
   <div id="log">idle.</div>
@@ -565,9 +570,9 @@ function log(msg){
   $('log').textContent = `[${t}] ${msg}\n` + $('log').textContent;
 }
 function setLive(on, busy){
-  $('dot').className = busy ? 'busy' : (on ? 'on' : '');
-  ['sendSingle','sendRaw','probe'].forEach(i => $(i).disabled = !on);
-  $('send').disabled = !on || !current;
+  $('dot').className = busy ? 'busy' : (on ? 'on' : (relayRoom() ? 'relay' : ''));
+  ['sendSingle','sendRaw','probe'].forEach(i => $(i).disabled = !on);   // Bluetooth only
+  $('send').disabled = !canSend() || !current;
   $('connect').textContent = on ? 'Disconnect' : 'Connect';
 }
 
@@ -1512,7 +1517,7 @@ function loadRoute(r){
   $('bar').className = 'show';
   $('barTxt').querySelector('b').textContent = r.name;
   paintPill($('barTxt').querySelector('.pill'), r.grade);
-  $('send').disabled = !rx;
+  $('send').disabled = !canSend();
   paintBar();
   log('loaded "' + r.name + '" \u2014 ' + GRADES[r.grade] + ' (V' + VGRADE[r.grade] + '), set by ' + r.setter);
   if ($('auto').checked && rx) sendProblem();
@@ -1527,7 +1532,7 @@ function clearRoute(){
   renderResults();
   paintBar();
   paintClimbers();
-  if (rx && !standby()) write('l##');
+  if (canSend() && !standby()) write('l##');
 }
 
 /* ---------- BLE ---------- */
@@ -1582,9 +1587,41 @@ async function connect(){
   }
 }
 
+/* Two ways to reach the wall. Bluetooth if this phone holds the link; otherwise,
+   if a room code is set, post it to the relay and let whoever is connected write
+   it. The box takes one Bluetooth connection at a time, so the second climber of
+   an evening was previously locked out of lighting anything - now they just need
+   the same code as the phone that's plugged in. */
+const relayRoom = () => {
+  const v = ($('room').value || '').trim();
+  return v.length >= 6 ? v : '';
+};
+const canSend = () => !!rx || !!relayRoom();
+
+async function relaySend(str, quiet){
+  const room = relayRoom();
+  if (!quiet) log('→ relay  ' + str);
+  try{
+    const r = await fetch('https://' + RELAY_HOST + '/send?room=' + encodeURIComponent(room), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payload: str }),
+    });
+    const d = await r.json();
+    if (d.error) log('relay: ' + d.error);
+    else if (!d.bridges) log('relay: nobody is bridging "' + room +
+                             '" — the connected phone has to enter the same code.');
+    else if (!quiet) log('relay: written by ' + d.bridges +
+                         ' phone' + (d.bridges === 1 ? '' : 's') + '.');
+  }catch(e){ log('relay unreachable: ' + e.message); }
+}
+
 async function write(str, quiet){
-  if (!rx) return log('not connected.');
   if (!(str.startsWith('l#') && str.endsWith('#'))) return log('refusing — payload must be l#…#');
+  if (!rx){
+    if (relayRoom()) return relaySend(str, quiet);
+    return log('not connected — tap Connect, or set a relay room code in Settings.');
+  }
   if (BLOCKED.some(b => rx.uuid.toLowerCase().includes(b))) return log('refusing — DFU characteristic.');
   if (/[SPE]0(,|#)/.test(str)) log('note: hold 0 (A1) does not light on this box — skipping it.');
   const bytes = new TextEncoder().encode(str);
@@ -1610,7 +1647,7 @@ async function write(str, quiet){
    too, and the route visibly flickers. Tried at the wall on 2026-08-27 and it
    read as the problem changing, so the blink is gone: send once, leave it lit. */
 async function sendProblem(){
-  if (!rx) return;
+  if (!canSend()) return;
   return write(buildPayload());
 }
 
@@ -2063,7 +2100,7 @@ async function moonIntro(){
   const mine = ++introToken;
   const { cells, width } = wordColumns();
   for (let off = COLS; off >= -width; off--){
-    if (!rx || introToken !== mine) return;
+    if (!canSend() || introToken !== mine) return;
     const lit = [];
     for (const c of cells){
       const col = c.x + off + 1, row = WORD_ROW - c.y;
@@ -2074,7 +2111,7 @@ async function moonIntro(){
     write('l#' + lit.sort((a, b) => a - b).map(n => 'S' + n).join(',') + '#', true);
     await new Promise(r => setTimeout(r, 70));
   }
-  if (rx && introToken === mine) write(payloadFrom(artCells(ART.moon)));
+  if (canSend() && introToken === mine) write(payloadFrom(artCells(ART.moon)));
 }
 
 /* Patterns come straight out of the sketchpad, which writes # for green, o for
@@ -2117,7 +2154,7 @@ function payloadFrom(cells){
 }
 
 function standby(){
-  if (!rx || !$('standby').value) return false;
+  if (!canSend() || !$('standby').value) return false;
   write(standbyPayload());
   return true;
 }
@@ -2215,7 +2252,7 @@ function snDraw(){
 }
 
 function snSend(){
-  if (!sn || !rx) return;
+  if (!sn || !canSend()) return;
   const parts = [];
   sn.body.forEach((c, i) =>
     parts.push({ tag: i === 0 ? 'P' : 'S', n: holdNum(SN_X + c.x, SN_Y + c.y) }));
@@ -2228,7 +2265,7 @@ function snStop(){
   clearInterval(snTimer); snTimer = null;
   sn = null;
   snDraw();
-  if (!rx) return;
+  if (!canSend()) return;
   if (current) write(buildPayload());
   else if (!standby()) write('l##');
 }
@@ -2447,7 +2484,7 @@ const C4_FRAME_L = C4_X - 1, C4_FRAME_R = C4_X + C4_COLS;   // columns B and K
 const C4_MAX_BYTES = 250;                            // measured safe limit
 
 function c4Frame(markerOn){
-  if (!c4 || !rx) return;
+  if (!c4 || !canSend()) return;
   const parts = [];
   for (let c = 0; c < C4_COLS; c++)
     for (let r = 0; r < c4.grid[c].length; r++){
@@ -2489,7 +2526,7 @@ function c4Frame(markerOn){
 }
 
 function c4Send(){
-  if (!c4 || !rx) return;
+  if (!c4 || !canSend()) return;
   c4Frame(true);        // one write per move - see the note above c4Frame
 }
 
@@ -2497,7 +2534,7 @@ function c4Stop(){
   c4StopClock();
   c4 = null;
   c4Draw();
-  if (!rx) return;
+  if (!canSend()) return;
   if (current) write(buildPayload());
   else if (!standby()) write('l##');
   log('connect four: back to problems.');
@@ -2627,7 +2664,7 @@ $('me').onchange = () => {
 };
 $('gbar').onchange = () => {
   applyGradeBar(); paint();
-  if (rx && current) sendProblem();
+  if (canSend() && current) sendProblem();
 };
 
 function saveCal(){
@@ -2642,11 +2679,16 @@ function loadCal(){
 $('order').onchange = () => { saveCal(); paint(); };
 $('standby').onchange = () => {
   try{ localStorage.setItem('mb-standby', $('standby').value); }catch(e){}
-  if (!current && rx && !standby()) write('l##');
+  if (!current && canSend() && !standby()) write('l##');
 };
 $('offset').oninput = () => { saveCal(); paint(); };
 $('chunk').oninput = saveCal;
 $('relayBtn').onclick = () => relayWant ? relayDisconnect() : relayConnect();
+$('room').oninput = () => {
+  try{ localStorage.setItem('mb-room', $('room').value.trim()); }catch(e){}
+  setLive(!!rx);                      // a code alone is enough to light the wall
+  paintBar();
+};
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && relayWant) keepAwake();
 });
