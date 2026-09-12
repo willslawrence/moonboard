@@ -44,6 +44,17 @@ The code is in public source, so it isn't a secret - but the relay only does any
 someone is actively bridging. Change it in Settings on every phone if you ever want a wall of
 your own.
 
+## Finding the payload limit
+
+Settings has a stepper that lights holds in wiring order from A1 up and reports the byte and
+chunk count. The box gives no feedback on an over-long write - it just renders less than it
+was sent - so the only honest measurement is a pattern you can count: ask for N, count what
+lit, and where they stop matching is the ceiling.
+
+Known so far: 213 bytes rendered during the first probing, but WILL WALL at 46 LEDs and 208
+bytes never appeared, so something other than raw length is involved. Worth walking the
+stepper up to settle it.
+
 ## Standby
 
 Connecting a phone puts something on the wall, and it comes back whenever nothing is loaded.

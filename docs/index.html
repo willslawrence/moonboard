@@ -430,6 +430,17 @@
   </div>
   <div class="hint" id="relayState">relay off</div>
 
+  <div class="lbl">Payload limit</div>
+  <div class="hint">Lights holds in wiring order from A1 up. Send a count, then count what
+    actually lit — where the two stop matching is the box's ceiling. WILL WALL was 46 LEDs
+    and 208 bytes and never appeared, so the real limit is lower than we've been assuming.</div>
+  <div class="three" style="margin-top:8px">
+    <button id="limMinus" class="ghost">−5</button>
+    <button id="limSend" class="ghost">Send</button>
+    <button id="limPlus" class="ghost">+5</button>
+  </div>
+  <div class="hint" id="limState"></div>
+
   <div class="lbl">Log</div>
   <div id="log">idle.</div>
   <div style="margin-top:10px"><button id="copy" class="ghost">Copy log</button></div>
@@ -2023,6 +2034,31 @@ function stepProblem(delta){
   }
 })();
 
+/* ---------- payload limit ----------
+   The box gives no feedback on a bad write - it just renders less than it was
+   sent - so the only honest measurement is a pattern you can count. Filling from
+   index 0 upward lights a contiguous block, and where the block stops short of
+   the number you asked for is the ceiling. */
+let limN = 20;
+
+function limPayload(n){
+  const cells = [];
+  for (let i = 0; i < n; i++) cells.push('S' + i);
+  return 'l#' + cells.join(',') + '#';
+}
+
+function limPaint(){
+  const pl = limPayload(limN);
+  $('limState').textContent = limN + ' LEDs \u00b7 ' + pl.length + ' bytes \u00b7 ' +
+    Math.ceil(pl.length / CHUNK_BYTES) + ' chunks';
+}
+
+function limSend(){
+  if (!canSend()) return log('nothing to send to — connect first.');
+  write(limPayload(limN));
+  log('limit test: asked for ' + limN + ' LEDs. Count what lit.');
+}
+
 /* ---------- standby ----------
    Something on the wall the moment a phone connects, and again whenever nothing
    is loaded. It answers the only question you have at that point - is this thing
@@ -2594,6 +2630,9 @@ $('gameBtn').onclick = () => {
 };
 $('setBtn').onclick = () => showPanel($('setPanel').hidden ? 'set' : null);
 $('setClose').onclick = () => showPanel(null);
+$('limMinus').onclick = () => { limN = Math.max(5, limN - 5); limPaint(); };
+$('limPlus').onclick  = () => { limN = Math.min(198, limN + 5); limPaint(); };
+$('limSend').onclick  = limSend;
 $('c4close').onclick = () => showPanel(null);
 $('logBtn').onclick = () => ($('logPanel').hidden ? openLog() : showPanel(null));
 $('logClose').onclick = () => showPanel(null);
@@ -2692,6 +2731,7 @@ paint();
 fillGradeSelects();
 c4Draw();
 snDraw();
+limPaint();
 try{
   const w = localStorage.getItem('mb-who');
   if (w){ $('who').appendChild(new Option(w, w)); $('who').value = w; }
