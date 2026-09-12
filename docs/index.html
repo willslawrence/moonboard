@@ -26,6 +26,9 @@
      and the search stay put while only the list scrolls. */
   /* Fixed head of the app - no longer sticky, it simply never scrolls. Capped
      so an open filter panel on a short phone can't squeeze the list to nothing. */
+  #noWall{background:#ef4444;color:#2c0505;font-weight:700;font-size:13px;
+          text-align:center;padding:9px 12px;margin:0 -14px}
+  #noWall[hidden]{display:none}
   #top{flex:0 0 auto;background:var(--bg);border-bottom:1px solid var(--edge);
        margin-bottom:6px;max-height:72vh;overflow-y:auto}
   header{display:flex;align-items:center;gap:10px;
@@ -38,6 +41,7 @@
   #dot{width:7px;height:7px;border-radius:50%;background:var(--dimmer);flex:none}
   #dot.on{background:var(--ink)}
   #dot.relay{background:#2563eb}   /* reaching the wall through someone else */
+  #dot.dead{background:#ef4444}
   #dot.busy{background:var(--dim);animation:pulse 1s infinite}
   @keyframes pulse{50%{opacity:.25}}
   #connect{flex:none;width:auto;padding:7px 11px;font-size:12px;letter-spacing:.02em}
@@ -309,6 +313,8 @@
 
 <div id="top">
 
+<div id="noWall" hidden>Not reaching the board — tap Connect</div>
+
 <header>
   <span id="dot"></span>
   <h1>MoonBoard</h1>
@@ -405,7 +411,6 @@
   <div class="lbl">On connect</div>
   <select id="standby">
     <option value="will">Show WW</option>
-    <option value="willwall">Show WILL WALL</option>
     <option value="moon">Show the moon</option>
     <option value="climber">Show a climber</option>
     <option value="frame">Show a frame</option>
@@ -555,7 +560,7 @@ function log(msg){
   $('log').textContent = lines.join('\n');
 }
 function setLive(on, busy){
-  $('dot').className = busy ? 'busy' : (on ? 'on' : (relayRoom() ? 'relay' : ''));
+  if (busy) $('dot').className = 'busy'; else wallState();
   $('send').disabled = !canSend() || !current;
   $('connect').textContent = on ? 'Disconnect' : 'Connect';
 }
@@ -1546,6 +1551,7 @@ async function connect(){
     });
     device.addEventListener('gattserverdisconnected', () => {
       rx = null;
+      bridgeSeen = null;                              // unknown again until we try
       if (relayWant) relayDisconnect();               // no board, nothing to bridge
       setLive(false);
       log('disconnected.');
@@ -1589,6 +1595,20 @@ const relayRoom = () => {
 };
 const canSend = () => !!rx || !!relayRoom();
 
+/* Whether the last relay send actually reached a phone. null until we've tried.
+   This matters more than it sounds: a room code is set by default, so canSend()
+   is true the moment the app loads, and before this the app would happily accept
+   every tap and post it into a room nobody was bridging. Bluetooth drops mid
+   session, the buttons stay lit, the wall quietly stops changing. */
+let bridgeSeen = null;
+
+function wallState(){
+  const el = $('noWall');
+  const lost = !rx && bridgeSeen === false;
+  el.hidden = !lost;
+  $('dot').className = rx ? 'on' : (bridgeSeen ? 'relay' : (lost ? 'dead' : ''));
+}
+
 async function relaySend(str, quiet){
   const room = relayRoom();
   if (!quiet) log('→ relay  ' + str);
@@ -1599,12 +1619,14 @@ async function relaySend(str, quiet){
       body: JSON.stringify({ payload: str }),
     });
     const d = await r.json();
+    bridgeSeen = !d.error && d.bridges > 0;
     if (d.error) log('relay: ' + d.error);
-    else if (!d.bridges) log('relay: nobody is bridging "' + room +
-                             '" — the connected phone has to enter the same code.');
+    else if (!d.bridges) log('relay: nothing is connected to the board — ' +
+                             'somebody has to tap Connect.');
     else if (!quiet) log('relay: written by ' + d.bridges +
                          ' phone' + (d.bridges === 1 ? '' : 's') + '.');
-  }catch(e){ log('relay unreachable: ' + e.message); }
+  }catch(e){ bridgeSeen = false; log('relay unreachable: ' + e.message); }
+  wallState();
 }
 
 async function write(str, quiet){
@@ -1614,7 +1636,6 @@ async function write(str, quiet){
     return log('not connected — tap Connect, or set a relay room code in Settings.');
   }
   if (BLOCKED.some(b => rx.uuid.toLowerCase().includes(b))) return log('refusing — DFU characteristic.');
-  if (/[SPE]0(,|#)/.test(str)) log('note: hold 0 (A1) does not light on this box — skipping it.');
   const bytes = new TextEncoder().encode(str);
   const size = CHUNK_BYTES;
   if (!quiet) log('→ ' + str + '  (' + bytes.length + 'B, ' + Math.ceil(bytes.length / size) + ' chunk(s))');
@@ -2031,14 +2052,6 @@ const ART = {
     '...........', '...........', '...........', '...........', '...........',
     '...........', '...........', '...........',
   ],
-  // The same idea spelled out - WILL down the left in blue, WALL down the right
-  // in green, four letters apiece.
-  willwall: [
-    '...........', 'o...o.#...#', 'o.o.o.#.#.#', '.o.o...#.#.', '...........',
-    '.ooo....#..', '..o....#.#.', '.ooo...#.#.', '...........', '.o.....#...',
-    '.o.....#...', '.ooo...###.', '...........', '.o.....#...', '.o.....#...',
-    '.ooo...###.', '...........', '...........',
-  ],
   climber: [
     '...#.......', '...#.......', '...#.......', '...##......', '....##.....',
     '....###....', '.....##....', '....###....', '...#..#....', '..#...#....',
@@ -2143,11 +2156,12 @@ function standby(){
 }
 
 /* ---------- snake ----------
-   Column A sits out: A1 is index 0 and doesn't light, A2 is dim and A4 is dead.
-   That leaves B..K by the full 18 rows. A snake is only ever a few dozen cells,
+   The whole wall, A1 to K18, now that A1's LED has been reseated. A2 and A4 are
+   still dead, so the snake goes dark for a cell as it passes them - the game
+   doesn't care, and losing a whole column to two holds was worse. A snake is only ever a few dozen cells,
    so unlike Tetris the payload never grows past what the box will take, and a
    full redraw every move reads as movement rather than flicker. */
-const SN_W = 10, SN_H = 18, SN_X = 2, SN_Y = 1;   // grid col 2 = B, row 1 = bottom
+const SN_W = 11, SN_H = 18, SN_X = 1, SN_Y = 1;   // the whole wall, A1 at the corner
 let sn = null, snTimer = null, snDir = null, snNext = null;
 
 const snCell = (x, y) => ({ x, y });

@@ -33,8 +33,12 @@ else still gets the whole app - search, tick lists, logbook, points - with no Bl
 
 Nothing to set up. Whoever taps **Connect** becomes the bridge automatically, and every other
 phone posts what it lights to the relay for that phone to write. The room code ships with a
-shared default, so a second phone just works. The header dot goes blue to say you're reaching
-the wall through someone else; Bluetooth always wins if this phone has it.
+shared default, so a second phone just works. Bluetooth always wins if this phone has it.
+
+The header only claims a connection it can prove. A room code being set means nothing on its
+own — the relay answers with how many phones are bridging, and if that's zero a red banner
+says so. Before that, losing Bluetooth mid-session left every button lit and the wall quietly
+frozen.
 
 The code is in public source, so it isn't a secret - but the relay only does anything while
 someone is actively bridging. Change it in Settings on every phone if you ever want a wall of
@@ -45,8 +49,8 @@ your own.
 Connecting a phone puts something on the wall, and it comes back whenever nothing is loaded.
 It answers the only question you have at that moment - is this thing actually talking to the
 box - without picking a problem to find out. WW by default - two overlapping Ws, twelve LEDs, one write, straight up, stays there.
-WILL WALL spells it out instead: WILL down the left in blue, WALL down the right in green,
-46 LEDs and 208 bytes. The moon, a climber, a dashed
+WILL WALL was dropped — 46 LEDs and 208 bytes and it never rendered on the box, so the real
+payload ceiling is lower than the 250 the earlier probing suggested. The moon, a climber, a dashed
 frame, the scrolling MOON, or nothing are all in Settings.
 
 Patterns are stored as eighteen quoted rows using the sketchpad's own alphabet - `#` green,
