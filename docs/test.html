@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Wall test</title>
+<style>
+ :root{--bg:#0e0e0f;--panel:#171719;--edge:#2a2a2e;--ink:#e9e9ec;--dim:#8b8b93;--dimmer:#5c5c65}
+ *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+ body{margin:0;background:var(--bg);color:var(--ink);padding:16px 14px 40px;
+      font:15px/1.45 -apple-system,system-ui,sans-serif}
+ h1{font-size:13px;letter-spacing:.16em;text-transform:uppercase;margin:0 0 4px}
+ .sub{font-size:12px;color:var(--dimmer);margin-bottom:14px}
+ button{width:100%;padding:13px;border-radius:9px;border:1px solid var(--edge);
+        background:var(--panel);color:var(--ink);font:600 14px inherit;margin-bottom:8px}
+ button:active{background:#2a2a2e}
+ button.pri{background:var(--ink);border-color:var(--ink);color:#0e0e0f}
+ .t{display:flex;gap:8px}.t>*{flex:1}
+ .exp{font-size:11px;color:var(--dimmer);margin:-4px 0 12px 2px}
+ .lbl{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dimmer);margin:18px 0 8px}
+ #log{font:11px/1.6 ui-monospace,Menlo,monospace;color:var(--dim);background:var(--panel);
+      border:1px solid var(--edge);border-radius:9px;padding:10px;max-height:220px;overflow:auto;
+      white-space:pre-wrap;word-break:break-all}
+ #dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#555;margin-right:6px}
+ #dot.on{background:#22c55e}
+</style></head><body>
+
+<h1><span id="dot"></span>Wall test</h1>
+<div class="sub">Nothing from the app runs here — no routes, no grade bar, no relay. Straight
+Bluetooth, one fixed payload per button. Compare what lights to what it says it should.</div>
+
+<button id="connect" class="pri">Connect</button>
+
+<div class="lbl">One light at a time</div>
+<div class="t"><button data-p="l#S0#">A1</button><button data-p="l#S17#">A18</button>
+  <button data-p="l#S18#">B18</button><button data-p="l#S35#">B1</button></div>
+<div class="exp">Bottom-left, top-left, then top of the second column, then bottom of it.</div>
+
+<div class="lbl">Lines</div>
+<button data-p="l#S0,S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12,S13,S14,S15,S16,S17#">Column A, all 18</button>
+<div class="exp">One solid vertical line up the far left. 18 LEDs, 76 bytes.</div>
+<button data-p="l#S0,S35,S36,S71,S72,S107,S108,S143,S144,S179,S180#">Row 1, all 11</button>
+<div class="exp">One solid horizontal line across the bottom. 11 LEDs, 51 bytes.</div>
+<button data-p="l#S0,S17,S180,S197#">Four corners</button>
+<div class="exp">A1, A18, K1, K18 — nothing in between.</div>
+
+<div class="lbl">Colour</div>
+<button data-p="l#S0,S1,S2,P3,P4,P5,E6,E7,E8#">3 green, 3 blue, 3 red</button>
+<div class="exp">Bottom of column A: green, green, green, blue, blue, blue, red, red, red.</div>
+
+<div class="lbl">How big before it breaks</div>
+<div class="t">
+  <button id="less">−5</button><button id="more">+5</button>
+</div>
+<button id="ramp" class="pri">Send <span id="n">30</span> LEDs</button>
+<div class="exp" id="rampExp"></div>
+
+<button data-p="l##">Wall off</button>
+
+<div class="lbl">Log</div>
+<div id="log">idle.</div>
+
+<script>
+const NUS='6e400001-b5a3-f393-e0a9-e50e24dcca9e',
+      RX='6e400002-b5a3-f393-e0a9-e50e24dcca9e';
+let rx=null, n=30;
+const $=id=>document.getElementById(id);
+const log=m=>{const t=new Date().toLocaleTimeString();
+  $('log').textContent=(`[${t}] ${m}\n`+$('log').textContent).split('\n').slice(0,60).join('\n');};
+
+$('connect').onclick=async()=>{
+  if(!navigator.bluetooth) return log('No Web Bluetooth. iPhone needs Bluefy; Android needs Chrome.');
+  try{
+    log('requesting device …');
+    const d=await navigator.bluetooth.requestDevice({filters:[{services:[NUS]},{namePrefix:'Moon'}],
+      optionalServices:[NUS]});
+    d.addEventListener('gattserverdisconnected',()=>{rx=null;$('dot').className='';log('disconnected.');});
+    const srv=await(await d.gatt.connect()).getPrimaryService(NUS);
+    rx=await srv.getCharacteristic(RX);
+    $('dot').className='on';
+    log('connected to '+(d.name||'(unnamed)')+'.');
+  }catch(e){ log('connect failed: '+e.message); }
+};
+
+async function send(p){
+  if(!rx) return log('not connected.');
+  const bytes=new TextEncoder().encode(p);
+  log('→ '+p+'  ('+bytes.length+'B, '+Math.ceil(bytes.length/20)+' chunks)');
+  try{
+    for(let i=0;i<bytes.length;i+=20){
+      await rx.writeValueWithResponse(bytes.slice(i,i+20));
+      await new Promise(r=>setTimeout(r,30));
+    }
+    log('written.');
+  }catch(e){ log('write failed: '+e.message); }
+}
+document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>send(b.dataset.p));
+
+const rampPayload=k=>'l#'+Array.from({length:k},(_,i)=>'S'+i).join(',')+'#';
+function paint(){
+  $('n').textContent=n;
+  const p=rampPayload(n);
+  $('rampExp').textContent='A solid block of '+n+' filling column by column from A1. '+
+    p.length+' bytes, '+Math.ceil(p.length/20)+' chunks. Count what lights.';
+}
+$('less').onclick=()=>{n=Math.max(5,n-5);paint();};
+$('more').onclick=()=>{n=Math.min(198,n+5);paint();};
+$('ramp').onclick=()=>send(rampPayload(n));
+paint();
+</script>
+</body></html>
