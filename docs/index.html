@@ -260,7 +260,7 @@
 
   /* snake - the wall is 10 wide by 18 tall once column A sits out, so the grid
      is sized off height rather than width or it would run off the screen */
-  #sn{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;
+  #sn{display:grid;gap:2px;                        /* columns set from SN_W in snDraw */
       width:min(52%,17vh);margin:0 auto;touch-action:none}
   #sn div{aspect-ratio:1;border-radius:2px;background:#191b1f}
   #sn div.s{background:#22c55e}
@@ -549,7 +549,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-09-12 20:31';        // bumped every deploy, shown bottom left
+const BUILD = '2026-09-12 21:00';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -2277,6 +2277,10 @@ function snDraw(){
   const box = $('sn');
   if (box.children.length !== SN_W * SN_H){
     box.innerHTML = '';
+    // Set from SN_W rather than hardcoded in the CSS: they drifted apart once,
+    // the grid flowed ten to a row while the code indexed eleven, and a snake
+    // going straight up the wall came out diagonal on screen.
+    box.style.gridTemplateColumns = 'repeat(' + SN_W + ', 1fr)';
     for (let i = 0; i < SN_W * SN_H; i++) box.appendChild(document.createElement('div'));
   }
   const at = (x, y) => box.children[(SN_H - 1 - y) * SN_W + x];
