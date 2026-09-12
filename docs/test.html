@@ -55,6 +55,18 @@ Bluetooth, one fixed payload per button. Compare what lights to what it says it 
 
 <button data-p="l##">Wall off</button>
 
+<div class="lbl">How it's written</div>
+<div class="sub" style="margin-bottom:8px">Same payload every time — if a repeat comes out
+different, the box is carrying leftovers between messages. Try each mode, then press one of
+the buttons above <b>three times</b> and see which mode stays identical.</div>
+<select id="mode">
+  <option value="chunk20">20-byte chunks, 30ms apart (what the app does)</option>
+  <option value="chunk20slow">20-byte chunks, 120ms apart</option>
+  <option value="single">One write, whole string at once</option>
+  <option value="clearfirst">Clear (l##), pause, then 20-byte chunks</option>
+  <option value="doubled">Send it twice, 150ms apart</option>
+</select>
+
 <div class="lbl">Log</div>
 <div id="log">idle.</div>
 
@@ -80,14 +92,32 @@ $('connect').onclick=async()=>{
   }catch(e){ log('connect failed: '+e.message); }
 };
 
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+async function raw(p,gap){
+  const bytes=new TextEncoder().encode(p);
+  for(let i=0;i<bytes.length;i+=20){
+    await rx.writeValueWithResponse(bytes.slice(i,i+20));
+    await wait(gap);
+  }
+}
+
 async function send(p){
   if(!rx) return log('not connected.');
-  const bytes=new TextEncoder().encode(p);
-  log('→ '+p+'  ('+bytes.length+'B, '+Math.ceil(bytes.length/20)+' chunks)');
+  const mode=$('mode').value;
+  const bytes=new TextEncoder().encode(p).length;
+  log('→ ['+mode+'] '+p+'  ('+bytes+'B)');
   try{
-    for(let i=0;i<bytes.length;i+=20){
-      await rx.writeValueWithResponse(bytes.slice(i,i+20));
-      await new Promise(r=>setTimeout(r,30));
+    if(mode==='single'){
+      await rx.writeValueWithResponse(new TextEncoder().encode(p));
+    } else if(mode==='chunk20slow'){
+      await raw(p,120);
+    } else if(mode==='clearfirst'){
+      await raw('l##',30); await wait(150); await raw(p,30);
+    } else if(mode==='doubled'){
+      await raw(p,30); await wait(150); await raw(p,30);
+    } else {
+      await raw(p,30);
     }
     log('written.');
   }catch(e){ log('write failed: '+e.message); }
