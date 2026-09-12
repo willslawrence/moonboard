@@ -142,7 +142,7 @@
 
   /* search, tick-list picker and the filter toggle share one row */
   /* every filter on one line - nothing tucked underneath when the panel opens */
-  .four{display:grid;grid-template-columns:1fr 1fr 1fr 1.15fr;gap:6px}
+  .four{display:grid;grid-template-columns:1.15fr 1.15fr .85fr 1fr;gap:5px}
   #searchRow{display:grid;grid-template-columns:1fr 1fr 44px;gap:6px}
   #searchRow #q{padding:9px 10px;font-size:16px}
   #searchRow #who{padding:9px 8px;font-size:16px;text-overflow:ellipsis}
@@ -293,7 +293,9 @@
   #c4turn i{width:20px;height:20px;border-radius:50%;background:#3a3a40;flex:none}
 
   /* the two panel toggles sit bottom-right, under the list */
-  #footBtns{display:flex;justify-content:flex-end;gap:8px;margin:4px 0 12px}
+  #footBtns{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin:4px 0 8px}
+  #ver{text-align:right;font:10px ui-monospace,Menlo,monospace;color:var(--dimmer);
+       margin-bottom:14px}
   #footBtns button{width:auto;padding:8px 14px}
   #footBtns button.on{background:var(--panel2);color:var(--ink);border-color:#3a3a40}
   .panel{border-top:1px solid var(--edge);padding-top:14px;margin-bottom:22px}
@@ -387,6 +389,7 @@
   <button id="gameBtn" class="ghost mini">Connect four</button>
   <button id="setBtn" class="ghost mini">Settings</button>
 </div>
+<div id="ver"></div>
 
 
 </div>
@@ -546,6 +549,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+const BUILD = '2026-09-12 20:31';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -1416,9 +1420,10 @@ function runPending(){
 }
 
 function fillGradeSelects(){
-  GRADES.forEach((g, i) => {
-    $('gmin').appendChild(new Option(g, i));
-    $('gmax').appendChild(new Option(g, i));
+  GRADES.forEach((g, i) => {                       // both scales, as the pills do
+    const label = g + ' \u00b7 V' + VGRADE[i];
+    $('gmin').appendChild(new Option(label, i));
+    $('gmax').appendChild(new Option(label, i));
   });
   $('gmin').value = 0; $('gmax').value = GRADES.length - 1;
 }
@@ -2728,6 +2733,7 @@ try{
   if (hashRoom || savedRoom) $('room').value = hashRoom || savedRoom;
 }catch(e){}
 paint();
+$('ver').textContent = 'build ' + BUILD;
 fillGradeSelects();
 c4Draw();
 snDraw();
