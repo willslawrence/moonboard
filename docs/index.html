@@ -135,8 +135,7 @@
   #barTxt #q.kbOn,#barTxt #q:focus{border-color:#8b8b93;background:var(--panel);outline:none}
   #barTxt #q.fresh{color:#0e0e0f;background:#8fb8ff}
   #barTxt .pill[hidden]{display:none}
-  #barTxt #who{flex:none;width:102px;padding:2px 4px;font-size:16px;text-overflow:ellipsis}
-  #barTxt #filtBtn{flex:none;width:30px;padding:3px 0;font-size:16px}
+    #barTxt #filtBtn{flex:none;width:30px;padding:3px 0;font-size:16px}
   #count:empty{display:none}
 
   /* grade pill - colour band by V-grade, same idea in the bar and the list */
@@ -146,10 +145,11 @@
   /* the four actions stack down the space beside the board */
   /* An empty column mirrors the button column, so the board sits dead centre
      on the page rather than centred in whatever is left over. */
-  #boardRow{display:grid;grid-template-columns:78px 1fr 78px;gap:8px;align-items:stretch}
+  #boardRow{display:grid;grid-template-columns:72px 1fr 72px;gap:8px;align-items:stretch}
   #boardCol{min-width:0}
   #barBtns{display:flex;flex-direction:column;gap:6px}
   #barBtns #send{font-size:18px;padding:2px 0}
+  #barBtns button.mini{padding-left:2px;padding-right:2px}
   #clear{margin-top:auto}   /* sits at the foot of the column, clear of the rest */
   #climbers{display:flex;flex-direction:column;gap:5px;min-width:0}
   #climbers .hd{font-size:9px;letter-spacing:.1em;text-transform:uppercase;
@@ -353,9 +353,10 @@
     <input type="text" id="q" placeholder="Search"
            spellcheck="false" autocapitalize="off" autocomplete="off">
     <span class="pill" hidden></span>
-    <select id="who"></select>
   </div>
   <div id="filters" hidden>
+    <div class="lbl">List</div>
+    <select id="who" style="margin-bottom:8px"></select>
     <div class="four">
       <div><div class="lbl">From</div><select id="gmin"></select></div>
       <div><div class="lbl">To</div><select id="gmax"></select></div>
@@ -571,7 +572,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-09-30 15:00';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-01 09:00';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -2708,7 +2709,7 @@ $('who').onchange = () => {
    bug rather than a setting. */
 function markFilters(){
   const narrowed = +$('gmin').value > 0 || +$('gmax').value < GRADES.length - 1;
-  const on = narrowed || (meNow() && $('hideDone').value === '1');
+  const on = narrowed || whoNow() || (meNow() && $('hideDone').value === '1');
   $('filtBtn').classList.toggle('active', !!on);
 }
 function showFilters(on){
