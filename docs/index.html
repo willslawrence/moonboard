@@ -76,7 +76,6 @@
   #kb button.ok{background:var(--ink);color:#0e0e0f;flex-grow:2}
   #kb button.dn{background:#5a5a60}
   #kb .half{flex:.5 1 0}
-  #q.kbOn{border-color:#8b8b93}
   select{background-image:none}
   .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--dimmer);margin-bottom:6px}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -85,7 +84,7 @@
   /* ---- results ---- */
   #count{font-size:11px;color:var(--dimmer);letter-spacing:.06em;
          text-transform:uppercase;margin:10px 0 4px}
-  .rt{display:flex;align-items:center;gap:12px;padding:13px 2px;
+  .rt{display:flex;align-items:center;gap:12px;padding:9.5px 2px;
       border-bottom:1px solid #202024}
   .rt:active{background:var(--panel)}
   .gd{flex:none;padding:2px 6px;border-radius:5px;
@@ -124,19 +123,30 @@
   .mark.E{border-color:#ef4444}
   .mark.g{width:6.4%;border-width:2px}
 
-  /* ---- selected route bar: pinned directly under the header ---- */
-  /* One slim row: filters, the route name (which is also the search), grade,
-     and whose list is showing. Tapping the name turns it into a fresh search. */
-  #bar{background:var(--bg);border-bottom:1px solid var(--edge);padding:3px 0}
-  #barTxt{display:flex;align-items:center;gap:5px;min-width:0}
-  #barTxt #q{flex:1;min-width:0;padding:2px 6px;font-size:15px;font-weight:600;
-             border-color:transparent;background:transparent;
-             white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #barTxt #q.kbOn,#barTxt #q:focus{border-color:#8b8b93;background:var(--panel);outline:none}
-  #barTxt #q.fresh{color:#0e0e0f;background:#8fb8ff}
-  #barTxt .pill[hidden]{display:none}
-    #barTxt #filtBtn{flex:none;width:30px;padding:3px 0;font-size:16px}
+  /* ---- route name / search: sits under the board ----
+     A filled, rounded box with a magnifier, so it reads as the search and never
+     as one more row of the list below it. Tapping the name turns it into a
+     fresh search; the filter toggle sits to its left and opens underneath. */
+  #bar{background:var(--bg);padding:5px 0 7px}
+  #barTxt{display:flex;align-items:center;gap:6px;min-width:0}
+  #barTxt #filtBtn{flex:none;width:34px;height:32px;padding:0;font-size:16px}
+  #qBox{flex:1;min-width:0;height:32px;display:flex;align-items:center;gap:5px;
+        padding:0 4px 0 9px;background:var(--panel2);border:1px solid #33333a;border-radius:9px}
+  #qBox.on,#qBox:focus-within{border-color:#8b8b93}
+  #qBox .mag{flex:none;width:14px;height:14px;color:var(--dimmer)}
+  #qBox .mag.act{color:#8fb8ff}             /* a search is narrowing the list */
+  #qBox #q{flex:1;min-width:0;padding:2px 4px;border:0;border-radius:5px;background:transparent;
+           font-size:15px;font-weight:600;outline:none;
+           white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #qBox #q.fresh{color:#0e0e0f;background:#8fb8ff}
+  #qBox .pill[hidden],#qX[hidden]{display:none}
+  #qX{flex:none;width:26px;height:26px;padding:0;border:0;border-radius:50%;
+      background:transparent;color:var(--dim);font-size:13px}
+  /* While the search keyboard is up the board steps aside, so the results get
+     the room rather than two rows squeezed between the board and the keys. */
+  body.typing #boardWrap{display:none !important}
   #count:empty{display:none}
+  #results .more{margin:10px 0 4px}
 
   /* grade pill - colour band by V-grade, same idea in the bar and the list */
   .pill{flex:none;padding:2px 6px;border-radius:5px;
@@ -176,9 +186,10 @@
   #filtBtn.active::after{content:'';position:absolute;top:5px;right:5px;
                          width:6px;height:6px;border-radius:50%;background:#22c55e}
   #filtBtn{position:relative}
-  #filters{border-top:1px solid var(--edge);padding-top:9px;margin-top:9px}
-  #filters select{padding:7px 8px;font-size:16px}
-  #filters .lbl{margin-bottom:4px;margin-top:0}
+  /* same 32px as the search box above, so the panel reads as part of it */
+  #filters{border-top:1px solid var(--edge);padding-top:6px;margin-top:7px}
+  #filters select{height:32px;padding:0 8px;font-size:16px;border-radius:9px}
+  #filters .lbl{margin-bottom:2px;margin-top:0}
 
   #filters button.mini{padding:8px 10px;white-space:nowrap}
 
@@ -324,7 +335,6 @@
   .panel{border-top:1px solid var(--edge);padding-top:14px;margin-bottom:22px}
 
   section{margin-bottom:18px}
-  #controls{margin-bottom:8px}
   .panel .lbl{margin-top:14px}
   .hint{font-size:12px;color:var(--dimmer);margin-top:8px;line-height:1.5}
   code{font:12px ui-monospace,Menlo,monospace;color:var(--dim);word-break:break-all}
@@ -347,12 +357,37 @@
   <button id="connect">Connect</button>
 </header>
 
+<section id="boardWrap" style="display:none">
+  <div id="boardRow">
+    <div id="climbers"></div><!-- who has climbed it; also centres the board -->
+    <div id="boardCol">
+      <div id="board">
+        <img src="board-2016.png" alt="MoonBoard 2016 wall" width="450" height="692">
+        <div id="marks"></div>
+      </div>
+    </div>
+    <div id="barBtns">
+      <button id="send" class="mini solid" disabled aria-label="Light up">&#128161;</button>
+      <button id="tick" class="mini" disabled>Add to list</button>
+      <button id="try" class="mini" disabled>Log try</button>
+      <button id="done" class="mini" disabled>Log send</button>
+      <button id="clear" class="mini ghost">Hide</button>
+    </div>
+  </div>
+</section>
+
 <div id="bar">
   <div id="barTxt">
     <button id="filtBtn" class="ghost" aria-label="Filters">&#9776;</button>
-    <input type="text" id="q" placeholder="Search"
-           spellcheck="false" autocapitalize="off" autocomplete="off">
-    <span class="pill" hidden></span>
+    <div id="qBox">
+      <svg class="mag" viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.8" cy="6.8" r="4.6"
+        fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10.3 10.3L14 14"
+        stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <input type="text" id="q" placeholder="Search routes or setters"
+             spellcheck="false" autocapitalize="off" autocomplete="off">
+      <span class="pill" hidden></span>
+      <button id="qX" hidden aria-label="Clear search">&#10005;</button>
+    </div>
   </div>
   <div id="filters" hidden>
     <div class="lbl">List</div>
@@ -375,26 +410,6 @@
   </div>
 </div>
 
-<section id="boardWrap" style="display:none">
-  <div id="boardRow">
-    <div id="climbers"></div><!-- who has climbed it; also centres the board -->
-    <div id="boardCol">
-      <div id="board">
-        <img src="board-2016.png" alt="MoonBoard 2016 wall" width="450" height="692">
-        <div id="marks"></div>
-      </div>
-    </div>
-    <div id="barBtns">
-      <button id="send" class="mini solid" disabled aria-label="Light up">&#128161;</button>
-      <button id="tick" class="mini" disabled>Add to list</button>
-      <button id="try" class="mini" disabled>Log try</button>
-      <button id="done" class="mini" disabled>Log send</button>
-      <button id="clear" class="mini ghost">Hide</button>
-    </div>
-  </div>
-</section>
-
-
 </div><!-- /#top -->
 
 <div id="scroll">
@@ -411,9 +426,6 @@
   <button id="setBtn" class="ghost mini">Settings</button>
 </div>
 <div id="ver"></div>
-
-
-</div>
 
 </div><!-- /#scroll -->
 
@@ -455,6 +467,7 @@
     <button id="relayBtn" class="ghost">Connect relay</button>
   </div>
   <div class="hint" id="relayState">relay off</div>
+  <button id="crewRoom" class="ghost mini" hidden style="margin-top:8px"></button>
 
   <div class="lbl">Payload limit</div>
   <div class="hint">Lights holds in wiring order from A1 up. Send a count, then count what
@@ -566,13 +579,13 @@
   <div class="hint">Green drops first, then blue. Played on C–I, rows 7–12, which
     keeps clear of the dead A2 and A4 holds. A win only counts towards the ranking
     when both players are named.</div>
-
+</div>
 
 <script>
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-01 09:00';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-01 18:00';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -1451,13 +1464,29 @@ function fillGradeSelects(){
   $('gmin').value = 0; $('gmax').value = GRADES.length - 1;
 }
 
-/* The field shows the search while there is one, otherwise the route's name. */
-let searchQ = '';
+/* The field shows the route's name once you've picked one, and the search while
+   you're typing one. Picking a route keeps the search - the list stays what you
+   searched for, so a swipe on the board steps through it - and the ✕ clears it. */
+let searchQ = '', showName = false;
+const nameShown = () => !!current && (showName || !searchQ);
 function showQ(){
-  const q = $('q'), pill = $('barTxt').querySelector('.pill');
+  const q = $('q');
   q.classList.remove('fresh');
-  if (searchQ || !current){ q.value = searchQ; pill.hidden = true; }
-  else { q.value = current.name; pill.hidden = false; paintPill(pill, current.grade); }
+  q.value = nameShown() ? current.name : searchQ;
+  paintQBox();
+}
+// Everything round the text: the grade goes with the name, the ✕ with a search.
+function paintQBox(){
+  const pill = $('qBox').querySelector('.pill');
+  pill.hidden = !nameShown();
+  if (!pill.hidden) paintPill(pill, current.grade);
+  $('qX').hidden = !searchQ;
+  $('qBox').querySelector('.mag').classList.toggle('act', !!searchQ);
+}
+function clearSearch(){
+  searchQ = ''; showName = true;
+  showQ(); renderResults();
+  $('scroll').scrollTop = 0;
 }
 
 function filtered(){
@@ -1482,12 +1511,24 @@ function filtered(){
 
 let lastHits = [];
 
+/* Eighty rows at a time, and more as you near the bottom - before this the list
+   simply stopped at 80 and the rest of the 549 were unreachable without a search.
+   The page count resets whenever what you're looking at changes. */
+const PAGE = 80;
+let limit = PAGE, limitKey = '';
+function showMore(){ limit += PAGE; renderResults(); }
+
 function renderResults(){
   const hits = filtered();
   lastHits = hits;
+  const key = [searchQ, $('gmin').value, $('gmax').value, whoNow(),
+               $('hideDone').value, $('sort').value].join('|');
+  if (key !== limitKey){ limitKey = key; limit = PAGE; }
+  const at = current ? hits.indexOf(current) : -1;          // keep the pick on screen
+  if (at >= limit) limit = Math.ceil((at + 1) / PAGE) * PAGE;
   const box = $('results');
   box.innerHTML = '';
-  hits.slice(0, 80).forEach(r => {
+  hits.slice(0, limit).forEach(r => {
     const row = document.createElement('div');
     row.className = 'rt' + (r === current ? ' sel' : '');
     row.innerHTML = '<div class="nm"><b></b><span></span></div>' +
@@ -1508,6 +1549,13 @@ function renderResults(){
     row.addEventListener('click', () => loadRoute(r));
     box.appendChild(row);
   });
+  if (hits.length > limit){
+    const more = document.createElement('button');
+    more.className = 'ghost mini more';
+    more.textContent = 'Show more \u2014 ' + (hits.length - limit) + ' left';
+    more.onclick = showMore;
+    box.appendChild(more);
+  }
   const view = whoNow(), me = meNow();
   const hidden = (me && $('hideDone').value === '1')
     ? Object.entries(done).filter(([, who]) => who.includes(me)).length : 0;
@@ -1546,8 +1594,7 @@ function loadRoute(r){
   applyGradeBar();
   $('boardWrap').style.display = '';
   paint();
-  renderResults();
-  searchQ = '';
+  showName = true;
   renderResults();
   showQ();
   $('send').disabled = !canSend();
@@ -1651,6 +1698,10 @@ function wallState(){
   const el = $('noWall');
   const lost = !rx && bridgeSeen === false;
   el.hidden = !lost;
+  // The usual reason for nobody bridging is a phone on a different room code.
+  const off = relayRoom() && relayRoom() !== DEFAULT_ROOM;
+  el.textContent = off ? 'Not reaching the board \u2014 your room code isn\u2019t the crew\u2019s. Tap to fix'
+                       : 'Not reaching the board \u2014 tap Connect';
   $('dot').className = rx ? 'on' : (bridgeSeen ? 'relay' : (lost ? 'dead' : ''));
 }
 
@@ -2037,7 +2088,10 @@ function stepProblem(delta){
   let i = current ? lastHits.indexOf(current) : -1;
   if (i === -1) i = delta > 0 ? -1 : 0;         // not in this list - start at an end
   const next = lastHits[i + delta];
-  if (next) loadRoute(next);
+  if (!next) return;
+  loadRoute(next);
+  const row = $('results').querySelector('.rt.sel');         // the list follows along
+  if (row) row.scrollIntoView({ block: 'nearest' });
 }
 
 (function boardSwipe(){
@@ -2617,9 +2671,15 @@ $('connect').onclick = () => {
 };
 $('send').onclick  = sendProblem;
 $('clear').onclick = clearRoute;
-$('q').oninput = () => { searchQ = $('q').value; renderResults(); };
-$('q').addEventListener('focus', () => { if ($('q').readOnly) return; if (!searchQ) $('q').select(); });
+$('q').oninput = () => { searchQ = $('q').value; showName = false; paintQBox(); renderResults(); };
+$('q').addEventListener('focus', () => { if (!$('q').readOnly && nameShown()) $('q').select(); });
 $('q').addEventListener('blur',  () => { if (!$('q').readOnly) showQ(); });
+$('qX').onclick = clearSearch;
+$('scroll').addEventListener('scroll', () => {           // the next page, before you hit the end
+  const sc = $('scroll');
+  if (sc.scrollTop + sc.clientHeight > sc.scrollHeight - 300 &&
+      $('results').querySelector('.more')) showMore();
+}, { passive: true });
 
 /* ---------- search keyboard (phones only) ----------
    The search field never takes focus on a touch screen, so iOS never raises
@@ -2655,11 +2715,21 @@ $('q').addEventListener('blur',  () => { if (!$('q').readOnly) showQ(); });
   }
   // Opening on the route's name highlights it; the first key replaces it.
   function open(){
-    if (kb.hidden){ layer = 'abc'; draw(); kb.hidden = false; q.classList.add('kbOn'); }
-    if (!searchQ && current) q.classList.add('fresh');
+    if (kb.hidden){
+      layer = 'abc'; draw(); kb.hidden = false;
+      $('qBox').classList.add('on'); document.body.classList.add('typing');
+    }
+    if (nameShown()) q.classList.add('fresh');
   }
-  function close(){ kb.hidden = true; q.classList.remove('kbOn'); showQ(); }
-  function set(v){ q.classList.remove('fresh'); searchQ = v; q.value = v; renderResults(); }
+  function close(){
+    kb.hidden = true;
+    $('qBox').classList.remove('on'); document.body.classList.remove('typing');
+    showQ();
+  }
+  function set(v){
+    q.classList.remove('fresh'); searchQ = v; showName = false; q.value = v;
+    paintQBox(); renderResults();
+  }
   function press(k){
     const fresh = q.classList.contains('fresh');
     if (fresh && (k === '<' || k.length === 1)) return set(k === '<' ? '' : k);
@@ -2693,9 +2763,16 @@ $('q').addEventListener('blur',  () => { if (!$('q').readOnly) showQ(); });
     if (!kb.hidden && !kb.contains(e.target) && e.target !== q) close();
   }, true);
 })();
-$('gmin').onchange = () => { if (+$('gmax').value < +$('gmin').value) $('gmax').value = $('gmin').value; renderResults(); };
-$('gmax').onchange = () => { if (+$('gmax').value < +$('gmin').value) $('gmin').value = $('gmax').value; renderResults(); };
-$('sort').onchange = renderResults;
+function saveView(){
+  try{
+    localStorage.setItem('mb-gmin', $('gmin').value);
+    localStorage.setItem('mb-gmax', $('gmax').value);
+    localStorage.setItem('mb-sort', $('sort').value);
+  }catch(e){}
+}
+$('gmin').onchange = () => { if (+$('gmax').value < +$('gmin').value) $('gmax').value = $('gmin').value; saveView(); renderResults(); };
+$('gmax').onchange = () => { if (+$('gmax').value < +$('gmin').value) $('gmin').value = $('gmax').value; saveView(); renderResults(); };
+$('sort').onchange = () => { saveView(); renderResults(); };
 $('hideDone').onchange = () => {
   try{ localStorage.setItem('mb-hide', $('hideDone').value); }catch(e){}
   renderResults();
@@ -2822,10 +2899,27 @@ $('standby').onchange = () => {
   if (!current && canSend() && !standby()) write('l##');
 };
 $('relayBtn').onclick = () => relayWant ? relayDisconnect() : relayConnect();
+/* Changing the code is easy and forgetting you did is easier - then nothing you
+   light reaches the wall. Offer the way back whenever it isn't the crew's. */
+function paintCrewRoom(){
+  const off = $('room').value.trim() !== DEFAULT_ROOM;
+  $('crewRoom').hidden = !off;
+  $('crewRoom').textContent = 'Back to the crew\u2019s room (' + DEFAULT_ROOM + ')';
+}
 $('room').oninput = () => {
   try{ localStorage.setItem('mb-room', $('room').value.trim()); }catch(e){}
+  bridgeSeen = null;                  // a new room hasn't been tried yet
   setLive(!!rx);                      // a code alone is enough to light the wall
-  paintBar();
+  paintBar(); paintCrewRoom();
+};
+$('crewRoom').onclick = () => {
+  $('room').value = DEFAULT_ROOM;
+  $('room').oninput();
+  if (relayWant) relayConnect();
+  log('room set back to ' + DEFAULT_ROOM + '.');
+};
+$('noWall').onclick = () => {
+  if (relayRoom() && relayRoom() !== DEFAULT_ROOM) showPanel('set');
 };
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && relayWant) keepAwake();
@@ -2840,6 +2934,7 @@ try{
   const hashRoom = (location.hash.match(/room=([\w-]+)/) || [])[1];
   if (hashRoom || savedRoom) $('room').value = hashRoom || savedRoom;
 }catch(e){}
+paintCrewRoom();
 paint();
 $('ver').textContent = 'build ' + BUILD;
 fillGradeSelects();
@@ -2852,6 +2947,11 @@ try{
   // Before these were split, picking a name in the view filter was how you said
   // who you were - carry that over rather than asking again.
   $('hideDone').value = localStorage.getItem('mb-hide') || '';
+  const g0 = localStorage.getItem('mb-gmin'), g1 = localStorage.getItem('mb-gmax'),
+        so = localStorage.getItem('mb-sort');
+  if (g0 !== null && $('gmin').querySelector('option[value="' + g0 + '"]')) $('gmin').value = g0;
+  if (g1 !== null && $('gmax').querySelector('option[value="' + g1 + '"]')) $('gmax').value = g1;
+  if (so && $('sort').querySelector('option[value="' + so + '"]')) $('sort').value = so;
   // The default changed to Will Wall; shift anyone still holding the old one.
   if (!localStorage.getItem('mb-standby-v2')){
     localStorage.setItem('mb-standby-v2', '1');
