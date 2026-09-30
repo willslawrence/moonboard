@@ -58,6 +58,25 @@
     border:1px solid var(--edge);background:var(--panel);color:var(--ink);
     font:16px -apple-system,system-ui,sans-serif;appearance:none}
   input::placeholder{color:var(--dimmer)}
+
+  /* ---- search keyboard ----
+     iOS Safari puts its prev/next/Done bar on top of the system keyboard and no
+     page can turn it off, so on a phone the search opens this instead: four
+     short rows, laid out in the page so the list shrinks rather than hides. */
+  #kb{flex:none;margin:0 -14px;background:#1a1a1d;border-top:1px solid var(--edge);
+      padding:6px 4px calc(env(safe-area-inset-bottom) + 6px);
+      user-select:none;-webkit-user-select:none;touch-action:manipulation}
+  #kb[hidden]{display:none}
+  #kb .r{display:flex;gap:5px;margin-bottom:5px;justify-content:center}
+  #kb .r:last-child{margin-bottom:0}
+  #kb button{flex:1 1 0;min-width:0;width:auto;height:36px;padding:0;border-radius:6px;
+             border:0;background:#3a3a3f;color:var(--ink);font:500 17px -apple-system,system-ui,sans-serif}
+  #kb button.fn{background:#26262a;font-size:13px;font-weight:600;flex-grow:1.5}
+  #kb button.sp{flex-grow:5}
+  #kb button.ok{background:var(--ink);color:#0e0e0f;flex-grow:2}
+  #kb button.dn{background:#5a5a60}
+  #kb .half{flex:.5 1 0}
+  #q.kbOn{border-color:#8b8b93}
   select{background-image:none}
   .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--dimmer);margin-bottom:6px}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -396,6 +415,8 @@
 
 </div><!-- /#scroll -->
 
+<div id="kb" hidden></div>
+
 <div id="setPanel" hidden>
   <div id="gameHead">
     <b>Settings</b>
@@ -549,7 +570,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-09-12 21:00';        // bumped every deploy, shown bottom left
+const BUILD = '2026-09-30 12:00';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -2589,6 +2610,73 @@ $('connect').onclick = () => {
 $('send').onclick  = sendProblem;
 $('clear').onclick = clearRoute;
 $('q').oninput = renderResults;
+
+/* ---------- search keyboard (phones only) ----------
+   The search field never takes focus on a touch screen, so iOS never raises
+   its own keyboard or the accessory bar that comes with it. Desktop keeps the
+   real input. */
+(function(){
+  if (!matchMedia('(pointer:coarse)').matches) return;
+  const q = $('q'), kb = $('kb');
+  q.readOnly = true;
+  q.setAttribute('inputmode', 'none');
+  const LAYOUTS = {
+    abc: [['q','w','e','r','t','y','u','i','o','p'],
+          ['|','a','s','d','f','g','h','j','k','l','|'],
+          ['#123','z','x','c','v','b','n','m','<'],
+          ['#clear',' ','#done']],
+    num: [['1','2','3','4','5','6','7','8','9','0'],
+          ['-','\'','.',',','&','!','?','(',')','/'],
+          ['#abc','+','@','"',':','_','<'],
+          ['#clear',' ','#done']]
+  };
+  let layer = 'abc';
+  function draw(){
+    kb.innerHTML = LAYOUTS[layer].map(row => '<div class="r">' + row.map(k => {
+      if (k === '|')      return '<span class="half"></span>';
+      if (k === ' ')      return '<button class="sp" data-k=" ">space</button>';
+      if (k === '<')      return '<button class="fn" data-k="<" aria-label="Delete">&#9003;</button>';
+      if (k === '#123')   return '<button class="fn" data-k="#123">123</button>';
+      if (k === '#abc')   return '<button class="fn" data-k="#abc">ABC</button>';
+      if (k === '#clear') return '<button class="fn" data-k="#clear">Clear</button>';
+      if (k === '#done')  return '<button class="ok" data-k="#done">Done</button>';
+      return '<button data-k="' + k.replace(/"/g,'&quot;') + '">' + k + '</button>';
+    }).join('') + '</div>').join('');
+  }
+  function open(){ if (kb.hidden){ layer = 'abc'; draw(); kb.hidden = false; q.classList.add('kbOn'); } }
+  function close(){ kb.hidden = true; q.classList.remove('kbOn'); }
+  function set(v){ q.value = v; renderResults(); }
+  function press(k){
+    if      (k === '<')      set(q.value.slice(0, -1));
+    else if (k === '#clear') set('');
+    else if (k === '#done')  close();
+    else if (k === '#123')   { layer = 'num'; draw(); }
+    else if (k === '#abc')   { layer = 'abc'; draw(); }
+    else                     set(q.value + k);
+  }
+  // Keys act on pointerdown so fast typing isn't held up by click delay; holding
+  // delete repeats like the real one.
+  let hold = null;
+  function stopHold(){ clearTimeout(hold); clearInterval(hold); hold = null; }
+  kb.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    const b = e.target.closest('button'); if (!b) return;
+    b.classList.add('dn'); setTimeout(() => b.classList.remove('dn'), 110);
+    press(b.dataset.k);
+    if (b.dataset.k === '<'){
+      stopHold();
+      hold = setTimeout(() => { hold = setInterval(() => press('<'), 70); }, 400);
+    }
+  });
+  ['pointerup','pointercancel','pointerleave'].forEach(t => kb.addEventListener(t, stopHold));
+  q.addEventListener('pointerdown', e => { e.preventDefault(); open(); });
+  q.addEventListener('focus', () => { q.blur(); open(); });
+  // A tap anywhere else (picking a route, opening filters) puts it away;
+  // scrolling the list doesn't, so you can browse while you type.
+  document.addEventListener('click', e => {
+    if (!kb.hidden && !kb.contains(e.target) && e.target !== q) close();
+  }, true);
+})();
 $('gmin').onchange = () => { if (+$('gmax').value < +$('gmin').value) $('gmax').value = $('gmin').value; renderResults(); };
 $('gmax').onchange = () => { if (+$('gmax').value < +$('gmin').value) $('gmin').value = $('gmax').value; renderResults(); };
 $('sort').onchange = renderResults;
