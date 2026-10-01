@@ -329,12 +329,20 @@
           font-size:17px;font-weight:600}
   #c4turn i{width:20px;height:20px;border-radius:50%;background:#3a3a40;flex:none}
 
-  /* the two panel toggles sit bottom-right, under the list */
-  #footBtns{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin:4px 0 8px}
-  #ver{text-align:right;font:10px ui-monospace,Menlo,monospace;color:var(--dimmer);
-       margin-bottom:14px}
-  #footBtns button{width:auto;padding:8px 14px}
-  #footBtns button.on{background:var(--panel2);color:var(--ink);border-color:#3a3a40}
+  /* Settings, logbook and the two games. They sat under the list, which was fine
+     at 80 rows and lost for good once the list ran on through all 549. Now they
+     ride in the search row when no route is up, and drop into the empty gutter
+     left of the board when one is. */
+  #tools{flex:none;display:flex;gap:6px}
+  #tools button{width:32px;height:32px;padding:0;display:grid;place-items:center;border-radius:8px}
+  #tools svg{width:18px;height:18px;display:block}
+  #leftCol{position:relative;min-width:0}
+  /* out of flow, so a long climber list can never make the row taller than the board */
+  #leftIn{position:absolute;inset:0;display:flex;flex-direction:column;gap:8px}
+  #leftIn #climbers{flex:1 1 auto;min-height:0;overflow:hidden}
+  #leftIn #tools{display:grid;grid-template-columns:32px 32px;gap:8px}
+  #climbers.many .p .nm2{display:none}       /* five or more: initials and results only */
+  #ver{font:10px ui-monospace,Menlo,monospace;color:var(--dimmer);margin-top:14px}
   .panel{border-top:1px solid var(--edge);padding-top:14px;margin-bottom:22px}
 
   section{margin-bottom:18px}
@@ -362,7 +370,9 @@
 
 <section id="boardWrap" style="display:none">
   <div id="boardRow">
-    <div id="climbers"></div><!-- who has climbed it; also centres the board -->
+    <div id="leftCol"><div id="leftIn">
+      <div id="climbers"></div><!-- who has climbed it; also centres the board -->
+    </div></div>
     <div id="boardCol">
       <div id="board">
         <img src="board-2016.png" alt="MoonBoard 2016 wall" width="450" height="692">
@@ -381,6 +391,12 @@
 
 <div id="bar">
   <div id="barTxt">
+    <div id="tools">
+      <button id="setBtn" class="ghost" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor"><circle cx="12" cy="12" r="5.6" stroke-width="2"/><circle cx="12" cy="12" r="2" stroke-width="1.8"/><path stroke-width="3" d="M12 2.6v3.2M12 18.2v3.2M2.6 12h3.2M18.2 12h3.2M5.35 5.35l2.26 2.26M16.39 16.39l2.26 2.26M5.35 18.65l2.26-2.26M16.39 7.61l2.26-2.26"/></g></svg></button>
+      <button id="logBtn" class="ghost" aria-label="Logbook" title="Logbook"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 6.8C9.6 5.2 6.4 4.8 3 5.6v13c3.4-.8 6.6-.4 9 1.2 2.4-1.6 5.6-2 9-1.2v-13c-3.4-.8-6.6-.4-9 1.2zM12 6.8v13"/></svg></button>
+      <button id="snakeBtn" class="ghost" aria-label="Snake" title="Snake"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="#22c55e"><rect x="2.5" y="14.5" width="4.6" height="4.6" rx="1"/><rect x="7.4" y="14.5" width="4.6" height="4.6" rx="1"/><rect x="7.4" y="9.6" width="4.6" height="4.6" rx="1"/><rect x="12.3" y="9.6" width="4.6" height="4.6" rx="1"/><rect x="12.3" y="4.7" width="4.6" height="4.6" rx="1"/></g><rect x="17.2" y="4.7" width="4.6" height="4.6" rx="1" fill="#2563eb"/></svg></button>
+      <button id="gameBtn" class="ghost" aria-label="Connect four" title="Connect four"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="4.5" cy="4.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="4.5" cy="9.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="4.5" cy="14.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="4.5" cy="19.5" r="2.1" fill="#22c55e"/><circle cx="9.5" cy="4.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="9.5" cy="9.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="9.5" cy="14.5" r="2.1" fill="#22c55e"/><circle cx="9.5" cy="19.5" r="2.1" fill="#2563eb"/><circle cx="14.5" cy="4.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="14.5" cy="9.5" r="2.1" fill="#22c55e"/><circle cx="14.5" cy="14.5" r="2.1" fill="#2563eb"/><circle cx="14.5" cy="19.5" r="2.1" fill="#2563eb"/><circle cx="19.5" cy="4.5" r="2.1" fill="#22c55e"/><circle cx="19.5" cy="9.5" r="2.1" fill="#2563eb"/><circle cx="19.5" cy="14.5" r="2.1" fill="#22c55e"/><circle cx="19.5" cy="19.5" r="2.1" fill="#2563eb"/></svg></button>
+    </div>
     <button id="filtBtn" class="ghost" aria-label="Filters">&#9776;</button>
     <div id="qBox">
       <svg class="mag" viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.8" cy="6.8" r="4.6"
@@ -422,13 +438,6 @@
   <div id="results"></div>
 </section>
 
-<div id="footBtns">
-  <button id="logBtn" class="ghost mini">Logbook</button>
-  <button id="snakeBtn" class="ghost mini">Snake</button>
-  <button id="gameBtn" class="ghost mini">Connect four</button>
-  <button id="setBtn" class="ghost mini">Settings</button>
-</div>
-<div id="ver"></div>
 
 </div><!-- /#scroll -->
 
@@ -486,6 +495,7 @@
   <div class="lbl">Log</div>
   <div id="log">idle.</div>
   <div style="margin-top:10px"><button id="copy" class="ghost">Copy log</button></div>
+  <div id="ver"></div>
 </div>
 
 <div id="sendPanel" hidden>
@@ -588,7 +598,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-01 20:00';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-01 21:00';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -1367,6 +1377,7 @@ function paintClimbers(){
   const box = $('climbers');
   box.innerHTML = '';
   const who = current ? (done[current.id] || []) : [];
+  box.classList.toggle('many', who.length > 4);
   if (!who.length) return;
   const hd = document.createElement('div');
   hd.className = 'hd';
@@ -1590,11 +1601,21 @@ function parseHolds(str, tag){
   });
 }
 
+/* The tools follow the board: in the search row with no route up, in the gutter
+   beside the board once there is one, so they never cost a row of the list. */
+function placeTools(){
+  const t = $('tools');
+  if (current){ if (t.parentNode !== $('leftIn')) $('leftIn').appendChild(t); }
+  else if (t.parentNode !== $('barTxt')) $('barTxt').insertBefore(t, $('filtBtn'));
+  $('q').placeholder = current ? 'Search routes or setters' : 'Search';
+}
+
 function loadRoute(r){
   introToken++;                          // a pick beats the intro
   for (const k in state) delete state[k];
   parseHolds(r.s, 'S'); parseHolds(r.m, 'P'); parseHolds(r.e, 'E');
   current = r;
+  placeTools();
   applyGradeBar();
   $('boardWrap').style.display = '';
   paint();
@@ -1611,6 +1632,7 @@ function clearRoute(){
   for (const k in state) delete state[k];
   current = null; gradeCells = {};
   $('boardWrap').style.display = 'none';
+  placeTools();
   showQ();
   paint();
   renderResults();
@@ -2856,10 +2878,6 @@ function showPanel(which){          // a key of PANELS, or null for none
   $('snakePanel').hidden = which !== 'snake';
   $('entryPanel').hidden = which !== 'entry';
   if (which !== 'snake' && which !== 'entry' && snTimer) snStop();     // don't leave it running unseen
-  $('gameBtn').className = 'ghost mini' + (which === 'game' ? ' on' : '');
-  $('setBtn').className  = 'ghost mini' + (which === 'set'  ? ' on' : '');
-  $('logBtn').className  = 'ghost mini' + (which === 'log'  ? ' on' : '');
-  $('snakeBtn').className = 'ghost mini' + (which === 'snake' ? ' on' : '');
   if (PANELS[which]) $(PANELS[which]).scrollTop = 0;   // open at the top, always
 }
 $('gameBtn').onclick = () => {
@@ -2989,6 +3007,7 @@ try{
 paintCrewRoom();
 paint();
 $('ver').textContent = 'build ' + BUILD;
+placeTools();
 fillGradeSelects();
 c4Draw();
 snDraw();
