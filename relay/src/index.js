@@ -155,6 +155,56 @@ export class Lists {
     return { people, lists, done, wins, snake, stats };
   }
 
+  /* Replay the whole log and rewrite every derived index from it. The log is
+     the source of truth; stats and done are caches, and caches drift. Ticks
+     that have no log rows at all - the ones that predate the logbook - are
+     left alone rather than erased, because the log can't speak for them. */
+  async rebuild(){
+    const rows = await this.state.storage.list({ prefix: "log:" });
+    const byPerson = {};                 // person -> id -> {a, sends, d}
+    const touched = new Set();           // "person|id" seen in the log
+    for (const [, row] of rows) {
+      if (!row) continue;
+      const per = (byPerson[row.person] = byPerson[row.person] || {});
+      const e = (per[row.id] = per[row.id] || { a: 0, sends: [], d: null });
+      if (row.result === "try") e.a++;
+      else { e.sends.push(row.result); e.a = 0; }
+      e.d = row.t;
+      touched.add(row.person + "|" + row.id);
+    }
+
+    const people = (await this.state.storage.get("people")) || [];
+    for (const person of people) {
+      const st = {};
+      const per = byPerson[person] || {};
+      for (const id in per) {
+        const e = per[id];
+        if (!e.a && !e.sends.length) continue;
+        const row = { a: e.a, r: e.sends.length ? e.sends[e.sends.length - 1] : null, d: e.d };
+        if (e.sends.length) row.s = e.sends;
+        st[id] = row;
+      }
+      if (Object.keys(st).length) await this.state.storage.put("stats:" + person, st);
+      else await this.state.storage.delete("stats:" + person);
+    }
+
+    const existing = await this.state.storage.list({ prefix: "done:" });
+    const done = {};
+    for (const [k, v] of existing) {
+      const id = k.slice(5);
+      // keep names with no log rows for this problem - nothing to replay for them
+      const keep = (v || []).filter((n) => !touched.has(n + "|" + id));
+      if (keep.length) done[id] = keep;
+    }
+    for (const person in byPerson)
+      for (const id in byPerson[person])
+        if (byPerson[person][id].sends.length)
+          done[id] = [...new Set([...(done[id] || []), person])];
+
+    for (const [k] of existing) await this.state.storage.delete(k);
+    for (const id in done) await this.state.storage.put("done:" + id, done[id]);
+  }
+
   /* Rebuild the indexes for one person and problem by replaying what's left in
      the log. Deleting an arbitrary old row can't be unwound arithmetically - the
      attempt count and the order of sends both depend on everything around it -
@@ -326,56 +376,57 @@ export class Lists {
 
     /* Locking is what stops a stray tap costing you a send you did months ago.
        Climbed only ever adds a row now, so the only way to lose one is here. */
-    /* Replay the whole log and rewrite every derived index from it. The log is
-       the source of truth; stats and done are caches, and caches drift. Ticks
-       that have no log rows at all - the ones that predate the logbook - are
-       left alone rather than erased, because the log can't speak for them. */
     if (path === "/lists/rebuild") {
-      const rows = await this.state.storage.list({ prefix: "log:" });
-      const byPerson = {};                 // person -> id -> {a, sends, d}
-      const touched = new Set();           // "person|id" seen in the log
-      for (const [, row] of rows) {
-        if (!row) continue;
-        const per = (byPerson[row.person] = byPerson[row.person] || {});
-        const e = (per[row.id] = per[row.id] || { a: 0, sends: [], d: null });
-        if (row.result === "try") e.a++;
-        else { e.sends.push(row.result); e.a = 0; }
-        e.d = row.t;
-        touched.add(row.person + "|" + row.id);
-      }
-
-      const people = (await this.state.storage.get("people")) || [];
-      for (const person of people) {
-        const st = {};
-        const per = byPerson[person] || {};
-        for (const id in per) {
-          const e = per[id];
-          if (!e.a && !e.sends.length) continue;
-          const row = { a: e.a, r: e.sends.length ? e.sends[e.sends.length - 1] : null, d: e.d };
-          if (e.sends.length) row.s = e.sends;
-          st[id] = row;
-        }
-        if (Object.keys(st).length) await this.state.storage.put("stats:" + person, st);
-        else await this.state.storage.delete("stats:" + person);
-      }
-
-      const existing = await this.state.storage.list({ prefix: "done:" });
-      const done = {};
-      for (const [k, v] of existing) {
-        const id = k.slice(5);
-        // keep names with no log rows for this problem - nothing to replay for them
-        const keep = (v || []).filter((n) => !touched.has(n + "|" + id));
-        if (keep.length) done[id] = keep;
-      }
-      for (const person in byPerson)
-        for (const id in byPerson[person])
-          if (byPerson[person][id].sends.length)
-            done[id] = [...new Set([...(done[id] || []), person])];
-
-      for (const [k] of existing) await this.state.storage.delete(k);
-      for (const id in done) await this.state.storage.put("done:" + id, done[id]);
-
+      await this.rebuild();
       return json(await this.snapshot());
+    }
+
+    /* Import from the official MoonBoard logbook - one call per person with the
+       whole batch, every row carrying the day it was really climbed, so first-
+       ascent points and the logbook's days stay true. Rows land locked (they're
+       history, not taps) and tagged src:"moonboard". A send already logged for
+       the same problem on the same day is skipped, so a re-run or an ascent
+       logged in both apps can't double up. Projects go onto the person's list.
+       dry:true reports what would happen and writes nothing. */
+    if (path === "/lists/log/import") {
+      const person = clean(body.person);
+      const people = (await this.state.storage.get("people")) || [];
+      if (!people.includes(person)) return json({ error: "unknown person" }, 404);
+      const entries = Array.isArray(body.entries) ? body.entries.slice(0, 3000) : [];
+      const day = (iso) => String(iso).slice(0, 10);
+
+      // "id|YYYY-MM-DD|send" or "...|try" already in the log - one of each per problem per day
+      const kind = (result) => result === "try" ? "try" : "send";
+      const have = new Set();
+      for (const [, row] of await this.state.storage.list({ prefix: "log:" }))
+        if (row && row.person === person) have.add(row.id + "|" + day(row.t) + "|" + kind(row.result));
+
+      const add = [], skipped = [];
+      for (const e of entries) {
+        const id = Number(e && e.id);
+        const result = clean(e && e.result);
+        const t = e && typeof e.t === "string" && /^\d{4}-\d{2}-\d{2}/.test(e.t) ? new Date(e.t) : null;
+        if (!Number.isFinite(id) || !RESULTS.includes(result) || !t || isNaN(t)) {
+          skipped.push({ id: e && e.id, t: e && e.t, why: "bad row" });
+          continue;
+        }
+        const k = id + "|" + day(t.toISOString()) + "|" + kind(result);
+        if (have.has(k)) { skipped.push({ id, t: e.t, why: "already logged" }); continue; }
+        have.add(k);
+        add.push({ t: t.toISOString(), person, id, result, src: "moonboard", lock: true });
+      }
+      const listKey = "list:" + person;
+      const listed = (await this.state.storage.get(listKey)) || [];
+      const projects = (Array.isArray(body.projects) ? body.projects : [])
+        .map(Number).filter((id) => Number.isFinite(id) && !listed.includes(id));
+      const newProjects = [...new Set(projects)];
+
+      if (body.dry) return json({ dry: true, would: add.length, skipped, projects: newProjects.length });
+
+      for (const row of add) await this.state.storage.put(logKey(row.t), row);
+      if (newProjects.length) await this.state.storage.put(listKey, [...listed, ...newProjects]);
+      await this.rebuild();
+      return json({ ...(await this.snapshot()), imported: add.length, skipped, projects: newProjects.length });
     }
 
     if (path === "/lists/log/lock") {
