@@ -38,6 +38,9 @@
      text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   header #me{flex:none;width:96px;padding:2px 8px;font-size:16px;
              text-overflow:ellipsis;border-radius:8px}
+  #wallTxt{cursor:pointer}
+  #wallTxt.off{color:var(--dim)}
+  #wallTxt.bad{color:#ef4444}
   #dot{width:7px;height:7px;border-radius:50%;background:var(--dimmer);flex:none}
   #dot.on{background:var(--ink)}
   #dot.relay{background:#2563eb}   /* reaching the wall through someone else */
@@ -352,7 +355,7 @@
 
 <header>
   <span id="dot"></span>
-  <h1>MoonBoard</h1>
+  <h1 id="wallTxt" title="Wall status — tap for Settings">MoonBoard</h1>
   <select id="me" aria-label="Climbing as"></select>
   <button id="connect">Connect</button>
 </header>
@@ -585,7 +588,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-01 18:00';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-01 20:00';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -612,6 +615,7 @@ function log(msg){
 }
 function setLive(on, busy){
   if (busy) $('dot').className = 'busy'; else wallState();
+  paintRelayBtn();
   $('send').disabled = !canSend() || !current;
   $('connect').textContent = on ? 'Disconnect' : 'Connect';
 }
@@ -1693,6 +1697,9 @@ const canSend = () => !!rx || !!relayRoom();
    every tap and post it into a room nobody was bridging. Bluetooth drops mid
    session, the buttons stay lit, the wall quietly stops changing. */
 let bridgeSeen = null;
+/* Whether any phone is bridging this room right now, from /status. Polled while
+   the app is open, so you can see the wall is reachable before you light anything. */
+let bridgeLive = null;
 
 function wallState(){
   const el = $('noWall');
@@ -1702,7 +1709,45 @@ function wallState(){
   const off = relayRoom() && relayRoom() !== DEFAULT_ROOM;
   el.textContent = off ? 'Not reaching the board \u2014 your room code isn\u2019t the crew\u2019s. Tap to fix'
                        : 'Not reaching the board \u2014 tap Connect';
-  $('dot').className = rx ? 'on' : (bridgeSeen ? 'relay' : (lost ? 'dead' : ''));
+  const live = bridgeLive !== null ? bridgeLive : bridgeSeen;
+  $('dot').className = rx ? 'on' : (lost ? 'dead' : (live ? 'relay' : ''));
+  /* Say it in words. With only the dot, people assumed their phone had a relay
+     switch of its own to turn on - it doesn't, only the Bluetooth phone shares. */
+  const sharing = rx && relayWS && relayWS.readyState === 1;
+  const [txt, cls] =
+      rx    ? (!sharing ? ['Connected', '']
+             : relayRoom() === DEFAULT_ROOM ? ['Sharing wall', ''] : ['Not crew room', 'bad'])
+    : lost  ? ['Not reaching', 'bad']
+    : live  ? ['Via relay', '']
+    : live === false ? ['Wall offline', 'off']
+    : ['MoonBoard', ''];
+  $('wallTxt').textContent = txt;
+  $('wallTxt').className = cls;
+}
+
+async function relayPeek(){
+  if (rx || document.visibilityState !== 'visible') return;
+  const room = relayRoom();
+  if (!room){ bridgeLive = null; return wallState(); }
+  try{
+    const d = await (await fetch('https://' + RELAY_HOST + '/status?room=' + encodeURIComponent(room))).json();
+    if (typeof d.bridges !== 'number') return;
+    bridgeLive = d.bridges > 0;
+    if (bridgeLive && bridgeSeen === false) bridgeSeen = null;   // someone's back - stop shouting
+    wallState();
+  }catch(e){}
+}
+
+/* Only the phone holding Bluetooth can bridge. Any other phone that joined as a
+   bridge would answer every request with "not connected" - and the relay takes
+   the first answer back, so the whole crew would see failures while the wall lit. */
+function paintRelayBtn(){
+  const b = $('relayBtn');
+  b.disabled = !rx && !relayWant;
+  b.textContent = relayWant ? 'Disconnect relay' : 'Connect relay';
+  if (!rx && !relayWant)
+    relayState('Not needed on this phone \u2014 it lights the wall through whoever is ' +
+               'connected by Bluetooth. Nothing to turn on.');
 }
 
 async function relaySend(str, quiet){
@@ -1716,6 +1761,7 @@ async function relaySend(str, quiet){
     });
     const d = await r.json();
     bridgeSeen = !d.error && d.bridges > 0;
+    if (typeof d.bridges === 'number') bridgeLive = d.bridges > 0;
     if (d.error) log('relay: ' + d.error);
     else if (!d.bridges) log('relay: nothing is connected to the board — ' +
                              'somebody has to tap Connect.');
@@ -1794,9 +1840,10 @@ function openRelay(room){
 
   ws.onopen = () => {
     relayTries = 0;
-    relayState('relay connected — Claude can drive the wall');
+    relayState('relay connected — sharing the wall with the crew');
     log('relay connected as bridge.');
     $('relayBtn').textContent = 'Disconnect relay';
+    wallState();
   };
 
   ws.onmessage = async (e) => {
@@ -1818,6 +1865,7 @@ function openRelay(room){
 
   ws.onclose = () => {
     $('relayBtn').textContent = 'Connect relay';
+    wallState();
     if (!relayWant) return relayState('relay off');
     const wait = Math.min(30000, 1000 * Math.pow(2, relayTries++));
     relayState('relay dropped — retrying in ' + Math.round(wait / 1000) + 's');
@@ -1832,7 +1880,8 @@ function relayDisconnect(){
   if (relayWS) { try{ relayWS.close(); }catch(e){} }
   relayWS = null;
   relayState('relay off');
-  $('relayBtn').textContent = 'Connect relay';
+  paintRelayBtn();
+  wallState();
   if (wakeLock){ try{ wakeLock.release(); }catch(e){} wakeLock = null; }
 }
 
@@ -2898,7 +2947,8 @@ $('standby').onchange = () => {
   try{ localStorage.setItem('mb-standby', $('standby').value); }catch(e){}
   if (!current && canSend() && !standby()) write('l##');
 };
-$('relayBtn').onclick = () => relayWant ? relayDisconnect() : relayConnect();
+$('relayBtn').onclick = () => relayWant ? relayDisconnect() : (rx ? relayConnect() : null);
+$('wallTxt').onclick = () => showPanel($('setPanel').hidden ? 'set' : null);
 /* Changing the code is easy and forgetting you did is easier - then nothing you
    light reaches the wall. Offer the way back whenever it isn't the crew's. */
 function paintCrewRoom(){
@@ -2908,9 +2958,9 @@ function paintCrewRoom(){
 }
 $('room').oninput = () => {
   try{ localStorage.setItem('mb-room', $('room').value.trim()); }catch(e){}
-  bridgeSeen = null;                  // a new room hasn't been tried yet
+  bridgeSeen = null; bridgeLive = null;    // a new room hasn't been tried yet
   setLive(!!rx);                      // a code alone is enough to light the wall
-  paintBar(); paintCrewRoom();
+  paintBar(); paintCrewRoom(); relayPeek();
 };
 $('crewRoom').onclick = () => {
   $('room').value = DEFAULT_ROOM;
@@ -2923,7 +2973,9 @@ $('noWall').onclick = () => {
 };
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && relayWant) keepAwake();
+  if (document.visibilityState === 'visible') relayPeek();
 });
+setInterval(relayPeek, 20000);
 $('copy').onclick = async () => {
   try{ await navigator.clipboard.writeText($('log').textContent); log('log copied.'); }
   catch(e){ log('copy blocked — select the text manually.'); }
@@ -2966,6 +3018,7 @@ try{
 renderResults();
 listsCall('/lists');
 setLive(false);
+relayPeek();
 if (!navigator.bluetooth) log(noBluetoothAdvice());
 else log('ready. Power the box, force-quit the MoonBoard app, then Connect.');
 </script>
