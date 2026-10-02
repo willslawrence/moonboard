@@ -593,7 +593,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-02 22:20';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-02 22:40';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -2358,6 +2358,7 @@ function setBoard(key, fromServer){
   if (key === boardKey) return;
   boardKey = key;
   PROBLEMS = BY_BOARD[key];
+  fillGradeSelects();
   $('board').querySelector('img').src = boardNow().img;
   $('board').querySelector('img').alt = boardNow().label + ' wall';
   if (current && current.board !== key) clearRoute();
@@ -2553,13 +2554,25 @@ function runPending(){
   else if (a === 'try') doTry();
 }
 
+/* Only the grades this hold set and angle actually has benchmarks at - no point
+   offering 5+ on a set whose easiest benchmark is 6B+. A choice still in range
+   survives a change of board; one that isn't falls back to the end of the range. */
+let gradeLo = 0, gradeHi = GRADES.length - 1;
 function fillGradeSelects(){
-  GRADES.forEach((g, i) => {                       // both scales, as the pills do
-    const label = g + ' \u00b7 V' + VGRADE[i];
+  const was = [$('gmin').value, $('gmax').value];
+  // an end of the range that was never narrowed should follow the new range out
+  const open = [was[0] === '' || +was[0] === gradeLo, was[1] === '' || +was[1] === gradeHi];
+  gradeLo = Math.min(...PROBLEMS.map(p => p.grade));
+  gradeHi = Math.max(...PROBLEMS.map(p => p.grade));
+  $('gmin').innerHTML = ''; $('gmax').innerHTML = '';
+  for (let i = gradeLo; i <= gradeHi; i++){        // both scales, as the pills do
+    const label = GRADES[i] + ' \u00b7 V' + VGRADE[i];
     $('gmin').appendChild(new Option(label, i));
     $('gmax').appendChild(new Option(label, i));
-  });
-  $('gmin').value = 0; $('gmax').value = GRADES.length - 1;
+  }
+  const keep = (v, wide, d) => (!wide && +v >= gradeLo && +v <= gradeHi) ? v : d;
+  $('gmin').value = keep(was[0], open[0], gradeLo);
+  $('gmax').value = keep(was[1], open[1], gradeHi);
 }
 
 /* The field shows the route's name once you've picked one, and the search while
@@ -3916,7 +3929,7 @@ $('who').onchange = () => {
    something in it is actually filtering - otherwise a short list looks like a
    bug rather than a setting. */
 function markFilters(){
-  const narrowed = +$('gmin').value > 0 || +$('gmax').value < GRADES.length - 1;
+  const narrowed = +$('gmin').value > gradeLo || +$('gmax').value < gradeHi;
   const on = narrowed || whoNow() || (meNow() && $('hideDone').value === '1');
   $('filtBtn').classList.toggle('active', !!on);
 }
