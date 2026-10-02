@@ -643,7 +643,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-02 23:08';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-02 23:25';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3357,27 +3357,21 @@ function paintBeta(){
 
 /* Where every limb is after each move. A limb nobody has placed yet hangs where
    it naturally would: hands on the first hold, feet on the kickboard below. */
-const BETA_FLAG = { FL: [-105, 70], FR: [105, 70], FD: [0, 140] };   // from the hips
+/* Where every limb is after each move. A foot that has flagged is off the wall
+   (null here, with its direction in .off) and gets placed from the hips when the
+   body is drawn. A limb nobody has placed yet sits where it naturally would:
+   hands on the first hold, feet on the kickboard below. */
 function betaFrames(moves){
   const at = {}, flag = {}, frames = [];
   moves.forEach(m => {
-    if (BETA_FLAG[m.h]){ flag[m.l] = m.h; delete at[m.l]; }
+    if (/^F[LRD]$/.test(m.h)){ flag[m.l] = m.h; delete at[m.l]; }
     else { at[m.l] = betaXY(m.h); delete flag[m.l]; }
-    const f = Object.assign({}, at);
-    const hand = f.LH || f.RH;
+    const hand = at.LH || at.RH;
     if (!hand) return;
-    f.LH = f.LH || hand; f.RH = f.RH || hand;
-    const kick = markY(0) * 6.92;
-    // a flagged foot is off the wall: it hangs out to the side of, or below, the hips
-    const hip = [(f.LH[0] + f.RH[0]) / 2, (f.LH[1] + f.RH[1]) / 2 + 170];
-    ['LF', 'RF'].forEach(l => {
-      if (!flag[l]) return;
-      const o = BETA_FLAG[flag[l]], side = flag[l] === 'FD' ? (l === 'LF' ? -14 : 14) : 0;
-      f[l] = [hip[0] + o[0] + side, hip[1] + o[1]];
-    });
-    f.LF = f.LF || [(f.LH[0] + f.RH[0]) / 2 - 22, kick];
-    f.RF = f.RF || [(f.LH[0] + f.RH[0]) / 2 + 22, kick];
-    f.off = Object.assign({}, flag);
+    const f = { LH: at.LH || hand, RH: at.RH || hand, off: Object.assign({}, flag) };
+    const mid = (f.LH[0] + f.RH[0]) / 2, kick = markY(0) * 6.92;
+    f.LF = flag.LF ? null : (at.LF || [mid - 22, kick]);
+    f.RF = flag.RF ? null : (at.RF || [mid + 22, kick]);
     frames.push(f);
   });
   return frames;
@@ -3389,51 +3383,149 @@ function betaSetup(moves){
   return Math.max(0, i - 1);
 }
 
-/* Two-bone limb: where the elbow or knee sits between a joint and a hand or foot. */
-function betaBend(a, b, l1, l2, out){
+/* ---- the climber ----
+   Drawn to scale on the 450x692 picture: holds are 20cm apart, which makes a
+   metre about 173px. Arms and legs are fixed lengths, so where the body sits is
+   worked out rather than guessed - shoulders must be within an arm of both
+   hands, hips within a leg of whichever feet are on, and the torso joins them.
+   A few rounds of nudging each of those into range settles on a believable hang. */
+const B_ARM = 107, B_LEG = 150, B_TORSO = 84, B_SH = 27, B_HIP = 15;
+const bLerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+const bDist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+
+function betaSolve(LH, RH, feet){        // feet: [{side:-1|1, pos, w}]
+  const S = [(LH[0] + RH[0]) / 2, (LH[1] + RH[1]) / 2 + B_ARM * 0.8];
+  const P = [S[0], S[1] + B_TORSO];
+  if (feet.length){
+    const fw = feet.reduce((n, c) => n + c.w, 0) || 1;
+    P[0] = (S[0] + feet.reduce((n, c) => n + c.pos[0] * c.w, 0) / fw) / 2;
+  }
+  const pull = (pt, joint, target, max, k) => {          // drag pt until joint reaches target
+    const d = bDist(joint, target);
+    if (d > max){ const t = (d - max) / d * k; pt[0] += (target[0] - joint[0]) * t; pt[1] += (target[1] - joint[1]) * t; }
+  };
+  for (let it = 0; it < 18; it++){
+    pull(S, [S[0] - B_SH, S[1]], LH, B_ARM * 0.97, 0.5);
+    pull(S, [S[0] + B_SH, S[1]], RH, B_ARM * 0.97, 0.5);
+    feet.forEach(c => {
+      const j = [P[0] + c.side * B_HIP, P[1]], d = bDist(j, c.pos);
+      pull(P, j, c.pos, B_LEG * 0.96, 0.5 * c.w);
+      if (d < B_LEG * 0.52){                              // knees in the chest - sit back out
+        const t = (B_LEG * 0.52 - d) / Math.max(d, 1) * 0.35 * c.w;
+        P[0] -= (c.pos[0] - j[0]) * t; P[1] -= (c.pos[1] - j[1]) * t;
+      }
+    });
+    P[1] += 2;                                            // weight hangs down
+    if (P[1] > 664) P[1] = 664;                           // but there is a floor
+    if (P[1] < S[1] + B_TORSO * 0.45) P[1] = S[1] + B_TORSO * 0.45;   // hips stay below shoulders
+    const vx = P[0] - S[0], vy = P[1] - S[1], d = Math.hypot(vx, vy) || 1, t = (d - B_TORSO) / d * 0.5;
+    S[0] += vx * t; S[1] += vy * t; P[0] -= vx * t; P[1] -= vy * t;
+  }
+  // the hands are what's actually holding on, so they get the last word
+  pull(S, [S[0] - B_SH, S[1]], LH, B_ARM * 0.99, 1);
+  pull(S, [S[0] + B_SH, S[1]], RH, B_ARM * 0.99, 1);
+  const vx = P[0] - S[0], vy = P[1] - S[1], d = Math.hypot(vx, vy) || 1;
+  return { S, P: [S[0] + vx / d * B_TORSO, S[1] + vy / d * B_TORSO] };
+}
+// a flagged foot: leg nearly straight, out to the side of the hips or hanging below
+function betaFlagAt(P, limb, dir){
+  const side = limb === 'LF' ? -1 : 1;
+  if (dir === 'FD') return [P[0] + side * 16, P[1] + B_LEG * 0.93];
+  return [P[0] + (dir === 'FL' ? -1 : 1) * B_LEG * 0.82, P[1] + B_LEG * 0.42];
+}
+/* Elbow or knee between a joint and a hand or foot. want picks which way it bends:
+   'down' for elbows, which drop below the arm; otherwise out to that side. */
+function betaBend(a, b, l1, l2, out, want){
   const dx = b[0] - a[0], dy = b[1] - a[1], n = Math.hypot(dx, dy) || 1;
   const d = Math.max(1, Math.min(n, l1 + l2 - 0.5));
   const x = (l1 * l1 - l2 * l2 + d * d) / (2 * d);
   const h = Math.sqrt(Math.max(0, l1 * l1 - x * x));
   const m = [a[0] + dx / n * x, a[1] + dy / n * x];
   const j1 = [m[0] - dy / n * h, m[1] + dx / n * h], j2 = [m[0] + dy / n * h, m[1] - dx / n * h];
-  // elbows and knees point away from the body: left limbs bend left, right limbs right
+  if (want === 'down' && Math.abs(j1[1] - j2[1]) > 6) return j1[1] > j2[1] ? j1 : j2;
   return (j1[0] - j2[0]) * out > 0 ? j1 : j2;
 }
-function betaDraw(f, hot){
-  const ARM = 107, TORSO = 86, LEG = 147, SH = 30, HIP = 18;
-  const hm = [(f.LH[0] + f.RH[0]) / 2, (f.LH[1] + f.RH[1]) / 2];
-  const fm = [(f.LF[0] + f.RF[0]) / 2, (f.LF[1] + f.RF[1]) / 2];
-  // shoulders hang below the hands, as low as both arms still reach
-  let s = hm;
-  for (let t = 0.85; t >= 0; t -= 0.05){
-    s = [hm[0] + (fm[0] - hm[0]) * 0.15, hm[1] + ARM * t];
-    if (Math.hypot(s[0] - SH - f.LH[0], s[1] - f.LH[1]) <= ARM &&
-        Math.hypot(s[0] + SH - f.RH[0], s[1] - f.RH[1]) <= ARM) break;
+
+let betaBody = null;                     // where the torso was last drawn, for easing it along
+/* Draw the climber part-way (e) between two frames. snap skips the easing of the
+   body, for the editor and the first frame of a loop. */
+function betaDraw(a, b, e, hot, snap, dt){
+  b = b || a; e = b === a ? 1 : e;
+  // the limb that is moving lifts off the wall in a shallow arc rather than sliding
+  const arc = l => (l === hot && e < 1) ? Math.sin(Math.PI * e) * (l[1] === 'H' ? 16 : 11) : 0;
+  const LH = bLerp(a.LH, b.LH, e), RH = bLerp(a.RH, b.RH, e);
+  LH[1] -= arc('LH'); RH[1] -= arc('RH');
+  // feet that are on (or coming on, or just leaving) hold the hips in place by degrees
+  const cons = [];
+  [['LF', -1], ['RF', 1]].forEach(([l, side]) => {
+    if (a[l] && b[l]) cons.push({ side, pos: bLerp(a[l], b[l], e), w: l === hot ? 1 - 0.6 * Math.sin(Math.PI * e) : 1 });
+    else if (a[l]) cons.push({ side, pos: a[l], w: 1 - e });
+    else if (b[l]) cons.push({ side, pos: b[l], w: e });
+  });
+  let { S, P } = betaSolve(LH, RH, cons.filter(c => c.w > 0.02));
+  /* A foot left on a hold the body can no longer reach has, in truth, come off.
+     Stop it dragging the hips down and let that leg hang toward where it was. */
+  const far = c => bDist([P[0] + c.side * B_HIP, P[1]], c.pos) > B_LEG * 1.04;
+  if (cons.some(far)){
+    cons.forEach(c => { if (far(c)) c.w *= 0.12; });
+    ({ S, P } = betaSolve(LH, RH, cons.filter(c => c.w > 0.02)));
   }
-  // hips under the shoulders, leaning toward the feet, pulled in if a leg can't reach
-  let vx = (fm[0] - s[0]) * 0.5, vy = Math.max(20, fm[1] - s[1]);
-  const vn = Math.hypot(vx, vy);
-  let p = [s[0] + vx / vn * TORSO, s[1] + vy / vn * TORSO];
-  const sl = [s[0] - SH, s[1]], sr = [s[0] + SH, s[1]];
-  const pl = [p[0] - HIP, p[1]], pr = [p[0] + HIP, p[1]];
-  const el = betaBend(sl, f.LH, ARM * 0.48, ARM * 0.52, -1), er = betaBend(sr, f.RH, ARM * 0.48, ARM * 0.52, 1);
-  const kl = betaBend(pl, f.LF, LEG * 0.51, LEG * 0.49, -1), kr = betaBend(pr, f.RF, LEG * 0.51, LEG * 0.49, 1);
-  const head = [s[0], s[1] - 26];
-  const line = pts => pts.map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' ');
-  const body = [
-    line([f.LH, el, sl, sr, er, f.RH]), line([s, p]), line([f.LF, kl, pl, pr, kr, f.RF]),
-  ];
-  let svg = '';
-  body.forEach(pts => { svg += '<polyline points="' + pts + '" fill="none" stroke="#0e0e0f" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" opacity=".55"/>'; });
-  body.forEach(pts => { svg += '<polyline points="' + pts + '" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>'; });
-  svg += '<circle cx="' + head[0].toFixed(1) + '" cy="' + head[1].toFixed(1) + '" r="15" fill="#fff" stroke="#0e0e0f" stroke-width="3"/>';
-  BETA_ORDER.forEach(l => {
-    const q = f[l], foot = l[1] === 'F', r = (l === hot ? 13 : 10);
-    const off = foot && f.off && f.off[l];             // flagged: hollow, it isn't on anything
-    svg += foot
-      ? '<rect x="' + (q[0] - r + 2).toFixed(1) + '" y="' + (q[1] - r + 2).toFixed(1) + '" width="' + (2 * r - 4) + '" height="' + (2 * r - 4) + '" rx="3" fill="' + (off ? '#0e0e0f' : BETA_COL[l]) + '" stroke="' + (off ? BETA_COL[l] : '#0e0e0f') + '" stroke-width="2.5"/>'
-      : '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="' + r + '" fill="' + BETA_COL[l] + '" stroke="#0e0e0f" stroke-width="2.5"/>';
+  if (betaBody && !snap){                // the body follows a beat behind the limbs
+    const k = 1 - Math.exp(-(dt || 16) / 110);
+    S = bLerp(betaBody.S, S, k); P = bLerp(betaBody.P, P, k);
+    const vx = P[0] - S[0], vy = P[1] - S[1], d = Math.hypot(vx, vy) || 1;
+    P = [S[0] + vx / d * B_TORSO, S[1] + vy / d * B_TORSO];
+  }
+  betaBody = { S, P };
+  const foot = l => {
+    const fa = a[l] || betaFlagAt(P, l, a.off[l]), fb = b[l] || betaFlagAt(P, l, b.off[l]);
+    const q = bLerp(fa, fb, e); q[1] -= arc(l); return q;
+  };
+  const LF = foot('LF'), RF = foot('RF');
+  const loose = {};
+  [['LF', LF, -1], ['RF', RF, 1]].forEach(([l, q, side]) => {
+    const j = [P[0] + side * B_HIP, P[1]], d = bDist(j, q);
+    if (d > B_LEG * 0.985){                       // out of reach: dangle at full stretch
+      q[0] = j[0] + (q[0] - j[0]) / d * B_LEG * 0.985; q[1] = j[1] + (q[1] - j[1]) / d * B_LEG * 0.985;
+      loose[l] = true;
+    }
+  });
+
+  // torso leans with the hips; shoulders and hips sit square across it
+  const ax = (P[0] - S[0]) / B_TORSO, ay = (P[1] - S[1]) / B_TORSO, px = ay, py = -ax;
+  const sl = [S[0] - px * B_SH, S[1] - py * B_SH], sr = [S[0] + px * B_SH, S[1] + py * B_SH];
+  const pl = [P[0] - px * B_HIP, P[1] - py * B_HIP], pr = [P[0] + px * B_HIP, P[1] + py * B_HIP];
+  const el = betaBend(sl, LH, B_ARM * 0.48, B_ARM * 0.52, -1, 'down');
+  const er = betaBend(sr, RH, B_ARM * 0.48, B_ARM * 0.52, 1, 'down');
+  const kl = betaBend(pl, LF, B_LEG * 0.52, B_LEG * 0.48, -1), kr = betaBend(pr, RF, B_LEG * 0.52, B_LEG * 0.48, 1);
+  // the head looks toward the hand that is reaching
+  const look = hot === 'LH' ? -4 : hot === 'RH' ? 4 : 0;
+  const neck = [S[0] - ax * 9, S[1] - ay * 9], head = [S[0] - ax * 27 + look, S[1] - ay * 27];
+
+  const pts = q => q.map(v => v[0].toFixed(1) + ',' + v[1].toFixed(1)).join(' ');
+  const INK = '#0e0e0f', SKIN = '#fbfbf7';
+  const stroke = (q, w, col, closed) => '<' + (closed ? 'polygon' : 'polyline') + ' points="' + pts(q) +
+    '" fill="' + (closed ? col : 'none') + '" stroke="' + col + '" stroke-width="' + w +
+    '" stroke-linecap="round" stroke-linejoin="round"/>';
+  // each part gets its own dark edge, so an arm across the chest still reads as an arm
+  const part = (q, w, closed) => stroke(q, w + 7, INK, closed) + stroke(q, w, SKIN, closed);
+  const dot = (c, r) => '<circle cx="' + c[0].toFixed(1) + '" cy="' + c[1].toFixed(1) + '" r="' + (r + 3.5) + '" fill="' + INK + '"/>' +
+                        '<circle cx="' + c[0].toFixed(1) + '" cy="' + c[1].toFixed(1) + '" r="' + r + '" fill="' + SKIN + '"/>';
+  let svg = '<g opacity=".97">';
+  svg += part([pl, kl, LF], 10) + part([pl, kl], 13);            // legs: shin, then the thicker thigh
+  svg += part([pr, kr, RF], 10) + part([pr, kr], 13);
+  svg += part([sl, sr, pr, pl], 9, true);                        // torso
+  svg += part([neck, head], 7);
+  svg += part([sl, el, LH], 8) + part([sl, el], 10);             // arms over the torso
+  svg += part([sr, er, RH], 8) + part([sr, er], 10);
+  svg += dot(head, 13.5);                                        // and the head over everything
+  svg += '</g>';
+  [['LH', LH], ['RH', RH], ['LF', LF], ['RF', RF]].forEach(([l, q]) => {
+    const isFoot = l[1] === 'F', r = (l === hot ? 11 : 9);
+    const off = loose[l] || (isFoot && e > 0.5 ? b.off[l] : isFoot && a.off[l]);   // off the wall: hollow
+    svg += isFoot
+      ? '<rect x="' + (q[0] - r + 1).toFixed(1) + '" y="' + (q[1] - r + 1).toFixed(1) + '" width="' + (2 * r - 2) + '" height="' + (2 * r - 2) + '" rx="4" fill="' + (off ? INK : BETA_COL[l]) + '" stroke="' + (off ? BETA_COL[l] : INK) + '" stroke-width="2.5"/>'
+      : '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="' + r + '" fill="' + BETA_COL[l] + '" stroke="' + INK + '" stroke-width="2.5"/>';
   });
   $('betaSvg').innerHTML = svg;
 }
@@ -3441,7 +3533,9 @@ function betaDraw(f, hot){
 function betaStop(){
   betaPlaying = false; cancelAnimationFrame(betaTimer); clearTimeout(betaTimer);
 }
-/* Play it: hold the start, move one limb at a time, rest at the top, go again. */
+/* Play it: settle on the start, move one limb at a time with the body following,
+   rest at the top, go again. One loop of frames drives it all so the body keeps
+   easing through the pauses instead of freezing between moves. */
 function betaPlay(){
   if (!beta || !beta.moves.length) return;
   const frames = betaFrames(beta.moves);
@@ -3450,26 +3544,32 @@ function betaPlay(){
   const skipped = beta.moves.length - frames.length;
   const first = Math.max(0, betaSetup(beta.moves) - skipped);
   betaPlaying = true; paintBeta();
-  const MOVE = 520, HOLD = 380, REST = 1400;
-  let i = first, t0 = null;
-  betaDraw(frames[first]);
-  const step = now => {
+  const MOVE = 640, HOLD = 170, REST = 1300, START = 800;
+  let i = first, phase = 'start', t0 = null, last = null;
+  betaBody = null;
+  betaDraw(frames[first], null, 1, null, true);
+  const tick = now => {
     if (!betaPlaying) return;
-    if (i + 1 >= frames.length){                      // topped out - rest, restart
-      betaTimer = setTimeout(() => { i = first; t0 = null; betaDraw(frames[first]);
-        betaTimer = setTimeout(() => { betaTimer = requestAnimationFrame(step); }, REST * 0.6); }, REST);
-      return;
-    }
     if (t0 === null) t0 = now;
-    const k = Math.min(1, (now - t0) / MOVE), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
-    const a = frames[i], b = frames[i + 1], f = {};
-    BETA_ORDER.forEach(l => { f[l] = [a[l][0] + (b[l][0] - a[l][0]) * e, a[l][1] + (b[l][1] - a[l][1]) * e]; });
-    f.off = b.off;
-    betaDraw(f, beta.moves[i + 1 + skipped].l);
-    if (k >= 1){ i++; t0 = null; betaTimer = setTimeout(() => { betaTimer = requestAnimationFrame(step); }, HOLD); return; }
-    betaTimer = requestAnimationFrame(step);
+    const dt = last === null ? 16 : Math.min(60, now - last); last = now;
+    const el = now - t0;
+    if (phase === 'move'){
+      const k = Math.min(1, el / MOVE), e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+      betaDraw(frames[i], frames[i + 1], e, beta.moves[i + 1 + skipped].l, false, dt);
+      if (k >= 1){ i++; phase = i + 1 >= frames.length ? 'rest' : 'hold'; t0 = now; }
+    } else {
+      betaDraw(frames[i], null, 1, null, false, dt);          // paused, but still settling
+      const wait = phase === 'start' ? START : phase === 'rest' ? REST : HOLD;
+      if (el >= wait){
+        if (phase === 'rest'){ i = first; phase = 'start'; betaBody = null; betaDraw(frames[first], null, 1, null, true); }
+        else if (i + 1 < frames.length) phase = 'move';
+        else phase = 'rest';
+        t0 = now;
+      }
+    }
+    betaTimer = requestAnimationFrame(tick);
   };
-  betaTimer = setTimeout(() => { betaTimer = requestAnimationFrame(step); }, REST * 0.6);
+  betaTimer = requestAnimationFrame(tick);
 }
 
 /* ---- entering it ---- */
@@ -3490,7 +3590,7 @@ function betaPaintEdit(){
     b.disabled = betaLimb[1] !== 'F' || !betaDraft.some(m => m.l[1] === 'H'));
   $('betaUndo').disabled = !betaDraft.length;
   const frames = betaFrames(betaDraft);
-  if (frames.length) betaDraw(frames[frames.length - 1], betaDraft[betaDraft.length - 1].l);
+  if (frames.length) betaDraw(frames[frames.length - 1], null, 1, betaDraft[betaDraft.length - 1].l, true);
   else $('betaSvg').innerHTML = '';
   paintBeta();
 }
