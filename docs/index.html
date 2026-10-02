@@ -173,18 +173,20 @@
   #betaTools{display:none;flex-direction:column;gap:6px;height:100%}
   body.betaEdit #barBtns > button{display:none}
   body.betaEdit #betaTools{display:flex}
-  #betaLimbs{display:grid;gap:5px}
-  #betaLimbs button{padding:5px 0;font-size:12px;font-weight:700;border-radius:6px}
+  #betaLimbs{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+  #betaLimbs button{padding:5px 0;font-size:12px;font-weight:700;border-radius:6px;min-width:0}
   #betaLimbs button.pick{color:#0e0e0f}
   #betaLimbs button[data-l$="H"].pick{background:#fff;border-color:#fff}
   #betaLimbs button[data-l="LH"],#betaLimbs button[data-l="LF"]{border-color:#38bdf8}
   #betaLimbs button[data-l="RH"],#betaLimbs button[data-l="RF"]{border-color:#fb7185}
   #betaLimbs button[data-l="LH"].pick,#betaLimbs button[data-l="LF"].pick{background:#38bdf8}
   #betaLimbs button[data-l="RH"].pick,#betaLimbs button[data-l="RF"].pick{background:#fb7185}
-  #betaFlag{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
-  #betaFlag::before{content:'Flag foot';grid-column:1/-1;font-size:9px;letter-spacing:.1em;
-                    text-transform:uppercase;color:var(--dimmer)}
-  #betaFlag button{padding:4px 0;font-size:14px}
+  .betaTri{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
+  .betaTri::before{grid-column:1/-1;font-size:9px;letter-spacing:.1em;
+                   text-transform:uppercase;color:var(--dimmer)}
+  #betaFlag::before{content:'Flag foot'}
+  #betaHips::before{content:'Hips'}
+  .betaTri button{padding:4px 0;font-size:14px;min-width:0}
   .betaPair{display:grid;grid-template-columns:1fr 1fr;gap:4px}
   .betaPair button{padding:6px 0;font-size:10px;min-width:0;letter-spacing:-.01em}
   #betaEnd{margin-top:auto}
@@ -416,15 +418,20 @@
       <button id="clear" class="mini ghost">Hide</button>
       <div id="betaTools">
         <div id="betaLimbs">
-          <button class="mini" data-l="LH">L hand</button>
-          <button class="mini" data-l="RH">R hand</button>
-          <button class="mini" data-l="LF">L foot</button>
-          <button class="mini" data-l="RF">R foot</button>
+          <button class="mini" data-l="LH" aria-label="Left hand">L &#9995;</button>
+          <button class="mini" data-l="RH" aria-label="Right hand">R &#9995;</button>
+          <button class="mini" data-l="LF" aria-label="Left foot">L &#129462;</button>
+          <button class="mini" data-l="RF" aria-label="Right foot">R &#129462;</button>
         </div>
-        <div id="betaFlag" title="Flag: take the foot off and let it hang">
+        <div id="betaFlag" class="betaTri" title="Flag: take the foot off and let it hang">
           <button class="mini" data-f="FL" aria-label="Flag left">&#8592;</button>
           <button class="mini" data-f="FD" aria-label="Flag down">&#8595;</button>
           <button class="mini" data-f="FR" aria-label="Flag right">&#8594;</button>
+        </div>
+        <div id="betaHips" class="betaTri" title="Hips: shift your weight left or right, or back to square">
+          <button class="mini" data-h="HL" aria-label="Hips left">&#8592;</button>
+          <button class="mini" data-h="HC" aria-label="Hips square">&#9679;</button>
+          <button class="mini" data-h="HR" aria-label="Hips right">&#8594;</button>
         </div>
         <div class="betaPair">
           <button id="betaUndo" class="mini">Undo</button>
@@ -643,7 +650,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-02 23:25';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-02 23:29';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3363,12 +3370,14 @@ function paintBeta(){
    hands on the first hold, feet on the kickboard below. */
 function betaFrames(moves){
   const at = {}, flag = {}, frames = [];
+  let hip = 0;                                  // -1 left, 0 square, 1 right; stays until changed
   moves.forEach(m => {
-    if (/^F[LRD]$/.test(m.h)){ flag[m.l] = m.h; delete at[m.l]; }
+    if (m.l === 'HP') hip = m.h === 'HL' ? -1 : m.h === 'HR' ? 1 : 0;
+    else if (/^F[LRD]$/.test(m.h)){ flag[m.l] = m.h; delete at[m.l]; }
     else { at[m.l] = betaXY(m.h); delete flag[m.l]; }
     const hand = at.LH || at.RH;
     if (!hand) return;
-    const f = { LH: at.LH || hand, RH: at.RH || hand, off: Object.assign({}, flag) };
+    const f = { LH: at.LH || hand, RH: at.RH || hand, off: Object.assign({}, flag), hip };
     const mid = (f.LH[0] + f.RH[0]) / 2, kick = markY(0) * 6.92;
     f.LF = flag.LF ? null : (at.LF || [mid - 22, kick]);
     f.RF = flag.RF ? null : (at.RF || [mid + 22, kick]);
@@ -3393,7 +3402,7 @@ const B_ARM = 107, B_LEG = 150, B_TORSO = 84, B_SH = 27, B_HIP = 15;
 const bLerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 const bDist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 
-function betaSolve(LH, RH, feet){        // feet: [{side:-1|1, pos, w}]
+function betaSolve(LH, RH, feet, hip){   // feet: [{side:-1|1, pos, w}]; hip: -1..1
   const S = [(LH[0] + RH[0]) / 2, (LH[1] + RH[1]) / 2 + B_ARM * 0.8];
   const P = [S[0], S[1] + B_TORSO];
   if (feet.length){
@@ -3415,6 +3424,7 @@ function betaSolve(LH, RH, feet){        // feet: [{side:-1|1, pos, w}]
         P[0] -= (c.pos[0] - j[0]) * t; P[1] -= (c.pos[1] - j[1]) * t;
       }
     });
+    if (hip) P[0] += (S[0] + hip * 62 - P[0]) * 0.3;     // weight shifted to one side, as told
     P[1] += 2;                                            // weight hangs down
     if (P[1] > 664) P[1] = 664;                           // but there is a floor
     if (P[1] < S[1] + B_TORSO * 0.45) P[1] = S[1] + B_TORSO * 0.45;   // hips stay below shoulders
@@ -3462,13 +3472,14 @@ function betaDraw(a, b, e, hot, snap, dt){
     else if (a[l]) cons.push({ side, pos: a[l], w: 1 - e });
     else if (b[l]) cons.push({ side, pos: b[l], w: e });
   });
-  let { S, P } = betaSolve(LH, RH, cons.filter(c => c.w > 0.02));
+  const hip = (a.hip || 0) + ((b.hip || 0) - (a.hip || 0)) * e;
+  let { S, P } = betaSolve(LH, RH, cons.filter(c => c.w > 0.02), hip);
   /* A foot left on a hold the body can no longer reach has, in truth, come off.
      Stop it dragging the hips down and let that leg hang toward where it was. */
   const far = c => bDist([P[0] + c.side * B_HIP, P[1]], c.pos) > B_LEG * 1.04;
   if (cons.some(far)){
     cons.forEach(c => { if (far(c)) c.w *= 0.12; });
-    ({ S, P } = betaSolve(LH, RH, cons.filter(c => c.w > 0.02)));
+    ({ S, P } = betaSolve(LH, RH, cons.filter(c => c.w > 0.02), hip));
   }
   if (betaBody && !snap){                // the body follows a beat behind the limbs
     const k = 1 - Math.exp(-(dt || 16) / 110);
@@ -3588,6 +3599,8 @@ function betaPaintEdit(){
   // only a foot can flag, and only once the climber is on the wall
   document.querySelectorAll('#betaFlag button').forEach(b =>
     b.disabled = betaLimb[1] !== 'F' || !betaDraft.some(m => m.l[1] === 'H'));
+  document.querySelectorAll('#betaHips button').forEach(b =>
+    b.disabled = !betaDraft.some(m => m.l[1] === 'H'));
   $('betaUndo').disabled = !betaDraft.length;
   const frames = betaFrames(betaDraft);
   if (frames.length) betaDraw(frames[frames.length - 1], null, 1, betaDraft[betaDraft.length - 1].l, true);
@@ -3629,6 +3642,9 @@ $('betaTap').addEventListener('click', betaTap);
 document.querySelectorAll('#betaLimbs button').forEach(b => b.onclick = () => { betaLimb = b.dataset.l; betaPaintEdit(); });
 document.querySelectorAll('#betaFlag button').forEach(b => b.onclick = () => {
   betaDraft.push({ l: betaLimb, h: b.dataset.f }); betaPaintEdit();
+});
+document.querySelectorAll('#betaHips button').forEach(b => b.onclick = () => {
+  betaDraft.push({ l: 'HP', h: b.dataset.h }); betaPaintEdit();
 });
 $('betaUndo').onclick = () => { betaDraft.pop(); betaPaintEdit(); };
 $('betaClear').onclick = () => { betaDraft = []; betaLimb = 'LH'; betaPaintEdit(); };
