@@ -650,7 +650,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-02 23:38';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-02 23:48';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3419,9 +3419,14 @@ function betaSolve(LH, RH, feet, hipX){  // feet: [{side:-1|1, pos, w}]; hipX: w
     feet.forEach(c => {
       const j = [P[0] + c.side * B_HIP, P[1]], d = bDist(j, c.pos);
       pull(P, j, c.pos, B_LEG * 0.96, 0.5 * c.w);
-      if (d < B_LEG * 0.52){                              // knees in the chest - sit back out
-        const t = (B_LEG * 0.52 - d) / Math.max(d, 1) * 0.35 * c.w;
-        P[0] -= (c.pos[0] - j[0]) * t; P[1] -= (c.pos[1] - j[1]) * t;
+      if (d < B_LEG * 0.64){                              // too close to a foot to stand on it like that
+        const need = (B_LEG * 0.64 - d) * c.w;
+        if (c.pos[1] < j[1] + 12){                        // a high foot: the backside sinks away, knee up
+          P[1] += need * 0.4; P[0] -= Math.sign(c.pos[0] - j[0]) * need * 0.1;
+        } else {                                          // crouched over a low one: straighten off it
+          const t = need / Math.max(d, 1) * 0.4;
+          P[0] -= (c.pos[0] - j[0]) * t; P[1] -= (c.pos[1] - j[1]) * t;
+        }
       }
     });
     if (hipX != null) P[0] += (hipX - P[0]) * 0.3;       // weight shifted to one side, as told
@@ -3443,8 +3448,8 @@ function betaFlagAt(P, limb, dir){
   if (dir === 'FD') return [P[0] + side * 16, P[1] + B_LEG * 0.93];
   return [P[0] + (dir === 'FL' ? -1 : 1) * B_LEG * 0.82, P[1] + B_LEG * 0.42];
 }
-/* Elbow or knee between a joint and a hand or foot. want picks which way it bends:
-   'down' for elbows, which drop below the arm; otherwise out to that side. */
+/* Elbow or knee between a joint and a hand or foot. There are always two places
+   it could go; want says which kind of joint it is, and so which one a climber uses. */
 function betaBend(a, b, l1, l2, out, want){
   const dx = b[0] - a[0], dy = b[1] - a[1], n = Math.hypot(dx, dy) || 1;
   const d = Math.max(1, Math.min(n, l1 + l2 - 0.5));
@@ -3452,8 +3457,15 @@ function betaBend(a, b, l1, l2, out, want){
   const h = Math.sqrt(Math.max(0, l1 * l1 - x * x));
   const m = [a[0] + dx / n * x, a[1] + dy / n * x];
   const j1 = [m[0] - dy / n * h, m[1] + dx / n * h], j2 = [m[0] + dy / n * h, m[1] - dx / n * h];
-  if (want === 'down' && Math.abs(j1[1] - j2[1]) > 6) return j1[1] > j2[1] ? j1 : j2;
-  return (j1[0] - j2[0]) * out > 0 ? j1 : j2;
+  if (want === 'knee'){
+    // a knee rides high - above the line from hip to foot - not dropped below it.
+    // Only when the leg hangs straight down is it a question of left or right.
+    if (Math.abs(j1[1] - j2[1]) > 8) return j1[1] < j2[1] ? j1 : j2;
+    return (j1[0] - j2[0]) * out > 0 ? j1 : j2;
+  }
+  // an elbow goes wide, away from the head; straight above or below, it drops
+  if (Math.abs(j1[0] - j2[0]) > 8) return (j1[0] - j2[0]) * out > 0 ? j1 : j2;
+  return j1[1] > j2[1] ? j1 : j2;
 }
 
 let betaBody = null;                     // where the torso was last drawn, for easing it along
@@ -3509,9 +3521,9 @@ function betaDraw(a, b, e, hot, snap, dt){
   const ax = (P[0] - S[0]) / B_TORSO, ay = (P[1] - S[1]) / B_TORSO, px = ay, py = -ax;
   const sl = [S[0] - px * B_SH, S[1] - py * B_SH], sr = [S[0] + px * B_SH, S[1] + py * B_SH];
   const pl = [P[0] - px * B_HIP, P[1] - py * B_HIP], pr = [P[0] + px * B_HIP, P[1] + py * B_HIP];
-  const el = betaBend(sl, LH, B_ARM * 0.48, B_ARM * 0.52, -1, 'down');
-  const er = betaBend(sr, RH, B_ARM * 0.48, B_ARM * 0.52, 1, 'down');
-  const kl = betaBend(pl, LF, B_LEG * 0.52, B_LEG * 0.48, -1), kr = betaBend(pr, RF, B_LEG * 0.52, B_LEG * 0.48, 1);
+  const el = betaBend(sl, LH, B_ARM * 0.48, B_ARM * 0.52, -1, 'elbow');
+  const er = betaBend(sr, RH, B_ARM * 0.48, B_ARM * 0.52, 1, 'elbow');
+  const kl = betaBend(pl, LF, B_LEG * 0.52, B_LEG * 0.48, -1, 'knee'), kr = betaBend(pr, RF, B_LEG * 0.52, B_LEG * 0.48, 1, 'knee');
   // the head looks toward the hand that is reaching
   const look = hot === 'LH' ? -4 : hot === 'RH' ? 4 : 0;
   const neck = [S[0] - ax * 9, S[1] - ay * 9], head = [S[0] - ax * 27 + look, S[1] - ay * 27];
