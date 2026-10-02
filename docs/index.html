@@ -163,6 +163,25 @@
   #barBtns{display:flex;flex-direction:column;gap:6px}
   #barBtns #send{font-size:18px;padding:2px 0}
   #barBtns button.mini{padding-left:2px;padding-right:2px}
+  /* ---- beta: a stick climber drawn over the board ---- */
+  #betaSvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  #betaTap{position:absolute;inset:0;display:none}
+  body.betaEdit #betaTap{display:block}
+  #betaCap{font-size:11px;color:var(--dim);text-align:center;margin-top:4px;min-height:0}
+  #betaCap:empty{display:none}
+  #betaCap u{color:var(--ink);text-underline-offset:2px}
+  #betaTools{display:none;flex-direction:column;gap:6px;height:100%}
+  body.betaEdit #barBtns > button{display:none}
+  body.betaEdit #betaTools{display:flex}
+  #betaLimbs{display:grid;gap:5px}
+  #betaLimbs button{padding:5px 0;font-size:12px;font-weight:700;border-radius:6px}
+  #betaLimbs button.pick{color:#0e0e0f}
+  #betaLimbs button[data-l$="H"].pick{background:#fff;border-color:#fff}
+  #betaLimbs button[data-l="LH"],#betaLimbs button[data-l="LF"]{border-color:#38bdf8}
+  #betaLimbs button[data-l="RH"],#betaLimbs button[data-l="RF"]{border-color:#fb7185}
+  #betaLimbs button[data-l="LH"].pick,#betaLimbs button[data-l="LF"].pick{background:#38bdf8}
+  #betaLimbs button[data-l="RH"].pick,#betaLimbs button[data-l="RF"].pick{background:#fb7185}
+  #betaSave{margin-top:auto}
   #clear{margin-top:auto}   /* sits at the foot of the column, clear of the rest */
   #climbers{display:flex;flex-direction:column;gap:5px;min-width:0}
   #climbers .hd{font-size:9px;letter-spacing:.1em;text-transform:uppercase;
@@ -377,14 +396,30 @@
       <div id="board">
         <img src="board-2016.png" alt="MoonBoard 2016 wall" width="450" height="692">
         <div id="marks"></div>
+        <svg id="betaSvg" viewBox="0 0 450 692" aria-hidden="true"></svg>
+        <div id="betaTap"></div>
       </div>
+      <div id="betaCap"></div>
     </div>
     <div id="barBtns">
       <button id="send" class="mini solid" disabled aria-label="Light up">&#128161;</button>
       <button id="tick" class="mini" disabled>Add to list</button>
       <button id="try" class="mini" disabled>Log try</button>
       <button id="done" class="mini" disabled>Log send</button>
+      <button id="betaBtn" class="mini" disabled>+ Beta</button>
       <button id="clear" class="mini ghost">Hide</button>
+      <div id="betaTools">
+        <div id="betaLimbs">
+          <button class="mini" data-l="LH">L hand</button>
+          <button class="mini" data-l="RH">R hand</button>
+          <button class="mini" data-l="LF">L foot</button>
+          <button class="mini" data-l="RF">R foot</button>
+        </div>
+        <button id="betaUndo" class="mini ghost">Undo</button>
+        <button id="betaClear" class="mini ghost">Clear all</button>
+        <button id="betaSave" class="mini solid">Save</button>
+        <button id="betaCancel" class="mini ghost">Cancel</button>
+      </div>
     </div>
   </div>
 </section>
@@ -593,7 +628,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-02 22:40';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-02 22:55';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -2374,6 +2409,7 @@ function applyLists(data){
   stats  = data.stats  || {};
   snakeBest = data.snake || {};
   if (data.board) setBoard(data.board, true);      // the crew's wall, shared
+  if (data.betas) betaIds = new Set(data.betas);
   fillWho();
   c4Fill();
   c4Rank();
@@ -2453,6 +2489,7 @@ function paintBar(){
   $('done').className   = 'mini' + (sent ? ' on' : '');
   $('done').title       = sent ? 'Log another send' : 'Log it as climbed';
   paintClimbers();
+  paintBeta();
 }
 
 /* Who has climbed the selected problem, down the gutter left of the board.
@@ -2552,6 +2589,7 @@ function runPending(){
   if (a === 'tick') doTick();
   else if (a === 'done') doDone();
   else if (a === 'try') doTry();
+  else if (a === 'beta') betaEdit();
 }
 
 /* Only the grades this hold set and angle actually has benchmarks at - no point
@@ -2722,6 +2760,7 @@ function loadRoute(r){
   showQ();
   $('send').disabled = !canSend();
   paintBar();
+  betaReset();
   log('loaded "' + r.name + '" \u2014 ' + GRADES[r.grade] + ' (V' + VGRADE[r.grade] + '), set by ' + r.setter);
   if ($('auto').checked && rx) sendProblem();
 }
@@ -2729,6 +2768,7 @@ function loadRoute(r){
 function clearRoute(){
   for (const k in state) delete state[k];
   current = null; gradeCells = {};
+  betaReset();
   $('boardWrap').style.display = 'none';
   placeTools();
   showQ();
@@ -3249,11 +3289,231 @@ async function loadLog(){
   });
 }
 
+
+/* ---------- beta ----------
+   How to climb it: the order hands and feet go on, one beta per problem, shared
+   by the crew. Entered by picking a limb and tapping a hold; shown as a stick
+   climber who moves through it over the board picture. Hands go on the problem's
+   holds; feet may also use the kickboard, which is row 0 here.
+   The figure is drawn to scale - holds are 20cm apart, so a climber is about half
+   the board tall - because the point is to show what reaches what. */
+let betaIds = new Set();       // problems that have beta
+let beta = null;               // the selected problem's, once fetched
+let betaDraft = null;          // moves being edited, or null
+let betaLimb = 'LH';
+let betaPlaying = false, betaTimer = 0;
+const BETA_ORDER = ['LH', 'RH', 'LF', 'RF'];
+const BETA_COL = { LH: '#38bdf8', LF: '#38bdf8', RH: '#fb7185', RF: '#fb7185' };
+
+// a hold name -> its centre on the 450x692 picture
+function betaXY(h){
+  const col = LETTERS.indexOf(h[0]) + 1, row = +h.slice(1);
+  return [markX(col) * 4.5, markY(row) * 6.92];
+}
+function betaReset(){
+  betaStop(); beta = null; betaDraft = null;
+  document.body.classList.remove('betaEdit');
+  $('betaSvg').innerHTML = '';
+  if (current && betaIds.has(current.id)) betaFetch(current.id);
+  paintBeta();
+}
+async function betaFetch(id){
+  try{
+    const d = await (await fetch(LISTS_API + '/lists/beta?id=' + id)).json();
+    if (current && current.id === id){ beta = d.beta || null; paintBeta(); }
+  }catch(e){}
+}
+function paintBeta(){
+  const b = $('betaBtn');
+  const has = !!(current && betaIds.has(current.id));
+  b.disabled = !current;
+  b.textContent = has ? (betaPlaying ? '■ Beta' : '▶ Beta') : '+ Beta';
+  b.className = 'mini' + (betaPlaying ? ' on' : '');
+  const cap = $('betaCap');
+  if (betaDraft){
+    cap.textContent = betaDraft.length
+      ? betaDraft.length + (betaDraft.length === 1 ? ' move' : ' moves') + ' · pick a limb, then tap its hold'
+      : 'Start position first: pick a limb, then tap its hold';
+  } else if (betaPlaying && beta){
+    cap.innerHTML = 'Beta by ' + beta.by.replace(/[<&]/g, '') + ' · <u id="betaEditLink">Edit</u>';
+    $('betaEditLink').onclick = () => { if (!needName('beta')) betaEdit(); };
+  } else cap.textContent = '';
+}
+
+/* Where every limb is after each move. A limb nobody has placed yet hangs where
+   it naturally would: hands on the first hold, feet on the kickboard below. */
+function betaFrames(moves){
+  const at = {}, frames = [];
+  moves.forEach(m => {
+    at[m.l] = betaXY(m.h);
+    const f = Object.assign({}, at);
+    const hand = f.LH || f.RH;
+    if (!hand) return;
+    f.LH = f.LH || hand; f.RH = f.RH || hand;
+    const kick = markY(0) * 6.92;
+    f.LF = f.LF || [(f.LH[0] + f.RH[0]) / 2 - 22, kick];
+    f.RF = f.RF || [(f.LH[0] + f.RH[0]) / 2 + 22, kick];
+    frames.push(f);
+  });
+  return frames;
+}
+// The opening pose is every limb placed once; the climbing starts after that.
+function betaSetup(moves){
+  const seen = new Set(); let i = 0;
+  while (i < moves.length && !seen.has(moves[i].l)){ seen.add(moves[i].l); i++; }
+  return Math.max(0, i - 1);
+}
+
+/* Two-bone limb: where the elbow or knee sits between a joint and a hand or foot. */
+function betaBend(a, b, l1, l2, out){
+  const dx = b[0] - a[0], dy = b[1] - a[1], n = Math.hypot(dx, dy) || 1;
+  const d = Math.max(1, Math.min(n, l1 + l2 - 0.5));
+  const x = (l1 * l1 - l2 * l2 + d * d) / (2 * d);
+  const h = Math.sqrt(Math.max(0, l1 * l1 - x * x));
+  const m = [a[0] + dx / n * x, a[1] + dy / n * x];
+  const j1 = [m[0] - dy / n * h, m[1] + dx / n * h], j2 = [m[0] + dy / n * h, m[1] - dx / n * h];
+  // elbows and knees point away from the body: left limbs bend left, right limbs right
+  return (j1[0] - j2[0]) * out > 0 ? j1 : j2;
+}
+function betaDraw(f, hot){
+  const ARM = 107, TORSO = 86, LEG = 147, SH = 30, HIP = 18;
+  const hm = [(f.LH[0] + f.RH[0]) / 2, (f.LH[1] + f.RH[1]) / 2];
+  const fm = [(f.LF[0] + f.RF[0]) / 2, (f.LF[1] + f.RF[1]) / 2];
+  // shoulders hang below the hands, as low as both arms still reach
+  let s = hm;
+  for (let t = 0.85; t >= 0; t -= 0.05){
+    s = [hm[0] + (fm[0] - hm[0]) * 0.15, hm[1] + ARM * t];
+    if (Math.hypot(s[0] - SH - f.LH[0], s[1] - f.LH[1]) <= ARM &&
+        Math.hypot(s[0] + SH - f.RH[0], s[1] - f.RH[1]) <= ARM) break;
+  }
+  // hips under the shoulders, leaning toward the feet, pulled in if a leg can't reach
+  let vx = (fm[0] - s[0]) * 0.5, vy = Math.max(20, fm[1] - s[1]);
+  const vn = Math.hypot(vx, vy);
+  let p = [s[0] + vx / vn * TORSO, s[1] + vy / vn * TORSO];
+  const sl = [s[0] - SH, s[1]], sr = [s[0] + SH, s[1]];
+  const pl = [p[0] - HIP, p[1]], pr = [p[0] + HIP, p[1]];
+  const el = betaBend(sl, f.LH, ARM * 0.48, ARM * 0.52, -1), er = betaBend(sr, f.RH, ARM * 0.48, ARM * 0.52, 1);
+  const kl = betaBend(pl, f.LF, LEG * 0.51, LEG * 0.49, -1), kr = betaBend(pr, f.RF, LEG * 0.51, LEG * 0.49, 1);
+  const head = [s[0], s[1] - 26];
+  const line = pts => pts.map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' ');
+  const body = [
+    line([f.LH, el, sl, sr, er, f.RH]), line([s, p]), line([f.LF, kl, pl, pr, kr, f.RF]),
+  ];
+  let svg = '';
+  body.forEach(pts => { svg += '<polyline points="' + pts + '" fill="none" stroke="#0e0e0f" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" opacity=".55"/>'; });
+  body.forEach(pts => { svg += '<polyline points="' + pts + '" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>'; });
+  svg += '<circle cx="' + head[0].toFixed(1) + '" cy="' + head[1].toFixed(1) + '" r="15" fill="#fff" stroke="#0e0e0f" stroke-width="3"/>';
+  BETA_ORDER.forEach(l => {
+    const q = f[l], foot = l[1] === 'F', r = (l === hot ? 13 : 10);
+    svg += foot
+      ? '<rect x="' + (q[0] - r + 2).toFixed(1) + '" y="' + (q[1] - r + 2).toFixed(1) + '" width="' + (2 * r - 4) + '" height="' + (2 * r - 4) + '" rx="3" fill="' + BETA_COL[l] + '" stroke="#0e0e0f" stroke-width="2.5"/>'
+      : '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="' + r + '" fill="' + BETA_COL[l] + '" stroke="#0e0e0f" stroke-width="2.5"/>';
+  });
+  $('betaSvg').innerHTML = svg;
+}
+
+function betaStop(){
+  betaPlaying = false; cancelAnimationFrame(betaTimer); clearTimeout(betaTimer);
+}
+/* Play it: hold the start, move one limb at a time, rest at the top, go again. */
+function betaPlay(){
+  if (!beta || !beta.moves.length) return;
+  const frames = betaFrames(beta.moves);
+  if (!frames.length) return;
+  // frames only start once a hand is on, so the opening pose index shifts with them
+  const skipped = beta.moves.length - frames.length;
+  const first = Math.max(0, betaSetup(beta.moves) - skipped);
+  betaPlaying = true; paintBeta();
+  const MOVE = 520, HOLD = 380, REST = 1400;
+  let i = first, t0 = null;
+  betaDraw(frames[first]);
+  const step = now => {
+    if (!betaPlaying) return;
+    if (i + 1 >= frames.length){                      // topped out - rest, restart
+      betaTimer = setTimeout(() => { i = first; t0 = null; betaDraw(frames[first]);
+        betaTimer = setTimeout(() => { betaTimer = requestAnimationFrame(step); }, REST * 0.6); }, REST);
+      return;
+    }
+    if (t0 === null) t0 = now;
+    const k = Math.min(1, (now - t0) / MOVE), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+    const a = frames[i], b = frames[i + 1], f = {};
+    BETA_ORDER.forEach(l => { f[l] = [a[l][0] + (b[l][0] - a[l][0]) * e, a[l][1] + (b[l][1] - a[l][1]) * e]; });
+    betaDraw(f, beta.moves[i + 1 + skipped].l);
+    if (k >= 1){ i++; t0 = null; betaTimer = setTimeout(() => { betaTimer = requestAnimationFrame(step); }, HOLD); return; }
+    betaTimer = requestAnimationFrame(step);
+  };
+  betaTimer = setTimeout(() => { betaTimer = requestAnimationFrame(step); }, REST * 0.6);
+}
+
+/* ---- entering it ---- */
+function betaEdit(){
+  if (!current) return;
+  betaStop();
+  betaDraft = beta ? beta.moves.map(m => ({ l: m.l, h: m.h })) : [];
+  betaLimb = BETA_ORDER[Math.min(betaDraft.length, 3)];
+  if (betaDraft.length >= 4) betaLimb = 'LH';
+  document.body.classList.add('betaEdit');
+  betaPaintEdit();
+}
+function betaPaintEdit(){
+  document.querySelectorAll('#betaLimbs button').forEach(b =>
+    b.classList.toggle('pick', b.dataset.l === betaLimb));
+  const frames = betaFrames(betaDraft);
+  if (frames.length) betaDraw(frames[frames.length - 1], betaDraft[betaDraft.length - 1].l);
+  else $('betaSvg').innerHTML = '';
+  paintBeta();
+}
+function betaTap(e){
+  if (!betaDraft || !current) return;
+  const r = $('board').getBoundingClientRect();
+  const x = (e.clientX - r.left) / r.width * 450, y = (e.clientY - r.top) / r.height * 692;
+  const foot = betaLimb[1] === 'F';
+  const holds = Object.keys(state).map(k => { const [c, w] = k.split(',').map(Number); return LETTERS[c - 1] + w; });
+  if (foot) LETTERS.forEach(c => holds.push(c + '0'));          // the kickboard
+  let best = null, bd = 34;                                      // about one hold spacing
+  holds.forEach(h => { const q = betaXY(h), d = Math.hypot(q[0] - x, q[1] - y); if (d < bd){ bd = d; best = h; } });
+  if (!best) return;
+  betaDraft.push({ l: betaLimb, h: best });
+  // the four start placements run in order; after that you say which limb moves
+  if (betaDraft.length < 4 && betaDraft.every((m, i) => m.l === BETA_ORDER[i])) betaLimb = BETA_ORDER[betaDraft.length];
+  betaPaintEdit();
+}
+async function betaSave(){
+  const me = meNow(); if (!me || !current) return;
+  const id = current.id, moves = betaDraft;
+  try{
+    const d = await (await fetch(LISTS_API + '/lists/beta', { method: 'POST',
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, person: me, moves }) })).json();
+    if (d.error){ log('beta: ' + d.error); $('betaCap').textContent = 'Could not save — ' + d.error; return; }
+    applyLists(d);
+    if (current && current.id === id){
+      beta = d.beta || null; betaDraft = null;
+      document.body.classList.remove('betaEdit');
+      $('betaSvg').innerHTML = '';
+      if (beta) betaPlay(); else paintBeta();
+    }
+  }catch(err){ $('betaCap').textContent = 'Could not save — no connection'; }
+}
+$('betaTap').addEventListener('click', betaTap);
+document.querySelectorAll('#betaLimbs button').forEach(b => b.onclick = () => { betaLimb = b.dataset.l; betaPaintEdit(); });
+$('betaUndo').onclick = () => { betaDraft.pop(); betaPaintEdit(); };
+$('betaClear').onclick = () => { betaDraft = []; betaLimb = 'LH'; betaPaintEdit(); };
+$('betaSave').onclick = betaSave;
+$('betaCancel').onclick = () => { betaDraft = null; document.body.classList.remove('betaEdit'); $('betaSvg').innerHTML = ''; paintBeta(); };
+$('betaBtn').onclick = () => {
+  if (!current) return;
+  if (betaIds.has(current.id)){
+    if (betaPlaying){ betaStop(); $('betaSvg').innerHTML = ''; paintBeta(); }
+    else if (beta) betaPlay();
+    else betaFetch(current.id).then(() => betaPlay());
+  } else if (!needName('beta')) betaEdit();
+};
+
 /* ---------- swipe the board for the next problem ----------
    The list is right there but the board is what you're looking at, so a flick
    across it steps through whatever the list currently shows. */
 function stepProblem(delta){
-  if (!lastHits.length) return;
+  if (!lastHits.length || betaDraft) return;       // no swiping away mid-edit
   let i = current ? lastHits.indexOf(current) : -1;
   if (i === -1) i = delta > 0 ? -1 : 0;         // not in this list - start at an end
   const next = lastHits[i + delta];

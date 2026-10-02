@@ -155,7 +155,10 @@ export class Lists {
     }
     // Which hold set and angle is on the wall - one wall, so one setting for everyone.
     const board = (await this.state.storage.get("board")) || "2016-40";
-    return { people, lists, done, wins, snake, stats, board };
+    // Which problems have beta. The moves themselves are fetched when one is opened.
+    const betas = [];
+    for (const [k] of await this.state.storage.list({ prefix: "beta:" })) betas.push(Number(k.slice(5)));
+    return { people, lists, done, wins, snake, stats, board, betas };
   }
 
   /* Replay the whole log and rewrite every derived index from it. The log is
@@ -288,6 +291,11 @@ export class Lists {
       return json(await this.snapshot());
     }
 
+    if (path === "/lists/beta" && request.method === "GET") {
+      const id = Number(url.searchParams.get("id"));
+      return json({ beta: (await this.state.storage.get("beta:" + id)) || null });
+    }
+
     if (path === "/lists/log" && request.method === "GET") {
       const person = url.searchParams.get("person") || "";
       // One person's logbook can run to hundreds of rows once an old one is
@@ -312,6 +320,24 @@ export class Lists {
     if (!body) return json({ error: "expected a JSON body" }, 400);
 
     const clean = (v) => typeof v === "string" ? v.trim().slice(0, 24) : "";
+
+    /* Beta: one per problem, the order hands and feet go on. Whoever saves last
+       replaces it. A move is a limb (LH RH LF RF) and a hold; row 0 is the
+       kickboard. An empty list of moves removes the beta. */
+    if (path === "/lists/beta") {
+      const id = Number(body.id);
+      const person = clean(body.person);
+      if (!Number.isFinite(id) || !person) return json({ error: "id and person required" }, 400);
+      const moves = (Array.isArray(body.moves) ? body.moves : []).slice(0, 80)
+        .filter((m) => m && ["LH", "RH", "LF", "RF"].includes(m.l) && /^[A-K](\d|1[0-8])$/.test(m.h))
+        .map((m) => ({ l: m.l, h: m.h }));
+      if (moves.length) {
+        await this.state.storage.put("beta:" + id, { by: person, t: new Date().toISOString(), moves });
+      } else {
+        await this.state.storage.delete("beta:" + id);
+      }
+      return json({ ...(await this.snapshot()), beta: moves.length ? { by: person, moves } : null });
+    }
 
     if (path === "/lists/board") {
       const board = clean(body.board);
