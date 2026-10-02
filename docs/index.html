@@ -650,7 +650,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-02 23:48';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-02 23:55';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3403,44 +3403,53 @@ const bLerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 const bDist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 
 function betaSolve(LH, RH, feet, hipX){  // feet: [{side:-1|1, pos, w}]; hipX: where to lean the hips, if told
-  const S = [(LH[0] + RH[0]) / 2, (LH[1] + RH[1]) / 2 + B_ARM * 0.8];
-  const P = [S[0], S[1] + B_TORSO];
-  if (feet.length){
-    const fw = feet.reduce((n, c) => n + c.w, 0) || 1;
-    P[0] = (S[0] + feet.reduce((n, c) => n + c.pos[0] * c.w, 0) / fw) / 2;
-  }
-  const pull = (pt, joint, target, max, k) => {          // drag pt until joint reaches target
-    const d = bDist(joint, target);
-    if (d > max){ const t = (d - max) / d * k; pt[0] += (target[0] - joint[0]) * t; pt[1] += (target[1] - joint[1]) * t; }
+  /* A climber rests on straight arms - hanging off the skeleton costs nothing,
+     holding a bent elbow does. So the shoulders go as low as the arms allow, the
+     hips hang under them, and it is the legs that bend to meet the feet. Only if a
+     foot still can't be reached does the torso lean toward it, and only after
+     that do the arms give. */
+  const R = B_ARM * 0.97, clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const fw = feet.reduce((n, c) => n + c.w, 0);
+  const fx = fw > 0.05 ? feet.reduce((n, c) => n + c.pos[0] * c.w, 0) / fw : null;
+  let sx = (LH[0] + RH[0]) / 2;
+  if (fx !== null) sx += clamp((fx - sx) * 0.2, -22, 22);
+  // each shoulder has to stay within an arm of its hand, sideways as well
+  const lo = Math.max(LH[0] + B_SH - R * 0.9, RH[0] - B_SH - R * 0.9);
+  const hi = Math.min(LH[0] + B_SH + R * 0.9, RH[0] - B_SH + R * 0.9);
+  sx = lo <= hi ? clamp(sx, lo, hi) : (lo + hi) / 2;
+  const drop = (h, jx) => h[1] + Math.sqrt(Math.max(0, R * R - (jx - h[0]) * (jx - h[0])));
+  const S = [sx, Math.min(drop(LH, sx - B_SH), drop(RH, sx + B_SH))];
+  // hips hang below, drawn a little toward the feet (or to where they were told to go)
+  const hang = () => {
+    const want = hipX != null ? hipX : fx !== null ? S[0] + clamp((fx - S[0]) * 0.45, -50, 50) : S[0];
+    const dx = clamp(want - S[0], -B_TORSO * 0.8, B_TORSO * 0.8);
+    return [S[0] + dx, S[1] + Math.sqrt(B_TORSO * B_TORSO - dx * dx)];
   };
-  for (let it = 0; it < 18; it++){
-    pull(S, [S[0] - B_SH, S[1]], LH, B_ARM * 0.97, 0.5);
-    pull(S, [S[0] + B_SH, S[1]], RH, B_ARM * 0.97, 0.5);
+  let P = hang();
+  for (let it = 0; it < 16; it++){
+    let worst = null;
     feet.forEach(c => {
-      const j = [P[0] + c.side * B_HIP, P[1]], d = bDist(j, c.pos);
-      pull(P, j, c.pos, B_LEG * 0.96, 0.5 * c.w);
-      if (d < B_LEG * 0.64){                              // too close to a foot to stand on it like that
-        const need = (B_LEG * 0.64 - d) * c.w;
-        if (c.pos[1] < j[1] + 12){                        // a high foot: the backside sinks away, knee up
-          P[1] += need * 0.4; P[0] -= Math.sign(c.pos[0] - j[0]) * need * 0.1;
-        } else {                                          // crouched over a low one: straighten off it
-          const t = need / Math.max(d, 1) * 0.4;
-          P[0] -= (c.pos[0] - j[0]) * t; P[1] -= (c.pos[1] - j[1]) * t;
-        }
-      }
+      const jt = [P[0] + c.side * B_HIP, P[1]], d = bDist(jt, c.pos), over = (d - B_LEG * 0.97) * c.w;
+      if (over > 0.5 && (!worst || over > worst.over)) worst = { over, d, jt, c };
     });
-    if (hipX != null) P[0] += (hipX - P[0]) * 0.3;       // weight shifted to one side, as told
-    P[1] += 2;                                            // weight hangs down
-    if (P[1] > 664) P[1] = 664;                           // but there is a floor
-    if (P[1] < S[1] + B_TORSO * 0.45) P[1] = S[1] + B_TORSO * 0.45;   // hips stay below shoulders
-    const vx = P[0] - S[0], vy = P[1] - S[1], d = Math.hypot(vx, vy) || 1, t = (d - B_TORSO) / d * 0.5;
-    S[0] += vx * t; S[1] += vy * t; P[0] -= vx * t; P[1] -= vy * t;
+    if (!worst) break;
+    const t = worst.over / worst.d * 0.7;                 // lean the hips toward that foot
+    P[0] += (worst.c.pos[0] - worst.jt[0]) * t; P[1] += (worst.c.pos[1] - worst.jt[1]) * t;
+    if (it > 5){                                          // leaning wasn't enough: pull up on the arms
+      const lift = Math.min(worst.over * 0.5, 14);
+      S[1] += (worst.c.pos[1] - worst.jt[1]) / worst.d * lift;
+      S[0] += (worst.c.pos[0] - worst.jt[0]) / worst.d * lift * 0.5;
+      // ...but never further than the arms reach: a foot below that is simply off
+      if (lo <= hi) S[0] = clamp(S[0], lo, hi);
+      S[1] = Math.min(S[1], drop(LH, S[0] - B_SH), drop(RH, S[0] + B_SH));
+    }
+    const vx = P[0] - S[0], vy = Math.max(P[1] - S[1], B_TORSO * 0.3), n = Math.hypot(vx, vy) || 1;
+    P = [S[0] + vx / n * B_TORSO, S[1] + vy / n * B_TORSO];   // hips stay a torso from the shoulders, and below them
   }
-  // the hands are what's actually holding on, so they get the last word
-  pull(S, [S[0] - B_SH, S[1]], LH, B_ARM * 0.99, 1);
-  pull(S, [S[0] + B_SH, S[1]], RH, B_ARM * 0.99, 1);
-  const vx = P[0] - S[0], vy = P[1] - S[1], d = Math.hypot(vx, vy) || 1;
-  return { S, P: [S[0] + vx / d * B_TORSO, S[1] + vy / d * B_TORSO] };
+  // Sitting on the floor to start: the backside can't go lower than the feet. The
+  // torso just looks shorter, the way it does leaning back off the wall.
+  if (P[1] > 678) P[1] = 678;
+  return { S, P };
 }
 // a flagged foot: leg nearly straight, out to the side of the hips or hanging below
 function betaFlagAt(P, limb, dir){
@@ -3499,8 +3508,6 @@ function betaDraw(a, b, e, hot, snap, dt){
   if (betaBody && !snap){                // the body follows a beat behind the limbs
     const k = 1 - Math.exp(-(dt || 16) / 110);
     S = bLerp(betaBody.S, S, k); P = bLerp(betaBody.P, P, k);
-    const vx = P[0] - S[0], vy = P[1] - S[1], d = Math.hypot(vx, vy) || 1;
-    P = [S[0] + vx / d * B_TORSO, S[1] + vy / d * B_TORSO];
   }
   betaBody = { S, P };
   const foot = l => {
@@ -3518,7 +3525,8 @@ function betaDraw(a, b, e, hot, snap, dt){
   });
 
   // torso leans with the hips; shoulders and hips sit square across it
-  const ax = (P[0] - S[0]) / B_TORSO, ay = (P[1] - S[1]) / B_TORSO, px = ay, py = -ax;
+  const tl = bDist(S, P) || 1;            // usually a torso long; shorter when sat on the floor
+  const ax = (P[0] - S[0]) / tl, ay = (P[1] - S[1]) / tl, px = ay, py = -ax;
   const sl = [S[0] - px * B_SH, S[1] - py * B_SH], sr = [S[0] + px * B_SH, S[1] + py * B_SH];
   const pl = [P[0] - px * B_HIP, P[1] - py * B_HIP], pr = [P[0] + px * B_HIP, P[1] + py * B_HIP];
   const el = betaBend(sl, LH, B_ARM * 0.48, B_ARM * 0.52, -1, 'elbow');
