@@ -329,7 +329,8 @@ export class Lists {
       const person = clean(body.person);
       if (!Number.isFinite(id) || !person) return json({ error: "id and person required" }, 400);
       const moves = (Array.isArray(body.moves) ? body.moves : []).slice(0, 80)
-        .filter((m) => m && ["LH", "RH", "LF", "RF"].includes(m.l) && /^[A-K](\d|1[0-8])$/.test(m.h))
+        .filter((m) => m && ["LH", "RH", "LF", "RF"].includes(m.l) && (/^[A-K](\d|1[0-8])$/.test(m.h) ||
+                       (m.l[1] === "F" && ["FL", "FR", "FD"].includes(m.h))))   // a flagged foot
         .map((m) => ({ l: m.l, h: m.h }));
       if (moves.length) {
         await this.state.storage.put("beta:" + id, { by: person, t: new Date().toISOString(), moves });

@@ -181,7 +181,13 @@
   #betaLimbs button[data-l="RH"],#betaLimbs button[data-l="RF"]{border-color:#fb7185}
   #betaLimbs button[data-l="LH"].pick,#betaLimbs button[data-l="LF"].pick{background:#38bdf8}
   #betaLimbs button[data-l="RH"].pick,#betaLimbs button[data-l="RF"].pick{background:#fb7185}
-  #betaSave{margin-top:auto}
+  #betaFlag{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
+  #betaFlag::before{content:'Flag foot';grid-column:1/-1;font-size:9px;letter-spacing:.1em;
+                    text-transform:uppercase;color:var(--dimmer)}
+  #betaFlag button{padding:4px 0;font-size:14px}
+  .betaPair{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+  .betaPair button{padding:6px 0;font-size:10px;min-width:0;letter-spacing:-.01em}
+  #betaEnd{margin-top:auto}
   #clear{margin-top:auto}   /* sits at the foot of the column, clear of the rest */
   #climbers{display:flex;flex-direction:column;gap:5px;min-width:0}
   #climbers .hd{font-size:9px;letter-spacing:.1em;text-transform:uppercase;
@@ -415,10 +421,19 @@
           <button class="mini" data-l="LF">L foot</button>
           <button class="mini" data-l="RF">R foot</button>
         </div>
-        <button id="betaUndo" class="mini ghost">Undo</button>
-        <button id="betaClear" class="mini ghost">Clear all</button>
-        <button id="betaSave" class="mini solid">Save</button>
-        <button id="betaCancel" class="mini ghost">Cancel</button>
+        <div id="betaFlag" title="Flag: take the foot off and let it hang">
+          <button class="mini" data-f="FL" aria-label="Flag left">&#8592;</button>
+          <button class="mini" data-f="FD" aria-label="Flag down">&#8595;</button>
+          <button class="mini" data-f="FR" aria-label="Flag right">&#8594;</button>
+        </div>
+        <div class="betaPair">
+          <button id="betaUndo" class="mini">Undo</button>
+          <button id="betaClear" class="mini ghost">Clear</button>
+        </div>
+        <div class="betaPair" id="betaEnd">
+          <button id="betaSave" class="mini solid">Save</button>
+          <button id="betaCancel" class="mini ghost">Exit</button>
+        </div>
       </div>
     </div>
   </div>
@@ -628,7 +643,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-02 22:55';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-02 23:08';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3332,8 +3347,8 @@ function paintBeta(){
   const cap = $('betaCap');
   if (betaDraft){
     cap.textContent = betaDraft.length
-      ? betaDraft.length + (betaDraft.length === 1 ? ' move' : ' moves') + ' · pick a limb, then tap its hold'
-      : 'Start position first: pick a limb, then tap its hold';
+      ? betaDraft.length + (betaDraft.length === 1 ? ' move' : ' moves') + ' · pick a limb, then tap a hold or flag'
+      : 'Start position first: pick a limb, then tap a hold or flag';
   } else if (betaPlaying && beta){
     cap.innerHTML = 'Beta by ' + beta.by.replace(/[<&]/g, '') + ' · <u id="betaEditLink">Edit</u>';
     $('betaEditLink').onclick = () => { if (!needName('beta')) betaEdit(); };
@@ -3342,17 +3357,27 @@ function paintBeta(){
 
 /* Where every limb is after each move. A limb nobody has placed yet hangs where
    it naturally would: hands on the first hold, feet on the kickboard below. */
+const BETA_FLAG = { FL: [-105, 70], FR: [105, 70], FD: [0, 140] };   // from the hips
 function betaFrames(moves){
-  const at = {}, frames = [];
+  const at = {}, flag = {}, frames = [];
   moves.forEach(m => {
-    at[m.l] = betaXY(m.h);
+    if (BETA_FLAG[m.h]){ flag[m.l] = m.h; delete at[m.l]; }
+    else { at[m.l] = betaXY(m.h); delete flag[m.l]; }
     const f = Object.assign({}, at);
     const hand = f.LH || f.RH;
     if (!hand) return;
     f.LH = f.LH || hand; f.RH = f.RH || hand;
     const kick = markY(0) * 6.92;
+    // a flagged foot is off the wall: it hangs out to the side of, or below, the hips
+    const hip = [(f.LH[0] + f.RH[0]) / 2, (f.LH[1] + f.RH[1]) / 2 + 170];
+    ['LF', 'RF'].forEach(l => {
+      if (!flag[l]) return;
+      const o = BETA_FLAG[flag[l]], side = flag[l] === 'FD' ? (l === 'LF' ? -14 : 14) : 0;
+      f[l] = [hip[0] + o[0] + side, hip[1] + o[1]];
+    });
     f.LF = f.LF || [(f.LH[0] + f.RH[0]) / 2 - 22, kick];
     f.RF = f.RF || [(f.LH[0] + f.RH[0]) / 2 + 22, kick];
+    f.off = Object.assign({}, flag);
     frames.push(f);
   });
   return frames;
@@ -3405,8 +3430,9 @@ function betaDraw(f, hot){
   svg += '<circle cx="' + head[0].toFixed(1) + '" cy="' + head[1].toFixed(1) + '" r="15" fill="#fff" stroke="#0e0e0f" stroke-width="3"/>';
   BETA_ORDER.forEach(l => {
     const q = f[l], foot = l[1] === 'F', r = (l === hot ? 13 : 10);
+    const off = foot && f.off && f.off[l];             // flagged: hollow, it isn't on anything
     svg += foot
-      ? '<rect x="' + (q[0] - r + 2).toFixed(1) + '" y="' + (q[1] - r + 2).toFixed(1) + '" width="' + (2 * r - 4) + '" height="' + (2 * r - 4) + '" rx="3" fill="' + BETA_COL[l] + '" stroke="#0e0e0f" stroke-width="2.5"/>'
+      ? '<rect x="' + (q[0] - r + 2).toFixed(1) + '" y="' + (q[1] - r + 2).toFixed(1) + '" width="' + (2 * r - 4) + '" height="' + (2 * r - 4) + '" rx="3" fill="' + (off ? '#0e0e0f' : BETA_COL[l]) + '" stroke="' + (off ? BETA_COL[l] : '#0e0e0f') + '" stroke-width="2.5"/>'
       : '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="' + r + '" fill="' + BETA_COL[l] + '" stroke="#0e0e0f" stroke-width="2.5"/>';
   });
   $('betaSvg').innerHTML = svg;
@@ -3438,6 +3464,7 @@ function betaPlay(){
     const k = Math.min(1, (now - t0) / MOVE), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
     const a = frames[i], b = frames[i + 1], f = {};
     BETA_ORDER.forEach(l => { f[l] = [a[l][0] + (b[l][0] - a[l][0]) * e, a[l][1] + (b[l][1] - a[l][1]) * e]; });
+    f.off = b.off;
     betaDraw(f, beta.moves[i + 1 + skipped].l);
     if (k >= 1){ i++; t0 = null; betaTimer = setTimeout(() => { betaTimer = requestAnimationFrame(step); }, HOLD); return; }
     betaTimer = requestAnimationFrame(step);
@@ -3458,6 +3485,10 @@ function betaEdit(){
 function betaPaintEdit(){
   document.querySelectorAll('#betaLimbs button').forEach(b =>
     b.classList.toggle('pick', b.dataset.l === betaLimb));
+  // only a foot can flag, and only once the climber is on the wall
+  document.querySelectorAll('#betaFlag button').forEach(b =>
+    b.disabled = betaLimb[1] !== 'F' || !betaDraft.some(m => m.l[1] === 'H'));
+  $('betaUndo').disabled = !betaDraft.length;
   const frames = betaFrames(betaDraft);
   if (frames.length) betaDraw(frames[frames.length - 1], betaDraft[betaDraft.length - 1].l);
   else $('betaSvg').innerHTML = '';
@@ -3496,6 +3527,9 @@ async function betaSave(){
 }
 $('betaTap').addEventListener('click', betaTap);
 document.querySelectorAll('#betaLimbs button').forEach(b => b.onclick = () => { betaLimb = b.dataset.l; betaPaintEdit(); });
+document.querySelectorAll('#betaFlag button').forEach(b => b.onclick = () => {
+  betaDraft.push({ l: betaLimb, h: b.dataset.f }); betaPaintEdit();
+});
 $('betaUndo').onclick = () => { betaDraft.pop(); betaPaintEdit(); };
 $('betaClear').onclick = () => { betaDraft = []; betaLimb = 'LH'; betaPaintEdit(); };
 $('betaSave').onclick = betaSave;
