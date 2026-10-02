@@ -129,6 +129,7 @@ export class Relay {
  * logbook panel opens, which keeps /lists small as the log grows.
  */
 const RESULTS = ["try", "flash", "2nd", "3rd", "4+"];
+const BOARDS = ["2016-40", "2019-40", "2019-25", "2024-40", "2024-25"];
 
 // Timestamp-prefixed so storage.list() comes back in chronological order.
 const logKey = (iso) => "log:" + iso + "-" + Math.random().toString(36).slice(2, 8);
@@ -152,7 +153,9 @@ export class Lists {
       const st = await this.state.storage.get("stats:" + p);
       if (st && Object.keys(st).length) stats[p] = st;
     }
-    return { people, lists, done, wins, snake, stats };
+    // Which hold set and angle is on the wall - one wall, so one setting for everyone.
+    const board = (await this.state.storage.get("board")) || "2016-40";
+    return { people, lists, done, wins, snake, stats, board };
   }
 
   /* Replay the whole log and rewrite every derived index from it. The log is
@@ -287,8 +290,12 @@ export class Lists {
 
     if (path === "/lists/log" && request.method === "GET") {
       const person = url.searchParams.get("person") || "";
-      const limit = Math.min(500, Math.max(1, Number(url.searchParams.get("limit")) || 100));
-      const rows = await this.state.storage.list({ prefix: "log:", reverse: true, limit: 500 });
+      // One person's logbook can run to hundreds of rows once an old one is
+      // imported, so a named request reads the whole log rather than the last 500.
+      const limit = Math.min(3000, Math.max(1, Number(url.searchParams.get("limit")) || 100));
+      const rows = await this.state.storage.list(person
+        ? { prefix: "log:", reverse: true }
+        : { prefix: "log:", reverse: true, limit: 500 });
       const out = [];
       for (const [key, row] of rows) {
         if (!row) continue;
@@ -305,6 +312,13 @@ export class Lists {
     if (!body) return json({ error: "expected a JSON body" }, 400);
 
     const clean = (v) => typeof v === "string" ? v.trim().slice(0, 24) : "";
+
+    if (path === "/lists/board") {
+      const board = clean(body.board);
+      if (!BOARDS.includes(board)) return json({ error: "unknown board" }, 400);
+      await this.state.storage.put("board", board);
+      return json(await this.snapshot());
+    }
 
     if (path === "/lists/person") {
       const name = clean(body.name);
