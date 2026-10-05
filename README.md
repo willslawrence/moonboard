@@ -44,6 +44,24 @@ The code is in public source, so it isn't a secret - but the relay only does any
 someone is actively bridging. Change it in Settings on every phone if you ever want a wall of
 your own.
 
+### What's on the wall
+
+When someone lights a problem, every other phone gets an **On the wall** button naming it and
+who put it up. One tap opens that problem. It sits at the top of the gutter left of the board,
+or across the top of the search row when no problem is open, and it settles into a plain label
+once you are looking at the problem that is up.
+
+Opening it is a look, not a send - the problem is already lit, and re-sending would only put
+your name on someone else's pick. For the same reason **Light the wall as soon as I pick a
+problem** is off unless a phone turns it on: with several people on one wall, browsing the list
+should not change what somebody is half way up.
+
+The phone holding Bluetooth is the one that writes to the box, so it is the one that knows what
+is up. It tells the relay; the relay hands it to everyone else in `/status`. A phone on an
+older build that lights a problem without saying which is matched back to the list by its
+holds, so the name still shows, just without a person. If the bridging phone itself is on an
+older build the relay says nothing rather than guess.
+
 ## Finding the payload limit
 
 Settings has a stepper that lights holds in wiring order from A1 up and reports the byte and
@@ -94,6 +112,10 @@ MoonBoard id. Anyone with the page can write; that's the point.
 app works out the grade for you: no tries logged means flash, one means 2nd go, three or more
 means 4+. The chooser arrives with that already picked and you tap to confirm, or pick another
 if it's wrong. **Undo my last entry** walks back a mis-tap.
+
+**History**, beside the board, is your own record on the problem that is open: every try and
+send with the day it happened, when you first sent it, and when you were last on it. It is
+read only - the Logbook is still where an entry gets changed or removed.
 
 Rows live in the relay Worker as an append-only `log:` prefix, with a per-person `stats:`
 index carrying the attempt count and last result. `/lists` returns the index; the rows
@@ -186,6 +208,13 @@ python3 -m venv .venv && ./.venv/bin/pip install bleak
 `relay/` is a Cloudflare Worker at `moonboard-relay.willslawrence.workers.dev`.
 The phone opens a WebSocket to `/ws?room=<code>` and acts as the BLE bridge;
 anything POSTed to `/send?room=<code>` is written to the wall.
+
+`/send` also takes `now: {id, by, board}` - which problem this is and whose phone lit it - and
+`/status?room=<code>` answers `{bridges, now}`, where `now` is `{payload, t, id?, by?, board?}`
+or `null`. A bridge says `{type:"hello"}` when it connects, to promise it will report what it
+lights itself, and then `{type:"now", payload, now}` each time it does. `now` is held in memory
+only: it means something only while a phone is bridging, and a bridge repeats its last write
+whenever it reconnects.
 
 The **room code is the only secret** and is never committed — it lives in
 `.relay-room` (gitignored) or `$MOONBOARD_ROOM`.

@@ -240,11 +240,24 @@
   #gamePanel[hidden]{display:none}
   #snakePanel{gap:8px !important}
   #snakePanel #snPad{margin-top:auto}      /* pushed to the bottom of the sheet */
-  #sendPanel,#logPanel,#snakePanel,#entryPanel,#setPanel{position:fixed;inset:0;z-index:60;background:var(--bg);
+  #sendPanel,#logPanel,#snakePanel,#entryPanel,#setPanel,#histPanel{position:fixed;inset:0;z-index:60;background:var(--bg);
              display:flex;flex-direction:column;gap:12px;overflow-y:auto;
              padding:calc(env(safe-area-inset-top) + 16px) 16px
                      calc(env(safe-area-inset-bottom) + 16px)}
-  #sendPanel[hidden],#logPanel[hidden],#snakePanel[hidden],#entryPanel[hidden],#setPanel[hidden]{display:none}
+  #sendPanel[hidden],#logPanel[hidden],#snakePanel[hidden],#entryPanel[hidden],#setPanel[hidden],#histPanel[hidden]{display:none}
+  /* ---- history: everything you have logged on the problem that's open ---- */
+  #histFor{font-size:15px;font-weight:600}
+  #histFor span{display:block;font-size:12px;color:var(--dimmer);font-weight:400;margin-top:2px}
+  #histSum{font-size:13px;color:var(--dim);line-height:1.5}
+  #histSum b{color:var(--ink);font-weight:600}
+  #histRows .e{display:flex;align-items:center;gap:9px;padding:10px 2px;border-bottom:1px solid #1e2024}
+  #histRows .e .d{flex:1;min-width:0;font-size:14px;font-weight:600}
+  #histRows .e .d span{display:block;font-size:11px;font-weight:400;color:var(--dimmer);margin-top:1px}
+  #histRows .e .rs{flex:none;padding:2px 7px;border-radius:5px;
+                   font:700 10px ui-monospace,Menlo,monospace;background:#22252b;color:var(--dim)}
+  #histRows .e.sent .rs{background:#22c55e;color:#06240e}
+  #histRows .e .lk{flex:none;font-size:10px;color:var(--dimmer)}
+  #histRows .none{font-size:13px;color:var(--dimmer);padding:8px 2px;line-height:1.5}
   #sendFor{font-size:15px;font-weight:600}
   #sendFor span{display:block;font-size:12px;color:var(--dimmer);font-weight:400;margin-top:2px}
   #sendPicks{display:grid;gap:8px}
@@ -369,6 +382,34 @@
   #leftIn #climbers{flex:1 1 auto;min-height:0;overflow:hidden}
   #leftIn #tools{display:grid;grid-template-columns:32px 32px;gap:8px}
   #climbers.many .p .nm2{display:none}       /* five or more: initials and results only */
+  /* ---- on the wall: the problem someone has lit, and who lit it ----
+     Top of the gutter beside the board, or across the top of the search row when
+     no problem is open. One tap opens it. Blue because it came through the relay,
+     the same blue as the dot in the header. */
+  #nowBtn{flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:2px;
+          width:100%;min-width:0;padding:5px;border-radius:7px;text-align:left;
+          border:1px solid #2f4a86;background:#131d33;color:var(--ink);font-weight:500}
+  #nowBtn[hidden]{display:none}
+  #nowBtn:active{background:#1b2a4a}
+  #nowBtn .cap{font-size:8px;letter-spacing:.06em;text-transform:uppercase;color:#8fb0f5;
+               white-space:nowrap}
+  /* 60px of room: a long word hyphenates if the browser can, and breaks if it can't */
+  #nowBtn .nm3{font-size:10.5px;font-weight:700;line-height:1.2;overflow-wrap:anywhere;
+               -webkit-hyphens:auto;hyphens:auto;
+               display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  #nowBtn .by{display:flex;align-items:center;gap:4px;max-width:100%;min-width:0;
+              font-size:10px;color:var(--dim)}
+  #nowBtn .by:empty{display:none}
+  #nowBtn .by i{flex:none;display:grid;place-items:center;width:14px;height:14px;
+                border-radius:50%;font-size:8px;font-weight:700;font-style:normal;color:#0e0e0f}
+  #nowBtn .by span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* already looking at it: nothing to tap, so it settles into a label */
+  #nowBtn.here{background:transparent;border-color:var(--edge)}
+  #nowBtn.here .nm3{display:none}
+  #bar > #nowBtn{flex-direction:row;align-items:center;gap:8px;padding:7px 10px;margin-bottom:6px}
+  #bar > #nowBtn .nm3{flex:0 1 auto;font-size:13px;-webkit-line-clamp:1;-webkit-hyphens:manual;hyphens:manual}
+  #bar > #nowBtn .by{flex:1 1 0;font-size:12px}
+  #bar > #nowBtn::after{content:'\203a';flex:none;margin-left:auto;color:#8fb0f5;font-size:16px}
   #ver{font:10px ui-monospace,Menlo,monospace;color:var(--dimmer);margin-top:14px}
   .panel{border-top:1px solid var(--edge);padding-top:14px;margin-bottom:22px}
 
@@ -414,6 +455,7 @@
       <button id="tick" class="mini" disabled>Add to list</button>
       <button id="try" class="mini" disabled>Log try</button>
       <button id="done" class="mini" disabled>Log send</button>
+      <button id="hist" class="mini" disabled title="Everything you have logged on this problem">History</button>
       <button id="betaBtn" class="mini" disabled>+ Beta</button>
       <button id="clear" class="mini ghost">Hide</button>
       <div id="betaTools">
@@ -447,6 +489,7 @@
 </section>
 
 <div id="bar">
+  <button id="nowBtn" hidden><span class="cap">On the wall</span><b class="nm3"></b><span class="by"></span></button>
   <div id="barTxt">
     <div id="tools">
       <button id="setBtn" class="ghost" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor"><circle cx="12" cy="12" r="5.6" stroke-width="2"/><circle cx="12" cy="12" r="2" stroke-width="1.8"/><path stroke-width="3" d="M12 2.6v3.2M12 18.2v3.2M2.6 12h3.2M18.2 12h3.2M5.35 5.35l2.26 2.26M16.39 16.39l2.26 2.26M5.35 18.65l2.26-2.26M16.39 7.61l2.26-2.26"/></g></svg></button>
@@ -507,7 +550,7 @@
   </div>
 
 
-  <label class="ck"><input type="checkbox" id="auto" checked>
+  <label class="ck"><input type="checkbox" id="auto">
     Light the wall as soon as I pick a problem</label>
   <label class="ck"><input type="checkbox" id="gbar" checked>
     Show the grade on row 1 — one light per V-grade</label>
@@ -564,6 +607,18 @@
   </div>
   <button id="sendUndo" class="ghost mini">Undo my last entry</button>
   <div class="hint" id="sendHint"></div>
+</div>
+
+<div id="histPanel" hidden>
+  <div id="gameHead">
+    <b>Your history</b>
+    <button id="histClose" class="ghost mini">Close</button>
+  </div>
+  <div id="histFor"></div>
+  <div id="histSum"></div>
+  <div id="histRows"></div>
+  <div class="hint">Every try and send you have logged on this problem, newest first.
+    To change or remove one, open the Logbook and hold the entry.</div>
 </div>
 
 <div id="logPanel" hidden>
@@ -650,7 +705,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-02 23:55';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-05 21:11';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -2378,6 +2433,11 @@ let boardKey = DEFAULT_BOARD;
 let PROBLEMS = BY_BOARD[boardKey];     // what's on the wall right now
 const boardNow = () => BOARDS.find(b => b.key === boardKey) || BOARDS[0];
 let current = null;
+/* What's on the wall, as far as this phone knows - see "what's on the wall" below. */
+let wallNow = null;        // {payload, t, id?, by?, board?} or null
+let wallKnown = false;     // the relay is new enough to say what is on the wall
+let lastWrite = null;      // {payload, meta} this phone last put up over Bluetooth
+let told = '';             // what the relay has been told, so a game's frames aren't each reported
 
 /* ---------- tick lists ----------
    Shared through the relay Worker, no logins: whoever is picked in the Tick list
@@ -2501,6 +2561,7 @@ function paintBar(){
   $('tick').disabled = !current;
   $('done').disabled = !current;
   $('try').disabled  = !current;
+  $('hist').disabled = !current;
   const t = current ? myTries(current.id) : 0;
   $('try').textContent = t ? 'Log try \u00b7 ' + t : 'Log try';
   $('try').className   = 'mini' + (t ? ' on' : '');
@@ -2611,6 +2672,7 @@ function runPending(){
   if (a === 'tick') doTick();
   else if (a === 'done') doDone();
   else if (a === 'try') doTry();
+  else if (a === 'hist') openHist();
   else if (a === 'beta') betaEdit();
 }
 
@@ -2766,9 +2828,15 @@ function placeTools(){
   if (current){ if (t.parentNode !== $('leftIn')) $('leftIn').appendChild(t); }
   else if (t.parentNode !== $('barTxt')) $('barTxt').insertBefore(t, $('filtBtn'));
   $('q').placeholder = current ? 'Search routes or setters' : 'Search';
+  const n = $('nowBtn');                 // what's on the wall: gutter top, or above the search row
+  if (current){ if (n.parentNode !== $('leftIn')) $('leftIn').insertBefore(n, $('leftIn').firstChild); }
+  else if (n.parentNode !== $('bar')) $('bar').insertBefore(n, $('barTxt'));
+  paintNow();
 }
 
-function loadRoute(r){
+/* look: open it on this phone without lighting it - for jumping to what is
+   already on the wall, where a send would only put your name on someone else's pick. */
+function loadRoute(r, look){
   introToken++;                          // a pick beats the intro
   for (const k in state) delete state[k];
   parseHolds(r.s, 'S'); parseHolds(r.m, 'P'); parseHolds(r.e, 'E');
@@ -2784,7 +2852,7 @@ function loadRoute(r){
   paintBar();
   betaReset();
   log('loaded "' + r.name + '" \u2014 ' + GRADES[r.grade] + ' (V' + VGRADE[r.grade] + '), set by ' + r.setter);
-  if ($('auto').checked && rx) sendProblem();
+  if (!look && $('auto').checked && rx) sendProblem();
 }
 
 function clearRoute(){
@@ -2829,6 +2897,7 @@ async function connect(){
     });
     device.addEventListener('gattserverdisconnected', () => {
       rx = null;
+      lastWrite = null; told = ''; setWallNow(null);  // not ours to say any more
       bridgeSeen = null;                              // unknown again until we try
       if (relayWant) relayDisconnect();               // no board, nothing to bridge
       setLive(false);
@@ -2846,6 +2915,7 @@ async function connect(){
       });
     }catch(e){ log('no notify channel (fine): ' + e.message); }
     setLive(true);
+    lastWrite = null; told = ''; setWallNow(null);    // this phone writes from here on; start from what it writes
     const p = Object.entries(rx.properties || {}).filter(([, v]) => v).map(([k]) => k).join(',');
     log('connected. Nordic UART found. RX props: [' + p + ']');
     // Whoever holds the Bluetooth becomes the bridge automatically, so everyone
@@ -2907,17 +2977,28 @@ function wallState(){
   $('wallTxt').className = cls;
 }
 
+let peekAt = 0;
 async function relayPeek(){
   if (rx || document.visibilityState !== 'visible') return;
   const room = relayRoom();
-  if (!room){ bridgeLive = null; return wallState(); }
+  if (!room){ bridgeLive = null; setWallNow(null); return wallState(); }
+  peekAt = Date.now();
   try{
     const d = await (await fetch('https://' + RELAY_HOST + '/status?room=' + encodeURIComponent(room))).json();
     if (typeof d.bridges !== 'number') return;
     bridgeLive = d.bridges > 0;
     if (bridgeLive && bridgeSeen === false) bridgeSeen = null;   // someone's back - stop shouting
+    // A relay that predates this never sends `now`, and the button simply stays away.
+    wallKnown = 'now' in d;
+    if (!rx && room === relayRoom()) setWallNow(bridgeLive && d.now ? d.now : null);
     wallState();
   }catch(e){}
+}
+/* Every 20 seconds is enough to know whether the wall is reachable. Seeing what
+   someone just lit wants to be quicker than that, so while a phone is bridging -
+   which is to say while people are actually climbing - look every five. */
+function peekTick(){
+  if (Date.now() - peekAt >= (bridgeLive ? 4500 : 19500)) relayPeek();
 }
 
 /* Only the phone holding Bluetooth can bridge. Any other phone that joined as a
@@ -2932,18 +3013,20 @@ function paintRelayBtn(){
                'connected by Bluetooth. Nothing to turn on.');
 }
 
-async function relaySend(str, quiet){
+async function relaySend(str, quiet, meta){
   const room = relayRoom();
   if (!quiet) log('→ relay  ' + str);
   try{
     const r = await fetch('https://' + RELAY_HOST + '/send?room=' + encodeURIComponent(room), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ payload: str }),
+      body: JSON.stringify({ payload: str, now: meta || null }),
     });
     const d = await r.json();
     bridgeSeen = !d.error && d.bridges > 0;
     if (typeof d.bridges === 'number') bridgeLive = d.bridges > 0;
+    // It is up there now, so this phone need not wait for the next look to say so.
+    if (bridgeSeen && wallKnown) setWallNow(nowFrom(str, meta));
     if (d.error) log('relay: ' + d.error);
     else if (!d.bridges) log('relay: nothing is connected to the board — ' +
                              'somebody has to tap Connect.');
@@ -2953,10 +3036,13 @@ async function relaySend(str, quiet){
   wallState();
 }
 
-async function write(str, quiet){
+/* meta says which problem this is and whose phone lit it - {id, by, board} - and
+   is left off for everything that isn't a problem: art, games, a cleared wall.
+   asked is set when the relay requested the write, so it is not told about it twice. */
+async function write(str, quiet, meta, asked){
   if (!(str.startsWith('l#') && str.endsWith('#'))) return log('refusing — payload must be l#…#');
   if (!rx){
-    if (relayRoom()) return relaySend(str, quiet);
+    if (relayRoom()) return relaySend(str, quiet, meta);
     return log('not connected — tap Connect, or set a relay room code in Settings.');
   }
   if (BLOCKED.some(b => rx.uuid.toLowerCase().includes(b))) return log('refusing — DFU characteristic.');
@@ -2975,6 +3061,7 @@ async function write(str, quiet){
       await new Promise(r => setTimeout(r, 30));
     }
     if (!quiet) log('written.');
+    wrote(str, meta, asked);
   }catch(e){ log('write failed: ' + e.message); }
 }
 
@@ -2984,7 +3071,117 @@ async function write(str, quiet){
    read as the problem changing, so the blink is gone: send once, leave it lit. */
 async function sendProblem(){
   if (!canSend()) return;
-  return write(buildPayload());
+  return write(buildPayload(), false, routeMeta());
+}
+
+/* ---------- what's on the wall ----------
+   One wall, several phones. When someone lights a problem, everyone else gets a
+   button that names it, says who put it up, and opens it in one tap - no asking
+   across the gym, no searching for it.
+
+   The phone holding Bluetooth is the one that actually writes to the box, so it
+   is the one that knows. It tells the relay what it lights, the relay hands that
+   to every other phone in /status, and a phone that lights something through the
+   relay says which problem and whose name alongside the payload. */
+const routeMeta = () => current ? { id: current.id, by: meNow(), board: boardKey } : null;
+const nowFrom = (payload, meta) =>
+  payload === 'l##' ? null : Object.assign({ payload, t: Date.now() }, meta || {});
+// What the relay was last told. A relay-requested write is marked apart, so the
+// next thing this phone lights on its own always counts as news.
+const tellKey = (payload, meta) => meta ? meta.id + '|' + meta.by + '|' + payload : '';
+
+function setWallNow(now){
+  wallNow = now || null;
+  paintNow();
+}
+
+/* A write reached the box from this phone. Remember it - a bridge that drops and
+   reconnects repeats it, which is how the relay gets away with storing nothing -
+   and tell the relay unless it was the relay that asked. Only problems are worth
+   a message: a game redraws the wall several times a second, and all anyone else
+   needs to hear is that the problem is no longer up. */
+function wrote(payload, meta, asked){
+  lastWrite = { payload, meta: meta || null };
+  setWallNow(nowFrom(payload, meta));
+  if (asked){ told = 'asked|' + payload; return; }
+  const key = tellKey(payload, meta);
+  if (key === told) return;
+  told = key;
+  tellRelay();
+}
+function tellRelay(){
+  if (!relayWS || relayWS.readyState !== 1 || !lastWrite) return;
+  relayWS.send(JSON.stringify({ type: 'now', payload: lastWrite.payload, now: lastWrite.meta }));
+}
+
+/* Which problem a payload is, for when nobody said. A phone on an older build
+   lights a problem without naming it, so the holds are matched back against the
+   list. The grade meter on row 1 is ours rather than the problem's, so it is
+   tried with and without. */
+let sigFor = null, sigMap = null;
+function routeSig(r){
+  const cells = {};
+  [[r.s, 'S'], [r.m, 'P'], [r.e, 'E']].forEach(([str, tag]) => (str || '').split(',').forEach(h => {
+    const m = /^([A-K])(\d{1,2})$/.exec(h.trim().toUpperCase());
+    if (!m) return;
+    const col = LETTERS.indexOf(m[1]) + 1, row = +m[2];
+    if (col >= 1 && row >= 1 && row <= ROWS) cells[holdNum(col, row)] = tag;
+  }));
+  return Object.keys(cells).map(Number).sort((a, b) => a - b).map(n => cells[n] + n).join(',');
+}
+function routeFromPayload(payload){
+  if (sigFor !== boardKey){
+    sigMap = new Map();
+    PROBLEMS.forEach(p => sigMap.set(routeSig(p), p));
+    sigFor = boardKey;
+  }
+  const parts = String(payload || '').slice(2, -1).split(',').filter(Boolean);
+  const whole = sigMap.get(parts.join(','));
+  if (whole) return whole;
+  const row1 = new Set();
+  for (let col = 1; col <= COLS; col++) row1.add(holdNum(col, 1));
+  return sigMap.get(parts.filter(x => !row1.has(+x.slice(1))).join(',')) || null;
+}
+
+function wallRoute(){
+  if (!wallNow) return null;
+  const named = wallNow.id != null ? byId[wallNow.id] : null;
+  const r = named || routeFromPayload(wallNow.payload);
+  return r && r.board === boardKey ? r : null;
+}
+
+function paintNow(){
+  const b = $('nowBtn');
+  if (!b) return;
+  // Only when this phone can know: it holds the Bluetooth, or someone else does.
+  const r = (rx || bridgeLive) ? wallRoute() : null;
+  if (!r){ b.hidden = true; return; }
+  const here = !!current && current.id === r.id;
+  const by = (wallNow.by || '').trim();
+  b.hidden = false;
+  b.classList.toggle('here', here);
+  b.querySelector('.nm3').textContent = r.name;
+  const who = b.querySelector('.by');
+  who.textContent = '';
+  if (by){
+    const chip = document.createElement('i');
+    chip.textContent = chipFor(by);
+    chip.style.background = personColor(by);
+    const nm = document.createElement('span');
+    nm.textContent = by;
+    who.append(chip, nm);
+  }
+  b.title = here ? 'This is the problem on the wall' + (by ? ', put up by ' + by : '')
+                 : 'Open ' + r.name + (by ? ' \u2014 put up by ' + by : '');
+  b.setAttribute('aria-label', 'On the wall: ' + r.name + (by ? ', put up by ' + by : ''));
+}
+
+function gotoWall(){
+  const r = wallRoute();
+  if (!r || betaDraft || (current && current.id === r.id)) return;
+  loadRoute(r, true);                    // a look, not a send - it is already up there
+  const row = $('results').querySelector('.rt.sel');
+  if (row) row.scrollIntoView({ block: 'nearest' });
 }
 
 
@@ -3024,6 +3221,10 @@ function openRelay(room){
     relayTries = 0;
     relayState('relay connected — sharing the wall with the crew');
     log('relay connected as bridge.');
+    // This build tells the relay what it lights itself; then say what is up now.
+    ws.send(JSON.stringify({ type: 'hello', v: 2 }));
+    told = '';
+    if (lastWrite){ told = tellKey(lastWrite.payload, lastWrite.meta); tellRelay(); }
     $('relayBtn').textContent = 'Disconnect relay';
     wallState();
   };
@@ -3038,7 +3239,7 @@ function openRelay(room){
     }
     log('relay → ' + m.payload);
     try{
-      await write(m.payload);
+      await write(m.payload, false, m.now || null, true);
       ws.send(JSON.stringify({ type: 'result', id: m.id, ok: true }));
     }catch(err){
       ws.send(JSON.stringify({ type: 'result', id: m.id, error: String(err && err.message || err) }));
@@ -3202,6 +3403,91 @@ async function entryAction(action){
   heldEntry = null;
   showPanel('log');
   loadLog();
+}
+
+/* ---------- history ----------
+   Your own record on the problem that is open: every try and every send, with
+   the day it happened. The numbers beside the board only say where you stand -
+   tries since the last send - and the Logbook is everyone's everything, so this
+   is the one place that answers "when did I last get on this, and how did it go".
+   Read only. It comes from the same log the Logbook reads. */
+let histFor = 0;                          // guards against a slow answer landing on another problem
+const RESULT_WORDS = { try: 'try', flash: '\u26a1 flash', '2nd': '2nd go', '3rd': '3rd go', '4+': '4+ goes' };
+
+async function openHist(){
+  const me = meNow(), r = current;
+  if (!me || !r) return;
+  const mine = ++histFor;
+  $('histFor').innerHTML = '';
+  const b = document.createElement('b'); b.textContent = r.name;
+  const sub = document.createElement('span');
+  sub.textContent = GRADES[r.grade] + ' \u00b7 V' + VGRADE[r.grade] + ' \u00b7 ' + me;
+  $('histFor').append(b, sub);
+  $('histSum').textContent = 'loading\u2026';
+  $('histRows').innerHTML = '';
+  showPanel('hist');
+
+  let entries = [];
+  try{
+    const res = await fetch(LISTS_API + '/lists/log?limit=3000&person=' + encodeURIComponent(me));
+    entries = ((await res.json()).entries || []).filter(e => Number(e.id) === r.id);
+  }catch(e){
+    if (mine === histFor) $('histSum').textContent = 'logbook unreachable \u2014 try again in a moment';
+    return;
+  }
+  if (mine !== histFor || $('histPanel').hidden) return;      // moved on while it loaded
+  entries.sort((a, b) => (a.t < b.t ? 1 : a.t > b.t ? -1 : 0));   // newest first
+
+  /* A row imported from the MoonBoard app is a calendar day, stored as midnight
+     UTC. Read in local time it would slip back a day anywhere west of Greenwich. */
+  const day = e => new Date(e.t).toLocaleDateString(undefined, Object.assign(
+    { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' },
+    e.src === 'moonboard' ? { timeZone: 'UTC' } : {}));
+  const sends = entries.filter(e => e.result !== 'try');
+  const tries = entries.length - sends.length;
+  const sum = $('histSum');
+  sum.textContent = '';
+  if (!entries.length){
+    // A tick from before the logbook kept dates has no rows to show.
+    const ticked = (done[r.id] || []).includes(me);
+    const d = document.createElement('div');
+    d.className = 'none';
+    d.textContent = ticked
+      ? 'Marked as climbed, from before the logbook kept dates \u2014 so there is nothing to list.'
+      : 'Nothing logged on this one yet. Log try and Log send will start filling it in.';
+    $('histRows').appendChild(d);
+    return;
+  }
+  const first = sends[sends.length - 1];                      // oldest send: the one that scores
+  const head = document.createElement('b');
+  head.textContent = [sends.length ? sends.length + (sends.length === 1 ? ' send' : ' sends') : 'Not sent yet',
+                      tries ? tries + (tries === 1 ? ' try' : ' tries') : ''].filter(Boolean).join(' \u00b7 ');
+  sum.appendChild(head);
+  const lines = [];
+  if (first) lines.push('First sent ' + day(first) + ' \u2014 ' + RESULT_WORDS[first.result]);
+  lines.push('Last on it ' + day(entries[0]));
+  lines.forEach(txt => { const d = document.createElement('div'); d.textContent = txt; sum.appendChild(d); });
+
+  entries.forEach(e => {
+    const row = document.createElement('div');
+    row.className = 'e' + (e.result !== 'try' ? ' sent' : '');
+    const d = document.createElement('div');
+    d.className = 'd';
+    d.textContent = day(e);
+    const at = document.createElement('span');
+    // Imported rows carry the day it was climbed but not a real time of day.
+    at.textContent = e.src === 'moonboard' ? 'from the MoonBoard app'
+      : new Date(e.t).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    d.appendChild(at);
+    const rs = document.createElement('div');
+    rs.className = 'rs';
+    rs.textContent = RESULT_WORDS[e.result] || e.result;
+    const lk = document.createElement('div');
+    lk.className = 'lk';
+    lk.textContent = e.lock ? '\ud83d\udd12' : '';
+    row.append(d, rs, lk);
+    $('histRows').appendChild(row);
+  });
 }
 
 async function openLog(){
@@ -3968,7 +4254,7 @@ function snStop(){
   sn = null;
   snDraw();
   if (!canSend()) return;
-  if (current) write(buildPayload());
+  if (current) write(buildPayload(), false, routeMeta());
   else if (!standby()) write('l##');
 }
 
@@ -4237,7 +4523,7 @@ function c4Stop(){
   c4 = null;
   c4Draw();
   if (!canSend()) return;
-  if (current) write(buildPayload());
+  if (current) write(buildPayload(), false, routeMeta());
   else if (!standby()) write('l##');
   log('connect four: back to problems.');
 }
@@ -4248,6 +4534,7 @@ $('connect').onclick = () => {
 };
 $('send').onclick  = sendProblem;
 $('clear').onclick = clearRoute;
+$('nowBtn').onclick = gotoWall;
 $('q').oninput = () => { searchQ = $('q').value; showName = false; paintQBox(); renderResults(); };
 $('q').addEventListener('focus', () => { if (!$('q').readOnly && nameShown()) $('q').select(); });
 $('q').addEventListener('blur',  () => { if (!$('q').readOnly) showQ(); });
@@ -4373,13 +4660,14 @@ function showFilters(on){
 }
 $('filtBtn').onclick = () => showFilters($('filters').hidden);
 
-const PANELS = { game: 'gamePanel', set: 'setPanel', log: 'logPanel',
+const PANELS = { game: 'gamePanel', set: 'setPanel', log: 'logPanel', hist: 'histPanel',
                  send: 'sendPanel', snake: 'snakePanel', entry: 'entryPanel' };
 
 function showPanel(which){          // a key of PANELS, or null for none
   $('gamePanel').hidden = which !== 'game';
   $('setPanel').hidden  = which !== 'set';
   $('logPanel').hidden  = which !== 'log';
+  $('histPanel').hidden = which !== 'hist';
   $('sendPanel').hidden = which !== 'send';
   $('snakePanel').hidden = which !== 'snake';
   $('entryPanel').hidden = which !== 'entry';
@@ -4396,6 +4684,8 @@ $('setClose').onclick = () => showPanel(null);
 $('c4close').onclick = () => showPanel(null);
 $('logBtn').onclick = () => ($('logPanel').hidden ? openLog() : showPanel(null));
 $('logClose').onclick = () => showPanel(null);
+$('hist').onclick = () => { if (!needName('hist')) openHist(); };
+$('histClose').onclick = () => { histFor++; showPanel(null); };
 $('snakeBtn').onclick = () => {
   const open = $('snakePanel').hidden;
   showPanel(open ? 'snake' : null);
@@ -4464,6 +4754,12 @@ $('gbar').onchange = () => {
   if (canSend() && current) sendProblem();
 };
 
+/* Off unless you turn it on. With several phones on one wall, looking through the
+   list should not change what someone else is half way up - lighting is the bulb
+   button's job. A phone that does want it remembers that it asked. */
+$('auto').onchange = () => {
+  try{ localStorage.setItem('mb-auto', $('auto').checked ? '1' : '0'); }catch(e){}
+};
 $('standby').onchange = () => {
   try{ localStorage.setItem('mb-standby', $('standby').value); }catch(e){}
   if (!current && canSend() && !standby()) write('l##');
@@ -4496,7 +4792,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && relayWant) keepAwake();
   if (document.visibilityState === 'visible') relayPeek();
 });
-setInterval(relayPeek, 20000);
+setInterval(peekTick, 1500);
 $('copy').onclick = async () => {
   try{ await navigator.clipboard.writeText($('log').textContent); log('log copied.'); }
   catch(e){ log('copy blocked — select the text manually.'); }
@@ -4544,6 +4840,7 @@ try{
   }
   const sb = localStorage.getItem('mb-standby');
   if (sb !== null) $('standby').value = sb;
+  $('auto').checked = localStorage.getItem('mb-auto') === '1';
   const m = localStorage.getItem('mb-me') || w;
   if (m){ $('me').appendChild(new Option(m, m)); $('me').value = m; lastMe = m; }
 }catch(e){}
