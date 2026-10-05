@@ -16,7 +16,7 @@
             -webkit-text-size-adjust:100%}
   /* The app fills the screen and does not scroll; only the problem list does. */
   body{font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
-       height:100dvh;display:flex;flex-direction:column;padding:0 14px;}
+       height:100dvh;display:flex;flex-direction:column;padding:0 10px;}
   /* No -webkit-overflow-scrolling:touch here - on iOS it makes this a containing
      block for position:fixed descendants, which trapped the game sheet inside it. */
   #scroll{flex:1 1 auto;min-height:110px;overflow-y:auto;overscroll-behavior:contain;
@@ -27,10 +27,10 @@
   /* Fixed head of the app - no longer sticky, it simply never scrolls. Capped
      so an open filter panel on a short phone can't squeeze the list to nothing. */
   #noWall{background:#ef4444;color:#2c0505;font-weight:700;font-size:13px;
-          text-align:center;padding:9px 12px;margin:0 -14px}
+          text-align:center;padding:9px 12px;margin:0 -10px}
   #noWall[hidden]{display:none}
   #top{flex:0 0 auto;background:var(--bg);border-bottom:1px solid var(--edge);
-       margin-bottom:6px;max-height:76vh;overflow-y:auto;overflow-x:hidden}
+       margin-bottom:6px;max-height:79vh;overflow-y:auto;overflow-x:hidden}
   header{display:flex;align-items:center;gap:10px;
          padding:calc(env(safe-area-inset-top) + 4px) 0 4px;
          border-bottom:1px solid var(--edge)}
@@ -66,7 +66,7 @@
      iOS Safari puts its prev/next/Done bar on top of the system keyboard and no
      page can turn it off, so on a phone the search opens this instead: four
      short rows, laid out in the page so the list shrinks rather than hides. */
-  #kb{flex:none;margin:0 -14px;background:#1a1a1d;border-top:1px solid var(--edge);
+  #kb{flex:none;margin:0 -10px;background:#1a1a1d;border-top:1px solid var(--edge);
       padding:6px 4px calc(env(safe-area-inset-bottom) + 6px);
       user-select:none;-webkit-user-select:none;touch-action:manipulation}
   #kb[hidden]{display:none}
@@ -87,12 +87,12 @@
   /* ---- results ---- */
   #count{font-size:11px;color:var(--dimmer);letter-spacing:.06em;
          text-transform:uppercase;margin:10px 0 4px}
-  .rt{display:flex;align-items:center;gap:12px;padding:6.5px 2px;
+  .rt{display:flex;align-items:center;gap:12px;padding:6px 2px;
       border-bottom:1px solid #202024}
   .rt:active{background:var(--panel)}
   .gd{flex:none;padding:2px 6px;border-radius:5px;
        font:700 10px ui-monospace,Menlo,monospace;letter-spacing:-.02em}
-  .nm{flex:1;min-width:0}
+  .nm{flex:1;min-width:0;line-height:1.3}
   .nm b{display:block;font-weight:600;font-size:15px;
         white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .nm span{font-size:12px;color:var(--dimmer)}
@@ -111,12 +111,13 @@
      tall. Board, search and filters all live inside #top, so nothing above the
      list moves when you scroll. Keep this modest - if #top grows taller than
      the viewport, sticky can't pin it and the whole thing scrolls away.
-     It was 26vh: the extra three takes about a tenth off the list's height and
+     Now 32vh, with the side columns 68px and the page margin 10px so a narrow phone
+     gets the extra width too. It was 26vh, then 29: the extra three takes about a tenth off the list's height and
      gives it to the picture, which is what you are actually looking at. On a
      tall narrow screen the buttons either side are the limit instead, and the
      board was already as wide as they allow. */
   #boardWrap{padding:6px 0;margin:0}
-  #board{position:relative;width:min(100%,29vh);margin:0 auto;
+  #board{position:relative;width:min(100%,32vh);margin:0 auto;
          border-radius:6px;overflow:hidden;touch-action:pan-y}
   /* iOS starts its own image drag on a sideways swipe, which eats the gesture */
   #board img{-webkit-user-drag:none;user-select:none;pointer-events:none}
@@ -184,7 +185,7 @@
   /* the four actions stack down the space beside the board */
   /* An empty column mirrors the button column, so the board sits dead centre
      on the page rather than centred in whatever is left over. */
-  #boardRow{display:grid;grid-template-columns:72px 1fr 72px;gap:8px;align-items:stretch}
+  #boardRow{display:grid;grid-template-columns:68px 1fr 68px;gap:6px;align-items:stretch}
   #boardCol{min-width:0}
   #barBtns{display:flex;flex-direction:column;gap:6px}
   #barBtns #send{font-size:18px;padding:6.25px 0}  /* the one that lights the wall: a quarter taller than the rest */
@@ -257,7 +258,7 @@
   /* who has sent it - a coloured initial per climber */
   /* Pill keeps the top right corner whatever happens; the climber chips stack
      under it and wrap leftwards, where there's room. */
-  .rside{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:5px;
+  .rside{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px;
          max-width:58%}
   .who{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:3px}
   .who b{display:grid;place-items:center;width:19px;height:19px;border-radius:50%;
@@ -422,10 +423,10 @@
   #wallBelow{display:flex;flex-direction:column;gap:8px;height:100%}
   #wallBelow #climbers{flex:1 1 auto;min-height:0;overflow:hidden}
   #wallCol > #stackUp{margin-bottom:5px}
-  #leftIn #tools{display:grid;grid-template-columns:32px 32px;gap:8px}
+  #leftIn #tools{display:grid;grid-template-columns:32px 32px;gap:4px}
   /* Settings and the logbook ride at the foot of the buttons right of the board,
      where Hide used to be; the two games keep the left gutter. */
-  #barBtns #toolsR{display:grid;grid-template-columns:32px 32px;gap:8px;margin-top:auto}
+  #barBtns #toolsR{display:grid;grid-template-columns:32px 32px;gap:4px;margin-top:auto}
   body.betaEdit #barBtns #toolsR{display:none}
   #climbers.many .p .nm2{display:none}       /* five or more: initials and results only */
   /* ---- on the wall: the problem someone has lit, and who lit it ----
@@ -439,8 +440,8 @@
   #nowBtn:active{background:#1b2a4a}
   #nowBtn .cap{font-size:8px;letter-spacing:.06em;text-transform:uppercase;color:#8fb0f5;
                white-space:nowrap}
-  /* 60px of room: a long word hyphenates if the browser can, and breaks if it can't */
-  #nowBtn .nm3{font-size:10.5px;font-weight:700;line-height:1.2;overflow-wrap:anywhere;
+  /* 56px of room: a long word hyphenates if the browser can, and breaks if it can't */
+  #nowBtn .nm3{font-size:10px;font-weight:700;line-height:1.2;overflow-wrap:anywhere;
                -webkit-hyphens:auto;hyphens:auto;
                display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
   #nowBtn .by{display:flex;align-items:center;gap:4px;max-width:100%;min-width:0;
@@ -823,7 +824,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-05 23:37';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-06 00:05';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
