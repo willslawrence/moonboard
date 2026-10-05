@@ -5,6 +5,9 @@
  * Anything POSTed to /send?room=<code> is broadcast to that room's bridges,
  * which write it to the wall over Bluetooth.
  *
+ * The room also remembers what is on the wall - which problem, and who put it
+ * up - so every phone can show it and jump to it. /status hands that back.
+ *
  * The room code IS the secret - it is never in the (public) page source.
  */
 
@@ -20,11 +23,52 @@ const json = (obj, status = 200) =>
     headers: { "Content-Type": "application/json", ...CORS },
   });
 
+const PAYLOAD = /^l#[SPE0-9,]*#$/;
+
+/* Who lit what, as the page reports it alongside a payload. Everything here is
+   shown on other people's phones, so it is cut down to the three things the page
+   uses and nothing else gets through. */
+const cleanMeta = (m) => {
+  if (!m || typeof m !== "object" || !Number.isFinite(Number(m.id))) return null;
+  return {
+    id: Number(m.id),
+    by: typeof m.by === "string" ? m.by.trim().slice(0, 24) : "",
+    board: typeof m.board === "string" ? m.board.slice(0, 12) : "",
+  };
+};
+
 export class Relay {
   constructor(state) {
     this.state = state;
     this.sockets = new Set();
     this.pending = new Map();      // command id -> resolver waiting on the bridge
+    /* What is on the wall right now: {payload, t, id?, by?, board?}, or null.
+       Memory only, on purpose. It means something only while a phone is bridging,
+       that open socket is what keeps this object alive, and a bridge repeats what
+       it last wrote every time it connects - so there is nothing worth storing. */
+    this.now = null;
+    /* Bridges that report what they light themselves. A phone on an older build
+       writes to the wall over Bluetooth without a word to us, so with one of those
+       connected we cannot know what is up there and say nothing rather than guess. */
+    this.tells = new Set();
+  }
+
+  setNow(payload, meta) {
+    if (typeof payload !== "string" || !PAYLOAD.test(payload) || payload === "l##") {
+      this.now = null;
+      return;
+    }
+    const m = cleanMeta(meta);
+    const same = this.now && this.now.payload === payload &&
+      (this.now.id ?? null) === (m ? m.id : null) && (this.now.by ?? "") === (m ? m.by : "");
+    if (same) return;                              // a re-send is not a new route
+    this.now = { payload, t: Date.now(), ...(m || {}) };
+  }
+
+  drop(ws) {
+    this.sockets.delete(ws);
+    this.tells.delete(ws);
+    if (this.sockets.size === 0) this.now = null;  // nobody at the wall, nothing to say
   }
 
   async fetch(request) {
@@ -36,14 +80,21 @@ export class Relay {
       }
       const [client, server] = Object.values(new WebSocketPair());
       server.accept();
+      // A first bridge is a new evening at the wall; whatever was up last time is gone.
+      if (this.sockets.size === 0) this.now = null;
       this.sockets.add(server);
-      server.addEventListener("close", () => this.sockets.delete(server));
-      server.addEventListener("error", () => this.sockets.delete(server));
+      server.addEventListener("close", () => this.drop(server));
+      server.addEventListener("error", () => this.drop(server));
       server.addEventListener("message", (e) => {
         // bridge reporting back: {type:"result", id, ok|error}
         let m = null;
         try { m = JSON.parse(typeof e.data === "string" ? e.data : "{}"); } catch { return; }
-        if (!m || m.type !== "result") return;
+        if (!m) return;
+        // "I will tell you what I light myself" - see this.tells
+        if (m.type === "hello") { this.tells.add(server); return; }
+        // the bridge lit something over Bluetooth directly: {type:"now", payload, now}
+        if (m.type === "now") { this.setNow(m.payload, m.now); return; }
+        if (m.type !== "result") return;
         if (m.id && this.pending.has(m.id)) return this.pending.get(m.id)(m);
         // Older bridges answer without an id - resolve the oldest waiter.
         const first = this.pending.keys().next();
@@ -56,17 +107,18 @@ export class Relay {
     if (url.pathname === "/send" && request.method === "POST") {
       const body = await request.json().catch(() => null);
       const payload = body && body.payload;
-      if (typeof payload !== "string" || !/^l#[SPE0-9,]*#$/.test(payload)) {
+      if (typeof payload !== "string" || !PAYLOAD.test(payload)) {
         return json({ error: "payload must match l#...#" }, 400);
       }
       if (this.sockets.size === 0) {
         return json({ error: "no bridge connected", bridges: 0 }, 409);
       }
       const id = crypto.randomUUID();
-      const msg = JSON.stringify({ type: "write", payload, id });
+      const meta = cleanMeta(body.now);        // which problem and whose phone, if it said
+      const msg = JSON.stringify({ type: "write", payload, id, now: meta });
       let sent = 0;
       for (const ws of [...this.sockets]) {
-        try { ws.send(msg); sent++; } catch { this.sockets.delete(ws); }
+        try { ws.send(msg); sent++; } catch { this.drop(ws); }
       }
       if (sent === 0) return json({ error: "no bridge connected", bridges: 0 }, 409);
 
@@ -78,15 +130,19 @@ export class Relay {
       });
 
       if (!result) {
+        this.setNow(payload, meta);
         return json({ ok: true, bridges: sent, ack: false,
                       note: "bridge did not confirm - it may be on an older build" });
       }
       if (result.error) return json({ error: result.error, bridges: sent }, 502);
+      this.setNow(payload, meta);
       return json({ ok: true, bridges: sent, wrote: payload });
     }
 
     if (url.pathname === "/status") {
-      return json({ bridges: this.sockets.size });
+      const sure = this.sockets.size > 0 &&
+        [...this.sockets].every((ws) => this.tells.has(ws));
+      return json({ bridges: this.sockets.size, now: sure ? this.now : null });
     }
 
     return json({ error: "not found" }, 404);
@@ -95,7 +151,7 @@ export class Relay {
   broadcast(data, except) {
     for (const ws of [...this.sockets]) {
       if (ws === except) continue;
-      try { ws.send(data); } catch { this.sockets.delete(ws); }
+      try { ws.send(data); } catch { this.drop(ws); }
     }
   }
 }
