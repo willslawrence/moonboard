@@ -87,7 +87,7 @@
   /* ---- results ---- */
   #count{font-size:11px;color:var(--dimmer);letter-spacing:.06em;
          text-transform:uppercase;margin:10px 0 4px}
-  .rt{display:flex;align-items:center;gap:12px;padding:9.5px 2px;
+  .rt{display:flex;align-items:center;gap:12px;padding:6.5px 2px;
       border-bottom:1px solid #202024}
   .rt:active{background:var(--panel)}
   .gd{flex:none;padding:2px 6px;border-radius:5px;
@@ -187,8 +187,14 @@
   #boardRow{display:grid;grid-template-columns:72px 1fr 72px;gap:8px;align-items:stretch}
   #boardCol{min-width:0}
   #barBtns{display:flex;flex-direction:column;gap:6px}
-  #barBtns #send{font-size:18px;padding:2px 0}
+  #barBtns #send{font-size:18px;padding:6.25px 0}  /* the one that lights the wall: a quarter taller than the rest */
   #barBtns button.mini{padding-left:2px;padding-right:2px}
+  /* A short screen has a short board, and the buttons beside it must not be the
+     taller of the two - that would take the height back out of the list. */
+  @media (max-height:680px){
+    #barBtns{gap:4px}
+    #barBtns button.mini:not(#send){padding-top:4px;padding-bottom:4px}
+  }
   /* ---- beta: a stick climber drawn over the board ---- */
   #betaSvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
   #betaTap{position:absolute;inset:0;display:none}
@@ -404,7 +410,18 @@
   #leftCol{position:relative;min-width:0}
   /* out of flow, so a long climber list can never make the row taller than the board */
   #leftIn{position:absolute;inset:0;display:flex;flex-direction:column;gap:8px}
-  #leftIn #climbers{flex:1 1 auto;min-height:0;overflow:hidden}
+  /* The gutter is a column that scrolls. #wallBelow is exactly one column tall, so at
+     rest it is all you see: the line's small bar, what is on the wall, who has climbed
+     the open problem. What sits above it - the line, then tonight's routes - only
+     shows when you pull the column down, so it costs the board nothing. */
+  #wallCol{position:relative;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+           scrollbar-width:none}
+  #wallCol::-webkit-scrollbar{display:none}
+  #wallCol.more{-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 14px);
+                mask-image:linear-gradient(to bottom,transparent 0,#000 14px)}
+  #wallBelow{display:flex;flex-direction:column;gap:8px;height:100%}
+  #wallBelow #climbers{flex:1 1 auto;min-height:0;overflow:hidden}
+  #wallCol > #stackUp{margin-bottom:5px}
   #leftIn #tools{display:grid;grid-template-columns:32px 32px;gap:8px}
   /* Settings and the logbook ride at the foot of the buttons right of the board,
      where Hide used to be; the two games keep the left gutter. */
@@ -439,6 +456,55 @@
   #bar > #nowBtn .nm3{flex:0 1 auto;font-size:13px;-webkit-line-clamp:1;-webkit-hyphens:manual;hyphens:manual}
   #bar > #nowBtn .by{flex:1 1 0;font-size:12px}
   #bar > #nowBtn::after{content:'\203a';flex:none;margin-left:auto;color:#8fb0f5;font-size:16px}
+  /* ---- next up: the line for the wall, and what has been up tonight ----
+     A small bar over "on the wall" says there is a line. The rows themselves are
+     above it, out of sight until the column is pulled down: whoever is next sits
+     nearest the wall, then a rule, then tonight's routes with the latest lowest. */
+  #lineBar{flex:none;display:flex;align-items:center;justify-content:center;gap:5px;width:100%;
+           height:16px;padding:0;margin-bottom:-4px;border-radius:7px;border:1px solid #2f4a86;
+           background:#131d33;color:#8fb0f5;font-size:8px;font-weight:600;letter-spacing:.07em;
+           text-transform:uppercase;white-space:nowrap}
+  #lineBar[hidden]{display:none}
+  #lineBar::before{content:'';width:12px;height:2px;border-radius:2px;background:#5d7fc4}
+  #lineBar.quiet{border-color:var(--edge);background:transparent;color:var(--dim)}
+  #lineBar.quiet::before{background:var(--dimmer)}
+  #stackUp[hidden]{display:none}
+  .stackSep{display:flex;align-items:center;gap:5px;margin:4px 0 2px;font-size:8px;
+            letter-spacing:.08em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
+  .stackSep[hidden]{display:none}
+  .stackSep::before,.stackSep::after{content:'';flex:1;height:1px;background:#3a3a40}
+  .hrow,.nrow{border-top:1px solid #1e2024;min-width:0}
+  .hrow:first-child,.nrow:first-child{border-top:0}
+  .hrow:active,.nrow:active{background:var(--panel)}
+  .hrow b,.nrow b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+                  overflow-wrap:anywhere;line-height:1.2}
+  .hrow{padding:4px 2px;color:var(--dim)}
+  .hrow b{font-size:9.5px;font-weight:600}
+  .hrow .gd,.nrow .gd{display:none}
+  .nrow{display:flex;flex-direction:column;gap:2px;padding:5px 2px}
+  .nrow .by{display:flex;align-items:center;gap:4px;min-width:0;font-size:9.5px;color:var(--dim)}
+  .nrow .by em{flex:none;font:700 9px ui-monospace,Menlo,monospace;font-style:normal;color:var(--dimmer)}
+  .nrow .by i{flex:none;display:grid;place-items:center;width:13px;height:13px;border-radius:50%;
+              font-size:8px;font-weight:700;font-style:normal;color:#0e0e0f}
+  .nrow .by span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nrow.mine .by span{color:var(--ink)}
+  .nrow b{font-size:10.5px;font-weight:700}
+  .nrow .put{margin-top:3px;padding:4px 2px;font-size:10.5px}
+  /* nothing open: the bar runs across the top of the search row and opens the same
+     rows in place, a line each */
+  #bar > #lineBar{height:22px;margin-bottom:5px;font-size:9.5px}
+  #bar > #stackUp{display:none}
+  #bar > #stackUp.open:not([hidden]){display:block;max-height:36vh;overflow-y:auto;
+                                     overscroll-behavior:contain;margin-bottom:5px}
+  #bar > #stackUp .stackSep{font-size:9px;margin:6px 0 2px}
+  #bar > #stackUp .hrow{display:flex;align-items:center;gap:8px;padding:6px 4px}
+  #bar > #stackUp .hrow b{flex:1;min-width:0;font-size:12.5px;-webkit-line-clamp:1}
+  #bar > #stackUp .nrow{flex-direction:row;align-items:center;gap:8px;padding:6px 4px}
+  #bar > #stackUp .nrow .by{flex:none;font-size:12px;gap:6px}
+  #bar > #stackUp .nrow .by i{width:17px;height:17px;font-size:9px}
+  #bar > #stackUp .nrow b{flex:1;min-width:0;font-size:13px;-webkit-line-clamp:1}
+  #bar > #stackUp .gd{display:block}
+  #bar > #stackUp .nrow .put{flex:none;width:auto;margin:0;padding:6px 12px;font-size:12px}
   #ver{font:10px ui-monospace,Menlo,monospace;color:var(--dimmer);margin-top:14px}
   .panel{border-top:1px solid var(--edge);padding-top:14px;margin-bottom:22px}
 
@@ -468,7 +534,12 @@
 <section id="boardWrap" style="display:none">
   <div id="boardRow">
     <div id="leftCol"><div id="leftIn">
-      <div id="climbers"></div><!-- who has climbed it; also centres the board -->
+      <!-- The gutter scrolls. At rest it shows what is on the wall and who has climbed
+           the open problem; pull it down and the line, then tonight's routes, come in
+           above. placeTools() puts #stackUp, #lineBar and #nowBtn in here. -->
+      <div id="wallCol"><div id="wallBelow">
+        <div id="climbers"></div><!-- who has climbed it; also centres the board -->
+      </div></div>
     </div></div>
     <div id="boardCol">
       <div id="board">
@@ -483,6 +554,7 @@
     </div>
     <div id="barBtns">
       <button id="send" class="mini solid" disabled aria-label="Light up">&#128161;</button>
+      <button id="nextBtn" class="mini" disabled hidden>Next up</button>
       <button id="tick" class="mini" disabled>Add to list</button>
       <button id="try" class="mini" disabled>Log try</button>
       <button id="done" class="mini" disabled>Log send</button>
@@ -519,6 +591,12 @@
 </section>
 
 <div id="bar">
+  <div id="stackUp" hidden>
+    <div id="wallHist"></div>
+    <div id="histSep" class="stackSep">History</div>
+    <div id="wallNext"></div>
+  </div>
+  <button id="lineBar" hidden></button>
   <button id="nowBtn" hidden><span class="cap">On the wall</span><b class="nm3"></b><span class="by"></span></button>
   <div id="barTxt">
     <div id="toolsR" class="tools">
@@ -596,28 +674,36 @@
   <div class="hint">Changes the route list and the board picture for everyone, so only
     switch it when the holds on the wall actually change.</div>
 
-  <div class="lbl">On connect</div>
-  <select id="standby">
-    <option value="will">Show WW</option>
-    <option value="moon">Show the moon</option>
-    <option value="climber">Show a climber</option>
-    <option value="frame">Show a frame</option>
-    <option value="moonScroll">Scroll MOON, settle on the moon</option>
-    <option value="">Leave the wall dark</option>
-  </select>
+  <!-- What the wall shows on connect is WW for everyone now. The choice is hidden,
+       not gone: the select still feeds standbyPayload(). -->
+  <div hidden>
+    <div class="lbl">On connect</div>
+    <select id="standby">
+      <option value="will">Show WW</option>
+      <option value="moon">Show the moon</option>
+      <option value="climber">Show a climber</option>
+      <option value="frame">Show a frame</option>
+      <option value="moonScroll">Scroll MOON, settle on the moon</option>
+      <option value="">Leave the wall dark</option>
+    </select>
+  </div>
 
-  <div class="lbl">Sharing the wall</div>
+  <div class="lbl">Where you're climbing</div>
+  <select id="loc">
+    <option value="home">Will's Wall</option>
+    <option value="other">Another wall</option>
+  </select>
   <div class="hint">The board takes one Bluetooth connection, so everyone shares the phone
     that has it. Whoever taps Connect becomes the bridge automatically, and every other
-    phone sends what it lights through them. Nothing to set up — the code below is the same
-    on every phone, and only matters if you want a wall of your own.</div>
+    phone sends what it lights through them. On a different MoonBoard? Pick Another wall
+    and give it a code of its own, the same on every phone there, so the two walls never
+    light each other's problems.</div>
   <div class="two" style="margin-top:8px">
-    <input type="text" id="room" placeholder="room code" spellcheck="false"
+    <input type="text" id="room" placeholder="that wall's code" spellcheck="false"
            autocapitalize="off" autocomplete="off">
     <button id="relayBtn" class="ghost">Connect relay</button>
   </div>
   <div class="hint" id="relayState">relay off</div>
-  <button id="crewRoom" class="ghost mini" hidden style="margin-top:8px"></button>
 
   <div class="lbl">Log</div>
   <div id="log">idle.</div>
@@ -737,7 +823,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-05 22:29';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-05 23:37';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -2467,6 +2553,14 @@ const boardNow = () => BOARDS.find(b => b.key === boardKey) || BOARDS[0];
 let current = null;
 /* What's on the wall, as far as this phone knows - see "what's on the wall" below. */
 let wallNow = null;        // {payload, t, id?, by?, board?} or null
+/* The line - who is waiting to go next, and with which problem - and the problems
+   that have been up this session. The relay keeps both; see "next up" below. */
+let lineKnown = false;     // false on a relay that predates the line: everything stays hidden
+let lineNow = [];          // [{id, by, board, t}] next first
+let histNow = [];          // [{id, by, board, t}] oldest first
+let stackSig = '';         // what the rows were last drawn from, so a look that changes nothing redraws nothing
+let stackPulled = false;   // the gutter has been pulled down off its resting place
+let stackTouch = 0;        // when it was last touched; left alone it goes back to rest
 let wallKnown = false;     // the relay is new enough to say what is on the wall
 let lastWrite = null;      // {payload, meta} this phone last put up over Bluetooth
 let told = '';             // what the relay has been told, so a game's frames aren't each reported
@@ -2605,6 +2699,8 @@ function paintBar(){
   $('done').title       = sent ? 'Log another send' : 'Log it as climbed';
   paintClimbers();
   paintBeta();
+  paintNext();
+  paintStack();
 }
 
 /* Who has climbed the selected problem, down the gutter left of the board.
@@ -2706,6 +2802,7 @@ function runPending(){
   else if (a === 'try') doTry();
   else if (a === 'hist') openHist();
   else if (a === 'beta') betaEdit();
+  else if (a === 'next') doNext();
 }
 
 /* Only the grades this hold set and angle actually has benchmarks at - no point
@@ -2867,10 +2964,23 @@ function placeTools(){
     if (t.parentNode !== $('barTxt')) $('barTxt').insertBefore(t, $('filtBtn'));
   }
   $('q').placeholder = current ? 'Search routes or setters' : 'Search';
-  const n = $('nowBtn');                 // what's on the wall: gutter top, or above the search row
-  if (current){ if (n.parentNode !== $('leftIn')) $('leftIn').insertBefore(n, $('leftIn').firstChild); }
-  else if (n.parentNode !== $('bar')) $('bar').insertBefore(n, $('barTxt'));
+  // What's on the wall, the line's small bar over it and the line itself above that:
+  // in the gutter beside the board, or across the top of the search row.
+  const n = $('nowBtn'), lb = $('lineBar'), up = $('stackUp');
+  if (current){
+    if (n.parentNode !== $('wallBelow')){
+      $('wallCol').insertBefore(up, $('wallBelow'));
+      $('wallBelow').insertBefore(lb, $('climbers'));
+      $('wallBelow').insertBefore(n, $('climbers'));
+    }
+  } else if (n.parentNode !== $('bar')){
+    $('bar').insertBefore(up, $('barTxt'));
+    $('bar').insertBefore(lb, $('barTxt'));
+    $('bar').insertBefore(n, $('barTxt'));
+  }
+  up.classList.remove('open');
   paintNow();
+  paintStack(true);
 }
 
 /* look: open it on this phone without lighting it - for jumping to what is
@@ -2883,6 +2993,7 @@ function loadRoute(r, look){
   placeTools();
   applyGradeBar();
   $('boardWrap').style.display = '';
+  stackRest();                           // the gutter has a size now; start it at rest
   paint();
   showName = true;
   renderResults();
@@ -3000,7 +3111,7 @@ function wallState(){
   el.hidden = !lost;
   // The usual reason for nobody bridging is a phone on a different room code.
   const off = relayRoom() && relayRoom() !== DEFAULT_ROOM;
-  el.textContent = off ? 'Not reaching the board \u2014 your room code isn\u2019t the crew\u2019s. Tap to fix'
+  el.textContent = off ? 'Not reaching the board \u2014 this phone is set to another wall. Tap to check'
                        : 'Not reaching the board \u2014 tap Connect';
   const live = bridgeLive !== null ? bridgeLive : bridgeSeen;
   $('dot').className = rx ? 'on' : (lost ? 'dead' : (live ? 'relay' : ''));
@@ -3009,7 +3120,7 @@ function wallState(){
   const sharing = rx && relayWS && relayWS.readyState === 1;
   const [txt, cls] =
       rx    ? (!sharing ? ['Connected', '']
-             : relayRoom() === DEFAULT_ROOM ? ['Sharing wall', ''] : ['Not crew room', 'bad'])
+             : relayRoom() === DEFAULT_ROOM ? ['Sharing wall', ''] : ['Other wall', ''])
     : lost  ? ['Not reaching', 'bad']
     : live  ? ['Via relay', '']
     : live === false ? ['Wall offline', 'off']
@@ -3020,13 +3131,21 @@ function wallState(){
 
 let peekAt = 0;
 async function relayPeek(){
-  if (rx || document.visibilityState !== 'visible') return;
+  if (document.visibilityState !== 'visible') return;
   const room = relayRoom();
-  if (!room){ bridgeLive = null; setWallNow(null); return wallState(); }
+  if (!room){
+    setLine(null);
+    if (rx) return;
+    bridgeLive = null; setWallNow(null); return wallState();
+  }
   peekAt = Date.now();
   try{
     const d = await (await fetch('https://' + RELAY_HOST + '/status?room=' + encodeURIComponent(room))).json();
-    if (typeof d.bridges !== 'number') return;
+    if (typeof d.bridges !== 'number' || room !== relayRoom()) return;
+    // The line and tonight's routes are everyone's, the phone at the wall included.
+    setLine(d);
+    // That phone holds the Bluetooth, so what is on the wall it knows first hand.
+    if (rx) return;
     bridgeLive = d.bridges > 0;
     if (bridgeLive && bridgeSeen === false) bridgeSeen = null;   // someone's back - stop shouting
     // A relay that predates this never sends `now`, and the button simply stays away.
@@ -3039,8 +3158,11 @@ async function relayPeek(){
    someone just lit wants to be quicker than that, so while a phone is bridging -
    which is to say while people are actually climbing - look every five. */
 function peekTick(){
-  if (Date.now() - peekAt >= (bridgeLive ? 4500 : 19500)) relayPeek();
+  if (Date.now() - peekAt >= ((bridgeLive || rx) ? 4500 : 19500)) relayPeek();
+  // A pulled-down gutter left alone goes back to rest, so the wall is what you see.
+  if (stackPulled && Date.now() - stackTouch > 20000) stackRest(true);
 }
+const peekSoon = () => setTimeout(relayPeek, 350);
 
 /* Only the phone holding Bluetooth can bridge. Any other phone that joined as a
    bridge would answer every request with "not connected" - and the relay takes
@@ -3068,6 +3190,7 @@ async function relaySend(str, quiet, meta){
     if (typeof d.bridges === 'number') bridgeLive = d.bridges > 0;
     // It is up there now, so this phone need not wait for the next look to say so.
     if (bridgeSeen && wallKnown) setWallNow(nowFrom(str, meta));
+    if (bridgeSeen && meta) lineWentUp(meta);
     if (d.error) log('relay: ' + d.error);
     else if (!d.bridges) log('relay: nothing is connected to the board — ' +
                              'somebody has to tap Connect.');
@@ -3134,6 +3257,7 @@ const tellKey = (payload, meta) => meta ? meta.id + '|' + meta.by + '|' + payloa
 function setWallNow(now){
   wallNow = now || null;
   paintNow();
+  paintStack();                          // tonight's list leaves out whatever is up right now
 }
 
 /* A write reached the box from this phone. Remember it - a bridge that drops and
@@ -3144,15 +3268,18 @@ function setWallNow(now){
 function wrote(payload, meta, asked){
   lastWrite = { payload, meta: meta || null };
   setWallNow(nowFrom(payload, meta));
+  if (meta) lineWentUp(meta);
   if (asked){ told = 'asked|' + payload; return; }
   const key = tellKey(payload, meta);
   if (key === told) return;
   told = key;
   tellRelay();
 }
-function tellRelay(){
+/* again: this is a repeat after reconnecting, not a problem newly lit. The relay
+   needs to know the difference - a repeat must not count as someone's go. */
+function tellRelay(again){
   if (!relayWS || relayWS.readyState !== 1 || !lastWrite) return;
-  relayWS.send(JSON.stringify({ type: 'now', payload: lastWrite.payload, now: lastWrite.meta }));
+  relayWS.send(JSON.stringify({ type: 'now', payload: lastWrite.payload, now: lastWrite.meta, again: !!again }));
 }
 
 /* Which problem a payload is, for when nobody said. A phone on an older build
@@ -3226,6 +3353,181 @@ function gotoWall(){
 }
 
 
+/* ---------- next up ----------
+   A line for the wall - the chalkboard by a pool table. You put your name down with
+   the problem you want and the lights do not change. Everyone sees who is waiting;
+   the wall only changes when someone taps Put it up, and then it goes up under the
+   name of whoever was waiting, so "on the wall" says whose go it is.
+
+   The relay keeps the line and the list of what has been up tonight, and hands both
+   out in /status. A relay that predates this hands out neither, and every part of
+   it stays hidden.
+
+   It lives above "on the wall", out of sight: a small bar says there is a line, and
+   pulling the gutter down brings it in - whoever is next nearest the wall, then a
+   rule, then tonight's routes with the latest lowest. Tapping a row opens that
+   problem on this phone and lights nothing. */
+const sameName = (a, b) =>
+  String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+const lineOn = () => lineKnown && !!relayRoom();
+
+function setLine(d){
+  lineKnown = !!d && Array.isArray(d.line);
+  lineNow = lineKnown ? d.line : [];
+  histNow = d && Array.isArray(d.hist) ? d.hist : [];
+  paintStack();
+  paintNext();
+}
+
+/* A named problem has just gone up, and this phone is the one that knows: do here
+   what the relay does, so nobody waits for the next look to see it. */
+function lineWentUp(meta){
+  if (!lineKnown || !meta || meta.id == null) return;
+  lineNow = lineNow.filter(e => !(sameName(e.by, meta.by) && e.id === meta.id));
+  histNow = histNow.filter(h => h.id !== meta.id)
+                   .concat([{ id: meta.id, by: meta.by || '', board: meta.board || boardKey, t: Date.now() }]);
+  paintStack();
+  paintNext();
+  peekSoon();
+}
+
+/* The button under the bulb. One spot each: on a problem that isn't the one you are
+   waiting with, it swaps your problem and keeps your place. */
+function paintNext(){
+  const b = $('nextBtn');
+  b.hidden = !lineOn();
+  const me = meNow();
+  const mine = me ? lineNow.find(e => sameName(e.by, me)) : null;
+  const here = !!(mine && current && mine.id === current.id && (mine.board || boardKey) === boardKey);
+  b.disabled = !current;
+  b.textContent = here ? '\u2713 In line' : 'Next up';
+  b.className = 'mini' + (here ? ' on' : '');
+  b.title = here ? 'Tap to give up your place in the line'
+          : mine ? 'Keep your place in the line, with this problem instead'
+                 : 'Put your name down with this problem \u2014 the lights do not change';
+}
+
+async function lineCall(body){
+  const room = relayRoom();
+  if (!room) return;
+  try{
+    const d = await (await fetch('https://' + RELAY_HOST + '/line?room=' + encodeURIComponent(room), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })).json();
+    if (d.error) return log('line: ' + d.error);
+    if (room === relayRoom()) setLine(d);
+  }catch(e){ log('line unreachable: ' + e.message); }
+}
+
+function doNext(){
+  const me = meNow(); if (!me || !current || !lineOn()) return;
+  const mine = lineNow.find(e => sameName(e.by, me));
+  if (mine && mine.id === current.id) return lineCall({ op: 'leave', by: me });
+  return lineCall({ op: 'join', by: me, id: current.id, board: boardKey });
+}
+
+/* Where the gutter sits. At rest #wallBelow fills it; pulled, some of what is above
+   shows. The reader's place is kept when the rows change under them. */
+function stackRest(smooth){
+  const col = $('wallCol'), top = $('wallBelow').offsetTop;
+  if (smooth && col.scrollTo) col.scrollTo({ top, behavior: 'smooth' });
+  else col.scrollTop = top;
+}
+function stackMore(){
+  const col = $('wallCol');
+  stackPulled = $('wallBelow').offsetTop - col.scrollTop > 2;
+  col.classList.toggle('more', stackPulled && col.scrollTop > 2);
+}
+
+function paintStack(rest){
+  const up = $('stackUp'), bar = $('lineBar'), col = $('wallCol'), below = $('wallBelow');
+  if (!up || !bar) return;
+  const on = lineOn();
+  const wall = (rx || bridgeLive) ? wallRoute() : null;
+  const here = e => byId[e.id] && byId[e.id].board === boardKey;
+  const line = on ? lineNow.filter(here) : [];
+  const hist = on ? histNow.filter(h => here(h) && !(wall && wall.id === h.id)) : [];
+  const me = meNow();
+  const sig = JSON.stringify([line.map(e => [e.id, e.by]), hist.map(h => h.id), me, boardKey]);
+  const inCol = up.parentNode === col;
+  const pulled = inCol ? below.offsetTop - col.scrollTop : 0;
+  if (sig !== stackSig){
+    stackSig = sig;
+    const hbox = $('wallHist'), nbox = $('wallNext');
+    hbox.innerHTML = ''; nbox.innerHTML = '';
+    hist.forEach(h => {                          // oldest first, so the latest sits nearest the wall
+      const r = byId[h.id], row = document.createElement('div');
+      row.className = 'hrow';
+      row.innerHTML = '<b></b><span class="gd"></span>';
+      row.querySelector('b').textContent = r.name;
+      paintPill(row.querySelector('.gd'), r.grade);
+      row.title = 'Open ' + r.name + (h.by ? ' \u2014 put up by ' + h.by : '');
+      row.onclick = () => stackOpen(r);
+      hbox.appendChild(row);
+    });
+    line.slice().reverse().forEach((e, k) => {   // whoever is next sits nearest the wall
+      const i = line.length - 1 - k, r = byId[e.id];
+      const row = document.createElement('div');
+      row.className = 'nrow' + (sameName(e.by, me) ? ' mine' : '');
+      row.innerHTML = '<span class="by"><em></em><i></i><span></span></span><b></b><span class="gd"></span>';
+      row.querySelector('em').textContent = i + 1;
+      const chip = row.querySelector('i');
+      chip.textContent = chipFor(e.by);
+      chip.style.background = personColor(e.by);
+      row.querySelector('.by span').textContent = e.by;
+      row.querySelector('b').textContent = r.name;
+      paintPill(row.querySelector('.gd'), r.grade);
+      row.title = 'Open ' + r.name + ' \u2014 ' + e.by + ' is waiting with it';
+      row.onclick = () => stackOpen(r);
+      if (!i){
+        const put = document.createElement('button');
+        put.className = 'mini solid put';
+        put.textContent = 'Put it up';
+        put.title = 'Light ' + r.name + ' for ' + e.by;
+        put.onclick = ev => { ev.stopPropagation(); putUp(e); };
+        row.appendChild(put);
+      }
+      nbox.appendChild(row);
+    });
+    $('histSep').hidden = !(hist.length && line.length);
+    const any = line.length + hist.length > 0;
+    up.hidden = !any;
+    bar.hidden = !any;
+    bar.className = line.length ? '' : 'quiet';
+    bar.textContent = line.length ? line.length + ' next' : 'History';
+    bar.title = line.length ? 'The line for the wall \u2014 pull down, or tap, to see it'
+                            : 'What has been up tonight \u2014 pull down, or tap, to see it';
+  }
+  if (inCol){
+    col.scrollTop = rest ? below.offsetTop : Math.max(0, below.offsetTop - pulled);
+    stackMore();
+  }
+}
+
+/* A look: the problem opens on this phone and nothing is sent. */
+function stackOpen(r){
+  if (betaDraft) return;
+  if (!current || current.id !== r.id) loadRoute(r, true);
+  else stackRest(true);
+  const row = $('results').querySelector('.rt.sel');
+  if (row) row.scrollIntoView({ block: 'nearest' });
+}
+
+/* The one tap that changes the wall. It goes up under the name of whoever was
+   waiting with it, which is also what uses up their spot in the line. */
+function putUp(e){
+  const r = byId[e.id];
+  if (!r || r.board !== boardKey || betaDraft || !canSend()) return;
+  loadRoute(r, true);
+  const again = !!wallNow && wallNow.id === r.id && sameName(wallNow.by, e.by);
+  write(buildPayload(), false, { id: r.id, by: e.by, board: boardKey });
+  // Already up there under their name: the relay hears nothing new, so say their go has come.
+  if (again) lineCall({ op: 'leave', by: e.by });
+}
+
+
 /* ---------- relay ---------- */
 const RELAY_HOST = 'moonboard-relay.willslawrence.workers.dev';
 /* A shared default so nobody has to be told a code. It's in public source, so it
@@ -3265,7 +3567,7 @@ function openRelay(room){
     // This build tells the relay what it lights itself; then say what is up now.
     ws.send(JSON.stringify({ type: 'hello', v: 2 }));
     told = '';
-    if (lastWrite){ told = tellKey(lastWrite.payload, lastWrite.meta); tellRelay(); }
+    if (lastWrite){ told = tellKey(lastWrite.payload, lastWrite.meta); tellRelay(true); }
     $('relayBtn').textContent = 'Disconnect relay';
     wallState();
   };
@@ -4597,6 +4899,43 @@ $('connect').onclick = () => {
 };
 $('send').onclick  = sendProblem;
 $('nowBtn').onclick = gotoWall;
+$('nextBtn').onclick = () => { if (!needName('next')) doNext(); };
+/* Tap the bar instead of pulling: it opens as far as will fit with the wall still in
+   view at the foot, and a second tap puts it back. With no problem open there is no
+   gutter, and the bar opens the same rows in place. */
+$('lineBar').onclick = () => {
+  const up = $('stackUp'), col = $('wallCol');
+  if (up.parentNode !== col){
+    up.classList.toggle('open');
+    if (up.classList.contains('open')) up.scrollTop = up.scrollHeight;   // the line first, history above
+    return;
+  }
+  if (stackPulled) return stackRest(true);
+  const keep = $('lineBar').offsetHeight + ($('nowBtn').hidden ? 0 : $('nowBtn').offsetHeight + 8);
+  const top = Math.max(0, $('wallBelow').offsetTop - Math.max(40, col.clientHeight - keep - 6));
+  if (col.scrollTo) col.scrollTo({ top, behavior: 'smooth' }); else col.scrollTop = top;
+};
+(function gutterScroll(){
+  const col = $('wallCol');
+  let settle = 0;
+  col.addEventListener('scroll', () => {
+    stackTouch = Date.now();
+    stackMore();
+    clearTimeout(settle);                      // let go a hair short of rest, and it finishes the job
+    settle = setTimeout(() => {
+      const d = $('wallBelow').offsetTop - col.scrollTop;
+      if (d > 2 && d < 20) stackRest(true);
+    }, 160);
+  }, { passive: true });
+  col.addEventListener('pointerdown', () => { stackTouch = Date.now(); }, { passive: true });
+  // The column is as tall as the board, which follows the screen. Keep the resting
+  // part exactly one column tall, and at rest unless someone has pulled it.
+  if (window.ResizeObserver) new ResizeObserver(() => {
+    if (!col.clientHeight) return;
+    $('wallBelow').style.height = col.clientHeight + 'px';
+    if (!stackPulled) stackRest();
+  }).observe(col);
+})();
 $('bigExit').onclick = () => bigBoard(false);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') bigBoard(false); });
 $('q').oninput = () => { searchQ = $('q').value; showName = false; paintQBox(); renderResults(); };
@@ -4830,24 +5169,36 @@ $('standby').onchange = () => {
 };
 $('relayBtn').onclick = () => relayWant ? relayDisconnect() : (rx ? relayConnect() : null);
 $('wallTxt').onclick = () => showPanel($('setPanel').hidden ? 'set' : null);
-/* Changing the code is easy and forgetting you did is easier - then nothing you
-   light reaches the wall. Offer the way back whenever it isn't the crew's. */
-function paintCrewRoom(){
-  const off = $('room').value.trim() !== DEFAULT_ROOM;
-  $('crewRoom').hidden = !off;
-  $('crewRoom').textContent = 'Back to the crew\u2019s room (' + DEFAULT_ROOM + ')';
+/* Where you are climbing is which room this phone talks to. Will's Wall is the
+   crew's room and needs no code. Any other wall takes a code of its own, the same
+   on every phone there, so two walls never light each other's problems. */
+function paintLoc(){
+  const home = $('room').value.trim() === DEFAULT_ROOM;
+  $('loc').value = home ? 'home' : 'other';
+  $('room').hidden = home;
 }
 $('room').oninput = () => {
-  try{ localStorage.setItem('mb-room', $('room').value.trim()); }catch(e){}
+  const v = $('room').value.trim();
+  try{
+    localStorage.setItem('mb-room', v);
+    if (v !== DEFAULT_ROOM) localStorage.setItem('mb-room-other', v);   // remembered for next time
+  }catch(e){}
   bridgeSeen = null; bridgeLive = null;    // a new room hasn't been tried yet
+  setLine(null);
   setLive(!!rx);                      // a code alone is enough to light the wall
-  paintBar(); paintCrewRoom(); relayPeek();
+  paintBar(); paintLoc(); relayPeek();
 };
-$('crewRoom').onclick = () => {
-  $('room').value = DEFAULT_ROOM;
+// Done typing the code: a phone that is already bridging moves to the new room.
+$('room').onchange = () => { if (relayWant && relayRoom()) relayConnect(); };
+$('loc').onchange = () => {
+  const home = $('loc').value === 'home';
+  let other = '';
+  try{ other = localStorage.getItem('mb-room-other') || ''; }catch(e){}
+  $('room').value = home ? DEFAULT_ROOM : other;
   $('room').oninput();
-  if (relayWant) relayConnect();
-  log('room set back to ' + DEFAULT_ROOM + '.');
+  if (relayWant && relayRoom()) relayConnect();
+  if (!home) $('room').focus();
+  log(home ? 'climbing at Will\u2019s Wall.' : 'climbing at another wall \u2014 it needs a code of its own.');
 };
 $('noWall').onclick = () => {
   if (relayRoom() && relayRoom() !== DEFAULT_ROOM) showPanel('set');
@@ -4867,7 +5218,7 @@ try{
   const hashRoom = (location.hash.match(/room=([\w-]+)/) || [])[1];
   if (hashRoom || savedRoom) $('room').value = hashRoom || savedRoom;
 }catch(e){}
-paintCrewRoom();
+paintLoc();
 BOARDS.forEach(b => $('boardSel').appendChild(new Option(b.label + ' — ' + BY_BOARD[b.key].length + ' benchmarks', b.key)));
 $('boardSel').value = boardKey;
 try{ const b = localStorage.getItem('mb-board'); if (b) setBoard(b); }catch(e){}
@@ -4896,14 +5247,8 @@ try{
   if (g0 !== null && $('gmin').querySelector('option[value="' + g0 + '"]')) $('gmin').value = g0;
   if (g1 !== null && $('gmax').querySelector('option[value="' + g1 + '"]')) $('gmax').value = g1;
   if (so && $('sort').querySelector('option[value="' + so + '"]')) $('sort').value = so;
-  // The default changed to Will Wall; shift anyone still holding the old one.
-  if (!localStorage.getItem('mb-standby-v2')){
-    localStorage.setItem('mb-standby-v2', '1');
-    if ((localStorage.getItem('mb-standby') || 'moon') === 'moon')
-      localStorage.removeItem('mb-standby');
-  }
-  const sb = localStorage.getItem('mb-standby');
-  if (sb !== null) $('standby').value = sb;
+  // What the wall shows on connect is WW for everyone now; a choice saved before
+  // that setting was hidden is left alone and ignored.
   $('auto').checked = localStorage.getItem('mb-auto') === '1';
   const m = localStorage.getItem('mb-me') || w;
   if (m){ $('me').appendChild(new Option(m, m)); $('me').value = m; lastMe = m; }

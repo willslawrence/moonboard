@@ -41,8 +41,13 @@ says so. Before that, losing Bluetooth mid-session left every button lit and the
 frozen.
 
 The code is in public source, so it isn't a secret - but the relay only does anything while
-someone is actively bridging. Change it in Settings on every phone if you ever want a wall of
-your own.
+someone is actively bridging.
+
+**Where you're climbing**, in Settings, is which wall a phone talks to. It is Will's Wall
+unless you say otherwise, and that needs no code. A different MoonBoard picks **Another wall**
+and gives it a code of its own, the same on every phone there, so two walls on the same hold
+set never light each other's problems. Each wall has its own line and its own evening's
+routes. The tick lists, the logbook and the hold-set setting are still one shared set.
 
 ### The board, big
 
@@ -75,6 +80,31 @@ older build that lights a problem without saying which is matched back to the li
 holds, so the name still shows, just without a person. If the bridging phone itself is on an
 older build the relay says nothing rather than guess.
 
+### Next up
+
+A line for the wall, the chalkboard by a pool table. **Next up**, under the bulb, puts your
+name down with the problem that is open, and the lights do not change. One spot each: tap it on
+another problem and you keep your place with that one instead; tap **In line** to give the
+place up.
+
+The line costs the board nothing. A small bar over *On the wall* says how many are waiting, and
+that is all you see until you pull that column down, or tap the bar. Then, reading up from the
+wall: whoever is next, with **Put it up**; the rest of the line; a rule marked *History*; and
+the problems that have been up this session, the latest lowest. Each problem is there once,
+however often it was lit. Left alone for twenty seconds the column goes back to rest.
+
+Tapping a row, in the line or in the history, opens that problem on your phone and lights
+nothing. **Put it up** is the one tap that changes the wall. Anyone can tap it, and the problem
+goes up under the name of the climber who was waiting, so *On the wall* says whose go it is.
+That is also what uses their spot: lighting your own queued problem with the bulb does the same.
+
+With no problem open there is no column to pull, so the bar sits over the search row and opens
+the same rows in place.
+
+The relay keeps the line and the history, because the phone at the wall drops off every time
+its screen sleeps and a line that vanished with it would be no line at all. A spot nobody has
+used in three hours is dropped, and after four hours with nothing lit the history starts again.
+
 ## Finding the payload limit
 
 Settings has a stepper that lights holds in wiring order from A1 up and reports the byte and
@@ -90,10 +120,11 @@ stepper up to settle it.
 
 Connecting a phone puts something on the wall, and it comes back whenever nothing is loaded.
 It answers the only question you have at that moment - is this thing actually talking to the
-box - without picking a problem to find out. WW by default - two overlapping Ws, twelve LEDs, one write, straight up, stays there.
+box - without picking a problem to find out. It is WW - two overlapping Ws, twelve LEDs, one write, straight up, stays there.
 WILL WALL was dropped — 46 LEDs and 208 bytes and it never rendered on the box, so the real
 payload ceiling is lower than the 250 the earlier probing suggested. The moon, a climber, a dashed
-frame, the scrolling MOON, or nothing are all in Settings.
+frame, the scrolling MOON and nothing at all are still in the page, but the Settings choice
+between them is hidden: every phone shows WW.
 
 Patterns are stored as eighteen quoted rows using the sketchpad's own alphabet - `#` green,
 `o` blue, `x` red - so anything drawn at the wall in `sketch.html` pastes straight in. Both
@@ -227,7 +258,14 @@ anything POSTed to `/send?room=<code>` is written to the wall.
 or `null`. A bridge says `{type:"hello"}` when it connects, to promise it will report what it
 lights itself, and then `{type:"now", payload, now}` each time it does. `now` is held in memory
 only: it means something only while a phone is bridging, and a bridge repeats its last write
-whenever it reconnects.
+whenever it reconnects, marked `again:true` so the repeat is not taken for the problem going up
+a second time.
+
+`/status` also answers `line` and `hist`: who is waiting, next first, and the problems that
+have been up this session, oldest first, each `{id, by, board, t}`. `POST /line?room=<code>`
+with `{op:"join", by, id, board}` takes a spot or swaps the problem in the one you hold, and
+`{op:"leave", by}` gives it up. A problem going up under a name removes that climber's spot if
+they were waiting with it. Both lists are kept in the room's storage.
 
 The **room code is the only secret** and is never committed — it lives in
 `.relay-room` (gitignored) or `$MOONBOARD_ROOM`.
