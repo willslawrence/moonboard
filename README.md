@@ -44,6 +44,19 @@ The code is in public source, so it isn't a secret - but the relay only does any
 someone is actively bridging. Change it in Settings on every phone if you ever want a wall of
 your own.
 
+### The board, big
+
+Tap the picture and it fills the screen, with the problem's name and grade above it and one
+big **Tap to exit** button below. Flicking still steps through the list while it is big, and a
+tap on the big picture does nothing on purpose - pointing at a hold to show someone should not
+throw them back to the list. It is laid over the page rather than using the browser's own
+fullscreen, which an iPhone only offers for video.
+
+Beside the board, the two games sit in the left gutter and **Settings** and the **Logbook** at
+the foot of the buttons on the right. There is no Hide button: once a problem is open the
+board stays, and taking a problem off the wall is not something a stray tap should do with
+other people climbing.
+
 ### What's on the wall
 
 When someone lights a problem, every other phone gets an **On the wall** button naming it and

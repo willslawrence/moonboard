@@ -126,6 +126,28 @@
   .mark.E{border-color:#ef4444}
   .mark.g{width:6.4%;border-width:2px}
 
+  /* ---- the board, big ----
+     Tap the picture and it fills the screen, for showing a problem to whoever is
+     standing at the wall or reading it from across the room. Not the browser's
+     own fullscreen - an iPhone has none for anything but video - so the board's
+     column is laid over the page instead, with one big button to come back. */
+  #bigCap,#bigExit{display:none}
+  body.big #boardCol{position:fixed;inset:0;z-index:55;background:var(--bg);
+       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+       padding:calc(env(safe-area-inset-top) + 10px) 10px calc(env(safe-area-inset-bottom) + 12px)}
+  /* as wide as the screen allows, or as tall as leaves room for the name and the button */
+  body.big #board{flex:none;margin:0;width:min(100%,calc((100vh - 190px) * .65))}
+  body.big #board{width:min(100%,calc((100dvh - 190px) * .65))}
+  body.big .mark{border-width:4px}
+  body.big .mark.g{border-width:3px}
+  body.big #bigCap{display:flex;order:-1;flex:none;align-items:center;gap:8px;
+                   max-width:100%;min-width:0;font-size:17px;font-weight:700}
+  body.big #bigCap b{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  body.big #bigCap .gd{font-size:12px}
+  body.big #betaCap{font-size:13px;margin-top:0}
+  body.big #bigExit{display:block;flex:none;width:min(100%,430px);padding:18px 12px;
+                    font-size:18px;font-weight:700;border-radius:12px}
+
   /* ---- route name / search: sits under the board ----
      A filled, rounded box with a magnifier, so it reads as the search and never
      as one more row of the list below it. Tapping the name turns it into a
@@ -190,7 +212,6 @@
   .betaPair{display:grid;grid-template-columns:1fr 1fr;gap:4px}
   .betaPair button{padding:6px 0;font-size:10px;min-width:0;letter-spacing:-.01em}
   #betaEnd{margin-top:auto}
-  #clear{margin-top:auto}   /* sits at the foot of the column, clear of the rest */
   #climbers{display:flex;flex-direction:column;gap:5px;min-width:0}
   #climbers .hd{font-size:9px;letter-spacing:.1em;text-transform:uppercase;
                 color:var(--dimmer);margin-bottom:1px}
@@ -373,14 +394,18 @@
      at 80 rows and lost for good once the list ran on through all 549. Now they
      ride in the search row when no route is up, and drop into the empty gutter
      left of the board when one is. */
-  #tools{flex:none;display:flex;gap:6px}
-  #tools button{width:32px;height:32px;padding:0;display:grid;place-items:center;border-radius:8px}
-  #tools svg{width:18px;height:18px;display:block}
+  .tools{flex:none;display:flex;gap:6px}
+  .tools button{width:32px;height:32px;padding:0;display:grid;place-items:center;border-radius:8px}
+  .tools svg{width:18px;height:18px;display:block}
   #leftCol{position:relative;min-width:0}
   /* out of flow, so a long climber list can never make the row taller than the board */
   #leftIn{position:absolute;inset:0;display:flex;flex-direction:column;gap:8px}
   #leftIn #climbers{flex:1 1 auto;min-height:0;overflow:hidden}
   #leftIn #tools{display:grid;grid-template-columns:32px 32px;gap:8px}
+  /* Settings and the logbook ride at the foot of the buttons right of the board,
+     where Hide used to be; the two games keep the left gutter. */
+  #barBtns #toolsR{display:grid;grid-template-columns:32px 32px;gap:8px;margin-top:auto}
+  body.betaEdit #barBtns #toolsR{display:none}
   #climbers.many .p .nm2{display:none}       /* five or more: initials and results only */
   /* ---- on the wall: the problem someone has lit, and who lit it ----
      Top of the gutter beside the board, or across the top of the search row when
@@ -449,6 +474,8 @@
         <div id="betaTap"></div>
       </div>
       <div id="betaCap"></div>
+      <div id="bigCap"><b></b><span class="gd"></span></div>
+      <button id="bigExit" class="solid">Tap to exit</button>
     </div>
     <div id="barBtns">
       <button id="send" class="mini solid" disabled aria-label="Light up">&#128161;</button>
@@ -457,7 +484,6 @@
       <button id="done" class="mini" disabled>Log send</button>
       <button id="hist" class="mini" disabled title="Everything you have logged on this problem">History</button>
       <button id="betaBtn" class="mini" disabled>+ Beta</button>
-      <button id="clear" class="mini ghost">Hide</button>
       <div id="betaTools">
         <div id="betaLimbs">
           <button class="mini" data-l="LH" aria-label="Left hand">L &#9995;</button>
@@ -491,9 +517,11 @@
 <div id="bar">
   <button id="nowBtn" hidden><span class="cap">On the wall</span><b class="nm3"></b><span class="by"></span></button>
   <div id="barTxt">
-    <div id="tools">
+    <div id="toolsR" class="tools">
       <button id="setBtn" class="ghost" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor"><circle cx="12" cy="12" r="5.6" stroke-width="2"/><circle cx="12" cy="12" r="2" stroke-width="1.8"/><path stroke-width="3" d="M12 2.6v3.2M12 18.2v3.2M2.6 12h3.2M18.2 12h3.2M5.35 5.35l2.26 2.26M16.39 16.39l2.26 2.26M5.35 18.65l2.26-2.26M16.39 7.61l2.26-2.26"/></g></svg></button>
       <button id="logBtn" class="ghost" aria-label="Logbook" title="Logbook"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 6.8C9.6 5.2 6.4 4.8 3 5.6v13c3.4-.8 6.6-.4 9 1.2 2.4-1.6 5.6-2 9-1.2v-13c-3.4-.8-6.6-.4-9 1.2zM12 6.8v13"/></svg></button>
+    </div>
+    <div id="tools" class="tools">
       <button id="snakeBtn" class="ghost" aria-label="Snake" title="Snake"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="#22c55e"><rect x="2.5" y="14.5" width="4.6" height="4.6" rx="1"/><rect x="7.4" y="14.5" width="4.6" height="4.6" rx="1"/><rect x="7.4" y="9.6" width="4.6" height="4.6" rx="1"/><rect x="12.3" y="9.6" width="4.6" height="4.6" rx="1"/><rect x="12.3" y="4.7" width="4.6" height="4.6" rx="1"/></g><rect x="17.2" y="4.7" width="4.6" height="4.6" rx="1" fill="#2563eb"/></svg></button>
       <button id="gameBtn" class="ghost" aria-label="Connect four" title="Connect four"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="4.5" cy="4.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="4.5" cy="9.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="4.5" cy="14.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="4.5" cy="19.5" r="2.1" fill="#22c55e"/><circle cx="9.5" cy="4.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="9.5" cy="9.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="9.5" cy="14.5" r="2.1" fill="#22c55e"/><circle cx="9.5" cy="19.5" r="2.1" fill="#2563eb"/><circle cx="14.5" cy="4.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="14.5" cy="9.5" r="2.1" fill="#22c55e"/><circle cx="14.5" cy="14.5" r="2.1" fill="#2563eb"/><circle cx="14.5" cy="19.5" r="2.1" fill="#2563eb"/><circle cx="19.5" cy="4.5" r="2.1" fill="#22c55e"/><circle cx="19.5" cy="9.5" r="2.1" fill="#2563eb"/><circle cx="19.5" cy="14.5" r="2.1" fill="#22c55e"/><circle cx="19.5" cy="19.5" r="2.1" fill="#2563eb"/></svg></button>
     </div>
@@ -705,7 +733,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-05 21:11';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-05 22:20';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -2821,12 +2849,19 @@ function parseHolds(str, tag){
   });
 }
 
-/* The tools follow the board: in the search row with no route up, in the gutter
-   beside the board once there is one, so they never cost a row of the list. */
+/* The tools follow the board: in the search row with no route up, and beside the
+   board once there is one - the two games in the left gutter, settings and the
+   logbook at the foot of the buttons on the right - so they never cost a row of
+   the list. */
 function placeTools(){
-  const t = $('tools');
-  if (current){ if (t.parentNode !== $('leftIn')) $('leftIn').appendChild(t); }
-  else if (t.parentNode !== $('barTxt')) $('barTxt').insertBefore(t, $('filtBtn'));
+  const t = $('tools'), t2 = $('toolsR');     // the two games; settings and the logbook
+  if (current){
+    if (t.parentNode !== $('leftIn')) $('leftIn').appendChild(t);
+    if (t2.parentNode !== $('barBtns')) $('barBtns').appendChild(t2);
+  } else {
+    if (t2.parentNode !== $('barTxt')) $('barTxt').insertBefore(t2, $('filtBtn'));
+    if (t.parentNode !== $('barTxt')) $('barTxt').insertBefore(t, $('filtBtn'));
+  }
   $('q').placeholder = current ? 'Search routes or setters' : 'Search';
   const n = $('nowBtn');                 // what's on the wall: gutter top, or above the search row
   if (current){ if (n.parentNode !== $('leftIn')) $('leftIn').insertBefore(n, $('leftIn').firstChild); }
@@ -2851,11 +2886,13 @@ function loadRoute(r, look){
   $('send').disabled = !canSend();
   paintBar();
   betaReset();
+  paintBig();
   log('loaded "' + r.name + '" \u2014 ' + GRADES[r.grade] + ' (V' + VGRADE[r.grade] + '), set by ' + r.setter);
   if (!look && $('auto').checked && rx) sendProblem();
 }
 
 function clearRoute(){
+  bigBoard(false);
   for (const k in state) delete state[k];
   current = null; gradeCells = {};
   betaReset();
@@ -3982,6 +4019,25 @@ function stepProblem(delta){
   if (row) row.scrollIntoView({ block: 'nearest' });
 }
 
+/* ---------- the board, big ----------
+   Tap the picture and it fills the screen; the button underneath brings the app
+   back. Flicking still steps through the list while it is big. A tap on the big
+   picture does nothing on purpose - pointing at a hold to show someone where the
+   foot goes should not throw them back to the list. Nothing here writes to the wall. */
+function paintBig(){
+  if (!current) return;
+  $('bigCap').querySelector('b').textContent = current.name;
+  paintPill($('bigCap').querySelector('.gd'), current.grade);
+}
+function bigBoard(on){
+  on = !!on && !!current && !betaDraft;      // not while placing hands and feet
+  document.body.classList.toggle('big', on);
+  if (on) paintBig();
+}
+function boardTap(){
+  if (!document.body.classList.contains('big')) bigBoard(true);
+}
+
 (function boardSwipe(){
   const el = $('board');
   let x0 = null, y0 = null;
@@ -3991,6 +4047,9 @@ function stepProblem(delta){
     if (x0 === null) return;
     const dx = x - x0, dy = y - y0;
     x0 = null;
+    // A touch that went nowhere is a tap: make the board big. Anything between a
+    // tap and a flick was a wobble, and does nothing.
+    if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return boardTap();
     if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
     stepProblem(dx < 0 ? 1 : -1);               // flick left for the next one
   };
@@ -4533,8 +4592,9 @@ $('connect').onclick = () => {
   if (device && device.gatt.connected) device.gatt.disconnect(); else connect();
 };
 $('send').onclick  = sendProblem;
-$('clear').onclick = clearRoute;
 $('nowBtn').onclick = gotoWall;
+$('bigExit').onclick = () => bigBoard(false);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') bigBoard(false); });
 $('q').oninput = () => { searchQ = $('q').value; showName = false; paintQBox(); renderResults(); };
 $('q').addEventListener('focus', () => { if (!$('q').readOnly && nameShown()) $('q').select(); });
 $('q').addEventListener('blur',  () => { if (!$('q').readOnly) showQ(); });
