@@ -8,6 +8,9 @@
  * The room also remembers what is on the wall - which problem, and who put it
  * up - so every phone can show it and jump to it. /status hands that back.
  *
+ * And it keeps the line: who is waiting to go next and with which problem
+ * (/line?room=<code>), plus the problems that have been up this session.
+ *
  * The room code IS the secret - it is never in the (public) page source.
  */
 
@@ -37,6 +40,11 @@ const cleanMeta = (m) => {
   };
 };
 
+const LINE_MAX = 12;                        // people waiting at once
+const HIST_MAX = 80;                        // problems in one session
+const LINE_TTL = 3 * 60 * 60 * 1000;        // an unused spot this old belongs to someone who went home
+const NIGHT_GAP = 4 * 60 * 60 * 1000;       // this long with nothing lit and it is a new session
+
 export class Relay {
   constructor(state) {
     this.state = state;
@@ -51,9 +59,63 @@ export class Relay {
        writes to the wall over Bluetooth without a word to us, so with one of those
        connected we cannot know what is up there and say nothing rather than guess. */
     this.tells = new Set();
+    /* Who is waiting to go next, and which problems have been up this session.
+       Unlike `now` these are kept in storage. The phone holding the Bluetooth
+       drops off every time its screen sleeps, this object can be gone from memory
+       a minute later, and a line that vanished with it would be no line at all. */
+    this.line = [];                // [{id, by, board, t}] next first, one spot each
+    this.hist = [];                // [{id, by, board, t}] oldest first, each problem once
+    this.ready = null;             // the one read of storage
   }
 
-  setNow(payload, meta) {
+  load() {
+    if (!this.ready) {
+      this.ready = this.state.storage.get("queue").then((q) => {
+        if (q && Array.isArray(q.line)) this.line = q.line;
+        if (q && Array.isArray(q.hist)) this.hist = q.hist;
+      }).catch(() => {});
+    }
+    return this.ready;
+  }
+
+  save() {
+    this.state.storage.put("queue", { line: this.line, hist: this.hist }).catch(() => {});
+  }
+
+  /* Nobody clears up after themselves at a climbing wall. A spot that has sat
+     unused for hours is dropped, and after a long quiet gap the list of what has
+     been up starts again - it is tonight's, not this week's. */
+  prune() {
+    const t = Date.now();
+    const line = this.line.filter((e) => t - e.t < LINE_TTL);
+    const last = this.hist[this.hist.length - 1];
+    const hist = last && t - last.t > NIGHT_GAP ? [] : this.hist;
+    if (line.length === this.line.length && hist === this.hist) return;
+    this.line = line;
+    this.hist = hist;
+    this.save();
+  }
+
+  /* A named problem has just gone up. It joins tonight's list - once, at the end,
+     however many times it is lit - and if the climber it went up for was waiting
+     with it, their turn has come and their spot in the line is used. */
+  wentUp(m) {
+    this.prune();
+    this.hist = this.hist.filter((h) => !(h.id === m.id && h.board === m.board));
+    this.hist.push({ id: m.id, by: m.by, board: m.board, t: Date.now() });
+    if (this.hist.length > HIST_MAX) this.hist = this.hist.slice(-HIST_MAX);
+    if (m.by) {
+      const who = m.by.toLowerCase();
+      this.line = this.line.filter((e) => !(e.by.toLowerCase() === who && e.id === m.id));
+    }
+    this.save();
+  }
+
+  /* again: the bridge is repeating what it last lit, as it does every time it
+     reconnects. That is news only if we never heard it the first time - otherwise
+     a phone waking up would count as the problem going up a second time, and use
+     the spot of a climber who had put their name down for another go on it. */
+  setNow(payload, meta, again) {
     if (typeof payload !== "string" || !PAYLOAD.test(payload) || payload === "l##") {
       this.now = null;
       return;
@@ -63,6 +125,10 @@ export class Relay {
       (this.now.id ?? null) === (m ? m.id : null) && (this.now.by ?? "") === (m ? m.by : "");
     if (same) return;                              // a re-send is not a new route
     this.now = { payload, t: Date.now(), ...(m || {}) };
+    if (!m) return;
+    const last = this.hist[this.hist.length - 1];
+    if (again && last && last.id === m.id && last.by === m.by && last.board === m.board) return;
+    this.wentUp(m);
   }
 
   drop(ws) {
@@ -73,6 +139,7 @@ export class Relay {
 
   async fetch(request) {
     const url = new URL(request.url);
+    await this.load();
 
     if (url.pathname === "/ws") {
       if (request.headers.get("Upgrade") !== "websocket") {
@@ -92,8 +159,9 @@ export class Relay {
         if (!m) return;
         // "I will tell you what I light myself" - see this.tells
         if (m.type === "hello") { this.tells.add(server); return; }
-        // the bridge lit something over Bluetooth directly: {type:"now", payload, now}
-        if (m.type === "now") { this.setNow(m.payload, m.now); return; }
+        // the bridge lit something over Bluetooth directly: {type:"now", payload, now},
+        // with again:true when it is only repeating itself after reconnecting
+        if (m.type === "now") { this.setNow(m.payload, m.now, m.again === true); return; }
         if (m.type !== "result") return;
         if (m.id && this.pending.has(m.id)) return this.pending.get(m.id)(m);
         // Older bridges answer without an id - resolve the oldest waiter.
@@ -139,10 +207,42 @@ export class Relay {
       return json({ ok: true, bridges: sent, wrote: payload });
     }
 
+    /* The line. Joining it never touches the wall, and it does not need a phone
+       at the wall either - you can put your name down while the Bluetooth phone
+       is waking up. One spot each: joining again with another problem keeps your
+       place and swaps the problem. Leaving the line is how a spot is given up;
+       having your problem go up (see wentUp) is how it is used. */
+    if (url.pathname === "/line" && request.method === "POST") {
+      const body = await request.json().catch(() => null);
+      const by = body && typeof body.by === "string" ? body.by.trim().slice(0, 24) : "";
+      if (!by) return json({ error: "a name is required" }, 400);
+      this.prune();
+      const mine = (e) => e.by.toLowerCase() === by.toLowerCase();
+      if (body.op === "leave") {
+        this.line = this.line.filter((e) => !mine(e));
+      } else if (body.op === "join") {
+        const m = cleanMeta(body);
+        if (!m) return json({ error: "which problem?" }, 400);
+        const spot = this.line.find(mine);
+        if (spot) {
+          spot.id = m.id; spot.board = m.board; spot.t = Date.now();
+        } else {
+          if (this.line.length >= LINE_MAX) return json({ error: "the line is full" }, 409);
+          this.line.push({ id: m.id, by, board: m.board, t: Date.now() });
+        }
+      } else {
+        return json({ error: "op must be join or leave" }, 400);
+      }
+      this.save();
+      return json({ ok: true, line: this.line, hist: this.hist });
+    }
+
     if (url.pathname === "/status") {
       const sure = this.sockets.size > 0 &&
         [...this.sockets].every((ws) => this.tells.has(ws));
-      return json({ bridges: this.sockets.size, now: sure ? this.now : null });
+      this.prune();
+      return json({ bridges: this.sockets.size, now: sure ? this.now : null,
+                    line: this.line, hist: this.hist });
     }
 
     return json({ error: "not found" }, 404);
@@ -602,7 +702,7 @@ export default {
 
     const url = new URL(request.url);
     if (url.pathname === "/") {
-      return json({ service: "moonboard-relay", routes: ["/ws?room=", "/send?room=", "/status?room=", "/lists", "/lists/log"] });
+      return json({ service: "moonboard-relay", routes: ["/ws?room=", "/send?room=", "/status?room=", "/line?room=", "/lists", "/lists/log"] });
     }
 
     if (url.pathname === "/lists" || url.pathname.startsWith("/lists/")) {
