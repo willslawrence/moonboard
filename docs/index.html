@@ -158,6 +158,13 @@
   #board{position:relative;margin:0;border-radius:6px;overflow:hidden;touch-action:pan-y;
          width:min(calc(100vw - 108px),38.4vh,calc((100vh - 252px) * .65))}
   #board{width:min(calc(100vw - 108px),38.4vh,calc((100dvh - 252px) * .65))}
+  /* ---- the board steps aside ----
+     Scroll the short list under it and the picture shrinks into the top right-hand
+     corner, so the list has the room; the wall's story beside it gets wider and
+     shorter. Picking a route puts it back. A trial, alongside the page of routes. */
+  body:not(.big) #board{transition:width .18s ease-out}
+  body.compact:not(.big) #board{width:min(calc(100vw - 108px),18vh)}
+  @media (prefers-reduced-motion:reduce){ body:not(.big) #board{transition:none} }
   /* iOS starts its own image drag on a sideways swipe, which eats the gesture */
   #board img{-webkit-user-drag:none;user-select:none;pointer-events:none}
   #board img{display:block;width:100%;height:auto}   /* beat the height attribute */
@@ -210,8 +217,13 @@
   body.big #bigRow{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:none;width:min(100%,430px)}
   #bigRow button{padding:15px 6px;font-size:16px;font-weight:700;border-radius:12px}
   body.big #bigRow2{display:flex;gap:8px;flex:none;width:min(100%,430px)}
-  #bigRow2 button{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;
+  #bigRow2 button,#bigRow2 a{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;
                   padding:9px 6px;font-size:13px;border-radius:10px}
+  /* Instagram is a link, so the phone can hand it to the Instagram app; dressed as a button */
+  #bigRow2 a{border:1px solid var(--edge);background:var(--panel2);color:var(--ink);font-weight:600;
+             text-decoration:none;white-space:nowrap}
+  #bigRow2 a:active{background:var(--press)}
+  #bigRow2 a[hidden]{display:none}
   #bigRow2 svg{width:16px;height:16px;flex:none}
   /* ---- under the big board: your own tries and sends on it, then who has climbed it
      ---- */
@@ -262,7 +274,7 @@
       background:transparent;color:var(--dim);font-size:13px}
   /* ---- two pages ----
      The board's page, and to its left a page that is nothing but routes: the search,
-     its filters, the whole list, the keys. Swipe right anywhere but on the picture to
+     its filters (open, under the search), the whole list, the keys. Swipe right anywhere but on the picture to
      go to it, or tap the search box; swipe left, pick a route, or tap Board to come
      back. It is one list in two shapes - short under the board, the whole screen
      here - so there is nothing to keep in step. */
@@ -656,6 +668,7 @@
         </div>
         <div id="bigRow2">
           <button id="betaBtn" class="mini" disabled>+ Beta</button>
+          <a id="igBtn" target="_blank" rel="noopener" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/></g><circle cx="17.2" cy="6.8" r="1.2" fill="currentColor"/></svg> Instagram</a>
           <button id="logBtn" class="mini" aria-label="Logbook"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 6.8C9.6 5.2 6.4 4.8 3 5.6v13c3.4-.8 6.6-.4 9 1.2 2.4-1.6 5.6-2 9-1.2v-13c-3.4-.8-6.6-.4-9 1.2zM12 6.8v13"/></svg> Logbook</button>
         </div>
       </div>
@@ -908,7 +921,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-08 00:10';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-08 00:15';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3190,6 +3203,7 @@ function loadRoute(r, look){
   paintBig();
   log('loaded "' + r.name + '" \u2014 ' + GRADES[r.grade] + ' (V' + VGRADE[r.grade] + '), set by ' + r.setter);
   if (!look && $('auto').checked && rx) sendProblem();
+  setCompact(false);                          // a route has been picked: the picture comes back to its size
   if (page === 'list') showPage('board');     // picked from the page of routes: back to the board, with it open
 }
 
@@ -4475,6 +4489,7 @@ function betaPlay(){
 /* ---- entering it ---- */
 function betaEdit(){
   if (!current) return;
+  setCompact(false);
   bigBoard(false);                       // the tools for placing hands and feet are beside the small board
   betaStop();
   betaDraft = beta ? beta.moves.map(m => ({ l: m.l, h: m.h })) : [];
@@ -4577,10 +4592,29 @@ function stepProblem(delta){
    through the list while it is big. A tap on the big picture does nothing on
    purpose - pointing at a hold to show someone where the foot goes should not throw
    them back to the list. Nothing here writes to the wall. */
+/* The MoonBoard app has a button on each problem that opens Instagram at the tag
+   climbers put on their videos of it. This is the same button. The tag is the
+   problem's name with everything but its letters and numbers taken out - a guess at
+   the app's own rule until Will has looked at what the app opens. */
+const INSTA_ON = false;            // off until the tag rule is known to match the app's
+function instaTag(r){
+  return r.name.normalize('NFKD').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+function paintInsta(){
+  const a = $('igBtn');
+  if (!a) return;
+  const tag = (INSTA_ON && current) ? instaTag(current) : '';
+  a.hidden = !tag;
+  if (!tag) return;
+  a.href = 'https://www.instagram.com/explore/tags/' + encodeURIComponent(tag) + '/';
+  a.title = 'Videos tagged #' + tag + ' on Instagram';
+}
+
 function paintBig(){
   if (!current) return;
   $('bigCap').querySelector('b').textContent = current.name;
   paintPill($('bigCap').querySelector('.gd'), current.grade);
+  paintInsta();
   if (document.body.classList.contains('big')) bigHist();    // a flick to the next problem brings its history
 }
 function bigBoard(on, fromBack){
@@ -4597,6 +4631,7 @@ function bigBoard(on, fromBack){
   if (betaPlaying){ betaStop(); $('betaSvg').innerHTML = ''; paintBeta(); }
 }
 function boardTap(){
+  if (document.body.classList.contains('compact')) return setCompact(false);   // small: a tap puts it back first
   if (!document.body.classList.contains('big')) bigBoard(true);
 }
 
@@ -5209,6 +5244,8 @@ function showPage(which, fromBack, ghost){
   ghostUntil = ghost ? Date.now() + ghost : 0;
   if (which === 'list'){
     layerOpen('list');
+    setCompact(false);
+    showFilters(true);                                 // there is room for them here, so they stand open
     kbOpen();                                          // ready to search, as a tap on the box always was
   } else {
     if (!fromBack) layerShut('list');
@@ -5245,6 +5282,38 @@ document.body.addEventListener('animationend', e => {
     showPage(dx > 0 ? 'list' : 'board', false, e.pointerType === 'mouse' ? 300 : 0);
   }, { passive: true });
   document.addEventListener('pointercancel', () => { x0 = null; }, { passive: true });
+})();
+
+/* ---------- the board steps aside ----------
+   Scrolling the short list under the board shrinks the picture into the top right
+   corner, and the list takes the room. Picking a route puts it back; so does a tap
+   on the small picture, a tap on anything in the wall's panel, or scrolling the list
+   back to its top. Only a finger or a wheel on the list does it: the list moving by
+   itself, to keep the open route in view, does not. */
+let compactAt = 0;                 // when it last changed, so the list's own settling is not read as a scroll
+function setCompact(on){
+  const b = document.body;
+  on = !!on && page === 'board' && !betaDraft && !b.classList.contains('big');
+  if (on === b.classList.contains('compact')) return;
+  b.classList.toggle('compact', on);
+  compactAt = Date.now();
+  if (on) return;
+  setTimeout(() => {                                   // back at full size: the open route may have slid out of view
+    const row = $('results').querySelector('.rt.sel');
+    if (row && page === 'board') row.scrollIntoView({ block: 'nearest' });
+  }, 230);
+}
+(function listScroll(){
+  const sc = $('scroll');
+  let hand = 0;                                        // until when a scroll counts as the climber's own
+  const mine = () => { hand = Date.now() + 1200; };
+  ['touchstart', 'touchmove', 'wheel'].forEach(t => sc.addEventListener(t, mine, { passive: true }));
+  sc.addEventListener('scroll', () => {
+    if (page !== 'board' || Date.now() > hand || Date.now() - compactAt < 450) return;
+    if (sc.scrollTop > 24) setCompact(true);
+    else if (sc.scrollTop <= 0) setCompact(false);
+  }, { passive: true });
+  $('leftCol').addEventListener('click', () => setCompact(false));
 })();
 
 /* ---------- back ----------
