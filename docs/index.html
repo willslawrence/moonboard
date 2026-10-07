@@ -35,6 +35,7 @@
     --onink:#0e0e0f; --bright:#fff; --orange-ink:#fb923c; --gold:#f5c542; --blue-ink:#8fb8ff;
     --now-bg:#131d33; --now-edge:#2f4a86; --now-cap:#8fb0f5; --now-press:#1b2a4a;
     --next-bg:#1b1630; --next-edge:#5b47a8; --next-cap:#b9a5f5;
+    --green-ink:#22c55e;
   }
   /* ---- backgrounds ----
      Black is how the app has always looked. The other two are for trying out: a
@@ -51,6 +52,7 @@
     --onink:#f8f4ee; --bright:#000; --orange-ink:#a04a06; --gold:#7a5600; --blue-ink:#1f4fae;
     --now-bg:#dbe4f8; --now-edge:#6f8fd6; --now-cap:#234a9e; --now-press:#c8d6f5;
     --next-bg:#e7dff8; --next-edge:#8672cf; --next-cap:#46348f;
+    --green-ink:#15803d;
   }
   html[data-bg="fog"]{
     --bg:#c6cbd0; --panel:#d1d5d9; --panel2:#dce0e3; --edge:#9ca4ac;
@@ -61,6 +63,7 @@
     --onink:#f4f6f8; --bright:#000; --orange-ink:#a04a06; --gold:#7a5600; --blue-ink:#1f4fae;
     --now-bg:#dbe4f8; --now-edge:#6f8fd6; --now-cap:#234a9e; --now-press:#c8d6f5;
     --next-bg:#e7dff8; --next-edge:#8672cf; --next-cap:#46348f;
+    --green-ink:#15803d;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;background:var(--bg);color:var(--ink);
@@ -90,6 +93,7 @@
      text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   header #me{flex:none;width:96px;padding:2px 8px;font-size:16px;
              text-overflow:ellipsis;border-radius:8px}
+  header #me.ask{outline:2px solid var(--blue-ink);outline-offset:1px}
   #wallTxt{cursor:pointer}
   #wallTxt.off{color:var(--dim)}
   #wallTxt.bad{color:#ef4444}
@@ -174,9 +178,9 @@
      Scroll the short list under it and the picture shrinks into the top right-hand
      corner, so the list has the room; the wall's story beside it gets wider and
      shorter. Picking a route puts it back. A trial, alongside the page of routes. */
-  body:not(.big) #board{transition:width .18s ease-out}
-  body.compact:not(.big) #board{width:min(calc(100vw - 108px),18vh)}
-  @media (prefers-reduced-motion:reduce){ body:not(.big) #board{transition:none} }
+  #board{transition:width .18s ease-out}
+  body.compact #board{width:min(calc(100vw - 108px),18vh)}
+  @media (prefers-reduced-motion:reduce){ #board{transition:none} }
   /* iOS starts its own image drag on a sideways swipe, which eats the gesture */
   #board img{-webkit-user-drag:none;user-select:none;pointer-events:none}
   #board img{display:block;width:100%;height:auto}   /* beat the height attribute */
@@ -196,53 +200,7 @@
   .mark.two.S{border-color:#22c55e}
   .mark.also{width:12.4%;border-style:dashed;border-color:#fb923c;border-width:2px}
 
-  /* ---- the board, big ----
-     Tap the picture and it fills the screen, for showing a problem to whoever is
-     standing at the wall or reading it from across the room. Not the browser's
-     own fullscreen - an iPhone has none for anything but video - so the board's
-     column is laid over the page instead, with one big button to come back. */
-  #bigHead,#bigRow,#bigRow2,#bigHist{display:none}
-  body.big #boardCol{position:fixed;inset:0;z-index:55;background:var(--bg);
-       overflow-y:auto;overscroll-behavior:contain;
-       padding:calc(env(safe-area-inset-top) + 10px) 10px calc(env(safe-area-inset-bottom) + 12px)}
-  /* The first screenful is the picture with its buttons, centred. What has been
-     logged on the problem comes after it, a scroll down. */
-  body.big #bigTop{display:flex;flex-direction:column;align-items:center;justify-content:center;
-       gap:10px;min-height:100%}
-  /* as wide as the screen allows, or as tall as leaves room for the name and the buttons */
-  body.big #board{flex:none;margin:0;width:min(100%,calc((100vh - 218px) * .65))}
-  body.big #board{width:min(100%,calc((100dvh - 218px) * .65))}
-  /* a second problem's name takes a line under the picture */
-  body.big.pair #board{width:min(100%,calc((100vh - 244px) * .65))}
-  body.big.pair #board{width:min(100%,calc((100dvh - 244px) * .65))}
-  body.big .mark{border-width:4px}
-  body.big .mark.g,body.big .mark.also{border-width:3px}
-  /* the name on the left, the way out on the right */
-  body.big #bigHead{display:flex;flex:none;align-items:center;gap:10px;width:min(100%,430px)}
-  #bigCap{display:flex;flex:1 1 auto;align-items:center;gap:8px;min-width:0;font-size:17px;font-weight:700}
-  #bigCap b{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #bigCap .gd{font-size:12px}
-  #bigExit{flex:none;width:auto;padding:9px 14px;font-size:13px;font-weight:700;border-radius:10px}
-  body.big #betaCap,body.big #pairCap{font-size:13px;margin-top:0}
-  /* Logging happens here: two big buttons under the picture. Beta and the logbook
-     sit under those, smaller. None of the four is anywhere else. */
-  body.big #bigRow{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:none;width:min(100%,430px)}
-  #bigRow button{padding:15px 6px;font-size:16px;font-weight:700;border-radius:12px}
-  body.big #bigRow2{display:flex;gap:8px;flex:none;width:min(100%,430px)}
-  #bigRow2 button,#bigRow2 a{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;
-                  padding:9px 6px;font-size:13px;border-radius:10px}
-  /* Instagram is a link, so the phone can hand it to the Instagram app; dressed as a button */
-  #bigRow2 a{border:1px solid var(--edge);background:var(--panel2);color:var(--ink);font-weight:600;
-             text-decoration:none;white-space:nowrap}
-  #bigRow2 a:active{background:var(--press)}
-  #bigRow2 a[hidden]{display:none}
-  #bigRow2 svg{width:16px;height:16px;flex:none}
-  /* ---- under the big board: your own tries and sends on it, then who has climbed it
-     ---- */
-  body.big #bigHist{display:block;width:min(100%,430px);margin:0 auto;padding:2px 0 6px}
-  #bigHist .lbl{margin:18px 0 6px}
-  #bigSum{font-size:13px;color:var(--dim);line-height:1.5}
-  #bigSum b{color:var(--ink);font-weight:600}
+  /* ---- who has climbed a route: a row a climber, on the log page ---- */
   .whoRows .p{display:flex;align-items:center;gap:9px;padding:9px 2px;border-bottom:1px solid var(--line)}
   .whoRows .p i{flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;
                font-size:11px;font-weight:700;font-style:normal;color:#0e0e0f}
@@ -259,7 +217,6 @@
   #pairCap b{min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #pairCap .gd{font-size:9px}
   #pairCap .leg{display:none;flex:none;color:var(--dim);white-space:nowrap}
-  body.big #pairCap .leg{display:inline}
 
   /* ---- route name / search: sits under the board ----
      A filled, rounded box with a magnifier, so it reads as the search and never
@@ -271,7 +228,10 @@
   #barTxt #filtBtn{flex:none;width:34px;height:32px;padding:0;font-size:16px}
   #barTxt #setBtn{flex:none;width:34px;height:32px;padding:0;display:grid;place-items:center;border-radius:8px}
   #barTxt #setBtn svg{width:18px;height:18px;display:block}
-  #barTxt #toBoard{flex:none;width:auto;height:32px;padding:0 10px;font-size:13px;white-space:nowrap}
+  #barTxt #toBoard,#barTxt #toLog{flex:none;width:auto;height:32px;padding:0 10px;font-size:13px;white-space:nowrap}
+  #barTxt #toLog{border-radius:9px}
+  body.listPage #toLog{display:none}
+  body.betaEdit #toLog{visibility:hidden}      /* no leaving mid-edit */
   #qBox{flex:1;min-width:0;height:32px;display:flex;align-items:center;gap:5px;
         padding:0 4px 0 9px;background:var(--panel2);border:1px solid var(--box);border-radius:9px}
   #qBox.on,#qBox:focus-within{border-color:#8b8b93}
@@ -284,7 +244,7 @@
   #qBox .pill[hidden],#qX[hidden]{display:none}
   #qX{flex:none;width:26px;height:26px;padding:0;border:0;border-radius:50%;
       background:transparent;color:var(--dim);font-size:13px}
-  /* ---- two pages ----
+  /* ---- the pages either side ----
      The board's page, and to its left a page that is nothing but routes: the search,
      its filters (open, under the search), the whole list, the keys. Swipe right anywhere but on the picture to
      go to it, or tap the search box; swipe left, pick a route, or tap Board to come
@@ -308,11 +268,115 @@
   #listCap span{font-size:10px;letter-spacing:.06em;color:var(--dimmer)}
   @keyframes pgL{from{transform:translateX(-18%);opacity:.25}to{transform:none;opacity:1}}
   @keyframes pgR{from{transform:translateX(18%);opacity:.25}to{transform:none;opacity:1}}
-  body.slideL #top,body.slideL #scroll{animation:pgL .17s ease-out}
-  body.slideR #top,body.slideR #scroll{animation:pgR .17s ease-out}
+  body.slideL #top,body.slideL #scroll,body.slideL #logPage{animation:pgL .17s ease-out}
+  body.slideR #top,body.slideR #scroll,body.slideR #logPage{animation:pgR .17s ease-out}
   @media (prefers-reduced-motion:reduce){
-    body.slideL #top,body.slideL #scroll,body.slideR #top,body.slideR #scroll{animation:none}
+    body.slideL #top,body.slideL #scroll,body.slideL #logPage,
+    body.slideR #top,body.slideR #scroll,body.slideR #logPage{animation:none}
   }
+  /* three dots at the foot of the screen say there are three pages, and which this is */
+  #pgDots{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 5px);transform:translateX(-50%);
+          display:flex;gap:6px;padding:4px 8px;z-index:5;pointer-events:none}
+  /* a little of the page's own colour behind them, so a row of the list passing under does not swallow them */
+  #pgDots::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:8px;background:var(--bg);opacity:.82}
+  #pgDots i{width:6px;height:6px;border-radius:50%;background:var(--dimmer);opacity:.45}
+  #pgDots[data-at="list"] i:nth-child(1),#pgDots[data-at="board"] i:nth-child(2),
+  #pgDots[data-at="log"] i:nth-child(3){background:var(--ink);opacity:.95}
+  #kb:not([hidden]) ~ #pgDots{display:none}
+  /* ---- the page to the right: logging, and what you have climbed ----
+     Under the app's own header, so the name picker is at hand. Everything else on
+     it is one column that scrolls. */
+  #logPage{display:none}
+  body.logPage #actRow,body.logPage #boardWrap,body.logPage #bar,
+  body.logPage #scroll,body.logPage #kb{display:none !important}
+  body.logPage #top{border-bottom:0;margin-bottom:0}
+  body.logPage #logPage{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+                        touch-action:pan-y;padding:10px 0 calc(env(safe-area-inset-bottom) + 30px)}
+  /* its own top line: the way back on the left, where the board is, and the page's name */
+  #lpCap{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin-bottom:10px}
+  #lpCap button{justify-self:start;width:auto;height:32px;padding:0 10px;font-size:13px;white-space:nowrap}
+  #lpCap b{font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase}
+  #logPage .lbl{margin:18px 0 7px}
+  #logPage .lbl[hidden]{display:none}
+  /* the session, in three numbers and a dot for every go */
+  #lpHero{border:1px solid var(--edge);border-radius:14px;background:var(--panel);padding:13px 14px 13px}
+  #lpHero + #lpSession{margin-top:4px}
+  #lpHero .kick{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+  #lpHero .nums{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:11px}
+  #lpHero .nums b{display:block;font-size:34px;line-height:36px;font-weight:700;letter-spacing:-.02em}
+  #lpHero .nums span{display:block;margin-top:3px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+                     color:var(--dimmer)}
+  #lpHero.idle .nums b{color:var(--dimmer)}
+  #lpStrip{display:flex;flex-wrap:wrap;gap:5px;margin-top:13px}
+  #lpStrip:empty{display:none}
+  /* a go: a ring for a try, filled green for a send, gold for a flash */
+  .go{flex:none;width:10px;height:10px;border-radius:50%;box-sizing:border-box;border:1.5px solid var(--dimmer)}
+  .go.s{border-color:#22c55e;background:#22c55e}
+  .go.f{border-color:#eab308;background:#eab308}
+  #lpHistSum{font-size:13px;color:var(--dim);line-height:1.5}
+  #lpHistSum b{color:var(--ink);font-weight:600}
+  .sublbl{font-size:12px;color:var(--dim);margin:8px 0 2px}
+  #lpFeedLbl{margin-top:18px}
+  .sublbl[hidden],.sublbl:empty{display:none}
+  .lprow .n em i{display:inline-grid;place-items:center;width:16px;height:16px;margin-right:5px;border-radius:50%;
+                 font-size:9px;font-weight:700;font-style:normal;color:#0e0e0f;vertical-align:-3px}
+  /* the open route, and the two buttons this page is for */
+  #lpNow{border:1px solid var(--edge);border-radius:14px;background:var(--panel);padding:13px 12px 10px}
+  #lpNow .top{display:flex;align-items:center;gap:8px;min-width:0}
+  #lpNow .top b{flex:0 1 auto;min-width:0;font-size:17px;font-weight:700;white-space:nowrap;overflow:hidden;
+                text-overflow:ellipsis}
+  #lpNow .top .gd{font-size:11px}
+  #lpNow .top .gd[hidden]{display:none}
+  #lpNow .sub{margin-top:3px;font-size:12px;color:var(--dim);line-height:1.4}
+  #lpNow .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px}
+  #lpNow .btns button{padding:14px 6px;font-size:16px;font-weight:700;border-radius:12px}
+  /* under them, smaller: the beta, and the whole logbook */
+  #lpNow .more3{display:flex;gap:8px;margin-top:8px}
+  #lpNow .more3 button,#lpNow .more3 a{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;
+                                      gap:6px;padding:9px 6px;font-size:13px;border-radius:10px}
+  /* Instagram is a link, so the phone can hand it to the Instagram app; dressed as a button */
+  #lpNow .more3 a{border:1px solid var(--edge);background:var(--panel2);color:var(--ink);font-weight:600;
+                  text-decoration:none;white-space:nowrap}
+  #lpNow .more3 a:active{background:var(--press)}
+  #lpNow .more3 a[hidden]{display:none}
+  #lpNow .more3 svg{width:16px;height:16px;flex:none}
+  #lpUndo{display:block;width:auto;max-width:100%;margin:9px auto 0;padding:2px 8px;border:0;font-size:11px;
+          overflow:hidden;text-overflow:ellipsis}
+  #lpUndo[hidden]{display:none}
+  #lpUndo.armed{color:#ef4444}
+  /* a route in a session: its name and grade, then its goes as dots and how it went */
+  .lprow{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line)}
+  .lprow:active{background:var(--panel)}
+  .lprow .n{flex:1;min-width:0}
+  .lprow .n b{display:block;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lprow .n span{display:flex;align-items:center;gap:7px;margin-top:3px;font-size:11px;color:var(--dimmer)}
+  .lprow .n .gd{font-size:9px}
+  .lprow .r{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:5px;max-width:46%}
+  .lprow .dots{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px}
+  .lprow .w{font:700 10px ui-monospace,Menlo,monospace;color:var(--dim);white-space:nowrap}
+  .lprow.sent .w{color:var(--green-ink)}
+  /* the open route's own history: the same row, on one line, the day where the name was */
+  .lprow.hist{padding:8px 2px}
+  .lprow.hist .n{display:flex;align-items:baseline;gap:8px}
+  .lprow.hist .n b{flex:none;font-size:14px}
+  .lprow.hist .n span{display:block;margin-top:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lprow.hist .r{flex-direction:row;align-items:center;gap:9px;max-width:62%}
+  #logPage .none{font-size:13px;color:var(--dimmer);padding:6px 2px;line-height:1.5}
+  /* an earlier session: one line, and its routes when it is tapped */
+  .lpses{border-bottom:1px solid var(--line)}
+  .lpses > .h{display:flex;align-items:center;gap:9px;padding:11px 2px}
+  .lpses > .h:active{background:var(--panel)}
+  .lpses > .h .cv{flex:none;color:var(--dimmer);font-size:13px;transition:transform .15s}
+  .lpses.open > .h .cv{transform:rotate(90deg)}
+  .lpses > .h b{flex:1;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lpses > .h .s{flex:none;font-size:12px;color:var(--dim)}
+  .lpses > .h .gd{font-size:9px}
+  .lpses > .body{padding:0 0 4px 12px}
+  .lpses > .body[hidden]{display:none}
+  .lpses > .body .lprow:last-child{border-bottom:0}
+  #logPage .more{margin:10px 0 0}
+  #lpFoot{margin-top:20px;font-size:12px;color:var(--dimmer);line-height:1.7;text-align:center}
+  #lpFoot u{color:var(--dim);text-underline-offset:2px}
   #count:empty{display:none}
   #results .more{margin:10px 0 4px}
 
@@ -403,16 +467,6 @@
              padding:calc(env(safe-area-inset-top) + 16px) 16px
                      calc(env(safe-area-inset-bottom) + 16px)}
   #sendPanel[hidden],#logPanel[hidden],#snakePanel[hidden],#entryPanel[hidden],#setPanel[hidden],#pairPanel[hidden]{display:none}
-  /* ---- history: everything you have logged on the problem that's open, listed
-     under the big board ---- */
-  #bigRows .e{display:flex;align-items:center;gap:9px;padding:10px 2px;border-bottom:1px solid var(--line)}
-  #bigRows .e .d{flex:1;min-width:0;font-size:14px;font-weight:600}
-  #bigRows .e .d span{display:block;font-size:11px;font-weight:400;color:var(--dimmer);margin-top:1px}
-  #bigRows .e .rs{flex:none;padding:2px 7px;border-radius:5px;
-                   font:700 10px ui-monospace,Menlo,monospace;background:var(--chip);color:var(--dim)}
-  #bigRows .e.sent .rs{background:#22c55e;color:#06240e}
-  #bigRows .e .lk{flex:none;font-size:10px;color:var(--dimmer)}
-  #bigRows .none{font-size:13px;color:var(--dimmer);padding:8px 2px;line-height:1.5}
   #sendFor,#pairFor{font-size:15px;font-weight:600}
   #sendFor span,#pairFor span{display:block;font-size:12px;color:var(--dimmer);font-weight:400;margin-top:2px}
   /* ---- the second bulb's one question ---- */
@@ -636,7 +690,7 @@
 
 <!-- One thin row over the board: the line, the bulb, the second bulb. Everything
      else that used to stand in a column beside the board has moved - logging to the
-     big board, the games to Settings, the rest out of the way. -->
+     page on the right, the games to Settings, the rest out of the way. -->
 <div id="actRow">
   <button id="nextBtn" class="mini" disabled hidden>Next up</button>
   <button id="send" class="mini solid" disabled aria-label="Light up">&#128161; Light up</button>
@@ -685,38 +739,14 @@
       </div>
     </div></div>
     <div id="boardCol">
-      <div id="bigTop">
-        <div id="bigHead">
-          <div id="bigCap"><b></b><span class="gd"></span></div>
-          <button id="bigExit" class="mini">Tap to exit</button>
-        </div>
-        <div id="board">
-          <img src="board-2016.png" alt="MoonBoard 2016 wall" width="450" height="692">
-          <div id="marks"></div>
-          <svg id="betaSvg" viewBox="0 0 450 692" aria-hidden="true"></svg>
-          <div id="betaTap"></div>
-        </div>
-        <div id="pairCap" hidden></div>
-        <div id="betaCap"></div>
-        <!-- Only with the board big: logging lives here now. -->
-        <div id="bigRow">
-          <button id="try" class="mini" disabled>Log try</button>
-          <button id="done" class="mini" disabled>Log send</button>
-        </div>
-        <div id="bigRow2">
-          <button id="betaBtn" class="mini" disabled>+ Beta</button>
-          <a id="igBtn" target="_blank" rel="noopener" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/></g><circle cx="17.2" cy="6.8" r="1.2" fill="currentColor"/></svg> Instagram</a>
-          <button id="logBtn" class="mini" aria-label="Logbook"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 6.8C9.6 5.2 6.4 4.8 3 5.6v13c3.4-.8 6.6-.4 9 1.2 2.4-1.6 5.6-2 9-1.2v-13c-3.4-.8-6.6-.4-9 1.2zM12 6.8v13"/></svg> Logbook</button>
-        </div>
+      <div id="board">
+        <img src="board-2016.png" alt="MoonBoard 2016 wall" width="450" height="692">
+        <div id="marks"></div>
+        <svg id="betaSvg" viewBox="0 0 450 692" aria-hidden="true"></svg>
+        <div id="betaTap"></div>
       </div>
-      <!-- Only with the board big: scroll down past the picture for these. -->
-      <div id="bigHist">
-        <div class="lbl">Your history</div>
-        <div id="bigSum"></div>
-        <div id="bigRows"></div>
-        <div class="lbl">Climbed by</div>
-        <div id="bigWho" class="whoRows"></div>
-      </div>
+      <div id="pairCap" hidden></div>
+      <div id="betaCap"></div>
     </div>
   </div>
 </section>
@@ -738,6 +768,7 @@
     </div>
     <button id="setBtn" class="ghost" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor"><circle cx="12" cy="12" r="5.6" stroke-width="2"/><circle cx="12" cy="12" r="2" stroke-width="1.8"/><path stroke-width="3" d="M12 2.6v3.2M12 18.2v3.2M2.6 12h3.2M18.2 12h3.2M5.35 5.35l2.26 2.26M16.39 16.39l2.26 2.26M5.35 18.65l2.26-2.26M16.39 7.61l2.26-2.26"/></g></svg></button>
     <button id="toBoard" class="ghost" aria-label="Back to the board">Board &#8250;</button>
+    <button id="toLog" aria-label="Log a go, and what you have climbed">Log &#8250;</button>
   </div>
   <div id="filters" hidden>
     <!-- The list is always the benchmarks now. Each climber's own list is hidden, not
@@ -776,7 +807,59 @@
 
 </div><!-- /#scroll -->
 
+<!-- The page to the right of the board: logging, and what you have climbed. It has
+     taken over from the board that filled the screen when tapped. Top to bottom: the
+     open route with its two buttons; this session - sends, tries, hardest, a dot for
+     every go, and its routes; your history on the open route; the community - who has
+     climbed it, and what the crew are on tonight; earlier sessions, folded away. -->
+<div id="logPage">
+  <div id="lpCap"><button id="lpBack" class="ghost" aria-label="Back to the board">&#8249; Board</button><b>Log</b><span></span></div>
+  <div id="lpNow">
+    <div class="top"><b></b><span class="gd"></span></div>
+    <div class="sub"></div>
+    <div class="btns">
+      <button id="try" class="mini" disabled>Log try</button>
+      <button id="done" class="mini" disabled>Log send</button>
+    </div>
+    <div class="more3">
+      <button id="betaBtn" class="mini" disabled>+ Beta</button>
+      <a id="igBtn" target="_blank" rel="noopener" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/></g><circle cx="17.2" cy="6.8" r="1.2" fill="currentColor"/></svg> Instagram</a>
+      <button id="logBtn" class="mini" aria-label="Logbook"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 6.8C9.6 5.2 6.4 4.8 3 5.6v13c3.4-.8 6.6-.4 9 1.2 2.4-1.6 5.6-2 9-1.2v-13c-3.4-.8-6.6-.4-9 1.2zM12 6.8v13"/></svg> Logbook</button>
+    </div>
+    <button id="lpUndo" class="ghost mini" hidden></button>
+  </div>
+
+  <div class="lbl">This session</div>
+  <div id="lpHero">
+    <div class="kick"></div>
+    <div class="nums">
+      <div><b id="lpSends">0</b><span>sends</span></div>
+      <div><b id="lpTries">0</b><span>tries</span></div>
+      <div><b id="lpHard">&ndash;</b><span>hardest</span></div>
+    </div>
+    <div id="lpStrip"></div>
+  </div>
+  <div id="lpSession"></div>
+
+  <div class="lbl" id="lpRouteLbl">Your history on this route</div>
+  <div id="lpHistSum"></div>
+  <div id="lpHistRows"></div>
+
+  <div class="lbl">Community</div>
+  <div class="sublbl" id="lpWhoLbl"></div>
+  <div id="lpWho" class="whoRows"></div>
+  <div class="sublbl" id="lpFeedLbl" hidden>The crew this session</div>
+  <div id="lpFeed"></div>
+
+  <div class="lbl" id="lpEarLbl">Earlier sessions</div>
+  <div id="lpEarlier"></div>
+  <div id="lpFoot"></div>
+</div>
+
 <div id="kb" hidden></div>
+
+<!-- three pages: routes, the board, the log -->
+<div id="pgDots" data-at="board" aria-hidden="true"><i></i><i></i><i></i></div>
 
 <div id="setPanel" hidden>
   <div id="gameHead">
@@ -961,7 +1044,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-08 00:21';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-08 00:48';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -2715,7 +2798,7 @@ let told = '';             // what the relay has been told, so a game's frames a
 let page = 'board';        // which of the two pages is showing: 'board', or 'list' to its left
 let panelOpen = false;     // a sheet (settings, logbook, a game, a question) is over the page
 let ghostUntil = 0;        // until then a click is the tail of the tap that changed the page, and is dropped
-const layers = [];         // what Back would close next, innermost last: 'list', 'big', 'panel'
+const layers = [];         // what Back would close next, innermost last: 'list' or 'log', then 'panel'
 let backSkip = 0;          // steps back through the history this page asked for itself
 
 /* ---------- tick lists ----------
@@ -2781,7 +2864,8 @@ function applyLists(data){
 }
 
 async function listsCall(path, body){
-  if (body && path.indexOf('/lists/log') === 0) logCache = null;   // the big board's copy is out of date now
+  const logged = !!body && path.indexOf('/lists/log') === 0;
+  if (logged) logStale();                 // the log page's copy is out of date now
   try{
     const r = await fetch(LISTS_API + path, body ? {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -2790,8 +2874,9 @@ async function listsCall(path, body){
     const d = await r.json();
     if (d.error) return log('tick list: ' + d.error);
     applyLists(d);
-    // logged from the big board: the rows under it are a line short until asked again
-    if (body && path.indexOf('/lists/log') === 0 && document.body.classList.contains('big')) bigHist();
+    // logged from the log page: its rows are a line short until asked again. Anything
+    // asked for while this was on its way may have missed it, so that goes as well.
+    if (logged){ logStale(); if (page === 'log') paintLogPage(); }
   }catch(e){ log('tick list unreachable: ' + e.message); }
 }
 
@@ -2823,6 +2908,7 @@ async function addPerson(previous){
   $('me').value = people.includes(name) ? name : previous;
   try{ localStorage.setItem('mb-me', $('me').value); }catch(e){}
   fillWho(); paintBar(); renderResults(); runPending();
+  if (page === 'log') paintLogPage();
 }
 
 /* Attempts you've logged on the selected problem since your last send. Counting
@@ -2834,7 +2920,7 @@ function myTries(id){
 const RESULTS = ['flash', '2nd', '3rd', '4+'];
 const derivedResult = id => RESULTS[Math.min(myTries(id), 3)];
 
-/* Log try and Log send, under the big board, act as whoever is picked in the header. */
+/* Log try and Log send, on the log page, act as whoever is picked in the header. */
 function paintBar(){
   const who = meNow();
   const on  = !!(current && who);
@@ -2852,13 +2938,14 @@ function paintBar(){
   paintNext();
   paintStack();
   paintPair();
+  paintLogNow();
 }
 
 /* Who has climbed the open problem. It used to run down the gutter left of the
-   board as well. It is read with the history now - under the big board, and on the
-   History sheet - so this only redraws whichever of those two is on screen. */
+   board. It is read on the log page now, under Community, so this only redraws it
+   when that page is the one on screen. */
 function paintWho(){
-  if (document.body.classList.contains('big')) whoFill($('bigWho'));
+  if (page === 'log') whoFill($('lpWho'));
 }
 
 /* + List and Done record against you, whatever list you happen to be looking
@@ -2867,9 +2954,10 @@ function paintWho(){
    tap that prompted the question. The view never changes. */
 function needName(action){
   if (meNow()) return false;
-  bigBoard(false);                       // the name picker is in the header, under the big board
   pending = action;
   $('me').focus();
+  $('me').classList.add('ask');          // a phone shows nothing for the focus, so the picker lights up for a moment
+  setTimeout(() => $('me').classList.remove('ask'), 2600);
   $('count').textContent = 'Pick your name up in the header first';
   log('pick your name from the header, next to Connect.');
   return true;
@@ -3242,7 +3330,8 @@ function loadRoute(r, look){
   $('send').disabled = !canSend();
   paintBar();
   betaReset();
-  paintBig();
+  paintInsta();
+  if (page === 'log') routeHist();       // opened from the log page: its history and its climbers follow
   log('loaded "' + r.name + '" \u2014 ' + GRADES[r.grade] + ' (V' + VGRADE[r.grade] + '), set by ' + r.setter);
   if (!look && $('auto').checked && rx) sendProblem();
   setCompact(false);                          // a route has been picked: the picture comes back to its size
@@ -3250,7 +3339,6 @@ function loadRoute(r, look){
 }
 
 function clearRoute(){
-  bigBoard(false);
   for (const k in state) delete state[k];
   current = null; gradeCells = {};
   second = null;
@@ -4002,34 +4090,41 @@ async function entryAction(action){
    Your own record on the problem that is open: every try and every send, with
    the day it happened. The Logbook is everyone's everything, so this is the one
    place that answers "when did I last get on this, and how did it go". Read only,
-   from the same log the Logbook reads, and shown under the big board (bigHist). */
+   from the same log the Logbook reads, and shown on the log page (routeHist). */
 const RESULT_WORDS = { try: 'try', flash: '\u26a1 flash', '2nd': '2nd go', '3rd': '3rd go', '4+': '4+ goes' };
 
-/* One climber's whole log. The big board asks every time the problem changes, so
-   an answer is kept for a minute - flicking through a list asks once - and dropped
-   as soon as this phone logs anything. fresh: ask regardless. */
+/* One climber's whole log. The log page asks every time the problem changes, so an
+   answer is kept for a minute - flicking through a list asks once - and dropped as
+   soon as this phone logs anything (logStale). Two parts of the page asking at once
+   share the one request. An answer that was already on its way when a go was logged
+   may not have that go in it, so it is handed back but not kept. fresh: ask regardless. */
 let logCache = null;                      // {me, t, entries}
+let logAsk = null;                        // {me, p}: a request on its way
+let logGen = 0;                           // goes up each time the kept answer is thrown out
+function logStale(){ logCache = null; logAsk = null; logGen++; }
 async function myLog(me, fresh){
   if (!fresh && logCache && logCache.me === me && Date.now() - logCache.t < 60000) return logCache.entries;
-  const res = await fetch(LISTS_API + '/lists/log?limit=3000&person=' + encodeURIComponent(me));
-  const entries = (await res.json()).entries || [];
-  logCache = { me, t: Date.now(), entries };
-  return entries;
+  if (!fresh && logAsk && logAsk.me === me) return logAsk.p;
+  const gen = logGen;
+  const p = (async () => {
+    const res = await fetch(LISTS_API + '/lists/log?limit=3000&person=' + encodeURIComponent(me));
+    const entries = (await res.json()).entries || [];
+    if (gen === logGen) logCache = { me, t: Date.now(), entries };
+    return entries;
+  })();
+  const ask = logAsk = { me, p };
+  try{ return await p; } finally{ if (logAsk === ask) logAsk = null; }
 }
 
-/* The summary and the rows, for the History sheet and for under the big board. */
+/* One route's history, for the log page: a line that sums it up, then a row for each
+   session it was tried in - the day, a dot for every go, and how it ended. The newest
+   few show; the rest wait behind a button. */
+let histShown = 4, histRoute = 0;
 function histFill(entries, r, me, sum, rows){
-  entries = entries.slice().sort((a, b) => (a.t < b.t ? 1 : a.t > b.t ? -1 : 0));   // newest first
+  entries = entries.slice().sort((a, b) => logTime(b) - logTime(a));   // newest first
   rows.innerHTML = '';
-
-  /* A row imported from the MoonBoard app is a calendar day, stored as midnight
-     UTC. Read in local time it would slip back a day anywhere west of Greenwich. */
-  const day = e => new Date(e.t).toLocaleDateString(undefined, Object.assign(
-    { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' },
-    e.src === 'moonboard' ? { timeZone: 'UTC' } : {}));
-  const sends = entries.filter(e => e.result !== 'try');
-  const tries = entries.length - sends.length;
   sum.textContent = '';
+  if (histRoute !== r.id){ histRoute = r.id; histShown = 4; }
   if (!entries.length){
     // A tick from before the logbook kept dates has no rows to show.
     const ticked = (done[r.id] || []).includes(me);
@@ -4041,64 +4136,68 @@ function histFill(entries, r, me, sum, rows){
     rows.appendChild(d);
     return;
   }
+  /* A row imported from the MoonBoard app is a calendar day, stored as midnight
+     UTC. Read in local time it would slip back a day anywhere west of Greenwich. */
+  const day = e => new Date(e.t).toLocaleDateString(undefined, Object.assign(
+    { day: 'numeric', month: 'short', year: 'numeric' }, e.src === 'moonboard' ? { timeZone: 'UTC' } : {}));
+  const sends = entries.filter(e => e.result !== 'try');
+  const tries = entries.length - sends.length;
   const first = sends[sends.length - 1];                      // oldest send: the one that scores
   const head = document.createElement('b');
   head.textContent = [sends.length ? sends.length + (sends.length === 1 ? ' send' : ' sends') : 'Not sent yet',
                       tries ? tries + (tries === 1 ? ' try' : ' tries') : ''].filter(Boolean).join(' \u00b7 ');
   sum.appendChild(head);
-  const lines = [];
-  if (first) lines.push('First sent ' + day(first) + ' \u2014 ' + RESULT_WORDS[first.result]);
-  lines.push('Last on it ' + day(entries[0]));
-  lines.forEach(txt => { const d = document.createElement('div'); d.textContent = txt; sum.appendChild(d); });
+  if (first) sum.appendChild(document.createTextNode(' \u00b7 first sent ' + day(first) + ', ' + RESULT_WORDS[first.result]));
 
-  entries.forEach(e => {
+  const all = logSessions(entries);
+  all.slice(0, histShown).forEach(s => {
+    const goes = s.rows.slice().reverse().map(e => e.result);  // in the order they happened
+    const sent = goes.filter(g => g !== 'try'), n = goes.length - sent.length;
     const row = document.createElement('div');
-    row.className = 'e' + (e.result !== 'try' ? ' sent' : '');
-    const d = document.createElement('div');
-    d.className = 'd';
-    d.textContent = day(e);
-    const at = document.createElement('span');
-    // Imported rows carry the day it was climbed but not a real time of day.
-    at.textContent = e.src === 'moonboard' ? 'from the MoonBoard app'
-      : new Date(e.t).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-    d.appendChild(at);
-    const rs = document.createElement('div');
-    rs.className = 'rs';
-    rs.textContent = RESULT_WORDS[e.result] || e.result;
-    const lk = document.createElement('div');
-    lk.className = 'lk';
-    lk.textContent = e.lock ? '\ud83d\udd12' : '';
-    row.append(d, rs, lk);
+    row.className = 'lprow hist' + (sent.length ? ' sent' : '');
+    row.innerHTML = '<div class="n"><b></b><span></span></div><div class="r"><div class="dots"></div><div class="w"></div></div>';
+    row.querySelector('b').textContent = sessionDay(s);
+    // imported rows carry the day it was climbed but not a real time of day
+    row.querySelector('span').textContent = s.rows.every(e => e.src === 'moonboard') ? 'MoonBoard app'
+      : new Date(s.t0).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    row.querySelector('.dots').innerHTML = goDots(goes);
+    row.querySelector('.w').textContent = sent.length
+      ? (RESULT_WORDS[sent[sent.length - 1]] || sent[sent.length - 1]) + (sent.length > 1 ? ' \u00d7' + sent.length : '')
+      : n + (n === 1 ? ' try' : ' tries');
     rows.appendChild(row);
   });
+  if (all.length > histShown){
+    const more = document.createElement('button');
+    more.className = 'ghost mini more';
+    more.textContent = 'Show ' + (all.length - histShown) + ' earlier';
+    more.onclick = () => { histShown = 1e9; histFill(entries, r, me, sum, rows); };
+    rows.appendChild(more);
+  }
 }
 
-/* ---------- under the big board ----------
-   Scroll down past the picture: what you have logged on this problem, the same rows
-   the History sheet shows, and then who has climbed it - how each of them first got
-   up it, how many times since, and when they were last on it. The second part comes
+/* ---------- the open route, on the log page ----------
+   What you have logged on it, and who has climbed it - how each of them first got up
+   it, how many times since, and when they were last on it. The second part comes
    from what the page already holds, so it is there at once and with no name picked. */
-let bigFor = 0;                           // guards against a slow answer landing on another problem
-async function bigHist(){
+let histFor = 0;                          // guards against a slow answer landing on another problem
+async function routeHist(){
   const r = current, me = meNow();
-  if (!r) return;
-  const mine = ++bigFor;
-  whoFill($('bigWho'));
-  const sum = $('bigSum'), rows = $('bigRows');
-  rows.innerHTML = '';
-  if (!me){
-    sum.textContent = 'Pick your name on the main screen, and your tries and sends on this problem show here.';
-    return;
-  }
+  const mine = ++histFor;
+  const sum = $('lpHistSum'), rows = $('lpHistRows');
+  rows.innerHTML = ''; sum.textContent = '';
+  $('lpRouteLbl').hidden = !r || !me;
+  $('lpWhoLbl').textContent = r ? 'Who has climbed ' + r.name : '';
+  whoFill($('lpWho'));
+  if (!r || !me) return;
   sum.textContent = 'loading\u2026';
   let entries = [];
   try{
     entries = (await myLog(me)).filter(e => Number(e.id) === r.id);
   }catch(e){
-    if (mine === bigFor) sum.textContent = 'logbook unreachable \u2014 try again in a moment';
+    if (mine === histFor) sum.textContent = 'logbook unreachable \u2014 try again in a moment';
     return;
   }
-  if (mine !== bigFor || !document.body.classList.contains('big')) return;   // moved on while it loaded
+  if (mine !== histFor || page !== 'log') return;      // moved on while it loaded
   histFill(entries, r, me, sum, rows);
 }
 
@@ -4291,7 +4390,7 @@ function paintBeta(){
       ? betaDraft.length + (betaDraft.length === 1 ? ' move' : ' moves') + ' · pick a limb, then tap a hold or flag'
       : 'Start position first: pick a limb, then tap a hold or flag';
   } else if (betaPlaying && beta){
-    cap.innerHTML = 'Beta by ' + beta.by.replace(/[<&]/g, '') + ' · <u id="betaEditLink">Edit</u>';
+    cap.innerHTML = 'Beta by ' + beta.by.replace(/[<&]/g, '') + ' · tap to stop · <u id="betaEditLink">Edit</u>';
     $('betaEditLink').onclick = () => { if (!needName('beta')) betaEdit(); };
   } else cap.textContent = '';
 }
@@ -4543,8 +4642,8 @@ function betaPlay(){
 /* ---- entering it ---- */
 function betaEdit(){
   if (!current) return;
+  showPage('board');                     // hands and feet are placed on the picture, with the tools beside it
   setCompact(false);
-  bigBoard(false);                       // the tools for placing hands and feet are beside the small board
   betaStop();
   betaDraft = beta ? beta.moves.map(m => ({ l: m.l, h: m.h })) : [];
   betaLimb = BETA_ORDER[Math.min(betaDraft.length, 3)];
@@ -4593,8 +4692,7 @@ async function betaSave(){
       beta = d.beta || null; betaDraft = null;
       document.body.classList.remove('betaEdit');
       $('betaSvg').innerHTML = '';
-      // Play it back where its button is: on the big board.
-      if (beta){ bigBoard(true); betaPlay(); } else paintBeta();
+      if (beta) betaPlay(); else paintBeta();
     }
   }catch(err){ $('betaCap').textContent = 'Could not save — no connection'; }
 }
@@ -4610,18 +4708,14 @@ $('betaUndo').onclick = () => { betaDraft.pop(); betaPaintEdit(); };
 $('betaClear').onclick = () => { betaDraft = []; betaLimb = 'LH'; betaPaintEdit(); };
 $('betaSave').onclick = betaSave;
 $('betaCancel').onclick = () => { betaDraft = null; document.body.classList.remove('betaEdit'); $('betaSvg').innerHTML = ''; paintBeta(); };
+/* The button is on the log page; the climber plays on the picture. So it goes to the
+   board first, and a tap on the picture (boardTap) stops him. */
 $('betaBtn').onclick = () => {
   if (!current) return;
-  if (betaIds.has(current.id)){
-    if (betaPlaying){ betaStop(); $('betaSvg').innerHTML = ''; paintBeta(); }
-    else if (beta) betaPlay();
-    else betaFetch(current.id).then(() => betaPlay());
-  } else {
-    // No beta yet: adding one happens beside the small board, and the name picker
-    // it may need is in the header, so the big board steps aside first.
-    bigBoard(false);
-    if (!needName('beta')) betaEdit();
-  }
+  if (betaPlaying){ betaStop(); $('betaSvg').innerHTML = ''; return paintBeta(); }
+  showPage('board');
+  if (!betaIds.has(current.id)){ if (!needName('beta')) betaEdit(); return; }
+  if (beta) betaPlay(); else betaFetch(current.id).then(() => betaPlay());
 };
 
 /* ---------- swipe the board for the next problem ----------
@@ -4638,14 +4732,6 @@ function stepProblem(delta){
   if (row) row.scrollIntoView({ block: 'nearest' });
 }
 
-/* ---------- the board, big ----------
-   Tap the picture and it fills the screen; "Tap to exit", top right, brings the app
-   back. This is where a go is logged - Log try and Log send are under the picture
-   and nowhere else - with Beta and the Logbook beneath them, and below those what
-   you have logged on the problem and who has climbed it. Flicking still steps
-   through the list while it is big. A tap on the big picture does nothing on
-   purpose - pointing at a hold to show someone where the foot goes should not throw
-   them back to the list. Nothing here writes to the wall. */
 /* The MoonBoard app has a button on each problem that opens Instagram at the tag
    climbers put on their videos of it. This is the same button. The tag is the
    problem's name with everything but its letters and numbers taken out - a guess at
@@ -4664,29 +4750,13 @@ function paintInsta(){
   a.title = 'Videos tagged #' + tag + ' on Instagram';
 }
 
-function paintBig(){
-  if (!current) return;
-  $('bigCap').querySelector('b').textContent = current.name;
-  paintPill($('bigCap').querySelector('.gd'), current.grade);
-  paintInsta();
-  if (document.body.classList.contains('big')) bigHist();    // a flick to the next problem brings its history
-}
-function bigBoard(on, fromBack){
-  on = !!on && !!current && !betaDraft;      // not while placing hands and feet
-  const was = document.body.classList.contains('big');
-  if (on === was) return;
-  document.body.classList.toggle('big', on);
-  $('boardCol').scrollTop = 0;               // open on the picture; leave nothing scrolled behind
-  if (on){ layerOpen('big'); return paintBig(); }
-  if (!fromBack) layerShut('big');
-  bigFor++;                                  // an answer still on its way is for nobody now
-  // The climber plays where its button is. Back beside the small board there is
-  // nothing to stop it with, so it stops here.
-  if (betaPlaying){ betaStop(); $('betaSvg').innerHTML = ''; paintBeta(); }
-}
+/* ---------- a tap on the board ----------
+   It used to fill the screen. Logging and history have a page of their own now, to
+   the right, so a tap only undoes things: it puts a shrunken board back to its size,
+   and it stops the beta climber. */
 function boardTap(){
-  if (document.body.classList.contains('compact')) return setCompact(false);   // small: a tap puts it back first
-  if (!document.body.classList.contains('big')) bigBoard(true);
+  if (document.body.classList.contains('compact')) return setCompact(false);
+  if (betaPlaying){ betaStop(); $('betaSvg').innerHTML = ''; paintBeta(); }
 }
 
 (function boardSwipe(){
@@ -4698,8 +4768,8 @@ function boardTap(){
     if (x0 === null) return;
     const dx = x - x0, dy = y - y0;
     x0 = null;
-    // A touch that went nowhere is a tap: make the board big. Anything between a
-    // tap and a flick was a wobble, and does nothing.
+    // A touch that went nowhere is a tap (boardTap). Anything between a tap and a
+    // flick was a wobble, and does nothing.
     if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return boardTap();
     if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
     stepProblem(dx < 0 ? 1 : -1);               // flick left for the next one
@@ -5245,8 +5315,17 @@ $('connect').onclick = () => {
 $('send').onclick  = sendProblem;
 $('nowBtn').onclick = gotoWall;
 $('nextBtn').onclick = () => { if (!needName('next')) doNext(); };
-$('bigExit').onclick = () => bigBoard(false);
 $('toBoard').onclick = () => showPage('board');
+$('toLog').onclick = () => showPage('log');
+$('lpBack').onclick = () => showPage('board');
+$('lpUndo').onclick = () => {
+  const me = meNow();
+  if (!me || !lpLast) return;
+  if (Date.now() < lpArmed){ lpArmed = 0; lpLast = null; paintUndo(); return listsCall('/lists/log/undo', { person: me }); }
+  lpArmed = Date.now() + 3500;
+  paintUndo();
+  setTimeout(paintUndo, 3600);
+};
 $('histBar').onclick = e => {
   e.stopPropagation();                                 // folding it is not a tap "in the panel" for the small board's sake
   histOpen = !histOpen;
@@ -5257,8 +5336,7 @@ $('pairBtn').onclick = openPair;
 $('pairGo').onclick = lightSecond;
 $('pairClose').onclick = () => showPanel(null);
 document.addEventListener('keydown', e => {
-  if (e.key !== 'Escape') return;
-  if (document.body.classList.contains('big')) bigBoard(false); else showPage('board');
+  if (e.key === 'Escape') showPage('board');
 });
 $('q').oninput = () => { searchQ = $('q').value; showName = false; paintQBox(); renderResults(); };
 $('q').addEventListener('focus', () => {          // with a mouse and real keys: the box is the way to the page of routes
@@ -5286,34 +5364,43 @@ $('scroll').addEventListener('scroll', () => {           // the next page, befor
 let kbOpen  = () => { const q = $('q'); q.focus(); if (nameShown()) q.select(); };   // real keys: just take the focus
 let kbClose = () => { $('q').blur(); };                                              // the phone's own keys replace both, below
 
-/* ghost: for how long the next click should be dropped - set by whoever changes the
-   page from a touch that has not finished yet (see below), and nobody else. */
+/* Left to right: the routes, the board, the log. A swipe goes one page; the board is
+   always in the middle. ghost: for how long the next click should be dropped - set by
+   whoever changes the page from a touch that has not finished yet (see below), and
+   nobody else. */
+const PAGES = ['list', 'board', 'log'];
 function showPage(which, fromBack, ghost){
-  if (which === page) return;
-  if (which === 'list' && (betaDraft || panelOpen || document.body.classList.contains('big'))) return;
+  if (which === page || !PAGES.includes(which)) return;
+  if (page === 'board' && (betaDraft || panelOpen)) return;
+  const was = page;
+  if (was === 'board' && betaPlaying){ betaStop(); $('betaSvg').innerHTML = ''; paintBeta(); }   // nobody is watching him now
   page = which;
   const b = document.body;
   b.classList.toggle('listPage', which === 'list');
+  b.classList.toggle('logPage', which === 'log');
   b.classList.remove('slideL', 'slideR');
   void b.offsetWidth;                                  // so the slide plays again
-  b.classList.add(which === 'list' ? 'slideL' : 'slideR');
+  b.classList.add(PAGES.indexOf(which) < PAGES.indexOf(was) ? 'slideL' : 'slideR');
+  $('pgDots').dataset.at = which;
   /* When the page changes while the finger is still down, the click that ends the tap
      goes, on Android, to whatever is under the finger NOW - a row of the list, usually.
      That is why the search would not stay open there unless you held it. That one
      click is dropped. */
   ghostUntil = ghost ? Date.now() + ghost : 0;
+  // Back steps from either side page to the board
+  if (was !== 'board' && !fromBack) layerShut(was);
+  if (which !== 'board') layerOpen(which);
+  setCompact(false);
   if (which === 'list'){
-    layerOpen('list');
-    setCompact(false);
     showFilters(true);                                 // there is room for them here, so they stand open
     kbOpen();                                          // ready to search, as a tap on the box always was
   } else {
-    if (!fromBack) layerShut('list');
     showFilters(false);
     kbClose();
   }
+  if (which === 'log'){ $('logPage').scrollTop = 0; paintLogPage(); }
   const row = $('results').querySelector('.rt.sel');   // the open route stays in view on both
-  if (row) row.scrollIntoView({ block: which === 'list' ? 'center' : 'nearest' });
+  if (row && which !== 'log') row.scrollIntoView({ block: which === 'list' ? 'center' : 'nearest' });
 }
 document.addEventListener('click', e => {
   if (Date.now() >= ghostUntil) return;
@@ -5329,7 +5416,7 @@ document.body.addEventListener('animationend', e => {
   const off = '#board, #kb, select, #setPanel, #logPanel, #sendPanel, #pairPanel, #snakePanel, #entryPanel, #gamePanel';
   document.addEventListener('pointerdown', e => {
     x0 = null;
-    if (betaDraft || panelOpen || document.body.classList.contains('big')) return;
+    if (betaDraft || panelOpen) return;
     if (e.target.closest && e.target.closest(off)) return;
     x0 = e.clientX; y0 = e.clientY;
   }, { passive: true });
@@ -5339,10 +5426,251 @@ document.body.addEventListener('animationend', e => {
     x0 = null;
     if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.6) return;   // a tap, a wobble, or a scroll
     // with a mouse, letting go where the drag began is a click as well: not wanted
-    showPage(dx > 0 ? 'list' : 'board', false, e.pointerType === 'mouse' ? 300 : 0);
+    // to the right brings in the page on the left, and the other way about
+    const to = PAGES[PAGES.indexOf(page) + (dx > 0 ? -1 : 1)];
+    if (to) showPage(to, false, e.pointerType === 'mouse' ? 300 : 0);
   }, { passive: true });
   document.addEventListener('pointercancel', () => { x0 = null; }, { passive: true });
 })();
+
+/* ---------- the log page ----------
+   The page to the right of the board. It is for two things: logging a go on the open
+   route, and seeing what you have climbed.
+
+   A session is a run of goes with no gap of four hours in it - the same four hours
+   the wall's own "tonight" uses - so an evening that runs past midnight stays one
+   session. The latest one is "this session" while its last go is under eight hours
+   old; after that it is just the newest of the earlier ones.
+
+   Everything comes from the same log the Logbook reads, through myLog, so opening
+   the page inside a minute of the last look asks nothing. */
+const SESSION_GAP = 4 * 3600e3, SESSION_LIVE = 8 * 3600e3;
+let lpFor = 0, lpShown = 12;
+const logTime = e => Date.parse(e.t) || 0;
+
+function logSessions(entries){             // newest first in; sessions newest first out
+  const out = [];
+  let cur = null, last = 0;
+  entries.forEach(e => {
+    const t = logTime(e);
+    if (!cur || last - t > SESSION_GAP){ cur = { t0: t, t1: t, rows: [] }; out.push(cur); }
+    cur.rows.push(e); cur.t0 = t; last = t;
+  });
+  return out;
+}
+function sessionRoutes(s){                 // each route once, latest first, its goes in the order they happened
+  const by = new Map();
+  s.rows.slice().reverse().forEach(e => {
+    const id = Number(e.id);
+    if (!by.has(id)) by.set(id, { id, goes: [], t: 0 });
+    const x = by.get(id);
+    x.goes.push(e.result); x.t = logTime(e);
+  });
+  return [...by.values()].sort((a, b) => b.t - a.t);
+}
+function sessionSum(s){
+  const sends = s.rows.filter(e => e.result !== 'try');
+  let hard = null;
+  sends.forEach(e => { const p = byId[e.id]; if (p && (!hard || p.grade > hard.grade)) hard = p; });
+  return { sends: sends.length, tries: s.rows.length - sends.length, hard };
+}
+const goDots = goes => goes.map(g => '<i class="go' + (g === 'try' ? '' : g === 'flash' ? ' f' : ' s') + '"></i>').join('');
+// a day imported from the MoonBoard app is midnight UTC: read anywhere west of Greenwich it would slip back a day
+const sessionDay = s => new Date(s.t1).toLocaleDateString(undefined, Object.assign(
+  { weekday: 'short', day: 'numeric', month: 'short' },
+  new Date(s.t1).getFullYear() === new Date().getFullYear() ? {} : { year: 'numeric' },
+  s.rows.every(e => e.src === 'moonboard') ? { timeZone: 'UTC' } : {}));
+
+function lpRow(x, clock){
+  const p = byId[x.id];
+  const row = document.createElement('div');
+  const sent = x.goes.filter(g => g !== 'try');
+  const tries = x.goes.length - sent.length;
+  row.className = 'lprow' + (sent.length ? ' sent' : '');
+  row.innerHTML = '<div class="n"><b></b><span><span class="gd"></span><em></em></span></div>' +
+                  '<div class="r"><div class="dots"></div><div class="w"></div></div>';
+  row.querySelector('b').textContent = p ? p.name : 'problem ' + x.id;
+  if (p) paintPill(row.querySelector('.gd'), p.grade); else row.querySelector('.gd').remove();
+  const em = row.querySelector('em');
+  em.style.fontStyle = 'normal';
+  em.textContent = clock && x.t ? new Date(x.t).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) : '';
+  row.querySelector('.dots').innerHTML = goDots(x.goes);
+  row.querySelector('.w').textContent = sent.length
+    ? (RESULT_WORDS[sent[sent.length - 1]] || sent[sent.length - 1]) + (sent.length > 1 ? ' \u00d7' + sent.length : '')
+    : tries + (tries === 1 ? ' try' : ' tries');
+  if (p && p.board === boardKey) row.onclick = () => {    // open it here, ready for another go
+    loadRoute(p, true);
+    $('logPage').scrollTo ? $('logPage').scrollTo({ top: 0, behavior: 'smooth' }) : ($('logPage').scrollTop = 0);
+  };
+  return row;
+}
+
+/* The open route's card: cheap, so it follows every change of route, name or count. */
+function paintLogNow(){
+  const box = $('lpNow');
+  if (!box) return;
+  const r = current, me = meNow();
+  box.querySelector('.top b').textContent = r ? r.name : 'No route open';
+  const gd = box.querySelector('.gd');
+  gd.hidden = !r;
+  if (r) paintPill(gd, r.grade);
+  const st = r && me && stats[me] && stats[me][r.id];
+  const sends = st && st.s ? st.s.length : 0, t = r ? myTries(r.id) : 0;
+  box.querySelector('.sub').textContent =
+      !r  ? 'Open one on the board, or from the routes, and log it here.'
+    : !me ? 'Pick your name at the top to log a go.'
+    : [t ? t + (t === 1 ? ' try' : ' tries') + (sends ? ' since your last send' : ' so far') : (sends ? '' : 'Not tried yet'),
+       sends ? 'sent ' + (sends === 1 ? 'once' : sends === 2 ? 'twice' : sends + ' times') : ''].filter(Boolean).join(' \u00b7 ');
+}                                          // the two buttons themselves are painted with the bar (paintBar)
+
+/* Undo, on the log page. The relay takes off your newest entry, whenever that was, so
+   here it is only offered for a go from this session, it says which go, and it wants
+   a second tap. Anything older is taken out in the Logbook, where it can be seen. */
+let lpLast = null, lpArmed = 0;
+function paintUndo(){
+  const u = $('lpUndo'), e = lpLast, p = e && byId[e.id];
+  u.hidden = !e;
+  u.classList.toggle('armed', !!e && Date.now() < lpArmed);
+  if (!e) return;
+  u.textContent = Date.now() < lpArmed ? 'Tap again to take it off'
+    : 'Undo ' + (RESULT_WORDS[e.result] || e.result) + ' on ' + (p ? p.name : 'problem ' + e.id);
+}
+
+/* What the rest of the crew are on: everyone else's goes in the last few hours, a row
+   a climber and route. Asked for at most once a minute; quietly absent if it fails. */
+let crewCache = null;                      // {t, entries}
+async function crewFeed(me, mine){
+  const box = $('lpFeed'), lbl = $('lpFeedLbl');
+  try{
+    if (!crewCache || Date.now() - crewCache.t > 60000){
+      const res = await fetch(LISTS_API + '/lists/log?limit=300');
+      crewCache = { t: Date.now(), entries: (await res.json()).entries || [] };
+    }
+  }catch(e){ if (mine === lpFor){ box.innerHTML = ''; lbl.hidden = true; } return; }
+  if (mine !== lpFor || page !== 'log') return;
+  const recent = crewCache.entries.filter(e => e.person && e.person !== me && Date.now() - logTime(e) < SESSION_LIVE)
+                                  .sort((a, b) => logTime(b) - logTime(a));
+  const by = new Map();
+  recent.slice().reverse().forEach(e => {
+    const k = e.person + '|' + e.id;
+    if (!by.has(k)) by.set(k, { id: Number(e.id), who: e.person, goes: [], t: 0 });
+    const x = by.get(k);
+    x.goes.push(e.result); x.t = logTime(e);
+  });
+  const rows = [...by.values()].sort((a, b) => b.t - a.t).slice(0, 12);
+  box.innerHTML = '';
+  lbl.hidden = false;
+  if (!rows.length){
+    const d = document.createElement('div');
+    d.className = 'none';
+    d.textContent = 'Nobody else has logged a go in the last few hours.';
+    box.appendChild(d);
+  }
+  rows.forEach(x => {
+    const row = lpRow(x, true);
+    const em = row.querySelector('em');
+    const chip = document.createElement('i');
+    chip.textContent = chipFor(x.who);
+    chip.style.background = personColor(x.who);
+    em.textContent = x.who + (em.textContent ? ' \u00b7 ' + em.textContent : '');
+    em.prepend(chip);
+    box.appendChild(row);
+  });
+}
+
+async function paintLogPage(){
+  paintLogNow();
+  routeHist();
+  const me = meNow(), mine = ++lpFor;
+  crewFeed(me, mine);
+  const hero = $('lpHero'), ses = $('lpSession'), ear = $('lpEarlier'), foot = $('lpFoot');
+  const blank = why => {
+    lpLast = null; paintUndo();
+    hero.className = 'idle';
+    hero.querySelector('.kick').textContent = 'No session yet';
+    $('lpSends').textContent = '0'; $('lpTries').textContent = '0'; $('lpHard').textContent = '\u2013';
+    $('lpStrip').innerHTML = '';
+    ses.innerHTML = ''; ear.innerHTML = ''; foot.innerHTML = '';
+    $('lpEarLbl').hidden = true;
+    const d = document.createElement('div');
+    d.className = 'none'; d.textContent = why;
+    ses.appendChild(d);
+  };
+  if (!me) return blank('Pick your name at the top, and what you climb shows here.');
+  let entries;
+  try{ entries = await myLog(me); }
+  catch(e){ if (mine === lpFor) blank('The logbook cannot be reached just now. Try again in a moment.'); return; }
+  if (mine !== lpFor || page !== 'log') return;                  // moved on while it loaded
+  const sorted = entries.slice().sort((a, b) => logTime(b) - logTime(a));
+  const sessions = logSessions(sorted);
+  const live = sessions.length && Date.now() - sessions[0].t1 < SESSION_LIVE ? sessions[0] : null;
+  const earlier = live ? sessions.slice(1) : sessions;
+  lpLast = live && !sorted[0].lock ? sorted[0] : null;
+  lpArmed = 0;
+  paintUndo();
+
+  // this session
+  if (live){
+    const sum = sessionSum(live);
+    hero.className = '';
+    hero.querySelector('.kick').textContent = sessionDay(live) + ' \u00b7 since ' +
+      new Date(live.t0).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    $('lpSends').textContent = sum.sends; $('lpTries').textContent = sum.tries;
+    $('lpHard').textContent = sum.hard ? GRADES[sum.hard.grade] : '\u2013';
+    $('lpStrip').innerHTML = goDots(live.rows.slice().reverse().map(e => e.result));
+    ses.innerHTML = '';
+    sessionRoutes(live).forEach(x => ses.appendChild(lpRow(x, true)));
+  } else {
+    blank('Log a try or a send and your session starts here.');
+    if (earlier.length) hero.querySelector('.kick').textContent = 'No session yet \u00b7 last on the wall ' + sessionDay(earlier[0]);
+  }
+
+  // earlier sessions: a line each, their routes when tapped
+  ear.innerHTML = '';
+  $('lpEarLbl').hidden = !earlier.length;
+  earlier.slice(0, lpShown).forEach(s => {
+    const sum = sessionSum(s);
+    const el = document.createElement('div');
+    el.className = 'lpses';
+    el.innerHTML = '<div class="h"><span class="cv">\u203a</span><b></b><span class="s"></span><span class="gd"></span></div><div class="body" hidden></div>';
+    el.querySelector('b').textContent = sessionDay(s);
+    el.querySelector('.s').textContent = [sum.sends ? sum.sends + (sum.sends === 1 ? ' send' : ' sends') : '',
+      sum.tries ? sum.tries + (sum.tries === 1 ? ' try' : ' tries') : ''].filter(Boolean).join(' \u00b7 ');
+    if (sum.hard) paintPill(el.querySelector('.gd'), sum.hard.grade); else el.querySelector('.gd').remove();
+    const body = el.querySelector('.body');
+    el.querySelector('.h').onclick = () => {
+      if (!body.children.length) sessionRoutes(s).forEach(x => body.appendChild(lpRow(x, false)));
+      body.hidden = !body.hidden;
+      el.classList.toggle('open', !body.hidden);
+    };
+    ear.appendChild(el);
+  });
+  if (earlier.length > lpShown){
+    const more = document.createElement('button');
+    more.className = 'ghost mini more';
+    more.textContent = 'Show more \u2014 ' + (earlier.length - lpShown) + ' older';
+    more.onclick = () => { lpShown += 20; paintLogPage(); };
+    ear.appendChild(more);
+  }
+
+  // everything, in a line, and the way to the whole logbook
+  const all = sorted.filter(e => e.result !== 'try');
+  let hardest = null;
+  all.forEach(e => { const p = byId[e.id]; if (p && (!hardest || p.grade > hardest.grade)) hardest = p; });
+  foot.innerHTML = '';
+  if (sorted.length){
+    const line = document.createElement('div');
+    line.textContent = [all.length + (all.length === 1 ? ' send' : ' sends') + ' in all',
+      all.filter(e => e.result === 'flash').length + ' flashed',
+      hardest ? 'hardest ' + GRADES[hardest.grade] : '',
+      scoreFor(me).total.toLocaleString() + ' points'].filter(Boolean).join(' \u00b7 ');
+    foot.appendChild(line);
+  }
+  const book = document.createElement('u');
+  book.textContent = 'Logbook and points';
+  book.onclick = openLog;
+  foot.appendChild(book);
+}
 
 /* ---------- the board steps aside ----------
    Scrolling the short list under the board shrinks the picture into the top right
@@ -5351,13 +5679,13 @@ document.body.addEventListener('animationend', e => {
    back to its top. Only a finger or a wheel on the list does it: the list moving by
    itself, to keep the open route in view, does not. */
 let compactAt = 0;                 // when it last changed, so the list's own settling is not read as a scroll
-function setCompact(on){
+function setCompact(on, stay){             // stay: leave the list where the climber has just put it
   const b = document.body;
-  on = !!on && page === 'board' && !betaDraft && !b.classList.contains('big');
+  on = !!on && page === 'board' && !betaDraft;
   if (on === b.classList.contains('compact')) return;
   b.classList.toggle('compact', on);
   compactAt = Date.now();
-  if (on) return;
+  if (on || stay) return;
   setTimeout(() => {                                   // back at full size: the open route may have slid out of view
     const row = $('results').querySelector('.rt.sel');
     if (row && page === 'board') row.scrollIntoView({ block: 'nearest' });
@@ -5371,14 +5699,14 @@ function setCompact(on){
   sc.addEventListener('scroll', () => {
     if (page !== 'board' || Date.now() > hand || Date.now() - compactAt < 450) return;
     if (sc.scrollTop > 24) setCompact(true);
-    else if (sc.scrollTop <= 0) setCompact(false);
+    else if (sc.scrollTop <= 0) setCompact(false, true);   // he scrolled to the top himself: do not move it again
   }, { passive: true });
   $('leftCol').addEventListener('click', () => setCompact(false));
 })();
 
 /* ---------- back ----------
    Android's Back button used to close the app, whatever was open. Each thing that
-   opens over the board's page - the page of routes, the big board, a sheet - now
+   opens over the board's page - the page of routes, the log page, a sheet - now
    puts one step in the browser's history, so Back closes that and nothing more;
    with only the board's page showing it leaves, as it should. Closing something
    with its own button takes its step back out. On an iPhone the same steps are what
@@ -5401,8 +5729,7 @@ window.addEventListener('popstate', () => {
   if (backSkip > 0){ backSkip--; return; }             // our own tidying up, not the button
   const name = layers.pop();
   if (name === 'panel') showPanel(null, true);
-  else if (name === 'big') bigBoard(false, true);
-  else if (name === 'list') showPage('board', true);
+  else if (name === 'list' || name === 'log') showPage('board', true);
 });
 
 /* ---------- search keyboard (phones only) ----------
@@ -5617,6 +5944,7 @@ $('me').onchange = () => {
   lastMe = $('me').value;
   try{ localStorage.setItem('mb-me', lastMe); }catch(e){}
   fillWho(); paintBar(); renderResults(); runPending();
+  if (page === 'log') paintLogPage();
 };
 /* The background: a name on the page's root, which the styles turn into colours. The
    browser's own bar round the page is told the same colour. */
