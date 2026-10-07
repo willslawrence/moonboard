@@ -243,7 +243,9 @@
   #barBtns{display:flex;flex-direction:column;gap:6px}
   #barBtns #send{font-size:18px;padding:6.25px 0}  /* the one that lights the wall: a quarter taller than the rest */
   #barBtns button.mini{padding-left:2px;padding-right:2px}
-  #barBtns #pairBtn{font-size:11px;letter-spacing:-.02em}   /* eleven letters in a 66px button */
+  /* the second bulb: orange, the colour the picture draws a second problem in */
+  #barBtns #pairBtn{border-color:#8a4b17;color:#fdba74}
+  #barBtns #pairBtn.on{background:#fb923c;border-color:#fb923c;color:#0e0e0f}
   /* A short screen has a short board, and the buttons beside it must not be the
      taller of the two - that would take the height back out of the list. */
   @media (max-height:680px){
@@ -326,11 +328,11 @@
   #gamePanel[hidden]{display:none}
   #snakePanel{gap:8px !important}
   #snakePanel #snPad{margin-top:auto}      /* pushed to the bottom of the sheet */
-  #sendPanel,#logPanel,#snakePanel,#entryPanel,#setPanel,#histPanel{position:fixed;inset:0;z-index:60;background:var(--bg);
+  #sendPanel,#logPanel,#snakePanel,#entryPanel,#setPanel,#histPanel,#pairPanel{position:fixed;inset:0;z-index:60;background:var(--bg);
              display:flex;flex-direction:column;gap:12px;overflow-y:auto;
              padding:calc(env(safe-area-inset-top) + 16px) 16px
                      calc(env(safe-area-inset-bottom) + 16px)}
-  #sendPanel[hidden],#logPanel[hidden],#snakePanel[hidden],#entryPanel[hidden],#setPanel[hidden],#histPanel[hidden]{display:none}
+  #sendPanel[hidden],#logPanel[hidden],#snakePanel[hidden],#entryPanel[hidden],#setPanel[hidden],#histPanel[hidden],#pairPanel[hidden]{display:none}
   /* ---- history: everything you have logged on the problem that's open ---- */
   #histFor{font-size:15px;font-weight:600}
   #histFor span{display:block;font-size:12px;color:var(--dimmer);font-weight:400;margin-top:2px}
@@ -344,8 +346,13 @@
   #histRows .e.sent .rs,#bigRows .e.sent .rs{background:#22c55e;color:#06240e}
   #histRows .e .lk,#bigRows .e .lk{flex:none;font-size:10px;color:var(--dimmer)}
   #histRows .none,#bigRows .none{font-size:13px;color:var(--dimmer);padding:8px 2px;line-height:1.5}
-  #sendFor{font-size:15px;font-weight:600}
-  #sendFor span{display:block;font-size:12px;color:var(--dimmer);font-weight:400;margin-top:2px}
+  #sendFor,#pairFor{font-size:15px;font-weight:600}
+  #sendFor span,#pairFor span{display:block;font-size:12px;color:var(--dimmer);font-weight:400;margin-top:2px}
+  /* ---- the second bulb's one question ---- */
+  #pairAsk{font-size:17px;font-weight:700;line-height:1.3}
+  #pairGo{padding:18px 12px;font-size:17px;font-weight:700;border-radius:12px;
+          background:#fb923c;border-color:#fb923c;color:#0e0e0f}
+  #pairGo[hidden]{display:none}
   #sendPicks{display:grid;gap:8px}
   button.res{padding:15px;font-size:15px;font-weight:600;border-radius:9px}
   button.res.pick{background:var(--ink);border-color:var(--ink);color:#0e0e0f}
@@ -635,7 +642,7 @@
       <button id="try" class="mini" disabled>Log try</button>
       <button id="done" class="mini" disabled>Log send</button>
       <button id="hist" class="mini" disabled title="Everything you have logged on this problem">History</button>
-      <button id="pairBtn" class="mini" disabled>+ 2nd route</button>
+      <button id="pairBtn" class="mini" disabled aria-label="Light up as the second route">2nd &#128161;</button>
       <div id="betaTools">
         <div id="betaLimbs">
           <button class="mini" data-l="LH" aria-label="Left hand">L &#9995;</button>
@@ -803,6 +810,17 @@
   <div class="hint" id="sendHint"></div>
 </div>
 
+<div id="pairPanel" hidden>
+  <div id="gameHead">
+    <b>Second route</b>
+    <button id="pairClose" class="ghost mini">Cancel</button>
+  </div>
+  <div id="pairFor"></div>
+  <div id="pairAsk"></div>
+  <button id="pairGo" class="solid">Light it up</button>
+  <div class="hint" id="pairHint"></div>
+</div>
+
 <div id="histPanel" hidden>
   <div id="gameHead">
     <b>Your history</b>
@@ -899,7 +917,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-07 21:44';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-07 22:01';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -913,8 +931,7 @@ const BLOCKED = ['0000fe59','00001530-1212-efde-1523-785feabcd123'];
 let device = null, rx = null, tx = null;
 const state = {};                      // "col,row" -> 'S' | 'P' | 'E'
 let gradeCells = {};                   // "col,1"   -> the row-1 grade meter
-let second = null;                     // a second problem shown with the open one (see "two at once")
-let pick2 = false;                     // the next tap in the list chooses it
+let second = null;                     // the second problem on the wall, drawn with the open one (see "two at once")
 const $ = id => document.getElementById(id);
 
 /* Capped. This grew without limit, and since it lives inside Settings the browser
@@ -988,11 +1005,12 @@ function payloadOf(cells){
   parts.sort((a, b) => (+a.slice(1)) - (+b.slice(1)));
   return 'l#' + parts.join(',') + '#';
 }
+/* What the bulb sends: the open problem on its own, with its grade meter. A second
+   problem that is up beside it is not carried along - the bulb puts one problem up. */
 function buildPayload(withGrade){
-  const two = secondCells(second);
   return payloadOf((withGrade === false)
-    ? Object.assign({}, two, state)
-    : Object.assign({}, gradeCells, two, state));     // a real hold always wins
+    ? Object.assign({}, state)
+    : Object.assign({}, gradeBarFor(current), state));   // a real hold always wins
 }
 
 /* ---------- benchmarks (2016 setup) ---------- */
@@ -3000,7 +3018,7 @@ function renderResults(){
       chip.style.background = personColor(n);
       whoBox.appendChild(chip);
     });
-    row.addEventListener('click', () => rowTap(r));
+    row.addEventListener('click', () => loadRoute(r));
     box.appendChild(row);
   });
   if (hits.length > limit){
@@ -3020,17 +3038,22 @@ function renderResults(){
 }
 
 /* Row 1 reads out the grade: first three green, next three blue, rest red. */
-function applyGradeBar(){
-  gradeCells = {};
-  // With two problems up the row stays dark: one meter for two grades says nothing.
-  if (!current || second || !$('gbar').checked) return;
+function gradeBarFor(r){
+  const cells = {};
+  if (!r || !$('gbar').checked) return cells;
   // Row 1 is free on every 2016 benchmark, but the other sets use it now and then.
-  if (/(^|,)[A-K]1(,|$)/.test(current.s + ',' + current.m + ',' + current.e)) return;
+  if (/(^|,)[A-K]1(,|$)/.test(r.s + ',' + r.m + ',' + r.e)) return cells;
   // A1 lights now that its LED has been reseated, so the bar runs the full A1..K1.
   // One light per V-grade: five green takes you to V5, two blue to V7, red above.
-  const lights = Math.min(VGRADE[current.grade], COLS);   // columns 1..11
+  const lights = Math.min(VGRADE[r.grade], COLS);   // columns 1..11
   for (let i = 0; i < lights; i++)
-    gradeCells[(i + 1) + ',1'] = i < 5 ? 'S' : (i < 7 ? 'P' : 'E');
+    cells[(i + 1) + ',1'] = i < 5 ? 'S' : (i < 7 ? 'P' : 'E');
+  return cells;
+}
+function applyGradeBar(){
+  // With two problems up the row is dark on the wall - one meter for two grades says
+  // nothing - so the picture leaves it dark as well.
+  gradeCells = second ? {} : gradeBarFor(current);
 }
 
 function parseHolds(str, tag, into){
@@ -3045,16 +3068,23 @@ function parseHolds(str, tag, into){
 }
 
 /* ---------- two at once ----------
-   A second problem shown, and lit, with the one that is open - two people working
-   different problems without relighting the wall between goes. Everything else on
-   the page (ticks, tries, beta, the line) still belongs to the open problem alone.
+   A second problem lit beside the one already on the wall - two people working
+   different problems without relighting between goes.
 
-   The box has three colours and the open problem uses all of them, so the second
+   It is a second bulb. Open the problem, tap "2nd", say yes, and it goes up next to
+   whatever is on the wall, which stays exactly as it is and stays the main one. The
+   ordinary bulb is unchanged: it puts the open problem up on its own.
+
+   The box has three colours and the main problem uses all of them, so the second
    cannot have one of its own on the wall: it goes up all red, with its finish green.
    Read from the top, a green hold is the second problem's finish and a red one is
-   the open problem's. The picture is not held to three colours, so there the second
+   the main problem's. The picture is not held to three colours, so there the second
    is drawn dashed and orange. If the box turns out to have another colour, these two
-   letters are the only thing to change (and the relay's payload check with them). */
+   letters are the only thing to change (and the relay's payload check with them).
+
+   Nothing about it is kept on the phone. Which two are up is read from the wall
+   (wallRoute, wallSecond), so every phone sees the same thing and none can be left
+   showing a second problem that has gone. */
 const SECOND_HOLD = 'E', SECOND_END = 'S';
 
 function cellsOf(r){               // a problem as it is lit on its own
@@ -3068,66 +3098,117 @@ function secondCells(r){           // a problem as it is lit when it is the seco
   parseHolds(r.s, SECOND_HOLD, c); parseHolds(r.m, SECOND_HOLD, c); parseHolds(r.e, SECOND_END, c);
   return c;
 }
-// what the wall is sent for these two together: no grade meter, the first one's holds win
+// what the wall is sent for these two together: no grade meter, the main one's holds win
 const pairPayload = (r, r2) => payloadOf(Object.assign({}, secondCells(r2), cellsOf(r)));
 
-/* look: show it on this phone without lighting it, as loadRoute does. */
-function setSecond(r, look){
-  pick2 = false;
-  const was = second;
-  second = (r && current && r.id !== current.id && r.board === current.board) ? r : null;
+// the problem this phone knows to be on the wall, or null
+function wallMain(){ return (rx || bridgeLive) ? wallRoute() : null; }
+
+/* How the open problem is on the wall: 'main', 'second' (beside another, or on its
+   own in the second's colours), or '' when it is not up there. */
+function wallPlace(){
+  const main = wallMain();
+  if (!main || !current) return '';
+  if (main.id === current.id) return wallNow.payload === payloadOf(secondCells(main)) ? 'second' : 'main';
+  const s = wallSecond();
+  return s && s.id === current.id ? 'second' : '';
+}
+
+/* The second problem on the picture: there when the open problem is the main one on
+   the wall and another is up beside it, and not otherwise. */
+function syncSecond(){
+  const main = wallMain();
+  const s = (main && current && current.id === main.id) ? wallSecond() : null;
+  if ((s ? s.id : 0) === (second ? second.id : 0)) return;
+  second = s;
   applyGradeBar();
   paint();
-  paintPair();
-  paintNow();                            // whether this phone is looking at what is on the wall
-  if (second !== was) log(second ? 'second route: "' + second.name + '" \u2014 red on the wall, finish green'
-                                 : 'second route off');
-  if (!look && second !== was && $('auto').checked && rx) sendProblem();
 }
 
 function paintPair(){
   const b = $('pairBtn'), cap = $('pairCap');
   if (!b || !cap) return;
-  document.body.classList.toggle('pair', !!second);
+  const place = wallPlace();
   b.disabled = !current;
-  b.textContent = second ? '\u2715 2nd route' : pick2 ? 'Pick one\u2026' : '+ 2nd route';
-  b.className = 'mini' + (second || pick2 ? ' on' : '');
-  b.title = second ? 'Take ' + second.name + ' off again'
-          : pick2 ? 'Tap a route in the list, or tap here to cancel'
-                  : 'Show and light a second route with this one';
+  b.className = 'mini' + (place === 'second' ? ' on' : '');
+  b.title = place === 'second' ? 'This one is up as the second route'
+                               : 'Light this one up beside what is on the wall';
+  // One line under the picture: the second problem's name when the open one is the
+  // main one, or how the open one is lit when it is the second.
+  const kind = second ? 'plus' : place === 'second' ? 'me' : '';
   const shown = !cap.hidden;
-  cap.hidden = !(second || pick2);
-  // This line under the picture makes the row, and so the gutter, a little taller.
-  // The browser pulls the gutter off its resting place to fit before its lower part
-  // has been resized to match, which read as someone pulling it down and left a
-  // sliver of the line showing. Ask for it to be put back once it has its new size.
+  cap.hidden = !kind;
+  document.body.classList.toggle('pair', !!kind);
+  // This line makes the row, and so the gutter, a little taller. The browser pulls
+  // the gutter off its resting place to fit before its lower part has been resized
+  // to match, which read as someone pulling it down and left a sliver of the line
+  // showing. Ask for it to be put back once it has its new size.
   if (shown !== !cap.hidden) stackSnap = true;
   cap.innerHTML = '';
-  if (second){
-    const nm = document.createElement('b');
+  if (!kind) return;
+  const nm = document.createElement('b');
+  const leg = document.createElement('span');
+  leg.className = 'leg';
+  leg.textContent = 'red on the wall \u00b7 finish green';
+  if (kind === 'plus'){
     nm.textContent = '+ ' + second.name;
     const gd = document.createElement('span');
     gd.className = 'gd';
     paintPill(gd, second.grade);
-    const leg = document.createElement('span');
-    leg.className = 'leg';
-    leg.textContent = 'red on the wall \u00b7 finish green';
     cap.append(nm, gd, leg);
-  } else if (pick2){
-    cap.textContent = 'Tap a second route in the list';
+  } else {
+    nm.textContent = 'Up as the 2nd route';
+    cap.append(nm, leg);
   }
 }
 
-/* A tap on a row of the list: the second problem while one is being picked, the
-   open one the rest of the time. */
-function rowTap(r){
-  if (!pick2) return loadRoute(r);
-  if (current && r.id === current.id){
-    $('pairCap').textContent = 'That one is already up \u2014 tap another';
-    return;
+/* The second bulb asks one question first. What it says depends on what is up. */
+function openPair(){
+  const r = current;
+  if (!r) return;
+  const main = wallMain(), place = wallPlace();
+  const other = main && main.id !== r.id ? main : null;       // the problem that would stay up as the main one
+  $('pairFor').innerHTML = '';
+  const b = document.createElement('b'); b.textContent = r.name;
+  const sub = document.createElement('span');
+  sub.textContent = GRADES[r.grade] + ' \u00b7 V' + VGRADE[r.grade];
+  $('pairFor').append(b, sub);
+  const ask = $('pairAsk'), hint = $('pairHint'), go = $('pairGo');
+  go.hidden = false;
+  ask.textContent = 'Ready to light it up as the second route?';
+  if (!canSend()){
+    ask.textContent = 'Not connected to the wall.';
+    hint.textContent = 'Tap Connect on the main screen first.';
+    go.hidden = true;
+  } else if (place === 'main'){
+    ask.textContent = 'This one is already up as the main route.';
+    hint.textContent = 'Open the route you want to add and tap 2nd there. It goes up beside this one in red, with a green finish.';
+    go.hidden = true;
+  } else if (other){
+    const was = wallSecond();
+    hint.textContent = other.name + ' stays up as the main route. This one goes up beside it in red, with a green finish.' +
+      (was && was.id !== r.id ? ' It takes the place of ' + was.name + '.' : '');
+  } else {
+    hint.textContent = 'Nothing else is on the wall that this phone knows of, so it goes up on its own: in red, with a green finish.';
   }
-  setSecond(r);
+  showPanel('pair');
 }
+
+/* Yes. Whatever is on the wall stays as the main problem, under the name it went up
+   with; the open problem goes up beside it. With nothing up, it goes up alone. */
+function lightSecond(){
+  const r = current;
+  showPanel(null);
+  if (!r || !canSend()) return;
+  const main = wallMain();
+  if (main && main.id !== r.id && main.board === r.board){
+    log('second route: "' + r.name + '" beside "' + main.name + '"');
+    return write(pairPayload(main, r), false, { id: main.id, by: (wallNow.by || '').trim(), board: boardKey });
+  }
+  log('second route: "' + r.name + '" on its own');
+  return write(payloadOf(secondCells(r)), false, routeMeta());
+}
+
 
 /* The tools follow the board: in the search row with no route up, and beside the
    board once there is one - the two games in the left gutter, settings and the
@@ -3168,9 +3249,6 @@ function loadRoute(r, look){
   introToken++;                          // a pick beats the intro
   for (const k in state) delete state[k];
   parseHolds(r.s, 'S'); parseHolds(r.m, 'P'); parseHolds(r.e, 'E');
-  // The second problem stays up while the open one changes, unless this is it.
-  if (second && (second.id === r.id || second.board !== r.board)) second = null;
-  pick2 = false;
   current = r;
   placeTools();
   applyGradeBar();
@@ -3192,7 +3270,7 @@ function clearRoute(){
   bigBoard(false);
   for (const k in state) delete state[k];
   current = null; gradeCells = {};
-  second = null; pick2 = false;
+  second = null;
   betaReset();
   $('boardWrap').style.display = 'none';
   placeTools();
@@ -3517,16 +3595,19 @@ function wallSecond(){
   }
   return pairHit;
 }
-const sameSecond = r2 => (second ? second.id : 0) === (r2 ? r2.id : 0);
 
 function paintNow(){
+  // What is on the wall has changed, or which problem is open has: the second
+  // problem on the picture, and the second bulb, follow both.
+  syncSecond();
+  paintPair();
   const b = $('nowBtn');
   if (!b) return;
   // Only when this phone can know: it holds the Bluetooth, or someone else does.
-  const r = (rx || bridgeLive) ? wallRoute() : null;
+  const r = wallMain();
   if (!r){ b.hidden = true; return; }
   const r2 = wallSecond();
-  const here = !!current && current.id === r.id && sameSecond(r2);
+  const here = !!current && current.id === r.id;
   const by = (wallNow.by || '').trim();
   b.hidden = false;
   b.classList.toggle('here', here);
@@ -3549,11 +3630,9 @@ function paintNow(){
 }
 
 function gotoWall(){
-  const r = wallRoute(), r2 = wallSecond();
-  if (!r || betaDraft || (current && current.id === r.id && sameSecond(r2))) return;
-  // a look, not a send - it is already up there
-  if (!current || current.id !== r.id) loadRoute(r, true);
-  setSecond(r2, true);
+  const r = wallRoute();
+  if (!r || betaDraft || (current && current.id === r.id)) return;
+  loadRoute(r, true);                    // a look, not a send - it is already up there
   const row = $('results').querySelector('.rt.sel');
   if (row) row.scrollIntoView({ block: 'nearest' });
 }
@@ -3726,7 +3805,6 @@ function stackOpen(r){
 function putUp(e){
   const r = byId[e.id];
   if (!r || r.board !== boardKey || betaDraft || !canSend()) return;
-  second = null;                         // their go, their problem: it goes up on its own
   loadRoute(r, true);
   const again = !!wallNow && wallNow.id === r.id && sameName(wallNow.by, e.by);
   write(buildPayload(), false, { id: r.id, by: e.by, board: boardKey });
@@ -5246,12 +5324,9 @@ $('bigHistBtn').onclick = () => {
   const el = $('bigHist');
   if (el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
-$('pairBtn').onclick = () => {
-  if (!current) return;
-  if (second) return setSecond(null);
-  pick2 = !pick2;
-  paintPair();
-};
+$('pairBtn').onclick = openPair;
+$('pairGo').onclick = lightSecond;
+$('pairClose').onclick = () => showPanel(null);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') bigBoard(false); });
 $('q').oninput = () => { searchQ = $('q').value; showName = false; paintQBox(); renderResults(); };
 $('q').addEventListener('focus', () => { if (!$('q').readOnly && nameShown()) $('q').select(); });
@@ -5379,7 +5454,7 @@ function showFilters(on){
 $('filtBtn').onclick = () => showFilters($('filters').hidden);
 
 const PANELS = { game: 'gamePanel', set: 'setPanel', log: 'logPanel', hist: 'histPanel',
-                 send: 'sendPanel', snake: 'snakePanel', entry: 'entryPanel' };
+                 send: 'sendPanel', snake: 'snakePanel', entry: 'entryPanel', pair: 'pairPanel' };
 
 function showPanel(which){          // a key of PANELS, or null for none
   $('gamePanel').hidden = which !== 'game';
@@ -5387,6 +5462,7 @@ function showPanel(which){          // a key of PANELS, or null for none
   $('logPanel').hidden  = which !== 'log';
   $('histPanel').hidden = which !== 'hist';
   $('sendPanel').hidden = which !== 'send';
+  $('pairPanel').hidden = which !== 'pair';
   $('snakePanel').hidden = which !== 'snake';
   $('entryPanel').hidden = which !== 'entry';
   if (which !== 'snake' && which !== 'entry' && snTimer) snStop();     // don't leave it running unseen
