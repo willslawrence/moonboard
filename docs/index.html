@@ -1116,7 +1116,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-08 01:21';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-08 01:29';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -2991,7 +2991,34 @@ function myTries(id){
   return (me && stats[me] && stats[me][id] && stats[me][id].a) || 0;
 }
 const RESULTS = ['flash', '2nd', '3rd', '4+'];
-const derivedResult = id => RESULTS[Math.min(myTries(id), 3)];
+/* Has this climber sent it before? Then the next send is a session send, and what
+   counts towards "2nd" or "3rd" is today's tries, not every try since the last send. */
+function sentBefore(id){
+  const me = meNow(), st = me && stats[me] && stats[me][id];
+  return !!(st && st.s && st.s.length);
+}
+function sessionTries(id){
+  const me = meNow(), st = me && stats[me] && stats[me][id];
+  if (!st || !st.a) return 0;
+  // With the log to hand: tries on this route since its last send, back to the first
+  // gap of four hours in everything this climber has logged.
+  if (logCache && logCache.me === me){
+    const mine = logCache.entries.slice().sort((a, b) => (a.t < b.t ? 1 : a.t > b.t ? -1 : 0));
+    let n = 0, last = Date.now();
+    for (const e of mine){
+      const t = Date.parse(e.t) || 0;
+      if (last - t > 4 * 3600e3) break;
+      last = t;
+      if (Number(e.id) !== id) continue;
+      if (e.result !== 'try') break;
+      n++;
+    }
+    return n;
+  }
+  // Without it: the relay's count is today's if the route was last touched inside the gap.
+  return st.d && Date.now() - Date.parse(st.d) < 4 * 3600e3 ? st.a : 0;
+}
+const derivedResult = id => RESULTS[Math.min(sentBefore(id) ? sessionTries(id) : myTries(id), 3)];
 
 /* Log try and Log send, on the log page, act as whoever is picked in the header. */
 function paintBar(){
@@ -3060,22 +3087,32 @@ function doDone(){
   openSend();
 }
 
+const SEND_LABELS = { flash: 'Flash', '2nd': '2nd go', '3rd': '3rd go', '4+': '4+ goes' };
 function openSend(){
-  const t = myTries(current.id), pick = derivedResult(current.id);
+  const again = sentBefore(current.id);            // sent before: this one is a session send
+  const t = again ? sessionTries(current.id) : myTries(current.id), pick = derivedResult(current.id);
+  const word = r => again ? RESULT_WORDS['s' + r] : SEND_LABELS[r];
   $('sendFor').innerHTML = '';
   const b = document.createElement('b'); b.textContent = current.name;
   const sub = document.createElement('span');
   sub.textContent = GRADES[current.grade] + ' \u00b7 V' + VGRADE[current.grade] +
-    ' \u00b7 ' + (t ? t + (t === 1 ? ' try logged' : ' tries logged') : 'no tries logged');
+    ' \u00b7 ' + (t ? t + (t === 1 ? ' try logged' : ' tries logged') : 'no tries logged') + (again ? ' this session' : '');
   $('sendFor').append(b, sub);
-  document.querySelectorAll('#sendPicks .res').forEach(el =>
-    el.className = 'res' + (el.dataset.r === pick ? ' pick' : ''));
+  document.querySelectorAll('#sendPicks .res').forEach(el => {
+    el.className = 'res' + (el.dataset.r === pick ? ' pick' : '');
+    el.textContent = word(el.dataset.r);
+  });
   const already = (done[current.id] || []).includes(meNow());
-  $('sendHint').textContent = (t
-    ? 'Your ' + t + ' logged ' + (t === 1 ? 'try makes' : 'tries make') + ' this a ' +
-      pick + '. Tap another if that is not right.'
-    : 'No tries logged, so this counts as a flash. Tap another if that is not right.') +
-    (already ? ' You have sent this before - this adds another, it does not replace it.' : '');
+  $('sendHint').textContent = again
+    ? 'You have sent this before, so this is a session send: ' +
+      (t ? 'your ' + t + (t === 1 ? ' try' : ' tries') + ' this session ' + (t === 1 ? 'makes' : 'make') + ' it a ' + word(pick) + '.'
+         : 'first go today makes it a ' + word(pick) + '.') +
+      ' Tap another if that is not right. It adds a send; your first one stays, and is the one that scores.'
+    : (t
+      ? 'Your ' + t + ' logged ' + (t === 1 ? 'try makes' : 'tries make') + ' this a ' +
+        pick + '. Tap another if that is not right.'
+      : 'No tries logged, so this counts as a flash. Tap another if that is not right.') +
+      (already ? ' You have sent this before - this adds another, it does not replace it.' : '');
   showPanel('send');
 }
 
@@ -4145,7 +4182,7 @@ function openEntry(e, p){
   const b = document.createElement('b');
   b.textContent = p ? p.name : 'problem ' + e.id;
   const sub = document.createElement('span');
-  sub.textContent = new Date(e.t).toLocaleString() + ' \u00b7 ' + e.result +
+  sub.textContent = new Date(e.t).toLocaleString() + ' \u00b7 ' + (e.rep ? RESULT_WORDS[shown(e)] : e.result) +
     (e.lock ? ' \u00b7 locked' : '');
   $('enFor').append(b, sub);
   $('enUnlock').textContent = e.lock ? 'Unlock' : 'Lock';
@@ -4169,7 +4206,30 @@ async function entryAction(action){
    the day it happened. The Logbook is everyone's everything, so this is the one
    place that answers "when did I last get on this, and how did it go". Read only,
    from the same log the Logbook reads, and shown on the log page (routeHist). */
-const RESULT_WORDS = { try: 'try', flash: '\u26a1 flash', '2nd': '2nd go', '3rd': '3rd go', '4+': '4+ goes' };
+const RESULT_WORDS = { try: 'try', flash: '\u26a1 flash', '2nd': '2nd go', '3rd': '3rd go', '4+': '4+ goes',
+                       sflash: 'Session flash', s2nd: 'Session 2nd', s3rd: 'Session 3rd', 's4+': 'Session 4+' };
+
+/* ---------- a send of something already sent ----------
+   A flash is the first go ever. Send a route again another day, first go, and it is a
+   session flash; second go, a session 2nd - the names the MoonBoard app uses. The log
+   keeps what it always kept (flash, 2nd, 3rd, 4+): which of a climber's sends of a
+   route came first is worked out here, when rows are shown, from the count of sends
+   the page already holds for everyone (stats). So nothing is stored differently, old
+   rows read right, and the score - which only ever counted the first send - is the
+   same. Rows may be any part of the log, in any order. */
+function tagRepeats(entries){
+  const newer = {};                        // sends of a route by a climber met so far, walking back in time
+  entries.slice().sort((a, b) => (a.t < b.t ? 1 : a.t > b.t ? -1 : 0)).forEach(e => {
+    e.rep = false;
+    if (e.result === 'try') return;
+    const k = e.person + '|' + e.id, st = stats[e.person] && stats[e.person][e.id];
+    const total = st && st.s ? st.s.length : 0, c = newer[k] || 0;
+    e.rep = total - 1 - c > 0;             // not the oldest of them: a repeat
+    newer[k] = c + 1;
+  });
+  return entries;
+}
+const shown = e => (e.rep && e.result !== 'try') ? 's' + e.result : e.result;     // the key into RESULT_WORDS
 
 /* One climber's whole log. The log page asks every time the problem changes, so an
    answer is kept for a minute - flicking through a list asks once - and dropped as
@@ -4229,7 +4289,7 @@ function histFill(entries, r, me, sum, rows){
 
   const all = logSessions(entries);
   all.slice(0, histShown).forEach(s => {
-    const goes = s.rows.slice().reverse().map(e => e.result);  // in the order they happened
+    const goes = s.rows.slice().reverse().map(shown);          // in the order they happened
     const sent = goes.filter(g => g !== 'try'), n = goes.length - sent.length;
     const row = document.createElement('div');
     row.className = 'lprow hist' + (sent.length ? ' sent' : '');
@@ -4270,7 +4330,7 @@ async function routeHist(){
   sum.textContent = 'loading\u2026';
   let entries = [];
   try{
-    entries = (await myLog(me)).filter(e => Number(e.id) === r.id);
+    entries = tagRepeats(await myLog(me)).filter(e => Number(e.id) === r.id);
   }catch(e){
     if (mine === histFor) sum.textContent = 'logbook unreachable \u2014 try again in a moment';
     return;
@@ -4334,9 +4394,10 @@ async function loadLog(){
     const r = await fetch(LISTS_API + '/lists/log?limit=2000&person=' + encodeURIComponent(who));
     entries = (await r.json()).entries || [];
   }catch(e){ $('logSum').textContent = 'logbook unreachable'; return; }
+  tagRepeats(entries);
 
   const sends = entries.filter(e => e.result !== 'try');
-  const flashes = sends.filter(e => e.result === 'flash').length;
+  const flashes = sends.filter(e => e.result === 'flash' && !e.rep).length;    // a session flash is not a flash
   const hardest = sends.reduce((best, e) => {
     const p = byId[e.id];
     return p && (!best || p.grade > best.grade) ? p : best;
@@ -4409,7 +4470,7 @@ async function loadLog(){
       n.textContent = p ? p.name : 'problem ' + e.id;
       const rs = document.createElement('div');
       rs.className = 'rs';
-      rs.textContent = e.result === 'try' ? 'try' : (e.result === 'flash' ? '\u26a1 flash' : e.result);
+      rs.textContent = e.rep ? RESULT_WORDS[shown(e)] : e.result === 'try' ? 'try' : (e.result === 'flash' ? '\u26a1 flash' : e.result);
       const lk = document.createElement('div');
       lk.className = 'lk';
       lk.textContent = e.lock ? '\ud83d\udd12' : '';
@@ -5544,7 +5605,7 @@ function sessionRoutes(s){                 // each route once, latest first, its
     const id = Number(e.id);
     if (!by.has(id)) by.set(id, { id, goes: [], t: 0 });
     const x = by.get(id);
-    x.goes.push(e.result); x.t = logTime(e);
+    x.goes.push(shown(e)); x.t = logTime(e);
   });
   return [...by.values()].sort((a, b) => b.t - a.t);
 }
@@ -5613,7 +5674,7 @@ function paintUndo(){
   u.classList.toggle('armed', !!e && Date.now() < lpArmed);
   if (!e) return;
   u.textContent = Date.now() < lpArmed ? 'Tap again to take it off'
-    : 'Undo ' + (RESULT_WORDS[e.result] || e.result) + ' on ' + (p ? p.name : 'problem ' + e.id);
+    : 'Undo ' + (RESULT_WORDS[shown(e)] || e.result) + ' on ' + (p ? p.name : 'problem ' + e.id);
 }
 
 /* What the rest of the crew are on: everyone else's goes in the last few hours, a row
@@ -5628,14 +5689,14 @@ async function crewFeed(me, mine){
     }
   }catch(e){ if (mine === lpFor){ box.innerHTML = ''; lbl.hidden = true; } return; }
   if (mine !== lpFor || page !== 'log') return;
-  const recent = crewCache.entries.filter(e => e.person && e.person !== me && Date.now() - logTime(e) < SESSION_LIVE)
+  const recent = tagRepeats(crewCache.entries.filter(e => e.person && e.person !== me && Date.now() - logTime(e) < SESSION_LIVE))
                                   .sort((a, b) => logTime(b) - logTime(a));
   const by = new Map();
   recent.slice().reverse().forEach(e => {
     const k = e.person + '|' + e.id;
     if (!by.has(k)) by.set(k, { id: Number(e.id), who: e.person, goes: [], t: 0 });
     const x = by.get(k);
-    x.goes.push(e.result); x.t = logTime(e);
+    x.goes.push(shown(e)); x.t = logTime(e);
   });
   const rows = [...by.values()].sort((a, b) => b.t - a.t).slice(0, 12);
   box.innerHTML = '';
@@ -5682,7 +5743,7 @@ async function paintLogPage(){
   try{ entries = await myLog(me); }
   catch(e){ if (mine === lpFor) blank('The logbook cannot be reached just now. Try again in a moment.'); return; }
   if (mine !== lpFor || page !== 'log') return;                  // moved on while it loaded
-  const sorted = entries.slice().sort((a, b) => logTime(b) - logTime(a));
+  const sorted = tagRepeats(entries).slice().sort((a, b) => logTime(b) - logTime(a));
   const sessions = logSessions(sorted);
   const live = sessions.length && Date.now() - sessions[0].t1 < SESSION_LIVE ? sessions[0] : null;
   const earlier = live ? sessions.slice(1) : sessions;
@@ -5699,7 +5760,7 @@ async function paintLogPage(){
       new Date(live.t0).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
     $('lpSends').textContent = sum.sends; $('lpTries').textContent = sum.tries;
     $('lpHard').textContent = sum.hard ? GRADES[sum.hard.grade] : '\u2013';
-    $('lpStrip').innerHTML = goDots(live.rows.slice().reverse().map(e => e.result));
+    $('lpStrip').innerHTML = goDots(live.rows.slice().reverse().map(shown));
     ses.innerHTML = '';
     sessionRoutes(live).forEach(x => ses.appendChild(lpRow(x, true)));
   } else {
@@ -5743,7 +5804,7 @@ async function paintLogPage(){
   if (sorted.length){
     const line = document.createElement('div');
     line.textContent = [all.length + (all.length === 1 ? ' send' : ' sends') + ' in all',
-      all.filter(e => e.result === 'flash').length + ' flashed',
+      all.filter(e => e.result === 'flash' && !e.rep).length + ' flashed',
       hardest ? 'hardest ' + GRADES[hardest.grade] : '',
       scoreFor(me).total.toLocaleString() + ' points'].filter(Boolean).join(' \u00b7 ');
     foot.appendChild(line);
