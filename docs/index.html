@@ -899,7 +899,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-07 21:37';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-07 21:44';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -2648,6 +2648,7 @@ let lineNow = [];          // [{id, by, board, t}] next first
 let histNow = [];          // [{id, by, board, t}] oldest first
 let stackSig = '';         // what the rows were last drawn from, so a look that changes nothing redraws nothing
 let stackPulled = false;   // the gutter has been pulled down off its resting place
+let stackSnap = false;     // the gutter is about to change height by itself: put it back at rest after
 let stackTouch = 0;        // when it was last touched; left alone it goes back to rest
 let wallKnown = false;     // the relay is new enough to say what is on the wall
 let lastWrite = null;      // {payload, meta} this phone last put up over Bluetooth
@@ -3094,7 +3095,13 @@ function paintPair(){
   b.title = second ? 'Take ' + second.name + ' off again'
           : pick2 ? 'Tap a route in the list, or tap here to cancel'
                   : 'Show and light a second route with this one';
+  const shown = !cap.hidden;
   cap.hidden = !(second || pick2);
+  // This line under the picture makes the row, and so the gutter, a little taller.
+  // The browser pulls the gutter off its resting place to fit before its lower part
+  // has been resized to match, which read as someone pulling it down and left a
+  // sliver of the line showing. Ask for it to be put back once it has its new size.
+  if (shown !== !cap.hidden) stackSnap = true;
   cap.innerHTML = '';
   if (second){
     const nm = document.createElement('b');
@@ -5230,7 +5237,8 @@ $('lineBar').onclick = () => {
   if (window.ResizeObserver) new ResizeObserver(() => {
     if (!col.clientHeight) return;
     $('wallBelow').style.height = col.clientHeight + 'px';
-    if (!stackPulled) stackRest();
+    if (!stackPulled || stackSnap) stackRest();
+    stackSnap = false;
   }).observe(col);
 })();
 $('bigExit').onclick = () => bigBoard(false);
