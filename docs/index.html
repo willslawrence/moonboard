@@ -183,20 +183,21 @@
   body.big #bigExit{flex:1 1 auto;width:auto;min-width:0;padding:18px 6px;
                     font-size:18px;font-weight:700;border-radius:12px}
   #bigRow > .mini{flex:0 0 86px;width:auto;padding:0 4px;font-size:13px;border-radius:12px}
-  /* ---- under the big board: your own tries and sends on it, then who has climbed it ---- */
+  /* ---- under the big board: your own tries and sends on it, then who has climbed it
+     (.whoRows - the History sheet lists them the same way) ---- */
   body.big #bigHist{display:block;width:min(100%,430px);margin:0 auto;padding:2px 0 6px}
   #bigHist .lbl{margin:18px 0 6px}
   #bigSum{font-size:13px;color:var(--dim);line-height:1.5}
   #bigSum b{color:var(--ink);font-weight:600}
-  #bigWho .p{display:flex;align-items:center;gap:9px;padding:9px 2px;border-bottom:1px solid #1e2024}
-  #bigWho .p i{flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;
+  .whoRows .p{display:flex;align-items:center;gap:9px;padding:9px 2px;border-bottom:1px solid #1e2024}
+  .whoRows .p i{flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;
                font-size:11px;font-weight:700;font-style:normal;color:#0e0e0f}
-  #bigWho .p .n{flex:1;min-width:0;font-size:14px;font-weight:600;
+  .whoRows .p .n{flex:1;min-width:0;font-size:14px;font-weight:600;
                 white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #bigWho .p .n span{display:block;font-size:11px;font-weight:400;color:var(--dimmer);margin-top:1px}
-  #bigWho .p .rs{flex:none;padding:2px 7px;border-radius:5px;
+  .whoRows .p .n span{display:block;font-size:11px;font-weight:400;color:var(--dimmer);margin-top:1px}
+  .whoRows .p .rs{flex:none;padding:2px 7px;border-radius:5px;
                  font:700 10px ui-monospace,Menlo,monospace;background:#22c55e;color:#06240e}
-  #bigWho .none{font-size:13px;color:var(--dimmer);padding:8px 2px;line-height:1.5}
+  .whoRows .none{font-size:13px;color:var(--dimmer);padding:8px 2px;line-height:1.5}
   /* ---- two at once: the second problem's name, under the picture ---- */
   #pairCap{display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;
            font-size:11px;color:#fb923c;margin-top:4px}
@@ -279,18 +280,6 @@
   .betaPair{display:grid;grid-template-columns:1fr 1fr;gap:4px}
   .betaPair button{padding:6px 0;font-size:10px;min-width:0;letter-spacing:-.01em}
   #betaEnd{margin-top:auto}
-  #climbers{display:flex;flex-direction:column;gap:5px;min-width:0}
-  #climbers .hd{font-size:9px;letter-spacing:.1em;text-transform:uppercase;
-                color:var(--dimmer);margin-bottom:1px}
-  /* 72px is not enough for a dot, a result and a long name on one line, and the
-     result is the bit that was getting cut. Result first, name underneath. */
-  #climbers .p{min-width:0}
-  #climbers .p .top{display:flex;align-items:center;gap:5px}
-  #climbers .p i{flex:none;display:grid;place-items:center;width:17px;height:17px;
-                 border-radius:50%;font-size:9px;font-weight:700;color:#0e0e0f}
-  #climbers .p .res{flex:none;font:700 11px ui-monospace,Menlo,monospace;color:var(--ink)}
-  #climbers .p .nm2{display:block;font-size:10px;color:var(--dimmer);margin-top:1px;
-                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   button.mini{padding:5px 6px;font-size:12px;font-weight:600;border-radius:6px;
               white-space:nowrap}
   button.on{background:var(--ink);border-color:var(--ink);color:#0e0e0f}
@@ -470,26 +459,25 @@
   .tools button{width:32px;height:32px;padding:0;display:grid;place-items:center;border-radius:8px}
   .tools svg{width:18px;height:18px;display:block}
   #leftCol{position:relative;min-width:0}
-  /* out of flow, so a long climber list can never make the row taller than the board */
+  /* out of flow, so nothing in the gutter can ever make the row taller than the board */
   #leftIn{position:absolute;inset:0;display:flex;flex-direction:column;gap:8px}
   /* The gutter is a column that scrolls. #wallBelow is exactly one column tall, so at
-     rest it is all you see: the line's small bar, what is on the wall, who has climbed
-     the open problem. What sits above it - the line, then tonight's routes - only
-     shows when you pull the column down, so it costs the board nothing. */
+     rest it is all you see: the line's small bar and what is on the wall. What sits
+     above it - the line, then tonight's routes - only shows when you pull the column
+     down, so it costs the board nothing. Who has climbed the open problem used to be
+     listed here as well; that is read with the history now (see whoFill). */
   #wallCol{position:relative;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
            scrollbar-width:none}
   #wallCol::-webkit-scrollbar{display:none}
   #wallCol.more{-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 14px);
                 mask-image:linear-gradient(to bottom,transparent 0,#000 14px)}
   #wallBelow{display:flex;flex-direction:column;gap:8px;height:100%}
-  #wallBelow #climbers{flex:1 1 auto;min-height:0;overflow:hidden}
   #wallCol > #stackUp{margin-bottom:5px}
   #leftIn #tools{display:grid;grid-template-columns:32px 32px;gap:4px}
   /* Settings and the logbook ride at the foot of the buttons right of the board,
      where Hide used to be; the two games keep the left gutter. */
   #barBtns #toolsR{display:grid;grid-template-columns:32px 32px;gap:4px;margin-top:auto}
   body.betaEdit #barBtns #toolsR{display:none}
-  #climbers.many .p .nm2{display:none}       /* five or more: initials and results only */
   /* ---- on the wall: the problem someone has lit, and who lit it ----
      Top of the gutter beside the board, or across the top of the search row when
      no problem is open. One tap opens it. Blue because it came through the relay,
@@ -602,12 +590,11 @@
 <section id="boardWrap" style="display:none">
   <div id="boardRow">
     <div id="leftCol"><div id="leftIn">
-      <!-- The gutter scrolls. At rest it shows what is on the wall and who has climbed
-           the open problem; pull it down and the line, then tonight's routes, come in
-           above. placeTools() puts #stackUp, #lineBar and #nowBtn in here. -->
-      <div id="wallCol"><div id="wallBelow">
-        <div id="climbers"></div><!-- who has climbed it; also centres the board -->
-      </div></div>
+      <!-- The gutter scrolls. At rest it shows what is on the wall; pull it down and
+           the line, then tonight's routes, come in above. placeTools() puts #stackUp,
+           #lineBar and #nowBtn in here. Empty, it still mirrors the buttons on the
+           right, which is what keeps the board in the middle of the page. -->
+      <div id="wallCol"><div id="wallBelow"></div></div>
     </div></div>
     <div id="boardCol">
       <div id="bigTop">
@@ -632,7 +619,7 @@
         <div id="bigSum"></div>
         <div id="bigRows"></div>
         <div class="lbl">Climbed by</div>
-        <div id="bigWho"></div>
+        <div id="bigWho" class="whoRows"></div>
       </div>
     </div>
     <div id="barBtns">
@@ -831,6 +818,8 @@
   <div id="histRows"></div>
   <div class="hint">Every try and send you have logged on this problem, newest first.
     To change or remove one, open the Logbook and hold the entry.</div>
+  <div class="lbl" style="margin-top:8px">Climbed by</div>
+  <div id="histWho" class="whoRows"></div>
 </div>
 
 <div id="logPanel" hidden>
@@ -2805,46 +2794,19 @@ function paintBar(){
   $('done').textContent = 'Log send';        // the filled state says whether it's ticked
   $('done').className   = 'mini' + (sent ? ' on' : '');
   $('done').title       = sent ? 'Log another send' : 'Log it as climbed';
-  paintClimbers();
+  paintWho();
   paintBeta();
   paintNext();
   paintStack();
   paintPair();
 }
 
-/* Who has climbed the selected problem, down the gutter left of the board.
-   Global - everyone's ticks, not just yours. */
-function paintClimbers(){
-  if (document.body.classList.contains('big')) bigWho();
-  const box = $('climbers');
-  box.innerHTML = '';
-  const who = current ? (done[current.id] || []) : [];
-  box.classList.toggle('many', who.length > 4);
-  if (!who.length) return;
-  const hd = document.createElement('div');
-  hd.className = 'hd';
-  hd.textContent = 'Climbed';
-  box.appendChild(hd);
-  who.forEach(n => {
-    const row = document.createElement('div');
-    row.className = 'p';
-    const top = document.createElement('div');
-    top.className = 'top';
-    const dot = document.createElement('i');
-    dot.textContent = chipFor(n);
-    dot.style.background = personColor(n);
-    const r = firstSend(stats[n] && stats[n][current.id]);
-    const res = document.createElement('span');
-    res.className = 'res';
-    res.textContent = r ? (r === 'flash' ? '\u26a1' : r) : '\u2713';
-    top.append(dot, res);
-    const nm = document.createElement('span');
-    nm.className = 'nm2';
-    nm.textContent = n;
-    row.append(top, nm);
-    row.title = n + (r ? ' \u2014 ' + r : '');
-    box.appendChild(row);
-  });
+/* Who has climbed the open problem. It used to run down the gutter left of the
+   board as well. It is read with the history now - under the big board, and on the
+   History sheet - so this only redraws whichever of those two is on screen. */
+function paintWho(){
+  if (document.body.classList.contains('big')) whoFill($('bigWho'));
+  if (!$('histPanel').hidden) whoFill($('histWho'));
 }
 
 /* + List and Done record against you, whatever list you happen to be looking
@@ -3230,8 +3192,8 @@ function placeTools(){
   if (current){
     if (n.parentNode !== $('wallBelow')){
       $('wallCol').insertBefore(up, $('wallBelow'));
-      $('wallBelow').insertBefore(lb, $('climbers'));
-      $('wallBelow').insertBefore(n, $('climbers'));
+      $('wallBelow').appendChild(lb);
+      $('wallBelow').appendChild(n);
     }
   } else if (n.parentNode !== $('bar')){
     $('bar').insertBefore(up, $('barTxt'));
@@ -3278,7 +3240,6 @@ function clearRoute(){
   paint();
   renderResults();
   paintBar();
-  paintClimbers();
   if (canSend() && !standby()) write('l##');
 }
 
@@ -4054,6 +4015,7 @@ async function openHist(){
   $('histSum').textContent = 'loading\u2026';
   $('histRows').innerHTML = '';
   showPanel('hist');
+  whoFill($('histWho'));                 // already in hand, so it is there before the log answers
 
   let entries = [];
   try{
@@ -4144,7 +4106,7 @@ async function bigHist(){
   const r = current, me = meNow();
   if (!r) return;
   const mine = ++bigFor;
-  bigWho();
+  whoFill($('bigWho'));
   const sum = $('bigSum'), rows = $('bigRows');
   rows.innerHTML = '';
   if (!me){
@@ -4163,8 +4125,7 @@ async function bigHist(){
   histFill(entries, r, me, sum, rows);
 }
 
-function bigWho(){
-  const box = $('bigWho');
+function whoFill(box){
   box.innerHTML = '';
   if (!current) return;
   const who = done[current.id] || [];
