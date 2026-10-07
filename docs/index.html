@@ -30,25 +30,37 @@
     --line:#1e2024; --box:#33333a; --box2:#3a3a40; --press:#2a2a2e; --soft:#16181c; --chip:#22252b;
     --kb:#1a1a1d; --key:#3a3a3f; --keyfn:#26262a; --keydn:#5a5a60;
     --second:#fdba74;                      /* the second bulb's lettering */
+    /* what changes when the background is light and the lettering dark: the words on
+       a filled button, the brightest lettering, and the coloured words and boxes */
+    --onink:#0e0e0f; --bright:#fff; --orange-ink:#fb923c; --gold:#f5c542; --blue-ink:#8fb8ff;
+    --now-bg:#131d33; --now-edge:#2f4a86; --now-cap:#8fb0f5; --now-press:#1b2a4a;
+    --next-bg:#1b1630; --next-edge:#5b47a8; --next-cap:#b9a5f5;
   }
   /* ---- backgrounds ----
-     Black is how the app has always looked. The other two are for trying out: the
-     same page on a warm taupe and on a foggy grey, each light enough to be a colour
-     and dark enough that the white lettering still reads. One choice a phone, kept
-     in Settings; the first lines of the page put it on before anything is drawn. */
+     Black is how the app has always looked. The other two are for trying out: a
+     light taupe and a light foggy grey, with the lettering turned dark. (The first
+     pair, a shade off black with white lettering, Will found too dark.) One choice a
+     phone, kept in Settings; the first lines of the page put it on before anything
+     is drawn. The picture of the wall and its rings are the same on all three. */
   html[data-bg="taupe"]{
-    --bg:#564c44; --panel:#61564d; --panel2:#6b5f55; --edge:#7e7166;
-    --ink:#f6f2ed; --dim:#d1c7bc; --dimmer:#ab9f93;
-    --line:#675c52; --box:#8a7c70; --box2:#95877a; --press:#776a5f; --soft:#5e534a; --chip:#72665b;
-    --kb:#4a413a; --key:#7a6d62; --keyfn:#63584f; --keydn:#96887b;
-    --second:#ffd9a8;
+    --bg:#c3b6a9; --panel:#cec2b6; --panel2:#d9cec3; --edge:#a39486;
+    --ink:#231d18; --dim:#51463d; --dimmer:#73675c;
+    --line:#b0a294; --box:#978879; --box2:#8b7c6e; --press:#c4b7aa; --soft:#cabdb0; --chip:#b3a597;
+    --kb:#ac9e90; --key:#ece4db; --keyfn:#d0c4b8; --keydn:#faf6f1;
+    --second:#8f4208;
+    --onink:#f8f4ee; --bright:#000; --orange-ink:#a04a06; --gold:#7a5600; --blue-ink:#1f4fae;
+    --now-bg:#dbe4f8; --now-edge:#6f8fd6; --now-cap:#234a9e; --now-press:#c8d6f5;
+    --next-bg:#e7dff8; --next-edge:#8672cf; --next-cap:#46348f;
   }
   html[data-bg="fog"]{
-    --bg:#52585e; --panel:#5c6369; --panel2:#666d74; --edge:#798188;
-    --ink:#f3f5f7; --dim:#cdd3d8; --dimmer:#a5adb4;
-    --line:#636a71; --box:#868e95; --box2:#9199a0; --press:#737b82; --soft:#5a6167; --chip:#6e767d;
-    --kb:#464b50; --key:#757d84; --keyfn:#5f666c; --keydn:#939ba2;
-    --second:#ffd9a8;
+    --bg:#c6cbd0; --panel:#d1d5d9; --panel2:#dce0e3; --edge:#9ca4ac;
+    --ink:#191e23; --dim:#47505a; --dimmer:#69727b;
+    --line:#b2b9c0; --box:#9098a0; --box2:#858d95; --press:#c9ced3; --soft:#cdd2d6; --chip:#b5bcc3;
+    --kb:#aeb5bc; --key:#eff1f3; --keyfn:#d3d8dc; --keydn:#fbfcfd;
+    --second:#8f4208;
+    --onink:#f4f6f8; --bright:#000; --orange-ink:#a04a06; --gold:#7a5600; --blue-ink:#1f4fae;
+    --now-bg:#dbe4f8; --now-edge:#6f8fd6; --now-cap:#234a9e; --now-press:#c8d6f5;
+    --next-bg:#e7dff8; --next-edge:#8672cf; --next-cap:#46348f;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;background:var(--bg);color:var(--ink);
@@ -93,7 +105,7 @@
          background:var(--panel2);color:var(--ink);font:600 14px inherit;font-family:inherit}
   button:active{background:var(--press)}
   button:disabled{opacity:.35}
-  button.solid{background:var(--ink);border-color:var(--ink);color:#0e0e0f}
+  button.solid{background:var(--ink);border-color:var(--ink);color:var(--onink)}
   button.ghost{background:transparent;color:var(--dim)}
 
   /* 16px is the floor - anything smaller and iOS zooms the page on focus. */
@@ -116,7 +128,7 @@
              border:0;background:var(--key);color:var(--ink);font:500 17px -apple-system,system-ui,sans-serif}
   #kb button.fn{background:var(--keyfn);font-size:13px;font-weight:600;flex-grow:1.5}
   #kb button.sp{flex-grow:5}
-  #kb button.ok{background:var(--ink);color:#0e0e0f;flex-grow:2}
+  #kb button.ok{background:var(--ink);color:var(--onink);flex-grow:2}
   #kb button.dn{background:var(--keydn)}
   #kb .half{flex:.5 1 0}
   select{background-image:none}
@@ -136,7 +148,7 @@
   .nm b{display:block;font-weight:600;font-size:15px;
         white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .nm span{font-size:12px;color:var(--dimmer)}
-  .rt.sel .nm b{color:#fff}
+  .rt.sel .nm b{color:var(--bright)}
   .rt.sel{background:var(--panel)}
   .chev{flex:none;color:var(--dimmer);font-size:13px}
 
@@ -242,7 +254,7 @@
   .whoRows .none{font-size:13px;color:var(--dimmer);padding:8px 2px;line-height:1.5}
   /* ---- two at once: the second problem's name, under the picture ---- */
   #pairCap{display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;
-           font-size:11px;color:#fb923c;margin-top:4px}
+           font-size:11px;color:var(--orange-ink);margin-top:4px}
   #pairCap[hidden]{display:none}
   #pairCap b{min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #pairCap .gd{font-size:9px}
@@ -264,7 +276,7 @@
         padding:0 4px 0 9px;background:var(--panel2);border:1px solid var(--box);border-radius:9px}
   #qBox.on,#qBox:focus-within{border-color:#8b8b93}
   #qBox .mag{flex:none;width:14px;height:14px;color:var(--dimmer)}
-  #qBox .mag.act{color:#8fb8ff}             /* a search is narrowing the list */
+  #qBox .mag.act{color:var(--blue-ink)}             /* a search is narrowing the list */
   #qBox #q{flex:1;min-width:0;padding:2px 4px;border:0;border-radius:5px;background:transparent;
            font-size:15px;font-weight:600;outline:none;
            white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -286,7 +298,14 @@
   body.listPage #filtBtn,body.listPage #toBoard{display:block}
   body.listPage #setBtn,body.listPage header,body.listPage #actRow,
   body.listPage #boardWrap,body.listPage #noWall{display:none !important}
-  body.listPage #bar{padding-top:calc(env(safe-area-inset-top) + 8px)}
+  body.listPage #bar{padding-top:calc(env(safe-area-inset-top) + 12px)}
+  /* The phone shades the very top of the screen, and on Will's that shade lay over half
+     the search box. This line takes the shade instead, and says where you are. */
+  #listCap{display:none}
+  body.listPage #listCap{display:flex;align-items:baseline;gap:8px;height:20px;margin-bottom:8px;
+                         font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+  #listCap b{font-weight:700;color:var(--ink)}
+  #listCap span{font-size:10px;letter-spacing:.06em;color:var(--dimmer)}
   @keyframes pgL{from{transform:translateX(-18%);opacity:.25}to{transform:none;opacity:1}}
   @keyframes pgR{from{transform:translateX(18%);opacity:.25}to{transform:none;opacity:1}}
   body.slideL #top,body.slideL #scroll{animation:pgL .17s ease-out}
@@ -344,7 +363,7 @@
   #betaEnd{margin-top:auto}
   button.mini{padding:5px 6px;font-size:12px;font-weight:600;border-radius:6px;
               white-space:nowrap}
-  button.on{background:var(--ink);border-color:var(--ink);color:#0e0e0f}
+  button.on{background:var(--ink);border-color:var(--ink);color:var(--onink)}
 
   /* search, tick-list picker and the filter toggle share one row */
   /* every filter on one line - nothing tucked underneath when the panel opens */
@@ -403,7 +422,7 @@
   #pairGo[hidden]{display:none}
   #sendPicks{display:grid;gap:8px}
   button.res{padding:15px;font-size:15px;font-weight:600;border-radius:9px}
-  button.res.pick{background:var(--ink);border-color:var(--ink);color:#0e0e0f}
+  button.res.pick{background:var(--ink);border-color:var(--ink);color:var(--onink)}
   #logWho{max-width:220px}
   #logSum{font-size:12px;color:var(--dim)}
   #logRows .e{display:flex;align-items:center;gap:9px;padding:9px 2px;
@@ -442,7 +461,7 @@
   #ptsRank .r .n{flex:none;color:var(--dimmer);font-size:11px}
   #ptsRank .r span.p{flex:none;font:700 13px ui-monospace,Menlo,monospace;color:var(--ink)}
   #ptsRank .me{background:var(--soft)}
-  #ptsRank .r.lead b{color:#f5c542}
+  #ptsRank .r.lead b{color:var(--gold)}
   #ptsRank .none{font-size:12px;color:var(--dimmer);padding:6px 2px}
   /* Pinned. Settings is far taller than the screen, so a header that scrolled
      away left you at the bottom of a full-screen sheet with no way out. */
@@ -473,7 +492,7 @@
              border-bottom:1px solid var(--line);font-size:13px}
   #c4rank .r b{flex:1;font-weight:600}
   #c4rank .r span{color:var(--dimmer);font:700 12px ui-monospace,Menlo,monospace}
-  #c4rank .king b{color:#f5c542}
+  #c4rank .king b{color:var(--gold)}
   #c4rank .none{font-size:12px;color:var(--dimmer);padding:6px 2px}
 
   /* snake - the wall is 10 wide by 18 tall once column A sits out, so the grid
@@ -499,12 +518,12 @@
   #snPad button[data-d="down"]{border-radius:12px 12px 999px 999px}
   #snPad button[data-d="left"]{border-radius:999px 12px 12px 999px}
   #snPad button[data-d="right"]{border-radius:12px 999px 999px 12px}
-  #snPad button:active{background:var(--ink);color:#0e0e0f}
+  #snPad button:active{background:var(--ink);color:var(--onink)}
   #snRank[hidden]{display:none}
   #snRank .r{display:flex;gap:9px;padding:5px 2px;border-bottom:1px solid var(--line);font-size:13px}
   #snRank .r b{flex:1;font-weight:600}
   #snRank .r span{color:var(--dimmer);font:700 12px ui-monospace,Menlo,monospace}
-  #snRank .top b{color:#f5c542}
+  #snRank .top b{color:var(--gold)}
   #snRank .none{font-size:12px;color:var(--dimmer);padding:6px 2px}
   #c4turn{display:flex;align-items:center;justify-content:center;gap:10px;
           font-size:17px;font-weight:600}
@@ -526,10 +545,10 @@
      through the relay, the same blue as the dot in the header. */
   #nowBtn{flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:2px;
           width:100%;min-width:0;padding:5px;border-radius:7px;text-align:left;
-          border:1px solid #2f4a86;background:#131d33;color:var(--ink);font-weight:500}
+          border:1px solid var(--now-edge);background:var(--now-bg);color:var(--ink);font-weight:500}
   #nowBtn[hidden]{display:none}
-  #nowBtn:active{background:#1b2a4a}
-  #nowBtn .cap{font-size:8px;letter-spacing:.06em;text-transform:uppercase;color:#8fb0f5;
+  #nowBtn:active{background:var(--now-press)}
+  #nowBtn .cap{font-size:8px;letter-spacing:.06em;text-transform:uppercase;color:var(--now-cap);
                white-space:nowrap}
   /* not much room: a long word hyphenates if the browser can, and breaks if it can't */
   #nowBtn .nm3{font-size:11px;font-weight:700;line-height:1.2;overflow-wrap:anywhere;
@@ -545,28 +564,44 @@
   #nowBtn.here{background:transparent;border-color:var(--edge)}
   #nowBtn.here .nm3{display:none}
   /* a second problem up with it, in the colour the picture draws it */
-  #nowBtn .nm4{font-size:11px;font-weight:700;line-height:1.2;color:#fb923c;overflow-wrap:anywhere;
+  #nowBtn .nm4{font-size:11px;font-weight:700;line-height:1.2;color:var(--orange-ink);overflow-wrap:anywhere;
                -webkit-hyphens:auto;hyphens:auto;
                display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
   #nowBtn .nm4:empty,#nowBtn.here .nm4{display:none}
   /* ---- next up: the line for the wall, and what has been up tonight ----
-     Under "on the wall", each with a small rule over it: whoever is next first,
-     then tonight's routes with the latest first. */
+     "On the wall" is a blue box. Each climber waiting is a box too, violet, so one
+     reads apart from the next and from the wall; your own has the brighter edge.
+     Tonight's routes are above both, folded away behind a small bar: tap it and they
+     open in a strip of their own, the latest nearest the wall, each a box big enough
+     to hit. */
   .stackSep{display:flex;align-items:center;gap:5px;margin:4px 0 2px;font-size:8px;
             letter-spacing:.08em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
   .stackSep[hidden]{display:none}
   .stackSep::before,.stackSep::after{content:'';flex:1;height:1px;background:var(--box2)}
-  .hrow,.nrow{border-top:1px solid var(--line);min-width:0}
-  .hrow:first-child,.nrow:first-child{border-top:0}
-  .hrow:active,.nrow:active{background:var(--panel)}
+  #nextSep{color:var(--next-cap);margin-top:2px}
+  #histBar{flex:none;display:flex;align-items:center;justify-content:center;gap:5px;width:100%;height:22px;
+           padding:0;border-radius:7px;border:1px solid var(--edge);background:transparent;color:var(--dim);
+           font-size:9px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap}
+  #histBar[hidden]{display:none}
+  #histBar.open{color:var(--ink);border-color:var(--box2);background:var(--panel)}
+  #wallHist{flex:0 1 auto;min-height:0;max-height:46%;overflow-y:auto;overscroll-behavior:contain;
+            touch-action:pan-y;display:flex;flex-direction:column;gap:4px;scrollbar-width:none}
+  #wallHist::-webkit-scrollbar{display:none}
+  #wallHist[hidden]{display:none}
+  #wallNext{display:flex;flex-direction:column;gap:5px}
+  .hrow,.nrow{flex:none;min-width:0;border-radius:7px}
   .hrow b,.nrow b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
                   overflow-wrap:anywhere;line-height:1.2}
-  .hrow{padding:4px 2px;color:var(--dim)}
-  .hrow b{font-size:10.5px;font-weight:600}
+  .hrow{padding:8px 6px;border:1px solid var(--edge);color:var(--dim)}
+  .hrow:active{background:var(--panel)}
+  .hrow b{font-size:11.5px;font-weight:600}
   .hrow .gd,.nrow .gd{display:none}
-  .nrow{display:flex;flex-direction:column;gap:2px;padding:5px 2px}
+  .nrow{display:flex;flex-direction:column;gap:2px;padding:6px;border:1px solid var(--next-edge);
+        background:var(--next-bg)}
+  .nrow:active{filter:brightness(1.15)}
+  .nrow.mine{border-color:var(--next-cap)}
   .nrow .by{display:flex;align-items:center;gap:4px;min-width:0;font-size:9.5px;color:var(--dim)}
-  .nrow .by em{flex:none;font:700 9px ui-monospace,Menlo,monospace;font-style:normal;color:var(--dimmer)}
+  .nrow .by em{flex:none;font:700 9px ui-monospace,Menlo,monospace;font-style:normal;color:var(--next-cap)}
   .nrow .by i{flex:none;display:grid;place-items:center;width:13px;height:13px;border-radius:50%;
               font-size:8px;font-weight:700;font-style:normal;color:#0e0e0f}
   .nrow .by span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -611,14 +646,16 @@
 <section id="boardWrap">
   <div id="boardRow">
     <div id="leftCol"><div id="leftIn">
-      <!-- The wall's story, down the left of the board: what is up, who is next, what
-           has been up tonight. While a beta is being entered its tools stand here. -->
+      <!-- The wall's story, down the left of the board. Always in view: what is up, and
+           who is next, each in a box of its own colour. Above them, folded away until
+           its bar is tapped: what has been up tonight. While a beta is being entered
+           its tools stand here instead. -->
       <div id="wallCol">
+        <button id="histBar" hidden></button>
+        <div id="wallHist" hidden></div>
         <button id="nowBtn" hidden><span class="cap">On the wall</span><b class="nm3"></b><b class="nm4"></b><span class="by"></span></button>
         <div id="nextSep" class="stackSep" hidden>Next up</div>
         <div id="wallNext"></div>
-        <div id="histSep" class="stackSep" hidden>History</div>
-        <div id="wallHist"></div>
       </div>
       <div id="betaTools">
         <div id="betaLimbs">
@@ -685,6 +722,9 @@
 </section>
 
 <div id="bar">
+  <!-- Only on the page of routes: a line of its own over the search. It names the page,
+       and it keeps the search box clear of the shade the phone lays over the top edge. -->
+  <div id="listCap"><b>Routes</b><span></span></div>
   <div id="barTxt">
     <button id="filtBtn" class="ghost" aria-label="Filters">&#9776;</button>
     <div id="qBox">
@@ -754,8 +794,8 @@
   <div class="lbl" style="margin-top:14px">Background</div>
   <select id="bgSel">
     <option value="">Black</option>
-    <option value="taupe">Taupe</option>
-    <option value="fog">Foggy grey</option>
+    <option value="taupe">Light taupe</option>
+    <option value="fog">Light foggy grey</option>
   </select>
   <div class="hint">For this phone only. Black is how the app has always looked.</div>
 
@@ -921,7 +961,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-08 00:15';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-08 00:21';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3009,6 +3049,8 @@ function renderResults(){
     : (view ? 'Nothing saved here yet'
             : hidden ? "You've climbed everything that matches" : 'Nothing matches');
   markFilters();
+  const cap = $('listCap');
+  if (cap) cap.querySelector('span').textContent = hits.length + ' shown';
 }
 
 /* Row 1 reads out the grade: first three green, next three blue, rest red. */
@@ -3650,8 +3692,19 @@ function doNext(){
   return lineCall({ op: 'join', by: me, id: current.id, board: boardKey });
 }
 
-/* Under "on the wall": the line, whoever is next first, and then tonight's routes
-   with the latest first. Each has a small rule over it, and goes when it is empty. */
+/* Under "on the wall": the line, whoever is next first, each climber in a box.
+   Above it: tonight's routes, oldest first so the latest sits nearest the wall, and
+   folded away behind a bar until it is tapped (histOpen). */
+let histOpen = false;
+function paintHist(){
+  const bar = $('histBar'), box = $('wallHist');
+  const n = box.children.length;
+  bar.hidden = !n;
+  box.hidden = !n || !histOpen;
+  bar.className = histOpen && n ? 'open' : '';
+  bar.textContent = 'History \u00b7 ' + n + (histOpen ? ' \u25b4' : ' \u25be');
+  bar.title = histOpen ? 'Fold tonight\u2019s routes away' : 'What has been up tonight';
+}
 function paintStack(){
   const hbox = $('wallHist'), nbox = $('wallNext');
   if (!hbox || !nbox) return;
@@ -3689,7 +3742,7 @@ function paintStack(){
     }
     nbox.appendChild(row);
   });
-  hist.slice().reverse().forEach(h => {
+  hist.forEach(h => {
     const r = byId[h.id], row = document.createElement('div');
     row.className = 'hrow';
     row.innerHTML = '<b></b><span class="gd"></span>';
@@ -3700,7 +3753,8 @@ function paintStack(){
     hbox.appendChild(row);
   });
   $('nextSep').hidden = !line.length;
-  $('histSep').hidden = !hist.length;
+  paintHist();
+  if (histOpen) hbox.scrollTop = hbox.scrollHeight;    // the latest, nearest the wall
 }
 
 /* A look: the problem opens on this phone and nothing is sent. */
@@ -5193,6 +5247,12 @@ $('nowBtn').onclick = gotoWall;
 $('nextBtn').onclick = () => { if (!needName('next')) doNext(); };
 $('bigExit').onclick = () => bigBoard(false);
 $('toBoard').onclick = () => showPage('board');
+$('histBar').onclick = e => {
+  e.stopPropagation();                                 // folding it is not a tap "in the panel" for the small board's sake
+  histOpen = !histOpen;
+  paintHist();
+  if (histOpen) $('wallHist').scrollTop = $('wallHist').scrollHeight;
+};
 $('pairBtn').onclick = openPair;
 $('pairGo').onclick = lightSecond;
 $('pairClose').onclick = () => showPanel(null);
