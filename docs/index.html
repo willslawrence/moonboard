@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0e0e0f">
+<!-- Added to the Home Screen, open as an app with none of the browser's bars. iOS 26
+     offers that for any site ("Open as Web App" on the Add to Home Screen sheet); an
+     older iPhone only does it for a page that asks, and this is the asking. The black
+     status bar keeps the page below the clock, where it has always started. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="MoonBoard">
 <title>MoonBoard Direct</title>
 <style>
   :root{
@@ -887,7 +895,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-07 21:23';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-07 21:33';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
