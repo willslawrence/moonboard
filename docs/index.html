@@ -23,6 +23,7 @@
 </script>
 <style>
   :root{
+    --pad:7px;                 /* the page's margin, left and right */
     --bg:#0e0e0f; --panel:#171719; --panel2:#1e1e21; --edge:#2a2a2e;
     --ink:#e9e9ec; --dim:#8b8b93; --dimmer:#5c5c65;
     /* the quieter neutrals: the line between rows, the edge of a box, a pressed button,
@@ -71,7 +72,7 @@
             -webkit-text-size-adjust:100%}
   /* The app fills the screen and does not scroll; only the problem list does. */
   body{font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
-       height:100dvh;display:flex;flex-direction:column;padding:0 10px;}
+       height:100dvh;display:flex;flex-direction:column;padding:0 var(--pad);}
   /* No -webkit-overflow-scrolling:touch here - on iOS it makes this a containing
      block for position:fixed descendants, which trapped the game sheet inside it. */
   #scroll{flex:1 1 auto;min-height:110px;overflow-y:auto;overscroll-behavior:contain;
@@ -82,7 +83,7 @@
   /* Fixed head of the app - no longer sticky, it simply never scrolls. Capped
      so an open filter panel on a short phone can't squeeze the list to nothing. */
   #noWall{background:#ef4444;color:#2c0505;font-weight:700;font-size:13px;
-          text-align:center;padding:9px 12px;margin:0 -10px}
+          text-align:center;padding:9px 12px;margin:0 calc(-1 * var(--pad))}
   #noWall[hidden]{display:none}
   #top{flex:0 0 auto;background:var(--bg);border-bottom:1px solid var(--edge);
        margin-bottom:6px;overflow:hidden}
@@ -122,7 +123,7 @@
      iOS Safari puts its prev/next/Done bar on top of the system keyboard and no
      page can turn it off, so on a phone the search opens this instead: four
      short rows, laid out in the page so the list shrinks rather than hides. */
-  #kb{flex:none;margin:0 -10px;background:var(--kb);border-top:1px solid var(--edge);
+  #kb{flex:none;margin:0 calc(-1 * var(--pad));background:var(--kb);border-top:1px solid var(--edge);
       padding:6px 4px calc(env(safe-area-inset-bottom) + 6px);
       user-select:none;-webkit-user-select:none;touch-action:manipulation}
   #kb[hidden]{display:none}
@@ -165,21 +166,23 @@
      already printed on the photo. */
   /* The wall is 450x692, so width drives height x1.54. The board is the page: it
      sits hard against the right edge and takes whichever is smallest of
-       - the screen's width, less a 76px panel on its left for the wall's story,
-       - 38.4vh, a fifth more than the 32vh it had with a column of buttons beside it,
+       - a twentieth more than the screen's width less 108px, which leaves a panel of
+         about 74px on its left for the wall's story - and never less than 72px,
+       - 40.3vh (it was 38.4vh until Will asked for a twentieth more),
        - what the screen's height leaves once the header, the row of bulbs, the
          search row and two rows of the list have had theirs.
      On most phones that is a quarter to a third more picture than before. */
   #boardWrap{padding:6px 0;margin:0}
   #board{position:relative;margin:0;border-radius:6px;overflow:hidden;touch-action:pan-y;
-         width:min(calc(100vw - 108px),38.4vh,calc((100vh - 252px) * .65))}
-  #board{width:min(calc(100vw - 108px),38.4vh,calc((100dvh - 252px) * .65))}
+         width:min(calc(105vw - 113px),calc(100vw - 92px),40.3vh,calc((100vh - 252px) * .65))}
+  #board{width:min(calc(105vw - 113px),calc(100vw - 92px),40.3vh,calc((100dvh - 252px) * .65))}
   /* ---- the board steps aside ----
      Scroll the short list under it and the picture shrinks into the top right-hand
      corner, so the list has the room; the wall's story beside it gets wider and
-     shorter. Picking a route puts it back. A trial, alongside the page of routes. */
+     shorter. It stays small while routes are picked, and a tap on it puts it back.
+     A trial, alongside the page of routes. */
   #board{transition:width .18s ease-out}
-  body.compact #board{width:min(calc(100vw - 108px),18vh)}
+  body.compact #board{width:min(calc(100vw - 108px),16.56vh)}
   @media (prefers-reduced-motion:reduce){ #board{transition:none} }
   /* iOS starts its own image drag on a sideways swipe, which eats the gesture */
   #board img{-webkit-user-drag:none;user-select:none;pointer-events:none}
@@ -424,6 +427,8 @@
   .betaTri button{padding:4px 0;font-size:14px;min-width:0}
   .betaPair{display:grid;grid-template-columns:1fr 1fr;gap:4px}
   .betaPair button{padding:6px 0;font-size:10px;min-width:0;letter-spacing:-.01em}
+  /* the panel is a few pixels narrower since the board grew: these four give up their side padding to fit */
+  #betaTools .betaPair button{padding-left:2px;padding-right:2px;font-size:11.5px}
   #betaEnd{margin-top:auto}
   button.mini{padding:5px 6px;font-size:12px;font-weight:600;border-radius:6px;
               white-space:nowrap}
@@ -594,6 +599,31 @@
   #wallCol{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:5px;
            overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
   #wallCol::-webkit-scrollbar{display:none}
+  /* ---- quick log: a button at the foot of the panel, and the two it opens ----
+     The two are round, red for a try and green for a send, and stand just over the
+     button. Each is a fingertip across, which on a narrow panel takes the green one a
+     little over the picture's edge - to the right only, because the page's own edge
+     would cut the red one off on the left. On a wide panel they sit in the middle,
+     further apart. A finger that went down on the button can slide on to one of them,
+     so the browser must not take the slide for a scroll. */
+  #quick{flex:none;position:relative;margin-top:6px;touch-action:none}
+  #quickBtn{display:block;width:100%;height:36px;padding:0 4px;font-size:12px;border-radius:18px;touch-action:none}
+  #quickBtn.open{background:var(--ink);border-color:var(--ink);color:var(--onink)}
+  #quickBtn.tried{background:#ef4444;border-color:#ef4444;color:#fff}
+  #quickBtn.sent{background:#22c55e;border-color:#22c55e;color:#06240e}
+  #quickBtn.bad{border-color:#ef4444;color:#ef4444}
+  #quickFan{position:absolute;z-index:6;left:0;bottom:calc(100% + 9px);width:max(100%,88px);
+            display:flex;justify-content:center;gap:clamp(4px,calc((100% - 84px) / 3),26px);pointer-events:none}
+  #quickFan[hidden]{display:none}
+  #quickFan button{flex:none;width:42px;height:42px;padding:0;border:0;border-radius:50%;pointer-events:auto;
+                   font-size:11px;font-weight:700;letter-spacing:-.01em;touch-action:none;
+                   box-shadow:0 0 0 2px var(--bg),0 3px 10px rgba(0,0,0,.45);animation:quickIn .13s ease-out}
+  #quickTry{background:#ef4444;color:#fff;transform-origin:100% 130%}
+  #quickSend{background:#22c55e;color:#06240e;transform-origin:0 130%}
+  #quickFan button:active,#quickFan button.at{filter:brightness(1.18);transform:scale(1.08)}
+  @keyframes quickIn{from{transform:scale(.45);opacity:0}to{transform:none;opacity:1}}
+  @media (prefers-reduced-motion:reduce){ #quickFan button{animation:none} }
+  body.betaEdit #quick{display:none}           /* the tools for hands and feet have the panel then */
   /* ---- on the wall: the problem someone has lit, and who lit it ----
      Top of the panel beside the board. One tap opens it. Blue because it came
      through the relay, the same blue as the dot in the header. */
@@ -710,6 +740,16 @@
         <button id="nowBtn" hidden><span class="cap">On the wall</span><b class="nm3"></b><b class="nm4"></b><span class="by"></span></button>
         <div id="nextSep" class="stackSep" hidden>Next up</div>
         <div id="wallNext"></div>
+      </div>
+      <!-- Quick log, at the foot of the wall's panel: one tap opens two round buttons
+           over it, red for a try and green for a send, and a tap on one logs it against
+           the open route. Or press, slide on to one, and let go. -->
+      <div id="quick">
+        <div id="quickFan" hidden>
+          <button id="quickTry" data-q="try" aria-label="Log a try">Try</button>
+          <button id="quickSend" data-q="send" aria-label="Log a send">Send</button>
+        </div>
+        <button id="quickBtn" class="mini" disabled aria-expanded="false">Quick log</button>
       </div>
       <div id="betaTools">
         <div id="betaLimbs">
@@ -1044,7 +1084,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-08 00:48';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-08 01:12';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -2872,12 +2912,13 @@ async function listsCall(path, body){
       body: JSON.stringify(body),
     } : undefined);
     const d = await r.json();
-    if (d.error) return log('tick list: ' + d.error);
+    if (d.error){ log('tick list: ' + d.error); return false; }
     applyLists(d);
     // logged from the log page: its rows are a line short until asked again. Anything
     // asked for while this was on its way may have missed it, so that goes as well.
     if (logged){ logStale(); if (page === 'log') paintLogPage(); }
-  }catch(e){ log('tick list unreachable: ' + e.message); }
+    return true;
+  }catch(e){ log('tick list unreachable: ' + e.message); return false; }
 }
 
 function fillWho(){
@@ -2939,6 +2980,7 @@ function paintBar(){
   paintStack();
   paintPair();
   paintLogNow();
+  paintQuick();
 }
 
 /* Who has climbed the open problem. It used to run down the gutter left of the
@@ -2970,7 +3012,9 @@ function doTick(){
 }
 function doTry(){
   const me = meNow(); if (!me || !current) return;
-  listsCall('/lists/log', { person: me, id: current.id, result: 'try' });
+  const id = current.id;
+  listsCall('/lists/log', { person: me, id, result: 'try' })
+    .then(ok => quickSay(ok ? '\u2713 Try ' + myTries(id) : 'Not saved', ok ? 'tried' : 'bad'));
 }
 
 /* Climbed no longer writes straight away - it asks how it went, with the answer
@@ -3005,7 +3049,8 @@ function openSend(){
 
 function logSend(result){
   const me = meNow(); if (!me || !current) return;
-  listsCall('/lists/log', { person: me, id: current.id, result });
+  listsCall('/lists/log', { person: me, id: current.id, result })
+    .then(ok => quickSay(ok ? '\u2713 Sent' : 'Not saved', ok ? 'sent' : 'bad'));
   showPanel(null);
 }
 function runPending(){
@@ -3332,9 +3377,9 @@ function loadRoute(r, look){
   betaReset();
   paintInsta();
   if (page === 'log') routeHist();       // opened from the log page: its history and its climbers follow
+  quickShow(false);                      // the two round buttons were for the route before
   log('loaded "' + r.name + '" \u2014 ' + GRADES[r.grade] + ' (V' + VGRADE[r.grade] + '), set by ' + r.setter);
   if (!look && $('auto').checked && rx) sendProblem();
-  setCompact(false);                          // a route has been picked: the picture comes back to its size
   if (page === 'list') showPage('board');     // picked from the page of routes: back to the board, with it open
 }
 
@@ -4644,6 +4689,7 @@ function betaEdit(){
   if (!current) return;
   showPage('board');                     // hands and feet are placed on the picture, with the tools beside it
   setCompact(false);
+  quickShow(false);
   betaStop();
   betaDraft = beta ? beta.moves.map(m => ({ l: m.l, h: m.h })) : [];
   betaLimb = BETA_ORDER[Math.min(betaDraft.length, 3)];
@@ -5374,6 +5420,7 @@ function showPage(which, fromBack, ghost){
   if (page === 'board' && (betaDraft || panelOpen)) return;
   const was = page;
   if (was === 'board' && betaPlaying){ betaStop(); $('betaSvg').innerHTML = ''; paintBeta(); }   // nobody is watching him now
+  quickShow(false);
   page = which;
   const b = document.body;
   b.classList.toggle('listPage', which === 'list');
@@ -5413,7 +5460,7 @@ document.body.addEventListener('animationend', e => {
 
 (function pageSwipe(){
   let x0 = null, y0 = null;
-  const off = '#board, #kb, select, #setPanel, #logPanel, #sendPanel, #pairPanel, #snakePanel, #entryPanel, #gamePanel';
+  const off = '#board, #kb, select, #quick, #setPanel, #logPanel, #sendPanel, #pairPanel, #snakePanel, #entryPanel, #gamePanel';
   document.addEventListener('pointerdown', e => {
     x0 = null;
     if (betaDraft || panelOpen) return;
@@ -5672,20 +5719,84 @@ async function paintLogPage(){
   foot.appendChild(book);
 }
 
+/* ---------- quick log ----------
+   A button at the foot of the wall's panel, for logging without leaving the board.
+   A press opens two round buttons over it: red logs a try, green logs a send (which
+   asks how it went, as a send does everywhere). Tap one, or keep the finger down,
+   slide on to it and let go. A tap anywhere else, another route, another page or six
+   seconds left alone puts them away. For a moment afterwards the button says what
+   was logged, or that it was not saved. */
+let quickOpen = false, quickShut = 0, quickUntil = 0, quickBack = 0;
+function paintQuick(){
+  const b = $('quickBtn');
+  b.disabled = !current;
+  if (!current && quickOpen) return quickShow(false);
+  if (Date.now() < quickUntil) return;               // still saying what was logged
+  b.textContent = 'Quick log';
+  b.className = 'mini' + (quickOpen ? ' open' : '');
+  b.setAttribute('aria-expanded', quickOpen ? 'true' : 'false');
+}
+function quickShow(on){
+  on = !!on && !!current && page === 'board' && !betaDraft;
+  clearTimeout(quickShut);
+  if (on === quickOpen) return;
+  quickOpen = on;
+  $('quickFan').hidden = !on;
+  if (on){ quickUntil = 0; quickShut = setTimeout(() => quickShow(false), 6000); }
+  paintQuick();
+}
+function quickSay(txt, cls){
+  const b = $('quickBtn');
+  quickShow(false);
+  b.textContent = txt;
+  b.className = 'mini ' + cls;
+  quickUntil = Date.now() + 1800;
+  clearTimeout(quickBack);
+  quickBack = setTimeout(() => { quickUntil = 0; paintQuick(); }, 1850);
+}
+function quickPick(which){
+  quickShow(false);
+  if (which === 'try'){ if (!needName('try')) doTry(); }
+  else if (!needName('done')) doDone();
+}
+(function quickLog(){
+  const btn = $('quickBtn'), fan = $('quickFan');
+  let pressed = false;
+  const under = e => { const el = document.elementFromPoint(e.clientX, e.clientY); return el && el.closest ? el.closest('#quickFan button') : null; };
+  const lit = b => fan.querySelectorAll('button').forEach(x => x.classList.toggle('at', x === b));
+  // It opens on the press, not the release, so the same finger can slide on to red or green.
+  btn.addEventListener('pointerdown', () => { if (btn.disabled) return; pressed = true; quickShow(!quickOpen); });
+  document.addEventListener('pointermove', e => { if (pressed && quickOpen) lit(under(e)); }, { passive: true });
+  document.addEventListener('pointerup', e => {
+    if (!pressed) return;
+    pressed = false; lit(null);
+    const hit = quickOpen && under(e);
+    if (hit) quickPick(hit.dataset.q);
+  });
+  document.addEventListener('pointercancel', () => { pressed = false; lit(null); });
+  fan.querySelectorAll('button').forEach(b => { b.onclick = () => quickPick(b.dataset.q); });
+  // a touch anywhere else puts them away
+  document.addEventListener('pointerdown', e => {
+    if (quickOpen && !(e.target.closest && e.target.closest('#quick'))) quickShow(false);
+  }, true);
+})();
+
 /* ---------- the board steps aside ----------
    Scrolling the short list under the board shrinks the picture into the top right
-   corner, and the list takes the room. Picking a route puts it back; so does a tap
-   on the small picture, a tap on anything in the wall's panel, or scrolling the list
-   back to its top. Only a finger or a wheel on the list does it: the list moving by
-   itself, to keep the open route in view, does not. */
+   corner, and the list takes the room. It then stays small - through picking routes,
+   through taps in the wall's panel, through scrolling back to the top - so the list
+   can be gone through with each route showing on the small picture. A tap on the
+   picture puts it back (boardTap); so does leaving the page. Only a finger or a wheel
+   on the list shrinks it: the list moving by itself, to keep the open route in view,
+   does not. */
 let compactAt = 0;                 // when it last changed, so the list's own settling is not read as a scroll
-function setCompact(on, stay){             // stay: leave the list where the climber has just put it
+function setCompact(on){
   const b = document.body;
   on = !!on && page === 'board' && !betaDraft;
   if (on === b.classList.contains('compact')) return;
   b.classList.toggle('compact', on);
   compactAt = Date.now();
-  if (on || stay) return;
+  if (on) return;
   setTimeout(() => {                                   // back at full size: the open route may have slid out of view
     const row = $('results').querySelector('.rt.sel');
     if (row && page === 'board') row.scrollIntoView({ block: 'nearest' });
@@ -5699,9 +5810,7 @@ function setCompact(on, stay){             // stay: leave the list where the cli
   sc.addEventListener('scroll', () => {
     if (page !== 'board' || Date.now() > hand || Date.now() - compactAt < 450) return;
     if (sc.scrollTop > 24) setCompact(true);
-    else if (sc.scrollTop <= 0) setCompact(false, true);   // he scrolled to the top himself: do not move it again
   }, { passive: true });
-  $('leftCol').addEventListener('click', () => setCompact(false));
 })();
 
 /* ---------- back ----------
