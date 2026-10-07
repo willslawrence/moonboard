@@ -303,7 +303,8 @@
   #logPage .lbl[hidden]{display:none}
   /* the session, in three numbers and a dot for every go */
   #lpHero{border:1px solid var(--edge);border-radius:14px;background:var(--panel);padding:13px 14px 13px}
-  #lpHero + #lpSession{margin-top:4px}
+  #lpHero[hidden]{display:none}
+  #lpSession + #lpHero{margin-top:12px}
   #lpHero .kick{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
   #lpHero .nums{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:11px}
   #lpHero .nums b{display:block;font-size:34px;line-height:36px;font-weight:700;letter-spacing:-.02em}
@@ -447,6 +448,27 @@
   #filters{border-top:1px solid var(--edge);padding-top:6px;margin-top:7px}
   #filters select{height:32px;padding:0 8px;font-size:16px;border-radius:9px}
   #filters .lbl{margin-bottom:2px;margin-top:0}
+  /* ---- grades, by sliding ----
+     A line with a dot at each end of the range. The row is as tall as a fingertip so
+     either dot is easy to catch, and it takes every touch for itself: a drag along it
+     must not scroll anything or turn the page. While a dot is held it grows a little
+     and says its grade above itself, where the finger does not cover it. */
+  #gSlide{position:relative;height:40px;margin:0 14px 2px;touch-action:none;
+          -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  #gSlide[hidden]{display:none}
+  #gSlide .rail{position:absolute;left:-6px;right:-6px;top:50%;height:4px;margin-top:-2px;border-radius:2px;
+                background:var(--box2)}
+  #gSlide .fill{position:absolute;top:0;bottom:0;margin:0 6px;border-radius:2px;background:var(--ink)}
+  #gSlide .dot{position:absolute;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;
+               background:var(--ink);box-shadow:0 0 0 3px var(--bg),0 1px 5px rgba(0,0,0,.35);
+               transition:transform .1s ease-out}
+  #gSlide .dot.on{transform:scale(1.18);z-index:2}
+  #gSlide .dot span{position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);display:none;
+                    padding:3px 7px;border-radius:6px;background:var(--ink);color:var(--onink);
+                    font:700 11px ui-monospace,Menlo,monospace;white-space:nowrap}
+  #gSlide .dot span.l{left:-4px;transform:none}          /* near an end of the line: keep the words on the screen */
+  #gSlide .dot span.r{left:auto;right:-4px;transform:none}
+  #gSlide .dot.on span{display:block}
 
   #filters button.mini{padding:8px 10px;white-space:nowrap}
 
@@ -817,6 +839,14 @@
       <div class="lbl">List</div>
       <select id="who" style="margin-bottom:8px"></select>
     </div>
+    <!-- Grades, by sliding: two dots on a line, the easiest wanted on the left and the
+         hardest on the right. It is the same choice as From and To under it, which follow
+         as the dots move. Out of the way of a screen reader: the two pickers say it already. -->
+    <div id="gSlide" aria-hidden="true">
+      <div class="rail"><div class="fill"></div></div>
+      <div class="dot" data-end="lo"><span></span></div>
+      <div class="dot" data-end="hi"><span></span></div>
+    </div>
     <div class="four">
       <div><div class="lbl">From</div><select id="gmin"></select></div>
       <div><div class="lbl">To</div><select id="gmax"></select></div>
@@ -849,9 +879,11 @@
 
 <!-- The page to the right of the board: logging, and what you have climbed. It has
      taken over from the board that filled the screen when tapped. Top to bottom: the
-     open route with its two buttons; this session - sends, tries, hardest, a dot for
-     every go, and its routes; your history on the open route; the community - who has
-     climbed it, and what the crew are on tonight; earlier sessions, folded away. -->
+     open route with its two buttons; your history on it; the community - who has
+     climbed it, and what the crew are on tonight; this session's routes, and under them
+     its sends, tries and hardest with a dot for every go; earlier sessions, folded away.
+     (Will moved the route's history and the community up under the card, and the
+     session's numbers down under its list, the night it was built.) -->
 <div id="logPage">
   <div id="lpCap"><button id="lpBack" class="ghost" aria-label="Back to the board">&#8249; Board</button><b>Log</b><span></span></div>
   <div id="lpNow">
@@ -869,18 +901,6 @@
     <button id="lpUndo" class="ghost mini" hidden></button>
   </div>
 
-  <div class="lbl">This session</div>
-  <div id="lpHero">
-    <div class="kick"></div>
-    <div class="nums">
-      <div><b id="lpSends">0</b><span>sends</span></div>
-      <div><b id="lpTries">0</b><span>tries</span></div>
-      <div><b id="lpHard">&ndash;</b><span>hardest</span></div>
-    </div>
-    <div id="lpStrip"></div>
-  </div>
-  <div id="lpSession"></div>
-
   <div class="lbl" id="lpRouteLbl">Your history on this route</div>
   <div id="lpHistSum"></div>
   <div id="lpHistRows"></div>
@@ -890,6 +910,18 @@
   <div id="lpWho" class="whoRows"></div>
   <div class="sublbl" id="lpFeedLbl" hidden>The crew this session</div>
   <div id="lpFeed"></div>
+
+  <div class="lbl">This session</div>
+  <div id="lpSession"></div>
+  <div id="lpHero" hidden>
+    <div class="kick"></div>
+    <div class="nums">
+      <div><b id="lpSends">0</b><span>sends</span></div>
+      <div><b id="lpTries">0</b><span>tries</span></div>
+      <div><b id="lpHard">&ndash;</b><span>hardest</span></div>
+    </div>
+    <div id="lpStrip"></div>
+  </div>
 
   <div class="lbl" id="lpEarLbl">Earlier sessions</div>
   <div id="lpEarlier"></div>
@@ -1084,7 +1116,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-08 01:12';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-08 01:21';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3138,6 +3170,7 @@ let limit = PAGE, limitKey = '';
 function showMore(){ limit += PAGE; renderResults(); }
 
 function renderResults(){
+  paintGradeSlide();                     // whatever changed From or To, the two dots follow
   const hits = filtered();
   lastHits = hits;
   const key = [searchQ, $('gmin').value, $('gmax').value, whoNow(),
@@ -5460,7 +5493,7 @@ document.body.addEventListener('animationend', e => {
 
 (function pageSwipe(){
   let x0 = null, y0 = null;
-  const off = '#board, #kb, select, #quick, #setPanel, #logPanel, #sendPanel, #pairPanel, #snakePanel, #entryPanel, #gamePanel';
+  const off = '#board, #kb, select, #quick, #gSlide, #setPanel, #logPanel, #sendPanel, #pairPanel, #snakePanel, #entryPanel, #gamePanel';
   document.addEventListener('pointerdown', e => {
     x0 = null;
     if (betaDraft || panelOpen) return;
@@ -5633,6 +5666,7 @@ async function paintLogPage(){
   const hero = $('lpHero'), ses = $('lpSession'), ear = $('lpEarlier'), foot = $('lpFoot');
   const blank = why => {
     lpLast = null; paintUndo();
+    hero.hidden = true;                      // no session, no numbers: the line under the label says why
     hero.className = 'idle';
     hero.querySelector('.kick').textContent = 'No session yet';
     $('lpSends').textContent = '0'; $('lpTries').textContent = '0'; $('lpHard').textContent = '\u2013';
@@ -5659,6 +5693,7 @@ async function paintLogPage(){
   // this session
   if (live){
     const sum = sessionSum(live);
+    hero.hidden = false;
     hero.className = '';
     hero.querySelector('.kick').textContent = sessionDay(live) + ' \u00b7 since ' +
       new Date(live.t0).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
@@ -5668,8 +5703,8 @@ async function paintLogPage(){
     ses.innerHTML = '';
     sessionRoutes(live).forEach(x => ses.appendChild(lpRow(x, true)));
   } else {
-    blank('Log a try or a send and your session starts here.');
-    if (earlier.length) hero.querySelector('.kick').textContent = 'No session yet \u00b7 last on the wall ' + sessionDay(earlier[0]);
+    blank(earlier.length ? 'Nothing logged yet today. You were last on the wall ' + sessionDay(earlier[0]) + '.'
+                         : 'Log a try or a send and your session starts here.');
   }
 
   // earlier sessions: a line each, their routes when tapped
@@ -5948,6 +5983,70 @@ $('who').onchange = () => {
   try{ localStorage.setItem('mb-who', $('who').value); }catch(e){}
   renderResults(); paintBar();
 };
+/* ---------- grades, by sliding ----------
+   Two dots on a line over the From and To pickers: drag the left one to the easiest
+   grade wanted and the right one to the hardest. It is the same choice as the two
+   pickers, so it is kept in them: a dot that moves sets its picker, and the list is
+   filtered from the pickers as it always was. The dots cannot pass each other. When
+   they sit on the same grade, the way the finger first moves says which one it took.
+   A tap on the line brings the nearer dot to it. */
+function paintGradeSlide(held){
+  const box = $('gSlide');
+  if (!box) return;
+  const n = gradeHi - gradeLo;
+  box.hidden = n < 1;                     // one grade on this board: nothing to slide
+  if (n < 1) return;
+  const lo = +$('gmin').value, hi = +$('gmax').value;
+  const at = v => (v - gradeLo) / n * 100;
+  const fill = box.querySelector('.fill');
+  fill.style.left = at(lo) + '%';
+  fill.style.width = (at(hi) - at(lo)) + '%';
+  box.querySelectorAll('.dot').forEach(d => {
+    const v = d.dataset.end === 'lo' ? lo : hi, s = d.querySelector('span');
+    d.style.left = at(v) + '%';
+    d.classList.toggle('on', held === d.dataset.end);
+    s.textContent = GRADES[v] + ' \u00b7 V' + VGRADE[v];
+    s.className = at(v) < 20 ? 'l' : at(v) > 80 ? 'r' : '';
+  });
+}
+(function gradeSlide(){
+  const box = $('gSlide');
+  let down = false, end = null, x0 = 0, raf = 0;
+  const frac = x => { const b = box.getBoundingClientRect(); return Math.min(1, Math.max(0, (x - b.left) / b.width)); };
+  const val = x => Math.round(gradeLo + frac(x) * (gradeHi - gradeLo));
+  const nearer = x => {
+    const b = box.getBoundingClientRect(), n = Math.max(1, gradeHi - gradeLo);
+    const px = v => b.left + (v - gradeLo) / n * b.width;
+    const dl = Math.abs(x - px(+$('gmin').value)), dh = Math.abs(x - px(+$('gmax').value));
+    return dl < dh ? 'lo' : dh < dl ? 'hi' : null;       // null: together, or dead between them
+  };
+  const move = x => {
+    if (end === null){                                    // which of the two? the first movement says
+      if (Math.abs(x - x0) < 4) return;
+      end = x < x0 ? 'lo' : 'hi';
+    }
+    const lo = +$('gmin').value, hi = +$('gmax').value;
+    const v = end === 'lo' ? Math.min(val(x), hi) : Math.max(val(x), lo);
+    const changed = v !== (end === 'lo' ? lo : hi);
+    if (changed) $(end === 'lo' ? 'gmin' : 'gmax').value = v;
+    paintGradeSlide(end);
+    if (!changed) return;
+    cancelAnimationFrame(raf);                            // the list catches up once a frame, not once a pixel
+    raf = requestAnimationFrame(() => { saveView(); renderResults(); paintGradeSlide(down ? end : null); markFilters(); });
+  };
+  box.addEventListener('pointerdown', e => {
+    if (e.button) return;
+    down = true; x0 = e.clientX; end = nearer(e.clientX);
+    try{ box.setPointerCapture(e.pointerId); }catch(err){}
+    if (end) move(e.clientX);                             // a tap on the line brings the nearer dot to it
+    e.preventDefault();
+  });
+  box.addEventListener('pointermove', e => { if (down) move(e.clientX); });
+  const up = () => { if (!down) return; down = false; end = null; paintGradeSlide(null); };
+  box.addEventListener('pointerup', up);
+  box.addEventListener('pointercancel', up);
+})();
+
 /* The panel is collapsed most of the time, so the button carries a mark when
    something in it is actually filtering - otherwise a short list looks like a
    bug rather than a setting. */
