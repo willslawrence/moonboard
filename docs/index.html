@@ -130,28 +130,69 @@
   .mark.P{border-color:#2563eb}
   .mark.E{border-color:#ef4444}
   .mark.g{width:6.4%;border-width:2px}
+  /* A second problem shown with the open one. The wall lights it red with a green
+     finish, because the box has no colours to spare. The picture draws it dashed and
+     orange, so its holds are not taken for the open problem's own red finish. A hold
+     the two share is lit as the open problem's, and gets a dashed ring around it. */
+  .mark.two{border-style:dashed;border-color:#fb923c}
+  .mark.two.S{border-color:#22c55e}
+  .mark.also{width:12.4%;border-style:dashed;border-color:#fb923c;border-width:2px}
 
   /* ---- the board, big ----
      Tap the picture and it fills the screen, for showing a problem to whoever is
      standing at the wall or reading it from across the room. Not the browser's
      own fullscreen - an iPhone has none for anything but video - so the board's
      column is laid over the page instead, with one big button to come back. */
-  #bigCap,#bigExit{display:none}
+  #bigCap,#bigRow,#bigHist{display:none}
   body.big #boardCol{position:fixed;inset:0;z-index:55;background:var(--bg);
-       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+       overflow-y:auto;overscroll-behavior:contain;
        padding:calc(env(safe-area-inset-top) + 10px) 10px calc(env(safe-area-inset-bottom) + 12px)}
+  /* The first screenful is the picture with its buttons, centred as before. What has
+     been logged on the problem comes after it, a scroll down. */
+  body.big #bigTop{display:flex;flex-direction:column;align-items:center;justify-content:center;
+       gap:10px;min-height:100%}
   /* as wide as the screen allows, or as tall as leaves room for the name and the button */
   body.big #board{flex:none;margin:0;width:min(100%,calc((100vh - 190px) * .65))}
   body.big #board{width:min(100%,calc((100dvh - 190px) * .65))}
+  /* a second problem's name takes a line under the picture */
+  body.big.pair #board{width:min(100%,calc((100vh - 216px) * .65))}
+  body.big.pair #board{width:min(100%,calc((100dvh - 216px) * .65))}
   body.big .mark{border-width:4px}
-  body.big .mark.g{border-width:3px}
+  body.big .mark.g,body.big .mark.also{border-width:3px}
   body.big #bigCap{display:flex;order:-1;flex:none;align-items:center;gap:8px;
                    max-width:100%;min-width:0;font-size:17px;font-weight:700}
   body.big #bigCap b{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   body.big #bigCap .gd{font-size:12px}
-  body.big #betaCap{font-size:13px;margin-top:0}
-  body.big #bigExit{display:block;flex:none;width:min(100%,430px);padding:18px 12px;
+  body.big #betaCap,body.big #pairCap{font-size:13px;margin-top:0}
+  /* Beta and History either side of the way out. Beta lives here and nowhere else:
+     the climber is worth watching at this size, and it is one button fewer beside
+     the small board. */
+  body.big #bigRow{display:flex;flex:none;align-items:stretch;gap:8px;width:min(100%,430px)}
+  body.big #bigExit{flex:1 1 auto;width:auto;min-width:0;padding:18px 6px;
                     font-size:18px;font-weight:700;border-radius:12px}
+  #bigRow > .mini{flex:0 0 86px;width:auto;padding:0 4px;font-size:13px;border-radius:12px}
+  /* ---- under the big board: your own tries and sends on it, then who has climbed it ---- */
+  body.big #bigHist{display:block;width:min(100%,430px);margin:0 auto;padding:2px 0 6px}
+  #bigHist .lbl{margin:18px 0 6px}
+  #bigSum{font-size:13px;color:var(--dim);line-height:1.5}
+  #bigSum b{color:var(--ink);font-weight:600}
+  #bigWho .p{display:flex;align-items:center;gap:9px;padding:9px 2px;border-bottom:1px solid #1e2024}
+  #bigWho .p i{flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;
+               font-size:11px;font-weight:700;font-style:normal;color:#0e0e0f}
+  #bigWho .p .n{flex:1;min-width:0;font-size:14px;font-weight:600;
+                white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #bigWho .p .n span{display:block;font-size:11px;font-weight:400;color:var(--dimmer);margin-top:1px}
+  #bigWho .p .rs{flex:none;padding:2px 7px;border-radius:5px;
+                 font:700 10px ui-monospace,Menlo,monospace;background:#22c55e;color:#06240e}
+  #bigWho .none{font-size:13px;color:var(--dimmer);padding:8px 2px;line-height:1.5}
+  /* ---- two at once: the second problem's name, under the picture ---- */
+  #pairCap{display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;
+           font-size:11px;color:#fb923c;margin-top:4px}
+  #pairCap[hidden]{display:none}
+  #pairCap b{min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #pairCap .gd{font-size:9px}
+  #pairCap .leg{display:none;flex:none;color:var(--dim);white-space:nowrap}
+  body.big #pairCap .leg{display:inline}
 
   /* ---- route name / search: sits under the board ----
      A filled, rounded box with a magnifier, so it reads as the search and never
@@ -190,6 +231,7 @@
   #barBtns{display:flex;flex-direction:column;gap:6px}
   #barBtns #send{font-size:18px;padding:6.25px 0}  /* the one that lights the wall: a quarter taller than the rest */
   #barBtns button.mini{padding-left:2px;padding-right:2px}
+  #barBtns #pairBtn{font-size:11px;letter-spacing:-.02em}   /* eleven letters in a 66px button */
   /* A short screen has a short board, and the buttons beside it must not be the
      taller of the two - that would take the height back out of the list. */
   @media (max-height:680px){
@@ -282,14 +324,14 @@
   #histFor span{display:block;font-size:12px;color:var(--dimmer);font-weight:400;margin-top:2px}
   #histSum{font-size:13px;color:var(--dim);line-height:1.5}
   #histSum b{color:var(--ink);font-weight:600}
-  #histRows .e{display:flex;align-items:center;gap:9px;padding:10px 2px;border-bottom:1px solid #1e2024}
-  #histRows .e .d{flex:1;min-width:0;font-size:14px;font-weight:600}
-  #histRows .e .d span{display:block;font-size:11px;font-weight:400;color:var(--dimmer);margin-top:1px}
-  #histRows .e .rs{flex:none;padding:2px 7px;border-radius:5px;
+  #histRows .e,#bigRows .e{display:flex;align-items:center;gap:9px;padding:10px 2px;border-bottom:1px solid #1e2024}
+  #histRows .e .d,#bigRows .e .d{flex:1;min-width:0;font-size:14px;font-weight:600}
+  #histRows .e .d span,#bigRows .e .d span{display:block;font-size:11px;font-weight:400;color:var(--dimmer);margin-top:1px}
+  #histRows .e .rs,#bigRows .e .rs{flex:none;padding:2px 7px;border-radius:5px;
                    font:700 10px ui-monospace,Menlo,monospace;background:#22252b;color:var(--dim)}
-  #histRows .e.sent .rs{background:#22c55e;color:#06240e}
-  #histRows .e .lk{flex:none;font-size:10px;color:var(--dimmer)}
-  #histRows .none{font-size:13px;color:var(--dimmer);padding:8px 2px;line-height:1.5}
+  #histRows .e.sent .rs,#bigRows .e.sent .rs{background:#22c55e;color:#06240e}
+  #histRows .e .lk,#bigRows .e .lk{flex:none;font-size:10px;color:var(--dimmer)}
+  #histRows .none,#bigRows .none{font-size:13px;color:var(--dimmer);padding:8px 2px;line-height:1.5}
   #sendFor{font-size:15px;font-weight:600}
   #sendFor span{display:block;font-size:12px;color:var(--dimmer);font-weight:400;margin-top:2px}
   #sendPicks{display:grid;gap:8px}
@@ -453,6 +495,12 @@
   /* already looking at it: nothing to tap, so it settles into a label */
   #nowBtn.here{background:transparent;border-color:var(--edge)}
   #nowBtn.here .nm3{display:none}
+  /* a second problem up with it, in the colour the picture draws it */
+  #nowBtn .nm4{font-size:10px;font-weight:700;line-height:1.2;color:#fb923c;overflow-wrap:anywhere;
+               -webkit-hyphens:auto;hyphens:auto;
+               display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  #nowBtn .nm4:empty,#nowBtn.here .nm4{display:none}
+  #bar > #nowBtn .nm4{flex:0 1 auto;font-size:13px;-webkit-line-clamp:1}
   #bar > #nowBtn{flex-direction:row;align-items:center;gap:8px;padding:7px 10px;margin-bottom:6px}
   #bar > #nowBtn .nm3{flex:0 1 auto;font-size:13px;-webkit-line-clamp:1;-webkit-hyphens:manual;hyphens:manual}
   #bar > #nowBtn .by{flex:1 1 0;font-size:12px}
@@ -543,15 +591,30 @@
       </div></div>
     </div></div>
     <div id="boardCol">
-      <div id="board">
-        <img src="board-2016.png" alt="MoonBoard 2016 wall" width="450" height="692">
-        <div id="marks"></div>
-        <svg id="betaSvg" viewBox="0 0 450 692" aria-hidden="true"></svg>
-        <div id="betaTap"></div>
+      <div id="bigTop">
+        <div id="board">
+          <img src="board-2016.png" alt="MoonBoard 2016 wall" width="450" height="692">
+          <div id="marks"></div>
+          <svg id="betaSvg" viewBox="0 0 450 692" aria-hidden="true"></svg>
+          <div id="betaTap"></div>
+        </div>
+        <div id="pairCap" hidden></div>
+        <div id="betaCap"></div>
+        <div id="bigCap"><b></b><span class="gd"></span></div>
+        <div id="bigRow">
+          <button id="betaBtn" class="mini" disabled>+ Beta</button>
+          <button id="bigExit" class="solid">Tap to exit</button>
+          <button id="bigHistBtn" class="mini" title="Your tries and sends on this problem, and who has climbed it">History</button>
+        </div>
       </div>
-      <div id="betaCap"></div>
-      <div id="bigCap"><b></b><span class="gd"></span></div>
-      <button id="bigExit" class="solid">Tap to exit</button>
+      <!-- Only with the board big: scroll down past the picture for these. -->
+      <div id="bigHist">
+        <div class="lbl">Your history</div>
+        <div id="bigSum"></div>
+        <div id="bigRows"></div>
+        <div class="lbl">Climbed by</div>
+        <div id="bigWho"></div>
+      </div>
     </div>
     <div id="barBtns">
       <button id="send" class="mini solid" disabled aria-label="Light up">&#128161;</button>
@@ -560,7 +623,7 @@
       <button id="try" class="mini" disabled>Log try</button>
       <button id="done" class="mini" disabled>Log send</button>
       <button id="hist" class="mini" disabled title="Everything you have logged on this problem">History</button>
-      <button id="betaBtn" class="mini" disabled>+ Beta</button>
+      <button id="pairBtn" class="mini" disabled>+ 2nd route</button>
       <div id="betaTools">
         <div id="betaLimbs">
           <button class="mini" data-l="LH" aria-label="Left hand">L &#9995;</button>
@@ -598,7 +661,7 @@
     <div id="wallNext"></div>
   </div>
   <button id="lineBar" hidden></button>
-  <button id="nowBtn" hidden><span class="cap">On the wall</span><b class="nm3"></b><span class="by"></span></button>
+  <button id="nowBtn" hidden><span class="cap">On the wall</span><b class="nm3"></b><b class="nm4"></b><span class="by"></span></button>
   <div id="barTxt">
     <div id="toolsR" class="tools">
       <button id="setBtn" class="ghost" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor"><circle cx="12" cy="12" r="5.6" stroke-width="2"/><circle cx="12" cy="12" r="2" stroke-width="1.8"/><path stroke-width="3" d="M12 2.6v3.2M12 18.2v3.2M2.6 12h3.2M18.2 12h3.2M5.35 5.35l2.26 2.26M16.39 16.39l2.26 2.26M5.35 18.65l2.26-2.26M16.39 7.61l2.26-2.26"/></g></svg></button>
@@ -824,7 +887,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-06 00:05';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-07 21:23';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -838,6 +901,8 @@ const BLOCKED = ['0000fe59','00001530-1212-efde-1523-785feabcd123'];
 let device = null, rx = null, tx = null;
 const state = {};                      // "col,row" -> 'S' | 'P' | 'E'
 let gradeCells = {};                   // "col,1"   -> the row-1 grade meter
+let second = null;                     // a second problem shown with the open one (see "two at once")
+let pick2 = false;                     // the next tap in the list chooses it
 const $ = id => document.getElementById(id);
 
 /* Capped. This grew without limit, and since it lives inside Settings the browser
@@ -882,30 +947,40 @@ const markY = row => boardNow().geo === 'photo'
 function paint(){
   const m = $('marks');
   m.innerHTML = '';
-  const all = Object.assign({}, gradeCells, state);   // a real hold always wins
-  for (const k in all){
+  const two = secondCells(second);
+  // a real hold always wins, and the open problem's over the second one's
+  const all = Object.assign({}, gradeCells, two, state);
+  const ring = (k, cls) => {
     const [col, row] = k.split(',').map(Number);
     const d = document.createElement('div');
-    d.className = 'mark ' + all[k] + (state[k] ? '' : ' g');
+    d.className = 'mark ' + cls;
     d.style.left = markX(col) + '%';
     d.style.top  = markY(row) + '%';
     m.appendChild(d);
-  }
+  };
+  for (const k in all) ring(k, all[k] + (state[k] ? '' : two[k] ? ' two' : ' g'));
+  // A hold both problems use is lit as the open problem's. Ring it again, so the
+  // second one still reads whole on the picture.
+  for (const k in two) if (state[k]) ring(k, 'also');
 }
-function buildPayload(withGrade){
+/* cells: "col,row" -> 'S' | 'P' | 'E', one entry a hold, as the wall is to show them */
+function payloadOf(cells){
   const parts = [];
-  const all = (withGrade === false)
-    ? Object.assign({}, state)
-    : Object.assign({}, gradeCells, state);           // a real hold always wins
-  for (const k in all){
+  for (const k in cells){
     const [col, row] = k.split(',').map(Number);
-    parts.push(all[k] + holdNum(col, row));
+    parts.push(cells[k] + holdNum(col, row));
   }
   // Holds MUST be listed in ascending index order. Grouping them by type
   // (all S, then all P, then all E) makes the box mis-colour holds and light
   // strays next to isolated moves. Verified on the wall 2026-08-27.
   parts.sort((a, b) => (+a.slice(1)) - (+b.slice(1)));
   return 'l#' + parts.join(',') + '#';
+}
+function buildPayload(withGrade){
+  const two = secondCells(second);
+  return payloadOf((withGrade === false)
+    ? Object.assign({}, two, state)
+    : Object.assign({}, gradeCells, two, state));     // a real hold always wins
 }
 
 /* ---------- benchmarks (2016 setup) ---------- */
@@ -2629,6 +2704,7 @@ function applyLists(data){
 }
 
 async function listsCall(path, body){
+  if (body && path.indexOf('/lists/log') === 0) logCache = null;   // the big board's copy is out of date now
   try{
     const r = await fetch(LISTS_API + path, body ? {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -2702,11 +2778,13 @@ function paintBar(){
   paintBeta();
   paintNext();
   paintStack();
+  paintPair();
 }
 
 /* Who has climbed the selected problem, down the gutter left of the board.
    Global - everyone's ticks, not just yours. */
 function paintClimbers(){
+  if (document.body.classList.contains('big')) bigWho();
   const box = $('climbers');
   box.innerHTML = '';
   const who = current ? (done[current.id] || []) : [];
@@ -2909,7 +2987,7 @@ function renderResults(){
       chip.style.background = personColor(n);
       whoBox.appendChild(chip);
     });
-    row.addEventListener('click', () => loadRoute(r));
+    row.addEventListener('click', () => rowTap(r));
     box.appendChild(row);
   });
   if (hits.length > limit){
@@ -2931,7 +3009,8 @@ function renderResults(){
 /* Row 1 reads out the grade: first three green, next three blue, rest red. */
 function applyGradeBar(){
   gradeCells = {};
-  if (!current || !$('gbar').checked) return;
+  // With two problems up the row stays dark: one meter for two grades says nothing.
+  if (!current || second || !$('gbar').checked) return;
   // Row 1 is free on every 2016 benchmark, but the other sets use it now and then.
   if (/(^|,)[A-K]1(,|$)/.test(current.s + ',' + current.m + ',' + current.e)) return;
   // A1 lights now that its LED has been reseated, so the bar runs the full A1..K1.
@@ -2941,14 +3020,94 @@ function applyGradeBar(){
     gradeCells[(i + 1) + ',1'] = i < 5 ? 'S' : (i < 7 ? 'P' : 'E');
 }
 
-function parseHolds(str, tag){
+function parseHolds(str, tag, into){
   if (!str) return;
+  const cells = into || state;
   str.split(',').forEach(h => {
     const m = /^([A-K])(\d{1,2})$/.exec(h.trim().toUpperCase());
     if (!m) return;
     const col = LETTERS.indexOf(m[1]) + 1, row = +m[2];
-    if (col >= 1 && row >= 1 && row <= ROWS) state[col + ',' + row] = tag;
+    if (col >= 1 && row >= 1 && row <= ROWS) cells[col + ',' + row] = tag;
   });
+}
+
+/* ---------- two at once ----------
+   A second problem shown, and lit, with the one that is open - two people working
+   different problems without relighting the wall between goes. Everything else on
+   the page (ticks, tries, beta, the line) still belongs to the open problem alone.
+
+   The box has three colours and the open problem uses all of them, so the second
+   cannot have one of its own on the wall: it goes up all red, with its finish green.
+   Read from the top, a green hold is the second problem's finish and a red one is
+   the open problem's. The picture is not held to three colours, so there the second
+   is drawn dashed and orange. If the box turns out to have another colour, these two
+   letters are the only thing to change (and the relay's payload check with them). */
+const SECOND_HOLD = 'E', SECOND_END = 'S';
+
+function cellsOf(r){               // a problem as it is lit on its own
+  const c = {};
+  parseHolds(r.s, 'S', c); parseHolds(r.m, 'P', c); parseHolds(r.e, 'E', c);
+  return c;
+}
+function secondCells(r){           // a problem as it is lit when it is the second one
+  const c = {};
+  if (!r) return c;
+  parseHolds(r.s, SECOND_HOLD, c); parseHolds(r.m, SECOND_HOLD, c); parseHolds(r.e, SECOND_END, c);
+  return c;
+}
+// what the wall is sent for these two together: no grade meter, the first one's holds win
+const pairPayload = (r, r2) => payloadOf(Object.assign({}, secondCells(r2), cellsOf(r)));
+
+/* look: show it on this phone without lighting it, as loadRoute does. */
+function setSecond(r, look){
+  pick2 = false;
+  const was = second;
+  second = (r && current && r.id !== current.id && r.board === current.board) ? r : null;
+  applyGradeBar();
+  paint();
+  paintPair();
+  paintNow();                            // whether this phone is looking at what is on the wall
+  if (second !== was) log(second ? 'second route: "' + second.name + '" \u2014 red on the wall, finish green'
+                                 : 'second route off');
+  if (!look && second !== was && $('auto').checked && rx) sendProblem();
+}
+
+function paintPair(){
+  const b = $('pairBtn'), cap = $('pairCap');
+  if (!b || !cap) return;
+  document.body.classList.toggle('pair', !!second);
+  b.disabled = !current;
+  b.textContent = second ? '\u2715 2nd route' : pick2 ? 'Pick one\u2026' : '+ 2nd route';
+  b.className = 'mini' + (second || pick2 ? ' on' : '');
+  b.title = second ? 'Take ' + second.name + ' off again'
+          : pick2 ? 'Tap a route in the list, or tap here to cancel'
+                  : 'Show and light a second route with this one';
+  cap.hidden = !(second || pick2);
+  cap.innerHTML = '';
+  if (second){
+    const nm = document.createElement('b');
+    nm.textContent = '+ ' + second.name;
+    const gd = document.createElement('span');
+    gd.className = 'gd';
+    paintPill(gd, second.grade);
+    const leg = document.createElement('span');
+    leg.className = 'leg';
+    leg.textContent = 'red on the wall \u00b7 finish green';
+    cap.append(nm, gd, leg);
+  } else if (pick2){
+    cap.textContent = 'Tap a second route in the list';
+  }
+}
+
+/* A tap on a row of the list: the second problem while one is being picked, the
+   open one the rest of the time. */
+function rowTap(r){
+  if (!pick2) return loadRoute(r);
+  if (current && r.id === current.id){
+    $('pairCap').textContent = 'That one is already up \u2014 tap another';
+    return;
+  }
+  setSecond(r);
 }
 
 /* The tools follow the board: in the search row with no route up, and beside the
@@ -2990,6 +3149,9 @@ function loadRoute(r, look){
   introToken++;                          // a pick beats the intro
   for (const k in state) delete state[k];
   parseHolds(r.s, 'S'); parseHolds(r.m, 'P'); parseHolds(r.e, 'E');
+  // The second problem stays up while the open one changes, unless this is it.
+  if (second && (second.id === r.id || second.board !== r.board)) second = null;
+  pick2 = false;
   current = r;
   placeTools();
   applyGradeBar();
@@ -3011,6 +3173,7 @@ function clearRoute(){
   bigBoard(false);
   for (const k in state) delete state[k];
   current = null; gradeCells = {};
+  second = null; pick2 = false;
   betaReset();
   $('boardWrap').style.display = 'none';
   placeTools();
@@ -3319,17 +3482,37 @@ function wallRoute(){
   return r && r.board === boardKey ? r : null;
 }
 
+/* Two problems can be up at once. The relay passes on the first one's id and the
+   lights themselves, so the second is worked out from the lights: it is the problem
+   that, put up beside the first, gives exactly this payload. Looked for once a payload. */
+let pairFor = '', pairHit = null;
+function wallSecond(){
+  const r = wallRoute();
+  if (!r) return null;
+  const key = boardKey + '|' + r.id + '|' + wallNow.payload;
+  if (key !== pairFor){
+    pairFor = key;
+    const lit = String(wallNow.payload || '').slice(2, -1).split(',').filter(Boolean).length;
+    pairHit = lit > Object.keys(cellsOf(r)).length
+      ? (PROBLEMS.find(p => p !== r && pairPayload(r, p) === wallNow.payload) || null) : null;
+  }
+  return pairHit;
+}
+const sameSecond = r2 => (second ? second.id : 0) === (r2 ? r2.id : 0);
+
 function paintNow(){
   const b = $('nowBtn');
   if (!b) return;
   // Only when this phone can know: it holds the Bluetooth, or someone else does.
   const r = (rx || bridgeLive) ? wallRoute() : null;
   if (!r){ b.hidden = true; return; }
-  const here = !!current && current.id === r.id;
+  const r2 = wallSecond();
+  const here = !!current && current.id === r.id && sameSecond(r2);
   const by = (wallNow.by || '').trim();
   b.hidden = false;
   b.classList.toggle('here', here);
   b.querySelector('.nm3').textContent = r.name;
+  b.querySelector('.nm4').textContent = r2 ? '+\u00a0' + r2.name : '';   // the plus stays with the name
   const who = b.querySelector('.by');
   who.textContent = '';
   if (by){
@@ -3340,15 +3523,18 @@ function paintNow(){
     nm.textContent = by;
     who.append(chip, nm);
   }
-  b.title = here ? 'This is the problem on the wall' + (by ? ', put up by ' + by : '')
-                 : 'Open ' + r.name + (by ? ' \u2014 put up by ' + by : '');
-  b.setAttribute('aria-label', 'On the wall: ' + r.name + (by ? ', put up by ' + by : ''));
+  const both = r.name + (r2 ? ' and ' + r2.name : '');
+  b.title = here ? (r2 ? 'These are the problems on the wall' : 'This is the problem on the wall') + (by ? ', put up by ' + by : '')
+                 : 'Open ' + both + (by ? ' \u2014 put up by ' + by : '');
+  b.setAttribute('aria-label', 'On the wall: ' + both + (by ? ', put up by ' + by : ''));
 }
 
 function gotoWall(){
-  const r = wallRoute();
-  if (!r || betaDraft || (current && current.id === r.id)) return;
-  loadRoute(r, true);                    // a look, not a send - it is already up there
+  const r = wallRoute(), r2 = wallSecond();
+  if (!r || betaDraft || (current && current.id === r.id && sameSecond(r2))) return;
+  // a look, not a send - it is already up there
+  if (!current || current.id !== r.id) loadRoute(r, true);
+  setSecond(r2, true);
   const row = $('results').querySelector('.rt.sel');
   if (row) row.scrollIntoView({ block: 'nearest' });
 }
@@ -3521,6 +3707,7 @@ function stackOpen(r){
 function putUp(e){
   const r = byId[e.id];
   if (!r || r.board !== boardKey || betaDraft || !canSend()) return;
+  second = null;                         // their go, their problem: it goes up on its own
   loadRoute(r, true);
   const again = !!wallNow && wallNow.id === r.id && sameName(wallNow.by, e.by);
   write(buildPayload(), false, { id: r.id, by: e.by, board: boardKey });
@@ -3773,14 +3960,31 @@ async function openHist(){
 
   let entries = [];
   try{
-    const res = await fetch(LISTS_API + '/lists/log?limit=3000&person=' + encodeURIComponent(me));
-    entries = ((await res.json()).entries || []).filter(e => Number(e.id) === r.id);
+    entries = (await myLog(me, true)).filter(e => Number(e.id) === r.id);
   }catch(e){
     if (mine === histFor) $('histSum').textContent = 'logbook unreachable \u2014 try again in a moment';
     return;
   }
   if (mine !== histFor || $('histPanel').hidden) return;      // moved on while it loaded
-  entries.sort((a, b) => (a.t < b.t ? 1 : a.t > b.t ? -1 : 0));   // newest first
+  histFill(entries, r, me, $('histSum'), $('histRows'));
+}
+
+/* One climber's whole log. The big board asks every time the problem changes, so
+   an answer is kept for a minute - flicking through a list asks once - and dropped
+   as soon as this phone logs anything. fresh: ask regardless. */
+let logCache = null;                      // {me, t, entries}
+async function myLog(me, fresh){
+  if (!fresh && logCache && logCache.me === me && Date.now() - logCache.t < 60000) return logCache.entries;
+  const res = await fetch(LISTS_API + '/lists/log?limit=3000&person=' + encodeURIComponent(me));
+  const entries = (await res.json()).entries || [];
+  logCache = { me, t: Date.now(), entries };
+  return entries;
+}
+
+/* The summary and the rows, for the History sheet and for under the big board. */
+function histFill(entries, r, me, sum, rows){
+  entries = entries.slice().sort((a, b) => (a.t < b.t ? 1 : a.t > b.t ? -1 : 0));   // newest first
+  rows.innerHTML = '';
 
   /* A row imported from the MoonBoard app is a calendar day, stored as midnight
      UTC. Read in local time it would slip back a day anywhere west of Greenwich. */
@@ -3789,7 +3993,6 @@ async function openHist(){
     e.src === 'moonboard' ? { timeZone: 'UTC' } : {}));
   const sends = entries.filter(e => e.result !== 'try');
   const tries = entries.length - sends.length;
-  const sum = $('histSum');
   sum.textContent = '';
   if (!entries.length){
     // A tick from before the logbook kept dates has no rows to show.
@@ -3799,7 +4002,7 @@ async function openHist(){
     d.textContent = ticked
       ? 'Marked as climbed, from before the logbook kept dates \u2014 so there is nothing to list.'
       : 'Nothing logged on this one yet. Log try and Log send will start filling it in.';
-    $('histRows').appendChild(d);
+    rows.appendChild(d);
     return;
   }
   const first = sends[sends.length - 1];                      // oldest send: the one that scores
@@ -3830,7 +4033,73 @@ async function openHist(){
     lk.className = 'lk';
     lk.textContent = e.lock ? '\ud83d\udd12' : '';
     row.append(d, rs, lk);
-    $('histRows').appendChild(row);
+    rows.appendChild(row);
+  });
+}
+
+/* ---------- under the big board ----------
+   Scroll down past the picture: what you have logged on this problem, the same rows
+   the History sheet shows, and then who has climbed it - how each of them first got
+   up it, how many times since, and when they were last on it. The second part comes
+   from what the page already holds, so it is there at once and with no name picked. */
+let bigFor = 0;                           // guards against a slow answer landing on another problem
+async function bigHist(){
+  const r = current, me = meNow();
+  if (!r) return;
+  const mine = ++bigFor;
+  bigWho();
+  const sum = $('bigSum'), rows = $('bigRows');
+  rows.innerHTML = '';
+  if (!me){
+    sum.textContent = 'Pick your name on the main screen, and your tries and sends on this problem show here.';
+    return;
+  }
+  sum.textContent = 'loading\u2026';
+  let entries = [];
+  try{
+    entries = (await myLog(me)).filter(e => Number(e.id) === r.id);
+  }catch(e){
+    if (mine === bigFor) sum.textContent = 'logbook unreachable \u2014 try again in a moment';
+    return;
+  }
+  if (mine !== bigFor || !document.body.classList.contains('big')) return;   // moved on while it loaded
+  histFill(entries, r, me, sum, rows);
+}
+
+function bigWho(){
+  const box = $('bigWho');
+  box.innerHTML = '';
+  if (!current) return;
+  const who = done[current.id] || [];
+  if (!who.length){
+    const d = document.createElement('div');
+    d.className = 'none';
+    d.textContent = 'Nobody has logged a send on this one yet.';
+    box.appendChild(d);
+    return;
+  }
+  who.forEach(n => {
+    const st = stats[n] && stats[n][current.id];
+    const first = firstSend(st), sends = (st && st.s) ? st.s.length : 0;
+    const row = document.createElement('div');
+    row.className = 'p';
+    const chip = document.createElement('i');
+    chip.textContent = chipFor(n);
+    chip.style.background = personColor(n);
+    const nm = document.createElement('div');
+    nm.className = 'n';
+    nm.textContent = n;
+    const sub = document.createElement('span');
+    const when = st && st.d ? new Date(st.d) : null;
+    sub.textContent = [sends > 1 ? sends + ' sends' : '',
+      when && !isNaN(when) ? 'last on it ' + when.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '']
+      .filter(Boolean).join(' \u00b7 ');
+    if (sub.textContent) nm.appendChild(sub);
+    const rs = document.createElement('div');
+    rs.className = 'rs';
+    rs.textContent = first ? (RESULT_WORDS[first] || first) : '\u2713 sent';
+    row.append(chip, nm, rs);
+    box.appendChild(row);
   });
 }
 
@@ -4239,6 +4508,7 @@ function betaPlay(){
 /* ---- entering it ---- */
 function betaEdit(){
   if (!current) return;
+  bigBoard(false);                       // the tools for placing hands and feet are beside the small board
   betaStop();
   betaDraft = beta ? beta.moves.map(m => ({ l: m.l, h: m.h })) : [];
   betaLimb = BETA_ORDER[Math.min(betaDraft.length, 3)];
@@ -4287,7 +4557,8 @@ async function betaSave(){
       beta = d.beta || null; betaDraft = null;
       document.body.classList.remove('betaEdit');
       $('betaSvg').innerHTML = '';
-      if (beta) betaPlay(); else paintBeta();
+      // Play it back where its button is: on the big board.
+      if (beta){ bigBoard(true); betaPlay(); } else paintBeta();
     }
   }catch(err){ $('betaCap').textContent = 'Could not save — no connection'; }
 }
@@ -4309,7 +4580,12 @@ $('betaBtn').onclick = () => {
     if (betaPlaying){ betaStop(); $('betaSvg').innerHTML = ''; paintBeta(); }
     else if (beta) betaPlay();
     else betaFetch(current.id).then(() => betaPlay());
-  } else if (!needName('beta')) betaEdit();
+  } else {
+    // No beta yet: adding one happens beside the small board, and the name picker
+    // it may need is in the header, so the big board steps aside first.
+    bigBoard(false);
+    if (!needName('beta')) betaEdit();
+  }
 };
 
 /* ---------- swipe the board for the next problem ----------
@@ -4335,11 +4611,19 @@ function paintBig(){
   if (!current) return;
   $('bigCap').querySelector('b').textContent = current.name;
   paintPill($('bigCap').querySelector('.gd'), current.grade);
+  if (document.body.classList.contains('big')) bigHist();    // a flick to the next problem brings its history
 }
 function bigBoard(on){
   on = !!on && !!current && !betaDraft;      // not while placing hands and feet
+  const was = document.body.classList.contains('big');
+  if (on === was) return;
   document.body.classList.toggle('big', on);
-  if (on) paintBig();
+  $('boardCol').scrollTop = 0;               // open on the picture; leave nothing scrolled behind
+  if (on) return paintBig();
+  bigFor++;                                  // an answer still on its way is for nobody now
+  // The climber plays where its button is. Back beside the small board there is
+  // nothing to stop it with, so it stops here.
+  if (betaPlaying){ betaStop(); $('betaSvg').innerHTML = ''; paintBeta(); }
 }
 function boardTap(){
   if (!document.body.classList.contains('big')) bigBoard(true);
@@ -4938,6 +5222,16 @@ $('lineBar').onclick = () => {
   }).observe(col);
 })();
 $('bigExit').onclick = () => bigBoard(false);
+$('bigHistBtn').onclick = () => {
+  const el = $('bigHist');
+  if (el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+$('pairBtn').onclick = () => {
+  if (!current) return;
+  if (second) return setSecond(null);
+  pick2 = !pick2;
+  paintPair();
+};
 document.addEventListener('keydown', e => { if (e.key === 'Escape') bigBoard(false); });
 $('q').oninput = () => { searchQ = $('q').value; showName = false; paintQBox(); renderResults(); };
 $('q').addEventListener('focus', () => { if (!$('q').readOnly && nameShown()) $('q').select(); });
