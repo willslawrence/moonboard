@@ -42,7 +42,7 @@
           text-align:center;padding:9px 12px;margin:0 -10px}
   #noWall[hidden]{display:none}
   #top{flex:0 0 auto;background:var(--bg);border-bottom:1px solid var(--edge);
-       margin-bottom:6px;max-height:79vh;overflow-y:auto;overflow-x:hidden}
+       margin-bottom:6px;overflow:hidden}
   header{display:flex;align-items:center;gap:10px;
          padding:calc(env(safe-area-inset-top) + 4px) 0 4px;
          border-bottom:1px solid var(--edge)}
@@ -119,18 +119,17 @@
      Moonboard-Guidebook renders with. Everything below is those as percentages,
      so the overlay scales with the image. Column letters and row numbers are
      already printed on the photo. */
-  /* The wall is 450x692, so width drives height x1.54 — 29vh wide is ~45vh
-     tall. Board, search and filters all live inside #top, so nothing above the
-     list moves when you scroll. Keep this modest - if #top grows taller than
-     the viewport, sticky can't pin it and the whole thing scrolls away.
-     Now 32vh, with the side columns 68px and the page margin 10px so a narrow phone
-     gets the extra width too. It was 26vh, then 29: the extra three takes about a tenth off the list's height and
-     gives it to the picture, which is what you are actually looking at. On a
-     tall narrow screen the buttons either side are the limit instead, and the
-     board was already as wide as they allow. */
+  /* The wall is 450x692, so width drives height x1.54. The board is the page: it
+     sits hard against the right edge and takes whichever is smallest of
+       - the screen's width, less a 76px panel on its left for the wall's story,
+       - 38.4vh, a fifth more than the 32vh it had with a column of buttons beside it,
+       - what the screen's height leaves once the header, the row of bulbs, the
+         search row and two rows of the list have had theirs.
+     On most phones that is a quarter to a third more picture than before. */
   #boardWrap{padding:6px 0;margin:0}
-  #board{position:relative;width:min(100%,32vh);margin:0 auto;
-         border-radius:6px;overflow:hidden;touch-action:pan-y}
+  #board{position:relative;margin:0;border-radius:6px;overflow:hidden;touch-action:pan-y;
+         width:min(calc(100vw - 108px),38.4vh,calc((100vh - 252px) * .65))}
+  #board{width:min(calc(100vw - 108px),38.4vh,calc((100dvh - 252px) * .65))}
   /* iOS starts its own image drag on a sideways swipe, which eats the gesture */
   #board img{-webkit-user-drag:none;user-select:none;pointer-events:none}
   #board img{display:block;width:100%;height:auto}   /* beat the height attribute */
@@ -155,36 +154,39 @@
      standing at the wall or reading it from across the room. Not the browser's
      own fullscreen - an iPhone has none for anything but video - so the board's
      column is laid over the page instead, with one big button to come back. */
-  #bigCap,#bigRow,#bigHist{display:none}
+  #bigHead,#bigRow,#bigRow2,#bigHist{display:none}
   body.big #boardCol{position:fixed;inset:0;z-index:55;background:var(--bg);
        overflow-y:auto;overscroll-behavior:contain;
        padding:calc(env(safe-area-inset-top) + 10px) 10px calc(env(safe-area-inset-bottom) + 12px)}
-  /* The first screenful is the picture with its buttons, centred as before. What has
-     been logged on the problem comes after it, a scroll down. */
+  /* The first screenful is the picture with its buttons, centred. What has been
+     logged on the problem comes after it, a scroll down. */
   body.big #bigTop{display:flex;flex-direction:column;align-items:center;justify-content:center;
        gap:10px;min-height:100%}
-  /* as wide as the screen allows, or as tall as leaves room for the name and the button */
-  body.big #board{flex:none;margin:0;width:min(100%,calc((100vh - 190px) * .65))}
-  body.big #board{width:min(100%,calc((100dvh - 190px) * .65))}
+  /* as wide as the screen allows, or as tall as leaves room for the name and the buttons */
+  body.big #board{flex:none;margin:0;width:min(100%,calc((100vh - 218px) * .65))}
+  body.big #board{width:min(100%,calc((100dvh - 218px) * .65))}
   /* a second problem's name takes a line under the picture */
-  body.big.pair #board{width:min(100%,calc((100vh - 216px) * .65))}
-  body.big.pair #board{width:min(100%,calc((100dvh - 216px) * .65))}
+  body.big.pair #board{width:min(100%,calc((100vh - 244px) * .65))}
+  body.big.pair #board{width:min(100%,calc((100dvh - 244px) * .65))}
   body.big .mark{border-width:4px}
   body.big .mark.g,body.big .mark.also{border-width:3px}
-  body.big #bigCap{display:flex;order:-1;flex:none;align-items:center;gap:8px;
-                   max-width:100%;min-width:0;font-size:17px;font-weight:700}
-  body.big #bigCap b{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  body.big #bigCap .gd{font-size:12px}
+  /* the name on the left, the way out on the right */
+  body.big #bigHead{display:flex;flex:none;align-items:center;gap:10px;width:min(100%,430px)}
+  #bigCap{display:flex;flex:1 1 auto;align-items:center;gap:8px;min-width:0;font-size:17px;font-weight:700}
+  #bigCap b{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #bigCap .gd{font-size:12px}
+  #bigExit{flex:none;width:auto;padding:9px 14px;font-size:13px;font-weight:700;border-radius:10px}
   body.big #betaCap,body.big #pairCap{font-size:13px;margin-top:0}
-  /* Beta and History either side of the way out. Beta lives here and nowhere else:
-     the climber is worth watching at this size, and it is one button fewer beside
-     the small board. */
-  body.big #bigRow{display:flex;flex:none;align-items:stretch;gap:8px;width:min(100%,430px)}
-  body.big #bigExit{flex:1 1 auto;width:auto;min-width:0;padding:18px 6px;
-                    font-size:18px;font-weight:700;border-radius:12px}
-  #bigRow > .mini{flex:0 0 86px;width:auto;padding:0 4px;font-size:13px;border-radius:12px}
+  /* Logging happens here: two big buttons under the picture. Beta and the logbook
+     sit under those, smaller. None of the four is anywhere else. */
+  body.big #bigRow{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:none;width:min(100%,430px)}
+  #bigRow button{padding:15px 6px;font-size:16px;font-weight:700;border-radius:12px}
+  body.big #bigRow2{display:flex;gap:8px;flex:none;width:min(100%,430px)}
+  #bigRow2 button{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;
+                  padding:9px 6px;font-size:13px;border-radius:10px}
+  #bigRow2 svg{width:16px;height:16px;flex:none}
   /* ---- under the big board: your own tries and sends on it, then who has climbed it
-     (.whoRows - the History sheet lists them the same way) ---- */
+     ---- */
   body.big #bigHist{display:block;width:min(100%,430px);margin:0 auto;padding:2px 0 6px}
   #bigHist .lbl{margin:18px 0 6px}
   #bigSum{font-size:13px;color:var(--dim);line-height:1.5}
@@ -209,11 +211,15 @@
 
   /* ---- route name / search: sits under the board ----
      A filled, rounded box with a magnifier, so it reads as the search and never
-     as one more row of the list below it. Tapping the name turns it into a
-     fresh search; the filter toggle sits to its left and opens underneath. */
+     as one more row of the list below it. On the board's page it shows the open
+     route's name, with Settings to its right, and a tap on it goes to the page of
+     routes. On that page it is the search itself, with the filters to its left. */
   #bar{background:var(--bg);padding:5px 0 7px}
   #barTxt{display:flex;align-items:center;gap:6px;min-width:0}
   #barTxt #filtBtn{flex:none;width:34px;height:32px;padding:0;font-size:16px}
+  #barTxt #setBtn{flex:none;width:34px;height:32px;padding:0;display:grid;place-items:center;border-radius:8px}
+  #barTxt #setBtn svg{width:18px;height:18px;display:block}
+  #barTxt #toBoard{flex:none;width:auto;height:32px;padding:0 10px;font-size:13px;white-space:nowrap}
   #qBox{flex:1;min-width:0;height:32px;display:flex;align-items:center;gap:5px;
         padding:0 4px 0 9px;background:var(--panel2);border:1px solid #33333a;border-radius:9px}
   #qBox.on,#qBox:focus-within{border-color:#8b8b93}
@@ -226,9 +232,28 @@
   #qBox .pill[hidden],#qX[hidden]{display:none}
   #qX{flex:none;width:26px;height:26px;padding:0;border:0;border-radius:50%;
       background:transparent;color:var(--dim);font-size:13px}
-  /* While the search keyboard is up the board steps aside, so the results get
-     the room rather than two rows squeezed between the board and the keys. */
-  body.typing #boardWrap{display:none !important}
+  /* ---- two pages ----
+     The board's page, and to its left a page that is nothing but routes: the search,
+     its filters, the whole list, the keys. Swipe right anywhere but on the picture to
+     go to it, or tap the search box; swipe left, pick a route, or tap Board to come
+     back. It is one list in two shapes - short under the board, the whole screen
+     here - so there is nothing to keep in step. */
+  #filtBtn,#toBoard{display:none}
+  /* A sideways drag has to reach the page as a swipe. The browser only asks the
+     nearest thing that scrolls whether it may pan, never the body above it, so each
+     of the three that scroll says so itself: up and down is theirs, sideways is ours. */
+  #top,#scroll,#wallCol{touch-action:pan-y}
+  body.listPage #filtBtn,body.listPage #toBoard{display:block}
+  body.listPage #setBtn,body.listPage header,body.listPage #actRow,
+  body.listPage #boardWrap,body.listPage #noWall{display:none !important}
+  body.listPage #bar{padding-top:calc(env(safe-area-inset-top) + 8px)}
+  @keyframes pgL{from{transform:translateX(-18%);opacity:.25}to{transform:none;opacity:1}}
+  @keyframes pgR{from{transform:translateX(18%);opacity:.25}to{transform:none;opacity:1}}
+  body.slideL #top,body.slideL #scroll{animation:pgL .17s ease-out}
+  body.slideR #top,body.slideR #scroll{animation:pgR .17s ease-out}
+  @media (prefers-reduced-motion:reduce){
+    body.slideL #top,body.slideL #scroll,body.slideR #top,body.slideR #scroll{animation:none}
+  }
   #count:empty{display:none}
   #results .more{margin:10px 0 4px}
 
@@ -236,23 +261,20 @@
   .pill{flex:none;padding:2px 6px;border-radius:5px;
         font:700 10px ui-monospace,Menlo,monospace;letter-spacing:-.02em}
 
-  /* the four actions stack down the space beside the board */
-  /* An empty column mirrors the button column, so the board sits dead centre
-     on the page rather than centred in whatever is left over. */
-  #boardRow{display:grid;grid-template-columns:68px 1fr 68px;gap:6px;align-items:stretch}
-  #boardCol{min-width:0}
-  #barBtns{display:flex;flex-direction:column;gap:6px}
-  #barBtns #send{font-size:18px;padding:6.25px 0}  /* the one that lights the wall: a quarter taller than the rest */
-  #barBtns button.mini{padding-left:2px;padding-right:2px}
+  /* The row over the board: the line on the left, the bulb in the middle, the second
+     bulb on the right. As thin as the search box, so it reads as one more row. */
+  #actRow{display:flex;gap:6px;padding-top:6px}
+  #actRow button{flex:1 1 0;min-width:0;height:32px;padding:0 6px;font-size:13px;border-radius:9px}
+  #actRow button[hidden]{display:none}
+  #actRow #send{flex:1.35 1 0;font-size:14px}
   /* the second bulb: orange, the colour the picture draws a second problem in */
-  #barBtns #pairBtn{border-color:#8a4b17;color:#fdba74}
-  #barBtns #pairBtn.on{background:#fb923c;border-color:#fb923c;color:#0e0e0f}
-  /* A short screen has a short board, and the buttons beside it must not be the
-     taller of the two - that would take the height back out of the list. */
-  @media (max-height:680px){
-    #barBtns{gap:4px}
-    #barBtns button.mini:not(#send){padding-top:4px;padding-bottom:4px}
-  }
+  #actRow #pairBtn{border-color:#8a4b17;color:#fdba74}
+  #actRow #pairBtn.on{background:#fb923c;border-color:#fb923c;color:#0e0e0f}
+  body.betaEdit #actRow{visibility:hidden}     /* nothing to light while placing hands and feet */
+  /* The wall's story on the left takes what the board leaves; the board keeps its
+     own width and stands against the right-hand edge. */
+  #boardRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:stretch}
+  #boardCol{min-width:0}
   /* ---- beta: a stick climber drawn over the board ---- */
   #betaSvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
   #betaTap{position:absolute;inset:0;display:none}
@@ -261,7 +283,7 @@
   #betaCap:empty{display:none}
   #betaCap u{color:var(--ink);text-underline-offset:2px}
   #betaTools{display:none;flex-direction:column;gap:6px;height:100%}
-  body.betaEdit #barBtns > button{display:none}
+  body.betaEdit #wallCol{display:none}
   body.betaEdit #betaTools{display:flex}
   #betaLimbs{display:grid;grid-template-columns:1fr 1fr;gap:5px}
   #betaLimbs button{padding:5px 0;font-size:12px;font-weight:700;border-radius:6px;min-width:0}
@@ -317,24 +339,21 @@
   #gamePanel[hidden]{display:none}
   #snakePanel{gap:8px !important}
   #snakePanel #snPad{margin-top:auto}      /* pushed to the bottom of the sheet */
-  #sendPanel,#logPanel,#snakePanel,#entryPanel,#setPanel,#histPanel,#pairPanel{position:fixed;inset:0;z-index:60;background:var(--bg);
+  #sendPanel,#logPanel,#snakePanel,#entryPanel,#setPanel,#pairPanel{position:fixed;inset:0;z-index:60;background:var(--bg);
              display:flex;flex-direction:column;gap:12px;overflow-y:auto;
              padding:calc(env(safe-area-inset-top) + 16px) 16px
                      calc(env(safe-area-inset-bottom) + 16px)}
-  #sendPanel[hidden],#logPanel[hidden],#snakePanel[hidden],#entryPanel[hidden],#setPanel[hidden],#histPanel[hidden],#pairPanel[hidden]{display:none}
-  /* ---- history: everything you have logged on the problem that's open ---- */
-  #histFor{font-size:15px;font-weight:600}
-  #histFor span{display:block;font-size:12px;color:var(--dimmer);font-weight:400;margin-top:2px}
-  #histSum{font-size:13px;color:var(--dim);line-height:1.5}
-  #histSum b{color:var(--ink);font-weight:600}
-  #histRows .e,#bigRows .e{display:flex;align-items:center;gap:9px;padding:10px 2px;border-bottom:1px solid #1e2024}
-  #histRows .e .d,#bigRows .e .d{flex:1;min-width:0;font-size:14px;font-weight:600}
-  #histRows .e .d span,#bigRows .e .d span{display:block;font-size:11px;font-weight:400;color:var(--dimmer);margin-top:1px}
-  #histRows .e .rs,#bigRows .e .rs{flex:none;padding:2px 7px;border-radius:5px;
+  #sendPanel[hidden],#logPanel[hidden],#snakePanel[hidden],#entryPanel[hidden],#setPanel[hidden],#pairPanel[hidden]{display:none}
+  /* ---- history: everything you have logged on the problem that's open, listed
+     under the big board ---- */
+  #bigRows .e{display:flex;align-items:center;gap:9px;padding:10px 2px;border-bottom:1px solid #1e2024}
+  #bigRows .e .d{flex:1;min-width:0;font-size:14px;font-weight:600}
+  #bigRows .e .d span{display:block;font-size:11px;font-weight:400;color:var(--dimmer);margin-top:1px}
+  #bigRows .e .rs{flex:none;padding:2px 7px;border-radius:5px;
                    font:700 10px ui-monospace,Menlo,monospace;background:#22252b;color:var(--dim)}
-  #histRows .e.sent .rs,#bigRows .e.sent .rs{background:#22c55e;color:#06240e}
-  #histRows .e .lk,#bigRows .e .lk{flex:none;font-size:10px;color:var(--dimmer)}
-  #histRows .none,#bigRows .none{font-size:13px;color:var(--dimmer);padding:8px 2px;line-height:1.5}
+  #bigRows .e.sent .rs{background:#22c55e;color:#06240e}
+  #bigRows .e .lk{flex:none;font-size:10px;color:var(--dimmer)}
+  #bigRows .none{font-size:13px;color:var(--dimmer);padding:8px 2px;line-height:1.5}
   #sendFor,#pairFor{font-size:15px;font-weight:600}
   #sendFor span,#pairFor span{display:block;font-size:12px;color:var(--dimmer);font-weight:400;margin-top:2px}
   /* ---- the second bulb's one question ---- */
@@ -451,37 +470,20 @@
           font-size:17px;font-weight:600}
   #c4turn i{width:20px;height:20px;border-radius:50%;background:#3a3a40;flex:none}
 
-  /* Settings, logbook and the two games. They sat under the list, which was fine
-     at 80 rows and lost for good once the list ran on through all 549. Now they
-     ride in the search row when no route is up, and drop into the empty gutter
-     left of the board when one is. */
-  .tools{flex:none;display:flex;gap:6px}
-  .tools button{width:32px;height:32px;padding:0;display:grid;place-items:center;border-radius:8px}
-  .tools svg{width:18px;height:18px;display:block}
+  /* The two games are buttons in Settings now, with a word beside each picture. */
+  #gameBtns button{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 8px;font-size:13px}
+  #gameBtns svg{width:18px;height:18px;flex:none}
   #leftCol{position:relative;min-width:0}
-  /* out of flow, so nothing in the gutter can ever make the row taller than the board */
-  #leftIn{position:absolute;inset:0;display:flex;flex-direction:column;gap:8px}
-  /* The gutter is a column that scrolls. #wallBelow is exactly one column tall, so at
-     rest it is all you see: the line's small bar and what is on the wall. What sits
-     above it - the line, then tonight's routes - only shows when you pull the column
-     down, so it costs the board nothing. Who has climbed the open problem used to be
-     listed here as well; that is read with the history now (see whoFill). */
-  #wallCol{position:relative;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
-           scrollbar-width:none}
+  /* out of flow, so nothing in the panel can ever make the row taller than the board */
+  #leftIn{position:absolute;inset:0;display:flex;flex-direction:column}
+  /* The wall's story, top to bottom: what is up, who is next, what has been up
+     tonight. All of it in view, and the panel scrolls if the evening runs long. */
+  #wallCol{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:5px;
+           overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
   #wallCol::-webkit-scrollbar{display:none}
-  #wallCol.more{-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 14px);
-                mask-image:linear-gradient(to bottom,transparent 0,#000 14px)}
-  #wallBelow{display:flex;flex-direction:column;gap:8px;height:100%}
-  #wallCol > #stackUp{margin-bottom:5px}
-  #leftIn #tools{display:grid;grid-template-columns:32px 32px;gap:4px}
-  /* Settings and the logbook ride at the foot of the buttons right of the board,
-     where Hide used to be; the two games keep the left gutter. */
-  #barBtns #toolsR{display:grid;grid-template-columns:32px 32px;gap:4px;margin-top:auto}
-  body.betaEdit #barBtns #toolsR{display:none}
   /* ---- on the wall: the problem someone has lit, and who lit it ----
-     Top of the gutter beside the board, or across the top of the search row when
-     no problem is open. One tap opens it. Blue because it came through the relay,
-     the same blue as the dot in the header. */
+     Top of the panel beside the board. One tap opens it. Blue because it came
+     through the relay, the same blue as the dot in the header. */
   #nowBtn{flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:2px;
           width:100%;min-width:0;padding:5px;border-radius:7px;text-align:left;
           border:1px solid #2f4a86;background:#131d33;color:var(--ink);font-weight:500}
@@ -489,8 +491,8 @@
   #nowBtn:active{background:#1b2a4a}
   #nowBtn .cap{font-size:8px;letter-spacing:.06em;text-transform:uppercase;color:#8fb0f5;
                white-space:nowrap}
-  /* 56px of room: a long word hyphenates if the browser can, and breaks if it can't */
-  #nowBtn .nm3{font-size:10px;font-weight:700;line-height:1.2;overflow-wrap:anywhere;
+  /* not much room: a long word hyphenates if the browser can, and breaks if it can't */
+  #nowBtn .nm3{font-size:11px;font-weight:700;line-height:1.2;overflow-wrap:anywhere;
                -webkit-hyphens:auto;hyphens:auto;
                display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
   #nowBtn .by{display:flex;align-items:center;gap:4px;max-width:100%;min-width:0;
@@ -503,28 +505,13 @@
   #nowBtn.here{background:transparent;border-color:var(--edge)}
   #nowBtn.here .nm3{display:none}
   /* a second problem up with it, in the colour the picture draws it */
-  #nowBtn .nm4{font-size:10px;font-weight:700;line-height:1.2;color:#fb923c;overflow-wrap:anywhere;
+  #nowBtn .nm4{font-size:11px;font-weight:700;line-height:1.2;color:#fb923c;overflow-wrap:anywhere;
                -webkit-hyphens:auto;hyphens:auto;
                display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
   #nowBtn .nm4:empty,#nowBtn.here .nm4{display:none}
-  #bar > #nowBtn .nm4{flex:0 1 auto;font-size:13px;-webkit-line-clamp:1}
-  #bar > #nowBtn{flex-direction:row;align-items:center;gap:8px;padding:7px 10px;margin-bottom:6px}
-  #bar > #nowBtn .nm3{flex:0 1 auto;font-size:13px;-webkit-line-clamp:1;-webkit-hyphens:manual;hyphens:manual}
-  #bar > #nowBtn .by{flex:1 1 0;font-size:12px}
-  #bar > #nowBtn::after{content:'\203a';flex:none;margin-left:auto;color:#8fb0f5;font-size:16px}
   /* ---- next up: the line for the wall, and what has been up tonight ----
-     A small bar over "on the wall" says there is a line. The rows themselves are
-     above it, out of sight until the column is pulled down: whoever is next sits
-     nearest the wall, then a rule, then tonight's routes with the latest lowest. */
-  #lineBar{flex:none;display:flex;align-items:center;justify-content:center;gap:5px;width:100%;
-           height:16px;padding:0;margin-bottom:-4px;border-radius:7px;border:1px solid #2f4a86;
-           background:#131d33;color:#8fb0f5;font-size:8px;font-weight:600;letter-spacing:.07em;
-           text-transform:uppercase;white-space:nowrap}
-  #lineBar[hidden]{display:none}
-  #lineBar::before{content:'';width:12px;height:2px;border-radius:2px;background:#5d7fc4}
-  #lineBar.quiet{border-color:var(--edge);background:transparent;color:var(--dim)}
-  #lineBar.quiet::before{background:var(--dimmer)}
-  #stackUp[hidden]{display:none}
+     Under "on the wall", each with a small rule over it: whoever is next first,
+     then tonight's routes with the latest first. */
   .stackSep{display:flex;align-items:center;gap:5px;margin:4px 0 2px;font-size:8px;
             letter-spacing:.08em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
   .stackSep[hidden]{display:none}
@@ -535,7 +522,7 @@
   .hrow b,.nrow b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
                   overflow-wrap:anywhere;line-height:1.2}
   .hrow{padding:4px 2px;color:var(--dim)}
-  .hrow b{font-size:9.5px;font-weight:600}
+  .hrow b{font-size:10.5px;font-weight:600}
   .hrow .gd,.nrow .gd{display:none}
   .nrow{display:flex;flex-direction:column;gap:2px;padding:5px 2px}
   .nrow .by{display:flex;align-items:center;gap:4px;min-width:0;font-size:9.5px;color:var(--dim)}
@@ -544,23 +531,8 @@
               font-size:8px;font-weight:700;font-style:normal;color:#0e0e0f}
   .nrow .by span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .nrow.mine .by span{color:var(--ink)}
-  .nrow b{font-size:10.5px;font-weight:700}
+  .nrow b{font-size:11px;font-weight:700}
   .nrow .put{margin-top:3px;padding:4px 2px;font-size:10.5px}
-  /* nothing open: the bar runs across the top of the search row and opens the same
-     rows in place, a line each */
-  #bar > #lineBar{height:22px;margin-bottom:5px;font-size:9.5px}
-  #bar > #stackUp{display:none}
-  #bar > #stackUp.open:not([hidden]){display:block;max-height:36vh;overflow-y:auto;
-                                     overscroll-behavior:contain;margin-bottom:5px}
-  #bar > #stackUp .stackSep{font-size:9px;margin:6px 0 2px}
-  #bar > #stackUp .hrow{display:flex;align-items:center;gap:8px;padding:6px 4px}
-  #bar > #stackUp .hrow b{flex:1;min-width:0;font-size:12.5px;-webkit-line-clamp:1}
-  #bar > #stackUp .nrow{flex-direction:row;align-items:center;gap:8px;padding:6px 4px}
-  #bar > #stackUp .nrow .by{flex:none;font-size:12px;gap:6px}
-  #bar > #stackUp .nrow .by i{width:17px;height:17px;font-size:9px}
-  #bar > #stackUp .nrow b{flex:1;min-width:0;font-size:13px;-webkit-line-clamp:1}
-  #bar > #stackUp .gd{display:block}
-  #bar > #stackUp .nrow .put{flex:none;width:auto;margin:0;padding:6px 12px;font-size:12px}
   #ver{font:10px ui-monospace,Menlo,monospace;color:var(--dimmer);margin-top:14px}
   .panel{border-top:1px solid var(--edge);padding-top:14px;margin-bottom:22px}
 
@@ -587,49 +559,27 @@
   <button id="connect">Connect</button>
 </header>
 
-<section id="boardWrap" style="display:none">
+<!-- One thin row over the board: the line, the bulb, the second bulb. Everything
+     else that used to stand in a column beside the board has moved - logging to the
+     big board, the games to Settings, the rest out of the way. -->
+<div id="actRow">
+  <button id="nextBtn" class="mini" disabled hidden>Next up</button>
+  <button id="send" class="mini solid" disabled aria-label="Light up">&#128161; Light up</button>
+  <button id="pairBtn" class="mini" disabled aria-label="Light up as the second route">2nd &#128161;</button>
+</div>
+
+<section id="boardWrap">
   <div id="boardRow">
     <div id="leftCol"><div id="leftIn">
-      <!-- The gutter scrolls. At rest it shows what is on the wall; pull it down and
-           the line, then tonight's routes, come in above. placeTools() puts #stackUp,
-           #lineBar and #nowBtn in here. Empty, it still mirrors the buttons on the
-           right, which is what keeps the board in the middle of the page. -->
-      <div id="wallCol"><div id="wallBelow"></div></div>
-    </div></div>
-    <div id="boardCol">
-      <div id="bigTop">
-        <div id="board">
-          <img src="board-2016.png" alt="MoonBoard 2016 wall" width="450" height="692">
-          <div id="marks"></div>
-          <svg id="betaSvg" viewBox="0 0 450 692" aria-hidden="true"></svg>
-          <div id="betaTap"></div>
-        </div>
-        <div id="pairCap" hidden></div>
-        <div id="betaCap"></div>
-        <div id="bigCap"><b></b><span class="gd"></span></div>
-        <div id="bigRow">
-          <button id="betaBtn" class="mini" disabled>+ Beta</button>
-          <button id="bigExit" class="solid">Tap to exit</button>
-          <button id="bigHistBtn" class="mini" title="Your tries and sends on this problem, and who has climbed it">History</button>
-        </div>
+      <!-- The wall's story, down the left of the board: what is up, who is next, what
+           has been up tonight. While a beta is being entered its tools stand here. -->
+      <div id="wallCol">
+        <button id="nowBtn" hidden><span class="cap">On the wall</span><b class="nm3"></b><b class="nm4"></b><span class="by"></span></button>
+        <div id="nextSep" class="stackSep" hidden>Next up</div>
+        <div id="wallNext"></div>
+        <div id="histSep" class="stackSep" hidden>History</div>
+        <div id="wallHist"></div>
       </div>
-      <!-- Only with the board big: scroll down past the picture for these. -->
-      <div id="bigHist">
-        <div class="lbl">Your history</div>
-        <div id="bigSum"></div>
-        <div id="bigRows"></div>
-        <div class="lbl">Climbed by</div>
-        <div id="bigWho" class="whoRows"></div>
-      </div>
-    </div>
-    <div id="barBtns">
-      <button id="send" class="mini solid" disabled aria-label="Light up">&#128161;</button>
-      <button id="nextBtn" class="mini" disabled hidden>Next up</button>
-      <button id="tick" class="mini" disabled>Add to list</button>
-      <button id="try" class="mini" disabled>Log try</button>
-      <button id="done" class="mini" disabled>Log send</button>
-      <button id="hist" class="mini" disabled title="Everything you have logged on this problem">History</button>
-      <button id="pairBtn" class="mini" disabled aria-label="Light up as the second route">2nd &#128161;</button>
       <div id="betaTools">
         <div id="betaLimbs">
           <button class="mini" data-l="LH" aria-label="Left hand">L &#9995;</button>
@@ -656,27 +606,45 @@
           <button id="betaCancel" class="mini ghost">Exit</button>
         </div>
       </div>
+    </div></div>
+    <div id="boardCol">
+      <div id="bigTop">
+        <div id="bigHead">
+          <div id="bigCap"><b></b><span class="gd"></span></div>
+          <button id="bigExit" class="mini">Tap to exit</button>
+        </div>
+        <div id="board">
+          <img src="board-2016.png" alt="MoonBoard 2016 wall" width="450" height="692">
+          <div id="marks"></div>
+          <svg id="betaSvg" viewBox="0 0 450 692" aria-hidden="true"></svg>
+          <div id="betaTap"></div>
+        </div>
+        <div id="pairCap" hidden></div>
+        <div id="betaCap"></div>
+        <!-- Only with the board big: logging lives here now. -->
+        <div id="bigRow">
+          <button id="try" class="mini" disabled>Log try</button>
+          <button id="done" class="mini" disabled>Log send</button>
+        </div>
+        <div id="bigRow2">
+          <button id="betaBtn" class="mini" disabled>+ Beta</button>
+          <button id="logBtn" class="mini" aria-label="Logbook"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 6.8C9.6 5.2 6.4 4.8 3 5.6v13c3.4-.8 6.6-.4 9 1.2 2.4-1.6 5.6-2 9-1.2v-13c-3.4-.8-6.6-.4-9 1.2zM12 6.8v13"/></svg> Logbook</button>
+        </div>
+      </div>
+      <!-- Only with the board big: scroll down past the picture for these. -->
+      <div id="bigHist">
+        <div class="lbl">Your history</div>
+        <div id="bigSum"></div>
+        <div id="bigRows"></div>
+        <div class="lbl">Climbed by</div>
+        <div id="bigWho" class="whoRows"></div>
+      </div>
     </div>
   </div>
 </section>
 
 <div id="bar">
-  <div id="stackUp" hidden>
-    <div id="wallHist"></div>
-    <div id="histSep" class="stackSep">History</div>
-    <div id="wallNext"></div>
-  </div>
-  <button id="lineBar" hidden></button>
-  <button id="nowBtn" hidden><span class="cap">On the wall</span><b class="nm3"></b><b class="nm4"></b><span class="by"></span></button>
   <div id="barTxt">
-    <div id="toolsR" class="tools">
-      <button id="setBtn" class="ghost" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor"><circle cx="12" cy="12" r="5.6" stroke-width="2"/><circle cx="12" cy="12" r="2" stroke-width="1.8"/><path stroke-width="3" d="M12 2.6v3.2M12 18.2v3.2M2.6 12h3.2M18.2 12h3.2M5.35 5.35l2.26 2.26M16.39 16.39l2.26 2.26M5.35 18.65l2.26-2.26M16.39 7.61l2.26-2.26"/></g></svg></button>
-      <button id="logBtn" class="ghost" aria-label="Logbook" title="Logbook"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 6.8C9.6 5.2 6.4 4.8 3 5.6v13c3.4-.8 6.6-.4 9 1.2 2.4-1.6 5.6-2 9-1.2v-13c-3.4-.8-6.6-.4-9 1.2zM12 6.8v13"/></svg></button>
-    </div>
-    <div id="tools" class="tools">
-      <button id="snakeBtn" class="ghost" aria-label="Snake" title="Snake"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="#22c55e"><rect x="2.5" y="14.5" width="4.6" height="4.6" rx="1"/><rect x="7.4" y="14.5" width="4.6" height="4.6" rx="1"/><rect x="7.4" y="9.6" width="4.6" height="4.6" rx="1"/><rect x="12.3" y="9.6" width="4.6" height="4.6" rx="1"/><rect x="12.3" y="4.7" width="4.6" height="4.6" rx="1"/></g><rect x="17.2" y="4.7" width="4.6" height="4.6" rx="1" fill="#2563eb"/></svg></button>
-      <button id="gameBtn" class="ghost" aria-label="Connect four" title="Connect four"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="4.5" cy="4.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="4.5" cy="9.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="4.5" cy="14.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="4.5" cy="19.5" r="2.1" fill="#22c55e"/><circle cx="9.5" cy="4.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="9.5" cy="9.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="9.5" cy="14.5" r="2.1" fill="#22c55e"/><circle cx="9.5" cy="19.5" r="2.1" fill="#2563eb"/><circle cx="14.5" cy="4.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="14.5" cy="9.5" r="2.1" fill="#22c55e"/><circle cx="14.5" cy="14.5" r="2.1" fill="#2563eb"/><circle cx="14.5" cy="19.5" r="2.1" fill="#2563eb"/><circle cx="19.5" cy="4.5" r="2.1" fill="#22c55e"/><circle cx="19.5" cy="9.5" r="2.1" fill="#2563eb"/><circle cx="19.5" cy="14.5" r="2.1" fill="#22c55e"/><circle cx="19.5" cy="19.5" r="2.1" fill="#2563eb"/></svg></button>
-    </div>
     <button id="filtBtn" class="ghost" aria-label="Filters">&#9776;</button>
     <div id="qBox">
       <svg class="mag" viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.8" cy="6.8" r="4.6"
@@ -687,10 +655,16 @@
       <span class="pill" hidden></span>
       <button id="qX" hidden aria-label="Clear search">&#10005;</button>
     </div>
+    <button id="setBtn" class="ghost" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor"><circle cx="12" cy="12" r="5.6" stroke-width="2"/><circle cx="12" cy="12" r="2" stroke-width="1.8"/><path stroke-width="3" d="M12 2.6v3.2M12 18.2v3.2M2.6 12h3.2M18.2 12h3.2M5.35 5.35l2.26 2.26M16.39 16.39l2.26 2.26M5.35 18.65l2.26-2.26M16.39 7.61l2.26-2.26"/></g></svg></button>
+    <button id="toBoard" class="ghost" aria-label="Back to the board">Board &#8250;</button>
   </div>
   <div id="filters" hidden>
-    <div class="lbl">List</div>
-    <select id="who" style="margin-bottom:8px"></select>
+    <!-- The list is always the benchmarks now. Each climber's own list is hidden, not
+         gone: the select still feeds whoNow(), and nothing offers anything but "". -->
+    <div hidden>
+      <div class="lbl">List</div>
+      <select id="who" style="margin-bottom:8px"></select>
+    </div>
     <div class="four">
       <div><div class="lbl">From</div><select id="gmin"></select></div>
       <div><div class="lbl">To</div><select id="gmax"></select></div>
@@ -727,6 +701,12 @@
   <div id="gameHead">
     <b>Settings</b>
     <button id="setClose" class="ghost mini">Close</button>
+  </div>
+
+  <div class="lbl">Games on the wall</div>
+  <div class="two" id="gameBtns">
+    <button id="snakeBtn" class="ghost"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="#22c55e"><rect x="2.5" y="14.5" width="4.6" height="4.6" rx="1"/><rect x="7.4" y="14.5" width="4.6" height="4.6" rx="1"/><rect x="7.4" y="9.6" width="4.6" height="4.6" rx="1"/><rect x="12.3" y="9.6" width="4.6" height="4.6" rx="1"/><rect x="12.3" y="4.7" width="4.6" height="4.6" rx="1"/></g><rect x="17.2" y="4.7" width="4.6" height="4.6" rx="1" fill="#2563eb"/></svg> Snake</button>
+    <button id="gameBtn" class="ghost"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="4.5" cy="4.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="4.5" cy="9.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="4.5" cy="14.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="4.5" cy="19.5" r="2.1" fill="#22c55e"/><circle cx="9.5" cy="4.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="9.5" cy="9.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="9.5" cy="14.5" r="2.1" fill="#22c55e"/><circle cx="9.5" cy="19.5" r="2.1" fill="#2563eb"/><circle cx="14.5" cy="4.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="14.5" cy="9.5" r="2.1" fill="#22c55e"/><circle cx="14.5" cy="14.5" r="2.1" fill="#2563eb"/><circle cx="14.5" cy="19.5" r="2.1" fill="#2563eb"/><circle cx="19.5" cy="4.5" r="2.1" fill="#22c55e"/><circle cx="19.5" cy="9.5" r="2.1" fill="#2563eb"/><circle cx="19.5" cy="14.5" r="2.1" fill="#22c55e"/><circle cx="19.5" cy="19.5" r="2.1" fill="#2563eb"/></svg> Connect four</button>
   </div>
 
 
@@ -806,20 +786,6 @@
   <div id="pairAsk"></div>
   <button id="pairGo" class="solid">Light it up</button>
   <div class="hint" id="pairHint"></div>
-</div>
-
-<div id="histPanel" hidden>
-  <div id="gameHead">
-    <b>Your history</b>
-    <button id="histClose" class="ghost mini">Close</button>
-  </div>
-  <div id="histFor"></div>
-  <div id="histSum"></div>
-  <div id="histRows"></div>
-  <div class="hint">Every try and send you have logged on this problem, newest first.
-    To change or remove one, open the Logbook and hold the entry.</div>
-  <div class="lbl" style="margin-top:8px">Climbed by</div>
-  <div id="histWho" class="whoRows"></div>
 </div>
 
 <div id="logPanel" hidden>
@@ -906,7 +872,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-07 22:01';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-08 00:03';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -2654,12 +2620,14 @@ let lineKnown = false;     // false on a relay that predates the line: everythin
 let lineNow = [];          // [{id, by, board, t}] next first
 let histNow = [];          // [{id, by, board, t}] oldest first
 let stackSig = '';         // what the rows were last drawn from, so a look that changes nothing redraws nothing
-let stackPulled = false;   // the gutter has been pulled down off its resting place
-let stackSnap = false;     // the gutter is about to change height by itself: put it back at rest after
-let stackTouch = 0;        // when it was last touched; left alone it goes back to rest
 let wallKnown = false;     // the relay is new enough to say what is on the wall
 let lastWrite = null;      // {payload, meta} this phone last put up over Bluetooth
 let told = '';             // what the relay has been told, so a game's frames aren't each reported
+let page = 'board';        // which of the two pages is showing: 'board', or 'list' to its left
+let panelOpen = false;     // a sheet (settings, logbook, a game, a question) is over the page
+let ghostUntil = 0;        // until then a click is the tail of the tap that changed the page, and is dropped
+const layers = [];         // what Back would close next, innermost last: 'list', 'big', 'panel'
+let backSkip = 0;          // steps back through the history this page asked for itself
 
 /* ---------- tick lists ----------
    Shared through the relay Worker, no logins: whoever is picked in the Tick list
@@ -2733,15 +2701,17 @@ async function listsCall(path, body){
     const d = await r.json();
     if (d.error) return log('tick list: ' + d.error);
     applyLists(d);
+    // logged from the big board: the rows under it are a line short until asked again
+    if (body && path.indexOf('/lists/log') === 0 && document.body.classList.contains('big')) bigHist();
   }catch(e){ log('tick list unreachable: ' + e.message); }
 }
 
 function fillWho(){
-  const sel = $('who'), keep = sel.value;
+  const sel = $('who');
   sel.innerHTML = '';
   sel.appendChild(new Option('Benchmarked', ''));
-  people.forEach(p => sel.appendChild(new Option(p + ' \u2014 ' + (lists[p] || []).length, p)));
-  sel.value = people.includes(keep) ? keep : '';
+  // Each climber's own list is hidden for now; what the crew saved is still kept.
+  sel.value = '';
 
   const me = $('me'), keepMe = me.value;
   me.innerHTML = '';
@@ -2775,22 +2745,16 @@ function myTries(id){
 const RESULTS = ['flash', '2nd', '3rd', '4+'];
 const derivedResult = id => RESULTS[Math.min(myTries(id), 3)];
 
-/* The bar's Tick and Done buttons act as whoever is picked in the filter. */
+/* Log try and Log send, under the big board, act as whoever is picked in the header. */
 function paintBar(){
   const who = meNow();
   const on  = !!(current && who);
-  const listed = on && (lists[who] || []).includes(current.id);
   const sent   = on && (done[current.id] || []).includes(who);
-  $('tick').disabled = !current;
   $('done').disabled = !current;
   $('try').disabled  = !current;
-  $('hist').disabled = !current;
   const t = current ? myTries(current.id) : 0;
   $('try').textContent = t ? 'Log try \u00b7 ' + t : 'Log try';
   $('try').className   = 'mini' + (t ? ' on' : '');
-  $('tick').textContent = listed ? '\u2713 On list' : 'Add to list';
-  $('tick').className   = 'mini' + (listed ? ' on' : '');
-  $('tick').title       = listed ? 'Tap to take it off your list' : 'Save to your list';
   $('done').textContent = 'Log send';        // the filled state says whether it's ticked
   $('done').className   = 'mini' + (sent ? ' on' : '');
   $('done').title       = sent ? 'Log another send' : 'Log it as climbed';
@@ -2806,7 +2770,6 @@ function paintBar(){
    History sheet - so this only redraws whichever of those two is on screen. */
 function paintWho(){
   if (document.body.classList.contains('big')) whoFill($('bigWho'));
-  if (!$('histPanel').hidden) whoFill($('histWho'));
 }
 
 /* + List and Done record against you, whatever list you happen to be looking
@@ -2815,6 +2778,7 @@ function paintWho(){
    tap that prompted the question. The view never changes. */
 function needName(action){
   if (meNow()) return false;
+  bigBoard(false);                       // the name picker is in the header, under the big board
   pending = action;
   $('me').focus();
   $('count').textContent = 'Pick your name up in the header first';
@@ -2872,7 +2836,6 @@ function runPending(){
   if (a === 'tick') doTick();
   else if (a === 'done') doDone();
   else if (a === 'try') doTry();
-  else if (a === 'hist') openHist();
   else if (a === 'beta') betaEdit();
   else if (a === 'next') doNext();
 }
@@ -3098,14 +3061,8 @@ function paintPair(){
   // One line under the picture: the second problem's name when the open one is the
   // main one, or how the open one is lit when it is the second.
   const kind = second ? 'plus' : place === 'second' ? 'me' : '';
-  const shown = !cap.hidden;
   cap.hidden = !kind;
   document.body.classList.toggle('pair', !!kind);
-  // This line makes the row, and so the gutter, a little taller. The browser pulls
-  // the gutter off its resting place to fit before its lower part has been resized
-  // to match, which read as someone pulling it down and left a sliver of the line
-  // showing. Ask for it to be put back once it has its new size.
-  if (shown !== !cap.hidden) stackSnap = true;
   cap.innerHTML = '';
   if (!kind) return;
   const nm = document.createElement('b');
@@ -3172,37 +3129,10 @@ function lightSecond(){
 }
 
 
-/* The tools follow the board: in the search row with no route up, and beside the
-   board once there is one - the two games in the left gutter, settings and the
-   logbook at the foot of the buttons on the right - so they never cost a row of
-   the list. */
-function placeTools(){
-  const t = $('tools'), t2 = $('toolsR');     // the two games; settings and the logbook
-  if (current){
-    if (t.parentNode !== $('leftIn')) $('leftIn').appendChild(t);
-    if (t2.parentNode !== $('barBtns')) $('barBtns').appendChild(t2);
-  } else {
-    if (t2.parentNode !== $('barTxt')) $('barTxt').insertBefore(t2, $('filtBtn'));
-    if (t.parentNode !== $('barTxt')) $('barTxt').insertBefore(t, $('filtBtn'));
-  }
-  $('q').placeholder = current ? 'Search routes or setters' : 'Search';
-  // What's on the wall, the line's small bar over it and the line itself above that:
-  // in the gutter beside the board, or across the top of the search row.
-  const n = $('nowBtn'), lb = $('lineBar'), up = $('stackUp');
-  if (current){
-    if (n.parentNode !== $('wallBelow')){
-      $('wallCol').insertBefore(up, $('wallBelow'));
-      $('wallBelow').appendChild(lb);
-      $('wallBelow').appendChild(n);
-    }
-  } else if (n.parentNode !== $('bar')){
-    $('bar').insertBefore(up, $('barTxt'));
-    $('bar').insertBefore(lb, $('barTxt'));
-    $('bar').insertBefore(n, $('barTxt'));
-  }
-  up.classList.remove('open');
+/* The panel left of the board: what is on the wall, who is next, what has been up. */
+function paintWall(){
   paintNow();
-  paintStack(true);
+  paintStack();
 }
 
 /* look: open it on this phone without lighting it - for jumping to what is
@@ -3212,10 +3142,8 @@ function loadRoute(r, look){
   for (const k in state) delete state[k];
   parseHolds(r.s, 'S'); parseHolds(r.m, 'P'); parseHolds(r.e, 'E');
   current = r;
-  placeTools();
+  paintWall();
   applyGradeBar();
-  $('boardWrap').style.display = '';
-  stackRest();                           // the gutter has a size now; start it at rest
   paint();
   showName = true;
   renderResults();
@@ -3226,6 +3154,7 @@ function loadRoute(r, look){
   paintBig();
   log('loaded "' + r.name + '" \u2014 ' + GRADES[r.grade] + ' (V' + VGRADE[r.grade] + '), set by ' + r.setter);
   if (!look && $('auto').checked && rx) sendProblem();
+  if (page === 'list') showPage('board');     // picked from the page of routes: back to the board, with it open
 }
 
 function clearRoute(){
@@ -3234,8 +3163,7 @@ function clearRoute(){
   current = null; gradeCells = {};
   second = null;
   betaReset();
-  $('boardWrap').style.display = 'none';
-  placeTools();
+  paintWall();
   showQ();
   paint();
   renderResults();
@@ -3381,8 +3309,6 @@ async function relayPeek(){
    which is to say while people are actually climbing - look every five. */
 function peekTick(){
   if (Date.now() - peekAt >= ((bridgeLive || rx) ? 4500 : 19500)) relayPeek();
-  // A pulled-down gutter left alone goes back to rest, so the wall is what you see.
-  if (stackPulled && Date.now() - stackTouch > 20000) stackRest(true);
 }
 const peekSoon = () => setTimeout(relayPeek, 350);
 
@@ -3674,89 +3600,63 @@ function doNext(){
   return lineCall({ op: 'join', by: me, id: current.id, board: boardKey });
 }
 
-/* Where the gutter sits. At rest #wallBelow fills it; pulled, some of what is above
-   shows. The reader's place is kept when the rows change under them. */
-function stackRest(smooth){
-  const col = $('wallCol'), top = $('wallBelow').offsetTop;
-  if (smooth && col.scrollTo) col.scrollTo({ top, behavior: 'smooth' });
-  else col.scrollTop = top;
-}
-function stackMore(){
-  const col = $('wallCol');
-  stackPulled = $('wallBelow').offsetTop - col.scrollTop > 2;
-  col.classList.toggle('more', stackPulled && col.scrollTop > 2);
-}
-
-function paintStack(rest){
-  const up = $('stackUp'), bar = $('lineBar'), col = $('wallCol'), below = $('wallBelow');
-  if (!up || !bar) return;
+/* Under "on the wall": the line, whoever is next first, and then tonight's routes
+   with the latest first. Each has a small rule over it, and goes when it is empty. */
+function paintStack(){
+  const hbox = $('wallHist'), nbox = $('wallNext');
+  if (!hbox || !nbox) return;
   const on = lineOn();
-  const wall = (rx || bridgeLive) ? wallRoute() : null;
+  const wall = wallMain();
   const here = e => byId[e.id] && byId[e.id].board === boardKey;
   const line = on ? lineNow.filter(here) : [];
   const hist = on ? histNow.filter(h => here(h) && !(wall && wall.id === h.id)) : [];
   const me = meNow();
   const sig = JSON.stringify([line.map(e => [e.id, e.by]), hist.map(h => h.id), me, boardKey]);
-  const inCol = up.parentNode === col;
-  const pulled = inCol ? below.offsetTop - col.scrollTop : 0;
-  if (sig !== stackSig){
-    stackSig = sig;
-    const hbox = $('wallHist'), nbox = $('wallNext');
-    hbox.innerHTML = ''; nbox.innerHTML = '';
-    hist.forEach(h => {                          // oldest first, so the latest sits nearest the wall
-      const r = byId[h.id], row = document.createElement('div');
-      row.className = 'hrow';
-      row.innerHTML = '<b></b><span class="gd"></span>';
-      row.querySelector('b').textContent = r.name;
-      paintPill(row.querySelector('.gd'), r.grade);
-      row.title = 'Open ' + r.name + (h.by ? ' \u2014 put up by ' + h.by : '');
-      row.onclick = () => stackOpen(r);
-      hbox.appendChild(row);
-    });
-    line.slice().reverse().forEach((e, k) => {   // whoever is next sits nearest the wall
-      const i = line.length - 1 - k, r = byId[e.id];
-      const row = document.createElement('div');
-      row.className = 'nrow' + (sameName(e.by, me) ? ' mine' : '');
-      row.innerHTML = '<span class="by"><em></em><i></i><span></span></span><b></b><span class="gd"></span>';
-      row.querySelector('em').textContent = i + 1;
-      const chip = row.querySelector('i');
-      chip.textContent = chipFor(e.by);
-      chip.style.background = personColor(e.by);
-      row.querySelector('.by span').textContent = e.by;
-      row.querySelector('b').textContent = r.name;
-      paintPill(row.querySelector('.gd'), r.grade);
-      row.title = 'Open ' + r.name + ' \u2014 ' + e.by + ' is waiting with it';
-      row.onclick = () => stackOpen(r);
-      if (!i){
-        const put = document.createElement('button');
-        put.className = 'mini solid put';
-        put.textContent = 'Put it up';
-        put.title = 'Light ' + r.name + ' for ' + e.by;
-        put.onclick = ev => { ev.stopPropagation(); putUp(e); };
-        row.appendChild(put);
-      }
-      nbox.appendChild(row);
-    });
-    $('histSep').hidden = !(hist.length && line.length);
-    const any = line.length + hist.length > 0;
-    up.hidden = !any;
-    bar.hidden = !any;
-    bar.className = line.length ? '' : 'quiet';
-    bar.textContent = line.length ? line.length + ' next' : 'History';
-    bar.title = line.length ? 'The line for the wall \u2014 pull down, or tap, to see it'
-                            : 'What has been up tonight \u2014 pull down, or tap, to see it';
-  }
-  if (inCol){
-    col.scrollTop = rest ? below.offsetTop : Math.max(0, below.offsetTop - pulled);
-    stackMore();
-  }
+  if (sig === stackSig) return;
+  stackSig = sig;
+  hbox.innerHTML = ''; nbox.innerHTML = '';
+  line.forEach((e, i) => {
+    const r = byId[e.id];
+    const row = document.createElement('div');
+    row.className = 'nrow' + (sameName(e.by, me) ? ' mine' : '');
+    row.innerHTML = '<span class="by"><em></em><i></i><span></span></span><b></b><span class="gd"></span>';
+    row.querySelector('em').textContent = i + 1;
+    const chip = row.querySelector('i');
+    chip.textContent = chipFor(e.by);
+    chip.style.background = personColor(e.by);
+    row.querySelector('.by span').textContent = e.by;
+    row.querySelector('b').textContent = r.name;
+    paintPill(row.querySelector('.gd'), r.grade);
+    row.title = 'Open ' + r.name + ' \u2014 ' + e.by + ' is waiting with it';
+    row.onclick = () => stackOpen(r);
+    if (!i){
+      const put = document.createElement('button');
+      put.className = 'mini solid put';
+      put.textContent = 'Put it up';
+      put.title = 'Light ' + r.name + ' for ' + e.by;
+      put.onclick = ev => { ev.stopPropagation(); putUp(e); };
+      row.appendChild(put);
+    }
+    nbox.appendChild(row);
+  });
+  hist.slice().reverse().forEach(h => {
+    const r = byId[h.id], row = document.createElement('div');
+    row.className = 'hrow';
+    row.innerHTML = '<b></b><span class="gd"></span>';
+    row.querySelector('b').textContent = r.name;
+    paintPill(row.querySelector('.gd'), r.grade);
+    row.title = 'Open ' + r.name + (h.by ? ' \u2014 put up by ' + h.by : '');
+    row.onclick = () => stackOpen(r);
+    hbox.appendChild(row);
+  });
+  $('nextSep').hidden = !line.length;
+  $('histSep').hidden = !hist.length;
 }
 
 /* A look: the problem opens on this phone and nothing is sent. */
 function stackOpen(r){
   if (betaDraft) return;
   if (!current || current.id !== r.id) loadRoute(r, true);
-  else stackRest(true);
   const row = $('results').querySelector('.rt.sel');
   if (row) row.scrollIntoView({ block: 'nearest' });
 }
@@ -3996,37 +3896,10 @@ async function entryAction(action){
 
 /* ---------- history ----------
    Your own record on the problem that is open: every try and every send, with
-   the day it happened. The numbers beside the board only say where you stand -
-   tries since the last send - and the Logbook is everyone's everything, so this
-   is the one place that answers "when did I last get on this, and how did it go".
-   Read only. It comes from the same log the Logbook reads. */
-let histFor = 0;                          // guards against a slow answer landing on another problem
+   the day it happened. The Logbook is everyone's everything, so this is the one
+   place that answers "when did I last get on this, and how did it go". Read only,
+   from the same log the Logbook reads, and shown under the big board (bigHist). */
 const RESULT_WORDS = { try: 'try', flash: '\u26a1 flash', '2nd': '2nd go', '3rd': '3rd go', '4+': '4+ goes' };
-
-async function openHist(){
-  const me = meNow(), r = current;
-  if (!me || !r) return;
-  const mine = ++histFor;
-  $('histFor').innerHTML = '';
-  const b = document.createElement('b'); b.textContent = r.name;
-  const sub = document.createElement('span');
-  sub.textContent = GRADES[r.grade] + ' \u00b7 V' + VGRADE[r.grade] + ' \u00b7 ' + me;
-  $('histFor').append(b, sub);
-  $('histSum').textContent = 'loading\u2026';
-  $('histRows').innerHTML = '';
-  showPanel('hist');
-  whoFill($('histWho'));                 // already in hand, so it is there before the log answers
-
-  let entries = [];
-  try{
-    entries = (await myLog(me, true)).filter(e => Number(e.id) === r.id);
-  }catch(e){
-    if (mine === histFor) $('histSum').textContent = 'logbook unreachable \u2014 try again in a moment';
-    return;
-  }
-  if (mine !== histFor || $('histPanel').hidden) return;      // moved on while it loaded
-  histFill(entries, r, me, $('histSum'), $('histRows'));
-}
 
 /* One climber's whole log. The big board asks every time the problem changes, so
    an answer is kept for a minute - flicking through a list asks once - and dropped
@@ -4661,23 +4534,27 @@ function stepProblem(delta){
 }
 
 /* ---------- the board, big ----------
-   Tap the picture and it fills the screen; the button underneath brings the app
-   back. Flicking still steps through the list while it is big. A tap on the big
-   picture does nothing on purpose - pointing at a hold to show someone where the
-   foot goes should not throw them back to the list. Nothing here writes to the wall. */
+   Tap the picture and it fills the screen; "Tap to exit", top right, brings the app
+   back. This is where a go is logged - Log try and Log send are under the picture
+   and nowhere else - with Beta and the Logbook beneath them, and below those what
+   you have logged on the problem and who has climbed it. Flicking still steps
+   through the list while it is big. A tap on the big picture does nothing on
+   purpose - pointing at a hold to show someone where the foot goes should not throw
+   them back to the list. Nothing here writes to the wall. */
 function paintBig(){
   if (!current) return;
   $('bigCap').querySelector('b').textContent = current.name;
   paintPill($('bigCap').querySelector('.gd'), current.grade);
   if (document.body.classList.contains('big')) bigHist();    // a flick to the next problem brings its history
 }
-function bigBoard(on){
+function bigBoard(on, fromBack){
   on = !!on && !!current && !betaDraft;      // not while placing hands and feet
   const was = document.body.classList.contains('big');
   if (on === was) return;
   document.body.classList.toggle('big', on);
   $('boardCol').scrollTop = 0;               // open on the picture; leave nothing scrolled behind
-  if (on) return paintBig();
+  if (on){ layerOpen('big'); return paintBig(); }
+  if (!fromBack) layerShut('big');
   bigFor++;                                  // an answer still on its way is for nobody now
   // The climber plays where its button is. Back beside the small board there is
   // nothing to stop it with, so it stops here.
@@ -5243,54 +5120,21 @@ $('connect').onclick = () => {
 $('send').onclick  = sendProblem;
 $('nowBtn').onclick = gotoWall;
 $('nextBtn').onclick = () => { if (!needName('next')) doNext(); };
-/* Tap the bar instead of pulling: it opens as far as will fit with the wall still in
-   view at the foot, and a second tap puts it back. With no problem open there is no
-   gutter, and the bar opens the same rows in place. */
-$('lineBar').onclick = () => {
-  const up = $('stackUp'), col = $('wallCol');
-  if (up.parentNode !== col){
-    up.classList.toggle('open');
-    if (up.classList.contains('open')) up.scrollTop = up.scrollHeight;   // the line first, history above
-    return;
-  }
-  if (stackPulled) return stackRest(true);
-  const keep = $('lineBar').offsetHeight + ($('nowBtn').hidden ? 0 : $('nowBtn').offsetHeight + 8);
-  const top = Math.max(0, $('wallBelow').offsetTop - Math.max(40, col.clientHeight - keep - 6));
-  if (col.scrollTo) col.scrollTo({ top, behavior: 'smooth' }); else col.scrollTop = top;
-};
-(function gutterScroll(){
-  const col = $('wallCol');
-  let settle = 0;
-  col.addEventListener('scroll', () => {
-    stackTouch = Date.now();
-    stackMore();
-    clearTimeout(settle);                      // let go a hair short of rest, and it finishes the job
-    settle = setTimeout(() => {
-      const d = $('wallBelow').offsetTop - col.scrollTop;
-      if (d > 2 && d < 20) stackRest(true);
-    }, 160);
-  }, { passive: true });
-  col.addEventListener('pointerdown', () => { stackTouch = Date.now(); }, { passive: true });
-  // The column is as tall as the board, which follows the screen. Keep the resting
-  // part exactly one column tall, and at rest unless someone has pulled it.
-  if (window.ResizeObserver) new ResizeObserver(() => {
-    if (!col.clientHeight) return;
-    $('wallBelow').style.height = col.clientHeight + 'px';
-    if (!stackPulled || stackSnap) stackRest();
-    stackSnap = false;
-  }).observe(col);
-})();
 $('bigExit').onclick = () => bigBoard(false);
-$('bigHistBtn').onclick = () => {
-  const el = $('bigHist');
-  if (el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-};
+$('toBoard').onclick = () => showPage('board');
 $('pairBtn').onclick = openPair;
 $('pairGo').onclick = lightSecond;
 $('pairClose').onclick = () => showPanel(null);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') bigBoard(false); });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (document.body.classList.contains('big')) bigBoard(false); else showPage('board');
+});
 $('q').oninput = () => { searchQ = $('q').value; showName = false; paintQBox(); renderResults(); };
-$('q').addEventListener('focus', () => { if (!$('q').readOnly && nameShown()) $('q').select(); });
+$('q').addEventListener('focus', () => {          // with a mouse and real keys: the box is the way to the page of routes
+  if ($('q').readOnly) return;
+  showPage('list', false, 400);              // the click that gave it the focus is still to come
+  if (nameShown()) $('q').select();
+});
 $('q').addEventListener('blur',  () => { if (!$('q').readOnly) showQ(); });
 $('qX').onclick = clearSearch;
 $('scroll').addEventListener('scroll', () => {           // the next page, before you hit the end
@@ -5299,10 +5143,107 @@ $('scroll').addEventListener('scroll', () => {           // the next page, befor
       $('results').querySelector('.more')) showMore();
 }, { passive: true });
 
+/* ---------- two pages ----------
+   The board's page, and to its left a page of nothing but routes: the search, its
+   filters, the whole list and the keys. A swipe to the right anywhere but on the
+   picture goes to it - the picture keeps its own flick, which steps through the
+   list - and so does a tap on the search box. A swipe to the left, picking a route,
+   or "Board" comes back.
+
+   It is one list in two shapes, short under the board and the whole screen here,
+   so there is nothing to keep in step: the page is a class on the body. */
+let kbOpen  = () => { const q = $('q'); q.focus(); if (nameShown()) q.select(); };   // real keys: just take the focus
+let kbClose = () => { $('q').blur(); };                                              // the phone's own keys replace both, below
+
+/* ghost: for how long the next click should be dropped - set by whoever changes the
+   page from a touch that has not finished yet (see below), and nobody else. */
+function showPage(which, fromBack, ghost){
+  if (which === page) return;
+  if (which === 'list' && (betaDraft || panelOpen || document.body.classList.contains('big'))) return;
+  page = which;
+  const b = document.body;
+  b.classList.toggle('listPage', which === 'list');
+  b.classList.remove('slideL', 'slideR');
+  void b.offsetWidth;                                  // so the slide plays again
+  b.classList.add(which === 'list' ? 'slideL' : 'slideR');
+  /* When the page changes while the finger is still down, the click that ends the tap
+     goes, on Android, to whatever is under the finger NOW - a row of the list, usually.
+     That is why the search would not stay open there unless you held it. That one
+     click is dropped. */
+  ghostUntil = ghost ? Date.now() + ghost : 0;
+  if (which === 'list'){
+    layerOpen('list');
+    kbOpen();                                          // ready to search, as a tap on the box always was
+  } else {
+    if (!fromBack) layerShut('list');
+    showFilters(false);
+    kbClose();
+  }
+  const row = $('results').querySelector('.rt.sel');   // the open route stays in view on both
+  if (row) row.scrollIntoView({ block: which === 'list' ? 'center' : 'nearest' });
+}
+document.addEventListener('click', e => {
+  if (Date.now() >= ghostUntil) return;
+  ghostUntil = 0;                                      // one click, the tail of that tap, and no more
+  e.stopImmediatePropagation(); e.preventDefault();
+}, true);
+document.body.addEventListener('animationend', e => {
+  if (e.animationName === 'pgL' || e.animationName === 'pgR') document.body.classList.remove('slideL', 'slideR');
+});
+
+(function pageSwipe(){
+  let x0 = null, y0 = null;
+  const off = '#board, #kb, select, #setPanel, #logPanel, #sendPanel, #pairPanel, #snakePanel, #entryPanel, #gamePanel';
+  document.addEventListener('pointerdown', e => {
+    x0 = null;
+    if (betaDraft || panelOpen || document.body.classList.contains('big')) return;
+    if (e.target.closest && e.target.closest(off)) return;
+    x0 = e.clientX; y0 = e.clientY;
+  }, { passive: true });
+  document.addEventListener('pointerup', e => {
+    if (x0 === null) return;
+    const dx = e.clientX - x0, dy = e.clientY - y0;
+    x0 = null;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.6) return;   // a tap, a wobble, or a scroll
+    // with a mouse, letting go where the drag began is a click as well: not wanted
+    showPage(dx > 0 ? 'list' : 'board', false, e.pointerType === 'mouse' ? 300 : 0);
+  }, { passive: true });
+  document.addEventListener('pointercancel', () => { x0 = null; }, { passive: true });
+})();
+
+/* ---------- back ----------
+   Android's Back button used to close the app, whatever was open. Each thing that
+   opens over the board's page - the page of routes, the big board, a sheet - now
+   puts one step in the browser's history, so Back closes that and nothing more;
+   with only the board's page showing it leaves, as it should. Closing something
+   with its own button takes its step back out. On an iPhone the same steps are what
+   the swipe from the screen's edge walks through. */
+function layerOpen(name){
+  if (layers.includes(name)) return;
+  layers.push(name);
+  try{ history.pushState({ mb: layers.length }, ''); }catch(e){}
+}
+function layerShut(name){
+  const i = layers.lastIndexOf(name);
+  if (i < 0) return;
+  layers.splice(i, 1);
+  // Only ever step back over a step this page put there: anything else is the way out.
+  if (!(history.state && history.state.mb)) return;
+  backSkip++;
+  try{ history.back(); }catch(e){ backSkip--; }
+}
+window.addEventListener('popstate', () => {
+  if (backSkip > 0){ backSkip--; return; }             // our own tidying up, not the button
+  const name = layers.pop();
+  if (name === 'panel') showPanel(null, true);
+  else if (name === 'big') bigBoard(false, true);
+  else if (name === 'list') showPage('board', true);
+});
+
 /* ---------- search keyboard (phones only) ----------
    The search field never takes focus on a touch screen, so iOS never raises
    its own keyboard or the accessory bar that comes with it. Desktop keeps the
-   real input. */
+   real input. The keys live on the page of routes and come up when it does. */
 (function(){
   if (!matchMedia('(pointer:coarse)').matches) return;
   const q = $('q'), kb = $('kb');
@@ -5335,15 +5276,16 @@ $('scroll').addEventListener('scroll', () => {           // the next page, befor
   function open(){
     if (kb.hidden){
       layer = 'abc'; draw(); kb.hidden = false;
-      $('qBox').classList.add('on'); document.body.classList.add('typing');
+      $('qBox').classList.add('on');
     }
     if (nameShown()) q.classList.add('fresh');
   }
   function close(){
     kb.hidden = true;
-    $('qBox').classList.remove('on'); document.body.classList.remove('typing');
+    $('qBox').classList.remove('on');
     showQ();
   }
+  kbOpen = open; kbClose = close;
   function set(v){
     q.classList.remove('fresh'); searchQ = v; showName = false; q.value = v;
     paintQBox(); renderResults();
@@ -5373,12 +5315,18 @@ $('scroll').addEventListener('scroll', () => {           // the next page, befor
     }
   });
   ['pointerup','pointercancel','pointerleave'].forEach(t => kb.addEventListener(t, stopHold));
-  q.addEventListener('pointerdown', e => { e.preventDefault(); open(); });
-  q.addEventListener('focus', () => { q.blur(); open(); });
-  // A tap anywhere else (picking a route, opening filters) puts it away;
+  // A touch anywhere on the box: from the board's page it goes to the page of routes,
+  // which brings the keys up; already there, it brings them back if they were put away.
+  $('qBox').addEventListener('pointerdown', e => {
+    if (e.target.closest('#qX')) return;
+    e.preventDefault();
+    if (page !== 'list') showPage('list', false, 700); else open();
+  });
+  q.addEventListener('focus', () => { q.blur(); });
+  // A tap anywhere else (picking a route, opening filters) puts the keys away;
   // scrolling the list doesn't, so you can browse while you type.
   document.addEventListener('click', e => {
-    if (!kb.hidden && !kb.contains(e.target) && e.target !== q) close();
+    if (!kb.hidden && !kb.contains(e.target) && !$('qBox').contains(e.target)) close();
   }, true);
 })();
 function saveView(){
@@ -5414,20 +5362,24 @@ function showFilters(on){
 }
 $('filtBtn').onclick = () => showFilters($('filters').hidden);
 
-const PANELS = { game: 'gamePanel', set: 'setPanel', log: 'logPanel', hist: 'histPanel',
+const PANELS = { game: 'gamePanel', set: 'setPanel', log: 'logPanel',
                  send: 'sendPanel', snake: 'snakePanel', entry: 'entryPanel', pair: 'pairPanel' };
 
-function showPanel(which){          // a key of PANELS, or null for none
+function showPanel(which, fromBack){  // a key of PANELS, or null for none
   $('gamePanel').hidden = which !== 'game';
   $('setPanel').hidden  = which !== 'set';
   $('logPanel').hidden  = which !== 'log';
-  $('histPanel').hidden = which !== 'hist';
   $('sendPanel').hidden = which !== 'send';
   $('pairPanel').hidden = which !== 'pair';
   $('snakePanel').hidden = which !== 'snake';
   $('entryPanel').hidden = which !== 'entry';
   if (which !== 'snake' && which !== 'entry' && snTimer) snStop();     // don't leave it running unseen
   if (PANELS[which]) $(PANELS[which]).scrollTop = 0;   // open at the top, always
+  // One step in the history for "a sheet is open", however many are swapped through.
+  const open = !!PANELS[which];
+  if (open && !panelOpen) layerOpen('panel');
+  else if (!open && panelOpen && !fromBack) layerShut('panel');
+  panelOpen = open;
 }
 $('gameBtn').onclick = () => {
   const open = $('gamePanel').hidden;
@@ -5439,8 +5391,6 @@ $('setClose').onclick = () => showPanel(null);
 $('c4close').onclick = () => showPanel(null);
 $('logBtn').onclick = () => ($('logPanel').hidden ? openLog() : showPanel(null));
 $('logClose').onclick = () => showPanel(null);
-$('hist').onclick = () => { if (!needName('hist')) openHist(); };
-$('histClose').onclick = () => { histFor++; showPanel(null); };
 $('snakeBtn').onclick = () => {
   const open = $('snakePanel').hidden;
   showPanel(open ? 'snake' : null);
@@ -5494,7 +5444,6 @@ $('c4off').onclick = c4Stop;
 $('c4pg').onchange = $('c4pb').onchange = () => c4Draw();
 $('c4timed').onchange = () => { if (c4) c4New(); else c4Clocks(); };
 $('c4mins').onchange  = () => { if (c4) c4New(); };
-$('tick').onclick = () => { if (!needName('tick')) doTick(); };
 $('done').onclick = () => { if (!needName('done')) doDone(); };
 $('try').onclick  = () => { if (!needName('try'))  doTry();  };
 let lastMe = '';
@@ -5584,13 +5533,12 @@ $('boardSel').onchange = () => {
 };
 paint();
 $('ver').textContent = 'build ' + BUILD;
-placeTools();
+paintWall();
 fillGradeSelects();
 c4Draw();
 snDraw();
 try{
   const w = localStorage.getItem('mb-who');
-  if (w){ $('who').appendChild(new Option(w, w)); $('who').value = w; }
   // Before these were split, picking a name in the view filter was how you said
   // who you were - carry that over rather than asking again.
   $('hideDone').value = localStorage.getItem('mb-hide') || '';
