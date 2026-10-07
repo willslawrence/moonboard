@@ -17,10 +17,38 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>MoonBoard Direct</title>
+<script>
+  // the background this phone chose, on before the first paint (see "backgrounds" in the styles)
+  try{ var mbBg = localStorage.getItem('mb-bg'); if (mbBg) document.documentElement.setAttribute('data-bg', mbBg); }catch(e){}
+</script>
 <style>
   :root{
     --bg:#0e0e0f; --panel:#171719; --panel2:#1e1e21; --edge:#2a2a2e;
     --ink:#e9e9ec; --dim:#8b8b93; --dimmer:#5c5c65;
+    /* the quieter neutrals: the line between rows, the edge of a box, a pressed button,
+       a soft fill, the small grey label, and the keys */
+    --line:#1e2024; --box:#33333a; --box2:#3a3a40; --press:#2a2a2e; --soft:#16181c; --chip:#22252b;
+    --kb:#1a1a1d; --key:#3a3a3f; --keyfn:#26262a; --keydn:#5a5a60;
+    --second:#fdba74;                      /* the second bulb's lettering */
+  }
+  /* ---- backgrounds ----
+     Black is how the app has always looked. The other two are for trying out: the
+     same page on a warm taupe and on a foggy grey, each light enough to be a colour
+     and dark enough that the white lettering still reads. One choice a phone, kept
+     in Settings; the first lines of the page put it on before anything is drawn. */
+  html[data-bg="taupe"]{
+    --bg:#564c44; --panel:#61564d; --panel2:#6b5f55; --edge:#7e7166;
+    --ink:#f6f2ed; --dim:#d1c7bc; --dimmer:#ab9f93;
+    --line:#675c52; --box:#8a7c70; --box2:#95877a; --press:#776a5f; --soft:#5e534a; --chip:#72665b;
+    --kb:#4a413a; --key:#7a6d62; --keyfn:#63584f; --keydn:#96887b;
+    --second:#ffd9a8;
+  }
+  html[data-bg="fog"]{
+    --bg:#52585e; --panel:#5c6369; --panel2:#666d74; --edge:#798188;
+    --ink:#f3f5f7; --dim:#cdd3d8; --dimmer:#a5adb4;
+    --line:#636a71; --box:#868e95; --box2:#9199a0; --press:#737b82; --soft:#5a6167; --chip:#6e767d;
+    --kb:#464b50; --key:#757d84; --keyfn:#5f666c; --keydn:#939ba2;
+    --second:#ffd9a8;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;background:var(--bg);color:var(--ink);
@@ -63,7 +91,7 @@
 
   button{width:100%;padding:13px 12px;border-radius:8px;border:1px solid var(--edge);
          background:var(--panel2);color:var(--ink);font:600 14px inherit;font-family:inherit}
-  button:active{background:#2a2a2e}
+  button:active{background:var(--press)}
   button:disabled{opacity:.35}
   button.solid{background:var(--ink);border-color:var(--ink);color:#0e0e0f}
   button.ghost{background:transparent;color:var(--dim)}
@@ -78,18 +106,18 @@
      iOS Safari puts its prev/next/Done bar on top of the system keyboard and no
      page can turn it off, so on a phone the search opens this instead: four
      short rows, laid out in the page so the list shrinks rather than hides. */
-  #kb{flex:none;margin:0 -10px;background:#1a1a1d;border-top:1px solid var(--edge);
+  #kb{flex:none;margin:0 -10px;background:var(--kb);border-top:1px solid var(--edge);
       padding:6px 4px calc(env(safe-area-inset-bottom) + 6px);
       user-select:none;-webkit-user-select:none;touch-action:manipulation}
   #kb[hidden]{display:none}
   #kb .r{display:flex;gap:5px;margin-bottom:5px;justify-content:center}
   #kb .r:last-child{margin-bottom:0}
   #kb button{flex:1 1 0;min-width:0;width:auto;height:36px;padding:0;border-radius:6px;
-             border:0;background:#3a3a3f;color:var(--ink);font:500 17px -apple-system,system-ui,sans-serif}
-  #kb button.fn{background:#26262a;font-size:13px;font-weight:600;flex-grow:1.5}
+             border:0;background:var(--key);color:var(--ink);font:500 17px -apple-system,system-ui,sans-serif}
+  #kb button.fn{background:var(--keyfn);font-size:13px;font-weight:600;flex-grow:1.5}
   #kb button.sp{flex-grow:5}
   #kb button.ok{background:var(--ink);color:#0e0e0f;flex-grow:2}
-  #kb button.dn{background:#5a5a60}
+  #kb button.dn{background:var(--keydn)}
   #kb .half{flex:.5 1 0}
   select{background-image:none}
   .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--dimmer);margin-bottom:6px}
@@ -100,7 +128,7 @@
   #count{font-size:11px;color:var(--dimmer);letter-spacing:.06em;
          text-transform:uppercase;margin:10px 0 4px}
   .rt{display:flex;align-items:center;gap:12px;padding:6px 2px;
-      border-bottom:1px solid #202024}
+      border-bottom:1px solid var(--line)}
   .rt:active{background:var(--panel)}
   .gd{flex:none;padding:2px 6px;border-radius:5px;
        font:700 10px ui-monospace,Menlo,monospace;letter-spacing:-.02em}
@@ -191,7 +219,7 @@
   #bigHist .lbl{margin:18px 0 6px}
   #bigSum{font-size:13px;color:var(--dim);line-height:1.5}
   #bigSum b{color:var(--ink);font-weight:600}
-  .whoRows .p{display:flex;align-items:center;gap:9px;padding:9px 2px;border-bottom:1px solid #1e2024}
+  .whoRows .p{display:flex;align-items:center;gap:9px;padding:9px 2px;border-bottom:1px solid var(--line)}
   .whoRows .p i{flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;
                font-size:11px;font-weight:700;font-style:normal;color:#0e0e0f}
   .whoRows .p .n{flex:1;min-width:0;font-size:14px;font-weight:600;
@@ -221,7 +249,7 @@
   #barTxt #setBtn svg{width:18px;height:18px;display:block}
   #barTxt #toBoard{flex:none;width:auto;height:32px;padding:0 10px;font-size:13px;white-space:nowrap}
   #qBox{flex:1;min-width:0;height:32px;display:flex;align-items:center;gap:5px;
-        padding:0 4px 0 9px;background:var(--panel2);border:1px solid #33333a;border-radius:9px}
+        padding:0 4px 0 9px;background:var(--panel2);border:1px solid var(--box);border-radius:9px}
   #qBox.on,#qBox:focus-within{border-color:#8b8b93}
   #qBox .mag{flex:none;width:14px;height:14px;color:var(--dimmer)}
   #qBox .mag.act{color:#8fb8ff}             /* a search is narrowing the list */
@@ -268,7 +296,7 @@
   #actRow button[hidden]{display:none}
   #actRow #send{flex:1.35 1 0;font-size:14px}
   /* the second bulb: orange, the colour the picture draws a second problem in */
-  #actRow #pairBtn{border-color:#8a4b17;color:#fdba74}
+  #actRow #pairBtn{border-color:#8a4b17;color:var(--second)}
   #actRow #pairBtn.on{background:#fb923c;border-color:#fb923c;color:#0e0e0f}
   body.betaEdit #actRow{visibility:hidden}     /* nothing to light while placing hands and feet */
   /* The wall's story on the left takes what the board leaves; the board keeps its
@@ -310,8 +338,8 @@
   /* every filter on one line - nothing tucked underneath when the panel opens */
   .four{display:grid;grid-template-columns:1.15fr 1.15fr .85fr 1fr;gap:5px}
   #filtBtn{width:44px;padding:9px 0;font-size:17px;line-height:1;border-radius:8px}
-  #filtBtn.on{background:var(--panel2);color:var(--ink);border-color:#3a3a40}
-  #filtBtn.active{color:var(--ink);border-color:#4a4a52}
+  #filtBtn.on{background:var(--panel2);color:var(--ink);border-color:var(--box2)}
+  #filtBtn.active{color:var(--ink);border-color:var(--dimmer)}
   #filtBtn.active::after{content:'';position:absolute;top:5px;right:5px;
                          width:6px;height:6px;border-radius:50%;background:#22c55e}
   #filtBtn{position:relative}
@@ -346,11 +374,11 @@
   #sendPanel[hidden],#logPanel[hidden],#snakePanel[hidden],#entryPanel[hidden],#setPanel[hidden],#pairPanel[hidden]{display:none}
   /* ---- history: everything you have logged on the problem that's open, listed
      under the big board ---- */
-  #bigRows .e{display:flex;align-items:center;gap:9px;padding:10px 2px;border-bottom:1px solid #1e2024}
+  #bigRows .e{display:flex;align-items:center;gap:9px;padding:10px 2px;border-bottom:1px solid var(--line)}
   #bigRows .e .d{flex:1;min-width:0;font-size:14px;font-weight:600}
   #bigRows .e .d span{display:block;font-size:11px;font-weight:400;color:var(--dimmer);margin-top:1px}
   #bigRows .e .rs{flex:none;padding:2px 7px;border-radius:5px;
-                   font:700 10px ui-monospace,Menlo,monospace;background:#22252b;color:var(--dim)}
+                   font:700 10px ui-monospace,Menlo,monospace;background:var(--chip);color:var(--dim)}
   #bigRows .e.sent .rs{background:#22c55e;color:#06240e}
   #bigRows .e .lk{flex:none;font-size:10px;color:var(--dimmer)}
   #bigRows .none{font-size:13px;color:var(--dimmer);padding:8px 2px;line-height:1.5}
@@ -367,13 +395,13 @@
   #logWho{max-width:220px}
   #logSum{font-size:12px;color:var(--dim)}
   #logRows .e{display:flex;align-items:center;gap:9px;padding:9px 2px;
-              border-bottom:1px solid #1e2024}
+              border-bottom:1px solid var(--line)}
   #logRows .e .d{flex:none;width:52px;font-size:11px;color:var(--dimmer)}
   #logRows .e .n{flex:1;min-width:0;font-size:14px;font-weight:600;
                  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #logRows .e .rs{flex:none;padding:2px 7px;border-radius:5px;
                   font:700 10px ui-monospace,Menlo,monospace;
-                  background:#22252b;color:var(--dim)}
+                  background:var(--chip);color:var(--dim)}
   #logRows .e.sent .rs{background:#22c55e;color:#06240e}
   #logRows .none{font-size:12px;color:var(--dimmer);padding:8px 2px}
   #logRows .day{display:flex;align-items:center;gap:8px;padding:11px 2px;cursor:pointer;
@@ -395,13 +423,13 @@
   #enPicks{display:grid;gap:8px}
   #enPicks button:disabled{opacity:.35}
   #ptsRank .r{display:flex;align-items:center;gap:9px;padding:7px 2px;
-              border-bottom:1px solid #1e2024;font-size:13px}
+              border-bottom:1px solid var(--line);font-size:13px}
   #ptsRank .r .pos{flex:none;width:20px;color:var(--dimmer);
                    font:700 11px ui-monospace,Menlo,monospace}
   #ptsRank .r b{flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #ptsRank .r .n{flex:none;color:var(--dimmer);font-size:11px}
   #ptsRank .r span.p{flex:none;font:700 13px ui-monospace,Menlo,monospace;color:var(--ink)}
-  #ptsRank .me{background:#16181c}
+  #ptsRank .me{background:var(--soft)}
   #ptsRank .r.lead b{color:#f5c542}
   #ptsRank .none{font-size:12px;color:var(--dimmer);padding:6px 2px}
   /* Pinned. Settings is far taller than the screen, so a header that scrolled
@@ -413,7 +441,7 @@
   #gameHead button{width:auto;padding:8px 14px}
   #c4{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;
       width:min(100%,56vh);margin:0 auto}
-  #c4 div{aspect-ratio:1;border-radius:50%;border:2px solid #232327}
+  #c4 div{aspect-ratio:1;border-radius:50%;border:2px solid var(--box)}
   #c4 div.a{background:#22c55e;border-color:#22c55e}
   #c4 div.b{background:#2563eb;border-color:#2563eb}
   #c4 div.win{background:#ef4444;border-color:#ef4444}
@@ -423,14 +451,14 @@
   #c4players .side.b{border-color:#1d3a72}
   #c4players .clk{margin-top:6px;text-align:center;
                   font:700 20px ui-monospace,Menlo,monospace;color:var(--dim)}
-  #c4players .side.turn{background:#16181c}
+  #c4players .side.turn{background:var(--soft)}
   #c4players .side.g.turn .clk{color:#22c55e}
   #c4players .side.b.turn .clk{color:#5b8cf5}
   #c4players .clk.low{color:#ef4444 !important}
   #c4mins{width:56px;flex:none;padding:5px 6px;text-align:center;
           font:600 15px ui-monospace,Menlo,monospace}
   #c4rank .r{display:flex;align-items:center;gap:9px;padding:6px 2px;
-             border-bottom:1px solid #1e2024;font-size:13px}
+             border-bottom:1px solid var(--line);font-size:13px}
   #c4rank .r b{flex:1;font-weight:600}
   #c4rank .r span{color:var(--dimmer);font:700 12px ui-monospace,Menlo,monospace}
   #c4rank .king b{color:#f5c542}
@@ -440,7 +468,7 @@
      is sized off height rather than width or it would run off the screen */
   #sn{display:grid;gap:2px;                        /* columns set from SN_W in snDraw */
       width:min(52%,17vh);margin:0 auto;touch-action:none}
-  #sn div{aspect-ratio:1;border-radius:2px;background:#191b1f}
+  #sn div{aspect-ratio:1;border-radius:2px;background:var(--soft)}
   #sn div.s{background:#22c55e}
   #sn div.h{background:#2563eb}
   #sn div.f{background:#ef4444}
@@ -454,21 +482,21 @@
          grid-template-areas:"u u" "l r" "d d";
          grid-template-columns:1fr 1fr}
   #snPad button{padding:0;font-size:34px;line-height:1;height:min(14vh,108px);
-                background:var(--panel2);border-color:#33333a}
+                background:var(--panel2);border-color:var(--box)}
   #snPad button[data-d="up"]{border-radius:999px 999px 12px 12px}
   #snPad button[data-d="down"]{border-radius:12px 12px 999px 999px}
   #snPad button[data-d="left"]{border-radius:999px 12px 12px 999px}
   #snPad button[data-d="right"]{border-radius:12px 999px 999px 12px}
   #snPad button:active{background:var(--ink);color:#0e0e0f}
   #snRank[hidden]{display:none}
-  #snRank .r{display:flex;gap:9px;padding:5px 2px;border-bottom:1px solid #1e2024;font-size:13px}
+  #snRank .r{display:flex;gap:9px;padding:5px 2px;border-bottom:1px solid var(--line);font-size:13px}
   #snRank .r b{flex:1;font-weight:600}
   #snRank .r span{color:var(--dimmer);font:700 12px ui-monospace,Menlo,monospace}
   #snRank .top b{color:#f5c542}
   #snRank .none{font-size:12px;color:var(--dimmer);padding:6px 2px}
   #c4turn{display:flex;align-items:center;justify-content:center;gap:10px;
           font-size:17px;font-weight:600}
-  #c4turn i{width:20px;height:20px;border-radius:50%;background:#3a3a40;flex:none}
+  #c4turn i{width:20px;height:20px;border-radius:50%;background:var(--box2);flex:none}
 
   /* The two games are buttons in Settings now, with a word beside each picture. */
   #gameBtns button{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 8px;font-size:13px}
@@ -515,8 +543,8 @@
   .stackSep{display:flex;align-items:center;gap:5px;margin:4px 0 2px;font-size:8px;
             letter-spacing:.08em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
   .stackSep[hidden]{display:none}
-  .stackSep::before,.stackSep::after{content:'';flex:1;height:1px;background:#3a3a40}
-  .hrow,.nrow{border-top:1px solid #1e2024;min-width:0}
+  .stackSep::before,.stackSep::after{content:'';flex:1;height:1px;background:var(--box2)}
+  .hrow,.nrow{border-top:1px solid var(--line);min-width:0}
   .hrow:first-child,.nrow:first-child{border-top:0}
   .hrow:active,.nrow:active{background:var(--panel)}
   .hrow b,.nrow b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
@@ -710,6 +738,14 @@
   </div>
 
 
+  <div class="lbl" style="margin-top:14px">Background</div>
+  <select id="bgSel">
+    <option value="">Black</option>
+    <option value="taupe">Taupe</option>
+    <option value="fog">Foggy grey</option>
+  </select>
+  <div class="hint">For this phone only. Black is how the app has always looked.</div>
+
   <label class="ck"><input type="checkbox" id="auto">
     Light the wall as soon as I pick a problem</label>
   <label class="ck"><input type="checkbox" id="gbar" checked>
@@ -872,7 +908,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-08 00:03';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-08 00:10';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -5022,7 +5058,7 @@ function c4Draw(){
     }
   const turn = $('c4turn'), dot = turn.querySelector('i');
   if (!c4){
-    turn.className = 'idle'; dot.style.background = '#3a3a40';
+    turn.className = 'idle'; dot.style.background = 'var(--box2)';
     turn.querySelector('span').textContent = 'not started';
   } else if (c4.win){
     turn.className = 'over';
@@ -5453,6 +5489,18 @@ $('me').onchange = () => {
   try{ localStorage.setItem('mb-me', lastMe); }catch(e){}
   fillWho(); paintBar(); renderResults(); runPending();
 };
+/* The background: a name on the page's root, which the styles turn into colours. The
+   browser's own bar round the page is told the same colour. */
+function setBg(v){
+  const el = document.documentElement;
+  if (v) el.setAttribute('data-bg', v); else el.removeAttribute('data-bg');
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', getComputedStyle(el).getPropertyValue('--bg').trim() || '#0e0e0f');
+}
+$('bgSel').onchange = () => {
+  try{ localStorage.setItem('mb-bg', $('bgSel').value); }catch(e){}
+  setBg($('bgSel').value);
+};
 $('gbar').onchange = () => {
   applyGradeBar(); paint();
   if (canSend() && current) sendProblem();
@@ -5550,6 +5598,8 @@ try{
   // What the wall shows on connect is WW for everyone now; a choice saved before
   // that setting was hidden is left alone and ignored.
   $('auto').checked = localStorage.getItem('mb-auto') === '1';
+  const bg = localStorage.getItem('mb-bg') || '';
+  if ($('bgSel').querySelector('option[value="' + bg + '"]')){ $('bgSel').value = bg; setBg(bg); }
   const m = localStorage.getItem('mb-me') || w;
   if (m){ $('me').appendChild(new Option(m, m)); $('me').value = m; lastMe = m; }
 }catch(e){}
