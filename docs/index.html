@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0e0e0f">
+<meta name="theme-color" content="#c6cbd0">
 <!-- Added to the Home Screen, open as an app with none of the browser's bars. iOS 26
      offers that for any site ("Open as Web App" on the Add to Home Screen sheet); an
      older iPhone only does it for a page that asks, and this is the asking. The black
@@ -18,8 +18,8 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>MoonBoard Direct</title>
 <script>
-  // the background this phone chose, on before the first paint (see "backgrounds" in the styles)
-  try{ var mbBg = localStorage.getItem('mb-bg'); if (mbBg) document.documentElement.setAttribute('data-bg', mbBg); }catch(e){}
+  // the background this phone chose (light foggy grey until it chooses), on before the first paint (see "backgrounds" in the styles)
+  try{ var mbBg = localStorage.getItem('mb-bg'); if (mbBg === null) mbBg = 'fog'; if (mbBg) document.documentElement.setAttribute('data-bg', mbBg); }catch(e){}
 </script>
 <style>
   :root{
@@ -39,7 +39,8 @@
     --green-ink:#22c55e;
   }
   /* ---- backgrounds ----
-     Black is how the app has always looked. The other two are for trying out: a
+     Black is how the app looked at first; since 2026-10-08 a phone that has not chosen
+     starts on the foggy grey. The other two are: a
      light taupe and a light foggy grey, with the lettering turned dark. (The first
      pair, a shade off black with white lettering, Will found too dark.) One choice a
      phone, kept in Settings; the first lines of the page put it on before anything
@@ -229,8 +230,6 @@
   #bar{background:var(--bg);padding:5px 0 7px}
   #barTxt{display:flex;align-items:center;gap:6px;min-width:0}
   #barTxt #filtBtn{flex:none;width:38px;height:38px;padding:0;font-size:16px}
-  #barTxt #setBtn{flex:none;width:38px;height:38px;padding:0;display:grid;place-items:center;border-radius:8px}
-  #barTxt #setBtn svg{width:18px;height:18px;display:block}
   #barTxt #toBoard{flex:none;width:auto;height:38px;padding:0 10px;font-size:13px;white-space:nowrap}
   /* Instagram: a square the height of the row, dressed as a button. With no route open it
      stays, so the row does not shift, but dim and deaf. */
@@ -264,7 +263,7 @@
      of the three that scroll says so itself: up and down is theirs, sideways is ours. */
   #top,#scroll,#wallCol{touch-action:pan-y}
   body.listPage #filtBtn,body.listPage #toBoard{display:block}
-  body.listPage #setBtn,body.listPage header,body.listPage #actRow,
+  body.listPage header,body.listPage #actRow,
   body.listPage #boardWrap,body.listPage #noWall{display:none !important}
   body.listPage #bar{padding-top:calc(env(safe-area-inset-top) + 12px)}
   /* The phone shades the very top of the screen, and on Will's that shade lay over half
@@ -276,11 +275,11 @@
   #listCap span{font-size:10px;letter-spacing:.06em;color:var(--dimmer)}
   @keyframes pgL{from{transform:translateX(-18%);opacity:.25}to{transform:none;opacity:1}}
   @keyframes pgR{from{transform:translateX(18%);opacity:.25}to{transform:none;opacity:1}}
-  body.slideL #top,body.slideL #scroll,body.slideL #logPage{animation:pgL .17s ease-out}
-  body.slideR #top,body.slideR #scroll,body.slideR #logPage{animation:pgR .17s ease-out}
+  body.slideL #top,body.slideL #scroll,body.slideL #logPage,body.slideL #setPanel{animation:pgL .17s ease-out}
+  body.slideR #top,body.slideR #scroll,body.slideR #logPage,body.slideR #setPanel{animation:pgR .17s ease-out}
   @media (prefers-reduced-motion:reduce){
-    body.slideL #top,body.slideL #scroll,body.slideL #logPage,
-    body.slideR #top,body.slideR #scroll,body.slideR #logPage{animation:none}
+    body.slideL #top,body.slideL #scroll,body.slideL #logPage,body.slideL #setPanel,
+    body.slideR #top,body.slideR #scroll,body.slideR #logPage,body.slideR #setPanel{animation:none}
   }
   /* Three pages, named, at the foot of the screen; the one you are on is filled. (They
      were three small dots until Will asked, on the design canvas, for it to be obvious.) */
@@ -289,9 +288,22 @@
   #pgDots button{flex:1 1 0;min-width:0;height:30px;padding:0;border:0;border-radius:9px;background:transparent;
                  color:var(--dim);font-size:12px;font-weight:600}
   #pgDots[data-at="list"] button[data-go="list"],#pgDots[data-at="board"] button[data-go="board"],
-  #pgDots[data-at="log"] button[data-go="log"]{background:var(--ink);color:var(--onink);font-weight:700}
+  #pgDots[data-at="log"] button[data-go="log"],#pgDots[data-at="set"] button[data-go="set"]{background:var(--ink);color:var(--onink);font-weight:700}
+  /* Settings is the cog, the size of a button, at the right-hand end */
+  #pgDots button[data-go="set"]{flex:none;width:38px;display:grid;place-items:center}
+  #pgDots button[data-go="set"] svg{width:17px;height:17px;display:block}
   body.betaEdit #pgDots{visibility:hidden}
   #kb:not([hidden]) ~ #pgDots{display:none}
+  /* ---- the page furthest right: Settings ----
+     It was a sheet over the board, opened by a cog beside the search box. Will asked for
+     the cog to go down into the row of pages, at the right-hand end, and for Settings to
+     be a page you can swipe to. */
+  #setPanel{display:none}
+  body.setPage #top,body.setPage #scroll,body.setPage #kb{display:none !important}
+  body.setPage #setPanel{display:flex;flex-direction:column;gap:12px;flex:1 1 auto;min-height:0;overflow-y:auto;
+                         overscroll-behavior:contain;touch-action:pan-y;
+                         padding:calc(env(safe-area-inset-top) + 16px) 9px calc(env(safe-area-inset-bottom) + 30px)}
+  body.setPage #setPanel > *{flex:none}
   /* ---- the page to the right: logging, and what you have climbed ----
      Under the app's own header, so the name picker is at hand. Everything else on
      it is one column that scrolls. */
@@ -490,11 +502,11 @@
   #gamePanel[hidden]{display:none}
   #snakePanel{gap:8px !important}
   #snakePanel #snPad{margin-top:auto}      /* pushed to the bottom of the sheet */
-  #logPanel,#snakePanel,#entryPanel,#setPanel,#pairPanel{position:fixed;inset:0;z-index:60;background:var(--bg);
+  #logPanel,#snakePanel,#entryPanel,#pairPanel{position:fixed;inset:0;z-index:60;background:var(--bg);
              display:flex;flex-direction:column;gap:12px;overflow-y:auto;
              padding:calc(env(safe-area-inset-top) + 16px) 16px
                      calc(env(safe-area-inset-bottom) + 16px)}
-  #logPanel[hidden],#snakePanel[hidden],#entryPanel[hidden],#setPanel[hidden],#pairPanel[hidden]{display:none}
+  #logPanel[hidden],#snakePanel[hidden],#entryPanel[hidden],#pairPanel[hidden]{display:none}
   #pairFor{font-size:15px;font-weight:600}
   #pairFor span{display:block;font-size:12px;color:var(--dimmer);font-weight:400;margin-top:2px}
   /* ---- the second bulb's one question ---- */
@@ -865,7 +877,6 @@
       <span class="pill" hidden></span>
       <button id="qX" hidden aria-label="Clear search">&#10005;</button>
     </div>
-    <button id="setBtn" class="ghost" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor"><circle cx="12" cy="12" r="5.6" stroke-width="2"/><circle cx="12" cy="12" r="2" stroke-width="1.8"/><path stroke-width="3" d="M12 2.6v3.2M12 18.2v3.2M2.6 12h3.2M18.2 12h3.2M5.35 5.35l2.26 2.26M16.39 16.39l2.26 2.26M5.35 18.65l2.26-2.26M16.39 7.61l2.26-2.26"/></g></svg></button>
     <button id="toBoard" class="ghost" aria-label="Back to the board">Board &#8250;</button>
     <!-- Quick log: a press opens a red Try and a green Send on two arms over it. -->
     <div id="quick">
@@ -975,29 +986,9 @@
   <div id="lpFoot"></div>
 </div>
 
-<div id="kb" hidden></div>
-
-<!-- three pages: routes, the board, the log -->
-<div id="quickScrim" hidden></div>
-<div id="quickToast" hidden></div>
-<!-- How a send went, asked in bubbles and not on a sheet: four of them swing out in an
-     arc from the button that was pressed - under Log send, over Quick log. The layer
-     itself is the dimming; the button with the cross sits where the pressed one is. -->
-<div id="sendFan" hidden>
-  <span class="arm"></span><span class="arm"></span><span class="arm"></span><span class="arm"></span>
-  <button data-r="flash">Flash</button>
-  <button data-r="2nd">2nd</button>
-  <button data-r="3rd">3rd</button>
-  <button data-r="4+">4+</button>
-  <div class="cap"></div>
-  <button class="x" aria-label="Close"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-</div>
-<nav id="pgDots" data-at="board" aria-label="Pages"><button data-go="list">&#8249; Routes</button><button data-go="board">Board</button><button data-go="log">Log &#8250;</button></nav>
-
-<div id="setPanel" hidden>
+<div id="setPanel">
   <div id="gameHead">
     <b>Settings</b>
-    <button id="setClose" class="ghost mini">Close</button>
   </div>
 
   <div class="lbl">Games on the wall</div>
@@ -1009,11 +1000,11 @@
 
   <div class="lbl" style="margin-top:14px">Background</div>
   <select id="bgSel">
-    <option value="">Black</option>
-    <option value="taupe">Light taupe</option>
     <option value="fog">Light foggy grey</option>
+    <option value="taupe">Light taupe</option>
+    <option value="">Black</option>
   </select>
-  <div class="hint">For this phone only. Black is how the app has always looked.</div>
+  <div class="hint">For this phone only. Light foggy grey is what everyone starts on.</div>
 
   <label class="ck"><input type="checkbox" id="auto">
     Light the wall as soon as I pick a problem</label>
@@ -1065,6 +1056,24 @@
   <div style="margin-top:10px"><button id="copy" class="ghost">Copy log</button></div>
   <div id="ver"></div>
 </div>
+<div id="kb" hidden></div>
+
+<!-- three pages: routes, the board, the log -->
+<div id="quickScrim" hidden></div>
+<div id="quickToast" hidden></div>
+<!-- How a send went, asked in bubbles and not on a sheet: four of them swing out in an
+     arc from the button that was pressed - under Log send, over Quick log. The layer
+     itself is the dimming; the button with the cross sits where the pressed one is. -->
+<div id="sendFan" hidden>
+  <span class="arm"></span><span class="arm"></span><span class="arm"></span><span class="arm"></span>
+  <button data-r="flash">Flash</button>
+  <button data-r="2nd">2nd</button>
+  <button data-r="3rd">3rd</button>
+  <button data-r="4+">4+</button>
+  <div class="cap"></div>
+  <button class="x" aria-label="Close"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+</div>
+<nav id="pgDots" data-at="board" aria-label="Pages"><button data-go="list">&#8249; Routes</button><button data-go="board">Board</button><button data-go="log">Log &#8250;</button><button data-go="set" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor"><circle cx="12" cy="12" r="5.6" stroke-width="2"/><circle cx="12" cy="12" r="2" stroke-width="1.8"/><path stroke-width="3" d="M12 2.6v3.2M12 18.2v3.2M2.6 12h3.2M18.2 12h3.2M5.35 5.35l2.26 2.26M16.39 16.39l2.26 2.26M5.35 18.65l2.26-2.26M16.39 7.61l2.26-2.26"/></g></svg></button></nav>
 
 <div id="pairPanel" hidden>
   <div id="gameHead">
@@ -1161,7 +1170,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-08 10:44';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-08 11:02';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -5618,11 +5627,11 @@ $('scroll').addEventListener('scroll', () => {           // the next page, befor
 let kbOpen  = () => { const q = $('q'); q.focus(); if (nameShown()) q.select(); };   // real keys: just take the focus
 let kbClose = () => { $('q').blur(); };                                              // the phone's own keys replace both, below
 
-/* Left to right: the routes, the board, the log. A swipe goes one page; the board is
-   always in the middle. ghost: for how long the next click should be dropped - set by
+/* Left to right: the routes, the board, the log, Settings. A swipe goes one page; the
+   board is where Back leads. ghost: for how long the next click should be dropped - set by
    whoever changes the page from a touch that has not finished yet (see below), and
    nobody else. */
-const PAGES = ['list', 'board', 'log'];
+const PAGES = ['list', 'board', 'log', 'set'];
 function showPage(which, fromBack, ghost){
   if (which === page || !PAGES.includes(which)) return;
   if (page === 'board' && (betaDraft || panelOpen)) return;
@@ -5634,6 +5643,7 @@ function showPage(which, fromBack, ghost){
   const b = document.body;
   b.classList.toggle('listPage', which === 'list');
   b.classList.toggle('logPage', which === 'log');
+  b.classList.toggle('setPage', which === 'set');
   b.classList.remove('slideL', 'slideR');
   void b.offsetWidth;                                  // so the slide plays again
   b.classList.add(PAGES.indexOf(which) < PAGES.indexOf(was) ? 'slideL' : 'slideR');
@@ -5655,8 +5665,9 @@ function showPage(which, fromBack, ghost){
     kbClose();
   }
   if (which === 'log'){ $('logPage').scrollTop = 0; paintLogPage(); }
+  if (which === 'set') $('setPanel').scrollTop = 0;
   const row = $('results').querySelector('.rt.sel');   // the open route stays in view on both
-  if (row && which !== 'log') row.scrollIntoView({ block: which === 'list' ? 'center' : 'nearest' });
+  if (row && which !== 'log' && which !== 'set') row.scrollIntoView({ block: which === 'list' ? 'center' : 'nearest' });
 }
 document.addEventListener('click', e => {
   if (Date.now() >= ghostUntil) return;
@@ -5669,7 +5680,7 @@ document.body.addEventListener('animationend', e => {
 
 (function pageSwipe(){
   let x0 = null, y0 = null;
-  const off = '#board, #kb, select, #quick, #gSlide, #sendFan, #setPanel, #logPanel, #pairPanel, #snakePanel, #entryPanel, #gamePanel';
+  const off = '#board, #kb, select, #quick, #gSlide, #sendFan, #setPanel input, #log, #logPanel, #pairPanel, #snakePanel, #entryPanel, #gamePanel';
   document.addEventListener('pointerdown', e => {
     x0 = null;
     if (betaDraft || panelOpen) return;
@@ -6056,7 +6067,7 @@ window.addEventListener('popstate', () => {
   const name = layers.pop();
   if (name === 'panel') showPanel(null, true);
   else if (name === 'fan'){ closeSend(true); quickShow(false, true); }
-  else if (name === 'list' || name === 'log') showPage('board', true);
+  else if (name === 'list' || name === 'log' || name === 'set') showPage('board', true);
 });
 
 /* ---------- search keyboard (phones only) ----------
@@ -6245,12 +6256,11 @@ function showFilters(on){
 }
 $('filtBtn').onclick = () => showFilters($('filters').hidden);
 
-const PANELS = { game: 'gamePanel', set: 'setPanel', log: 'logPanel',
+const PANELS = { game: 'gamePanel', log: 'logPanel',
                  snake: 'snakePanel', entry: 'entryPanel', pair: 'pairPanel' };
 
 function showPanel(which, fromBack){  // a key of PANELS, or null for none
   $('gamePanel').hidden = which !== 'game';
-  $('setPanel').hidden  = which !== 'set';
   $('logPanel').hidden  = which !== 'log';
   $('pairPanel').hidden = which !== 'pair';
   $('snakePanel').hidden = which !== 'snake';
@@ -6268,8 +6278,6 @@ $('gameBtn').onclick = () => {
   showPanel(open ? 'game' : null);
   if (open && !c4) c4New();         // land on a playable board, not an empty one
 };
-$('setBtn').onclick = () => showPanel($('setPanel').hidden ? 'set' : null);
-$('setClose').onclick = () => showPanel(null);
 $('c4close').onclick = () => showPanel(null);
 $('logBtn').onclick = () => ($('logPanel').hidden ? openLog() : showPanel(null));
 $('logClose').onclick = () => showPanel(null);
@@ -6355,7 +6363,7 @@ $('standby').onchange = () => {
   if (!current && canSend() && !standby()) write('l##');
 };
 $('relayBtn').onclick = () => relayWant ? relayDisconnect() : (rx ? relayConnect() : null);
-$('wallTxt').onclick = () => showPanel($('setPanel').hidden ? 'set' : null);
+$('wallTxt').onclick = () => showPage(page === 'set' ? 'board' : 'set');
 /* Where you are climbing is which room this phone talks to. Will's Wall is the
    crew's room and needs no code. Any other wall takes a code of its own, the same
    on every phone there, so two walls never light each other's problems. */
@@ -6388,7 +6396,7 @@ $('loc').onchange = () => {
   log(home ? 'climbing at Will\u2019s Wall.' : 'climbing at another wall \u2014 it needs a code of its own.');
 };
 $('noWall').onclick = () => {
-  if (relayRoom() && relayRoom() !== DEFAULT_ROOM) showPanel('set');
+  if (relayRoom() && relayRoom() !== DEFAULT_ROOM) showPage('set');
 };
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && relayWant) keepAwake();
@@ -6436,7 +6444,7 @@ try{
   // What the wall shows on connect is WW for everyone now; a choice saved before
   // that setting was hidden is left alone and ignored.
   $('auto').checked = localStorage.getItem('mb-auto') === '1';
-  const bg = localStorage.getItem('mb-bg') || '';
+  const bgKept = localStorage.getItem('mb-bg'), bg = bgKept === null ? 'fog' : bgKept;   // nothing chosen yet: the foggy grey
   if ($('bgSel').querySelector('option[value="' + bg + '"]')){ $('bgSel').value = bg; setBg(bg); }
   const m = localStorage.getItem('mb-me') || w;
   if (m){ $('me').appendChild(new Option(m, m)); $('me').value = m; lastMe = m; }
