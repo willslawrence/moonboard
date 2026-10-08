@@ -231,10 +231,15 @@
   #barTxt #filtBtn{flex:none;width:38px;height:38px;padding:0;font-size:16px}
   #barTxt #setBtn{flex:none;width:38px;height:38px;padding:0;display:grid;place-items:center;border-radius:8px}
   #barTxt #setBtn svg{width:18px;height:18px;display:block}
-  #barTxt #toBoard,#barTxt #toLog{flex:none;width:auto;height:38px;padding:0 10px;font-size:13px;white-space:nowrap}
-  #barTxt #toLog{border-radius:9px}
-  body.listPage #toLog{display:none}
-  body.betaEdit #toLog{visibility:hidden}      /* no leaving mid-edit */
+  #barTxt #toBoard{flex:none;width:auto;height:38px;padding:0 10px;font-size:13px;white-space:nowrap}
+  /* Instagram: a square the height of the row, dressed as a button. With no route open it
+     stays, so the row does not shift, but dim and deaf. */
+  #barTxt #igBtn{flex:none;width:38px;height:38px;display:grid;place-items:center;border-radius:9px;
+                 border:1px solid var(--edge);background:var(--panel2);color:var(--ink)}
+  #barTxt #igBtn svg{width:20px;height:20px;display:block}
+  #barTxt #igBtn:active{background:var(--press)}
+  #barTxt #igBtn.off{opacity:.35;pointer-events:none}
+  #barTxt #igBtn[hidden],body.listPage #igBtn{display:none}
   #qBox{flex:1;min-width:0;height:38px;display:flex;align-items:center;gap:5px;
         padding:0 4px 0 9px;background:var(--panel2);border:1px solid var(--box);border-radius:9px}
   #qBox.on,#qBox:focus-within{border-color:#8b8b93}
@@ -337,13 +342,8 @@
   #lpNow .btns button{padding:7px 6px;font-size:16px;font-weight:700;border-radius:12px}
   /* under them, smaller: the beta, and the whole logbook */
   #lpNow .more3{display:flex;gap:8px;margin-top:8px}
-  #lpNow .more3 button,#lpNow .more3 a{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;
-                                      gap:6px;padding:9px 6px;font-size:13px;border-radius:10px}
-  /* Instagram is a link, so the phone can hand it to the Instagram app; dressed as a button */
-  #lpNow .more3 a{border:1px solid var(--edge);background:var(--panel2);color:var(--ink);font-weight:600;
-                  text-decoration:none;white-space:nowrap}
-  #lpNow .more3 a:active{background:var(--press)}
-  #lpNow .more3 a[hidden]{display:none}
+  #lpNow .more3 button{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;
+                       gap:6px;padding:9px 6px;font-size:13px;border-radius:10px}
   #lpNow .more3 svg{width:16px;height:16px;flex:none}
   #lpUndo{display:block;width:auto;max-width:100%;margin:9px auto 0;padding:2px 8px;border:0;font-size:11px;
           overflow:hidden;text-overflow:ellipsis}
@@ -876,7 +876,9 @@
       </div>
       <button id="quickBtn" class="mini solid" disabled aria-expanded="false" aria-label="Quick log"></button>
     </div>
-    <button id="toLog" aria-label="Log a go, and what you have climbed">Log &#8250;</button>
+    <!-- Instagram, where "Log" was: the bar at the foot goes to the log page now. Its mark
+         and no word. A link, so the phone can hand it to the Instagram app. -->
+    <a id="igBtn" class="off" target="_blank" rel="noopener" aria-label="Instagram: videos of this route, and a caption for yours"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/></g><circle cx="17.2" cy="6.8" r="1.2" fill="currentColor"/></svg></a>
   </div>
   <div id="filters" hidden>
     <!-- The list is always the benchmarks now. Each climber's own list is hidden, not
@@ -941,7 +943,6 @@
     </div>
     <div class="more3">
       <button id="betaBtn" class="mini" disabled>+ Beta</button>
-      <a id="igBtn" target="_blank" rel="noopener" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/></g><circle cx="17.2" cy="6.8" r="1.2" fill="currentColor"/></svg> Instagram</a>
       <button id="logBtn" class="mini" aria-label="Logbook"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 6.8C9.6 5.2 6.4 4.8 3 5.6v13c3.4-.8 6.6-.4 9 1.2 2.4-1.6 5.6-2 9-1.2v-13c-3.4-.8-6.6-.4-9 1.2zM12 6.8v13"/></svg> Logbook</button>
     </div>
     <button id="lpUndo" class="ghost mini" hidden></button>
@@ -1160,7 +1161,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-08 10:19';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-08 10:44';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3084,6 +3085,7 @@ function paintBar(){
   paintPair();
   paintLogNow();
   paintQuick();
+  paintInsta();
 }
 
 /* Who has climbed the open problem. It used to run down the gutter left of the
@@ -4982,8 +4984,9 @@ function paintInsta(){
   const a = $('igBtn');
   if (!a) return;
   const on = INSTA_ON && !!current;
-  a.hidden = !on;
-  if (!on) return;
+  a.hidden = !INSTA_ON;
+  a.classList.toggle('off', !on);
+  if (!on) return a.removeAttribute('href');
   a.href = 'https://www.instagram.com/explore/search/keyword/?q=' + encodeURIComponent(current.name + ' moonboard');
   a.title = 'Copies a caption for your own video, and opens Instagram at videos of ' + current.name;
 }
@@ -5558,7 +5561,6 @@ $('send').onclick  = sendProblem;
 $('nowBtn').onclick = gotoWall;
 $('nextBtn').onclick = () => { if (!needName('next')) doNext(); };
 $('toBoard').onclick = () => showPage('board');
-$('toLog').onclick = () => showPage('log');
 $('pgDots').querySelectorAll('button').forEach(b => { b.onclick = () => showPage(b.dataset.go); });
 // On the click, not on the touch going down: a layer that went on the touch would let
 // the click that follows land on whatever is under it - a row of the list, usually.
