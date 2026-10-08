@@ -531,11 +531,44 @@
   #gamePanel[hidden]{display:none}
   #snakePanel{gap:8px !important}
   #snakePanel #snPad{margin-top:auto}      /* pushed to the bottom of the sheet */
-  #logPanel,#snakePanel,#entryPanel,#pairPanel{position:fixed;inset:0;z-index:60;background:var(--bg);
+  #logPanel,#snakePanel,#entryPanel,#pairPanel,#igPanel{position:fixed;inset:0;z-index:60;background:var(--bg);
              display:flex;flex-direction:column;gap:12px;overflow-y:auto;
              padding:calc(env(safe-area-inset-top) + 16px) 16px
                      calc(env(safe-area-inset-bottom) + 16px)}
-  #logPanel[hidden],#snakePanel[hidden],#entryPanel[hidden],#pairPanel[hidden]{display:none}
+  #logPanel[hidden],#snakePanel[hidden],#entryPanel[hidden],#pairPanel[hidden],#igPanel[hidden]{display:none}
+  /* ---- videos of the open route: a sheet ----
+     A row a video, found on Instagram: a small picture where there is one, how the
+     caption begins, who posted it and when. A tap opens that video in Instagram. */
+  #igFor{display:flex;align-items:center;gap:8px;min-width:0;font-size:16px;font-weight:700}
+  #igFor b{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #igSay{font-size:13px;color:var(--dimmer);padding:6px 2px;line-height:1.5}
+  #igSay[hidden]{display:none}
+  #igList{display:flex;flex-direction:column;margin-top:-6px}
+  .igRow{display:flex;align-items:center;gap:11px;padding:9px 2px;border-bottom:1px solid var(--line);
+         color:var(--ink);text-decoration:none}
+  .igRow:active{background:var(--panel)}
+  .igRow .th{flex:none;width:54px;height:72px;border-radius:8px;overflow:hidden;background:var(--panel2);
+             border:1px solid var(--edge);display:grid;place-items:center;color:var(--dimmer)}
+  .igRow .th img{width:100%;height:100%;object-fit:cover;display:block}
+  .igRow .th svg{width:22px;height:22px;display:block}
+  .igRow .tx{flex:1;min-width:0}
+  .igRow .tx b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+               font-size:14px;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+  .igRow .tx span{display:block;font-size:11px;color:var(--dimmer);margin-top:4px;
+                  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .igRow .igGo{flex:none;color:var(--dimmer);font-size:18px}
+  #igMore{display:block;text-align:center;padding:11px 10px;border:1px solid var(--edge);border-radius:10px;
+          color:var(--ink);text-decoration:none;font-size:13px;font-weight:600}
+  #igMore:active{background:var(--press)}
+  /* Google's own part of the sheet. The results are drawn above, by this page, so the
+     tabs, the count and the page numbers that go with Google's list are put away. What
+     Google adds beside them (its name, and an advertisement if it has one) is left. */
+  #igG .gsc-control-cse{border:0;padding:0}
+  #igG .gsc-control-cse,#igG .gsc-control-cse div,#igG .gsc-control-cse table,#igG .gsc-control-cse td{background-color:transparent !important;border-color:transparent !important}
+  #igG .gsc-tabsArea,#igG .gsc-refinementsArea,#igG .gsc-above-wrapper-area,#igG .gsc-cursor-box,
+  #igG .gsc-search-box,#igG .gcsc-find-more-on-google-root,#igG .gcsc-more-maybe-branding-root{display:none !important}
+  /* the search for pictures: only what it finds is wanted, to put a picture on a row */
+  #igG2{position:absolute;left:-9999px;top:0;width:320px;height:1px;overflow:hidden}
   #pairFor{font-size:15px;font-weight:600}
   #pairFor span{display:block;font-size:12px;color:var(--dimmer);font-weight:400;margin-top:2px}
   /* ---- the second bulb's one question ---- */
@@ -1117,6 +1150,21 @@
   <div class="hint" id="pairHint"></div>
 </div>
 
+<div id="igPanel" hidden>
+  <div id="gameHead">
+    <b>Videos</b>
+    <button id="igClose" class="ghost mini">Close</button>
+  </div>
+  <div id="igFor"><b></b><span class="gd"></span></div>
+  <div id="igSay"></div>
+  <div id="igList"></div>
+  <a id="igMore" target="_blank" rel="noopener">Search the web for more &#8250;</a>
+  <div class="hint" style="margin-top:0">A tap opens the video in Instagram. These come from a Google search of
+    Instagram, so a new post takes a while to turn up.</div>
+  <div id="igG"></div>
+  <div id="igG2"></div>
+</div>
+
 <div id="logPanel" hidden>
   <div id="gameHead">
     <b>Logbook</b>
@@ -1201,7 +1249,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-08 16:10';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-08 16:20';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -5031,14 +5079,219 @@ function paintInsta(){
   /* It opened Instagram's own search at first. On a phone with the Instagram app that
      link opens the app at its front page and the search is lost (a friend of Will's
      tried it), and the app takes no link that carries a search. So: a web search kept
-     to instagram.com. Each result is one video, and a tap on it opens that video. */
-  a.href = 'https://www.google.com/search?q=' + encodeURIComponent('site:instagram.com "' + current.name + '" moonboard');
+     to instagram.com. With a search engine of our own (IG_CX) the button opens the
+     sheet of videos instead, and this link is what it falls back on. */
+  a.href = igWebUrl(current);
   a.title = 'Copies a caption for your own video, and finds Instagram videos of ' + current.name;
 }
-$('igBtn').addEventListener('click', () => {            // the link itself does the opening
+$('igBtn').addEventListener('click', e => {
   if (!current) return;
   try{ navigator.clipboard.writeText(instaCaption(current)).then(() => log('caption copied for Instagram'), () => {}); }catch(e){}
+  if (!IG_CX) return;                                  // no engine of our own: the link itself opens the web search
+  e.preventDefault();
+  openVideos();
 });
+
+/* ---------- videos of a route, in a sheet ----------
+   Will, 2026-10-08: the web search "works, however it's not all that nice", and Moon's
+   app shows its videos inside the app, a small picture each, and a tap opens Instagram
+   at that video. Instagram gives nobody else that list, and its app takes no link with
+   a search in it. What can be had is Google's: a Programmable Search engine that looks
+   at instagram.com only, asked from this page by Google's own script (free, no key and
+   no server). The script is fetched the first time the sheet is opened and not before.
+
+   Two searches are run for a route: the ordinary one, whose results name the route but
+   seldom come with a picture, and the one for pictures, which always has a picture but
+   is loose about what it finds. Rows come from the first, and from the second only
+   where the route is named; a picture from either goes on the row for the same post.
+   The pictures Instagram's own pages name cannot be used: those links stop working.
+
+   IG_CX is that engine's id (programmablesearchengine.google.com, sites to search:
+   instagram.com, image search on). While it is empty the button opens the web search. */
+const IG_CX = '';
+const IG_KEEP = 30 * 60000;          // a sheet opened again within the half hour does not ask again
+let igReady = null;                  // Google's script, once asked for: a promise of its search element
+let igWait = null;                   // the search under way
+let igFor = 0;                       // the route the sheet is showing
+const igKept = {};                   // route id -> { at, rows }
+const igAsked = {};                  // route id -> true while its search is under way
+
+function igWebUrl(r){
+  return 'https://www.google.com/search?q=' + encodeURIComponent('site:instagram.com "' + r.name + '" moonboard');
+}
+function igLoad(){
+  if (igReady) return igReady;
+  igReady = new Promise((res, rej) => {
+    // An answer is for the search under way only if it is to the same question: one
+    // that comes late, after another route has been asked about, is dropped.
+    const got = kind => (name, q, promos, results) => {
+      const w = igWait;
+      if (w && igFlat(q) === igFlat(w.q)){ w[kind] = results || []; w.check(); }
+      return true;                                     // drawn by this page, not by Google
+    };
+    let begun = false;
+    window.__gcse = {
+      parsetags: 'explicit',
+      initializationCallback: () => {
+        if (begun) return;
+        begun = true;
+        try{
+          const el = google.search.cse.element;
+          // no history: Google's would write the search into the address, where the wall's code is kept
+          const quiet = { enableHistory: false, autoSearchOnLoad: false };
+          el.render({ div: 'igG', tag: 'searchresults-only', gname: 'igWeb', attributes: quiet });
+          el.render({ div: 'igG2', tag: 'searchresults-only', gname: 'igImg',
+                      attributes: Object.assign({ enableImageSearch: true, defaultToImageSearch: true, disableWebSearch: true }, quiet) });
+          res(el);
+        }catch(e){ igReady = null; rej(e); }
+      },
+      searchCallbacks: { web: { ready: got('web') }, image: { ready: got('image') } }
+    };
+    const sc = document.createElement('script');
+    sc.async = true;
+    sc.src = 'https://cse.google.com/cse.js?cx=' + encodeURIComponent(IG_CX) + '&hl=en';
+    // Not fetched at all (offline, or blocked): the next opening tries afresh. Merely slow
+    // is left to arrive; the search that was waiting on it gives up by its own clock.
+    sc.onerror = () => { igReady = null; sc.remove(); rej(new Error('the search could not be fetched')); };
+    document.head.appendChild(sc);
+  });
+  return igReady;
+}
+/* Both searches at once, one route at a time: a new one takes the place of one still
+   under way. It is over when both have answered; when only one has, the other is given
+   a little longer and then done without. The clock runs from the tap, so the first
+   time it covers fetching Google's script as well. */
+function igSearch(q){
+  if (igWait) igWait.drop();
+  return new Promise((res, rej) => {
+    let late = 0, over = false;
+    const w = igWait = { q, web: null, image: null };
+    const end = err => {
+      if (over) return;
+      over = true;
+      clearTimeout(late); clearTimeout(last);
+      if (igWait === w) igWait = null;
+      if (err) return rej(err);
+      if (w.web || w.image) res({ web: w.web || [], image: w.image || [] }); else rej(new Error('no answer'));
+    };
+    const last = setTimeout(() => end(), 14000);
+    w.drop = () => end(new Error('another search took its place'));
+    w.check = () => {
+      if (w.web && w.image) return end();
+      clearTimeout(late);
+      late = setTimeout(() => end(), 2500);
+    };
+    igLoad().then(el => {
+      if (over) return;
+      el.getElement('igWeb').execute(q);
+      el.getElement('igImg').execute(q);
+    }, end);
+  });
+}
+// which post an address is: Google hands its own address round the real one
+function igPost(u){
+  u = String(u || '');
+  if (/^https?:\/\/(www\.)?google\.[a-z.]+\/url\?/.test(u)){
+    const m = /[?&]q=([^&]+)/.exec(u);
+    if (m){ try{ u = decodeURIComponent(m[1]); }catch(e){ return null; } }
+  }
+  const k = /^https?:\/\/(?:www\.)?instagram\.com\/(?:[^\/?#]+\/)?(p|reels?|tv)\/([A-Za-z0-9_-]+)/.exec(u);
+  if (!k) return null;
+  const kind = k[1] === 'p' ? 'p' : k[1] === 'tv' ? 'tv' : 'reel';
+  return { kind, code: k[2], url: 'https://www.instagram.com/' + kind + '/' + k[2] + '/' };
+}
+const igFlat = t => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+/* Who, when and what, out of the line Instagram writes under its pages:
+   '18 likes, 0 comments - someone on July 1, 2024: "the caption".' */
+function igRead(text, title){
+  let t = String(text || '').replace(/\s+/g, ' ').trim();
+  const cut = t.indexOf(' ... ');
+  if (cut >= 0 && cut < 24) t = t.slice(cut + 5);      // the date Google puts in front of what it quotes
+  const m = /^(?:[\d.,KkMm]+ likes?, [\d.,KkMm]+ comments? - )?([A-Za-z0-9._]+) on ([A-Z][a-z]+ \d{1,2}, \d{4})\s*:\s*(.*)$/.exec(t);
+  const clean = x => String(x || '').replace(/^["\u201c\u201d\s]+/, '').replace(/["\u201c\u201d\s.]+$/, '').replace(/\s*-\s*Instagram$/, '').replace(/\s*\.\.\.$/, '').trim();
+  if (m && clean(m[3])) return { who: '@' + m[1], when: m[2], say: clean(m[3]) };
+  return { who: m ? '@' + m[1] : '', when: m ? m[2] : '', say: clean(title) || clean(t) };
+}
+function igRows(route, web, image){
+  const want = igFlat(route.name), rows = [], seen = {}, pics = {};
+  const pic = r => (r && r.thumbnailImage && r.thumbnailImage.url) || '';
+  image.forEach(r => { const at = igPost(r.contextUrl || r.originalContextUrl); if (at && pic(r) && !pics[at.code]) pics[at.code] = pic(r); });
+  const add = (at, title, text, thumb, strict) => {
+    if (!at || seen[at.code]) return;
+    const inTitle = igFlat(title).indexOf(want), inText = igFlat(text).indexOf(want);
+    if (strict && inTitle < 0 && inText < 0) return;   // the picture search is loose: only what names the route
+    seen[at.code] = 1;
+    const read = igRead(text, title);
+    const th = thumb || pics[at.code] || '';
+    const lead = igFlat(read.say).indexOf(want) === 0 || inTitle === 0;
+    rows.push({ url: at.url, kind: at.kind, thumb: th, who: read.who, when: read.when, say: read.say,
+                score: (lead ? 4 : inTitle >= 0 ? 3 : inText >= 0 ? 2 : 1) + (at.kind === 'p' ? 0 : .5) + (th ? .25 : 0), n: rows.length });
+  };
+  web.forEach(r => {
+    const mt = (r.richSnippet && r.richSnippet.metatags) || {};
+    add(igPost(r.url) || igPost(mt.ogUrl), r.titleNoFormatting, mt.ogDescription || r.contentNoFormatting, pic(r), false);
+  });
+  image.forEach(r => add(igPost(r.contextUrl || r.originalContextUrl), r.titleNoFormatting, r.contentNoFormatting, pic(r), true));
+  rows.sort((a, b) => b.score - a.score || a.n - b.n);
+  // Posts that only mention the route somewhere down the page are left out once there are enough that are about it.
+  const about = rows.filter(r => r.score >= 2);
+  return (about.length >= 5 ? about : rows).slice(0, 12);
+}
+const IG_SAY = { wait: 'Looking on Instagram\u2026', none: 'No videos of this one have turned up yet.',
+                 fail: 'The search could not be reached. The web search below still works.' };
+function igPaint(state, rows){
+  const list = $('igList'), say = $('igSay');
+  list.innerHTML = '';
+  say.hidden = state === 'rows';
+  say.textContent = IG_SAY[state] || '';
+  (state === 'rows' ? rows : []).forEach(r => {
+    const a = document.createElement('a');
+    a.className = 'igRow'; a.href = r.url; a.target = '_blank'; a.rel = 'noopener';
+    const th = document.createElement('span'), tx = document.createElement('span'), go = document.createElement('span');
+    th.className = 'th'; tx.className = 'tx'; go.className = 'igGo'; go.textContent = '\u203a';
+    const mark = () => { th.innerHTML = $('igBtn').innerHTML; };          // no picture: Instagram's mark stands in
+    if (r.thumb){
+      const img = new Image();
+      img.alt = ''; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer';
+      img.onerror = mark;
+      img.src = r.thumb;
+      th.appendChild(img);
+    } else mark();
+    const b = document.createElement('b'), sub = document.createElement('span');
+    b.textContent = r.say || 'A post on Instagram';
+    sub.textContent = [r.who, r.when, r.kind === 'p' ? 'Post' : 'Reel'].filter(Boolean).join(' \u00b7 ');
+    tx.append(b, sub);
+    a.append(th, tx, go);
+    list.appendChild(a);
+  });
+}
+function openVideos(){
+  const r = current;
+  if (!r) return;
+  igFor = r.id;
+  $('igFor').firstChild.textContent = r.name;
+  paintPill($('igFor').lastChild, r.grade);
+  $('igMore').href = igWebUrl(r);
+  showPanel('ig');
+  const kept = igKept[r.id];
+  if (kept && Date.now() - kept.at < IG_KEEP) return igPaint(kept.rows.length ? 'rows' : 'none', kept.rows);
+  igPaint('wait');
+  if (igAsked[r.id]) return;                           // already looking: the answer is painted when it comes
+  igAsked[r.id] = true;
+  const mine = () => igFor === r.id && !$('igPanel').hidden;
+  igSearch('"' + r.name + '" moonboard').then(got => {
+    delete igAsked[r.id];
+    const rows = igRows(r, got.web, got.image);
+    igKept[r.id] = { at: Date.now(), rows };
+    log('instagram: ' + rows.length + ' videos of ' + r.name);
+    if (mine()) igPaint(rows.length ? 'rows' : 'none', rows);
+  }, e => {
+    delete igAsked[r.id];
+    log('instagram: ' + (e && e.message || e));
+    if (mine()) igPaint('fail');
+  });
+}
+$('igClose').onclick = () => showPanel(null);
 
 /* ---------- a tap on the board ----------
    One tap only undoes things: it puts a shrunken board back to its size, and it stops
@@ -6330,12 +6583,13 @@ function showFilters(on){
 }
 $('filtBtn').onclick = () => showFilters($('filters').hidden);
 
-const PANELS = { game: 'gamePanel', log: 'logPanel',
+const PANELS = { game: 'gamePanel', log: 'logPanel', ig: 'igPanel',
                  snake: 'snakePanel', entry: 'entryPanel', pair: 'pairPanel' };
 
 function showPanel(which, fromBack){  // a key of PANELS, or null for none
   $('gamePanel').hidden = which !== 'game';
   $('logPanel').hidden  = which !== 'log';
+  $('igPanel').hidden   = which !== 'ig';
   $('pairPanel').hidden = which !== 'pair';
   $('snakePanel').hidden = which !== 'snake';
   $('entryPanel').hidden = which !== 'entry';
