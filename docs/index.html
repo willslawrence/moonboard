@@ -186,6 +186,34 @@
   #board{transition:width .18s ease-out}
   body.compact #board{width:min(calc(100vw - 108px),16.56vh)}
   @media (prefers-reduced-motion:reduce){ #board{transition:none} }
+  /* ---- focus: the picture and nothing else ----
+     Two taps on the picture and it fills the screen: no buttons, only the route's name
+     over it. Two more taps put the page back, and so does Back. A swipe on the picture
+     still steps through the routes. (A single tap that filled the screen was retired
+     when the log page came; Will asked for this, as a double tap, on 2026-10-08.) */
+  #focusCap,#focusHint{display:none}
+  #board{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  body.focus #boardCol{position:fixed;inset:0;z-index:55;background:var(--bg);display:flex;flex-direction:column;
+                       align-items:center;justify-content:center;
+                       padding:calc(env(safe-area-inset-top) + 8px) 6px calc(env(safe-area-inset-bottom) + 8px)}
+  /* as wide as the screen, or as tall as it once the name's line (and, with two routes
+     up, the second one's) has had its room: 52px and 92px with the padding */
+  body.focus #board{flex:none;transition:none;width:min(100%,calc((100vh - 52px) * .65))}
+  body.focus #board{width:min(100%,calc((100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 52px) * .65))}
+  body.focus.pair #board{width:min(100%,calc((100vh - 92px) * .65))}
+  body.focus.pair #board{width:min(100%,calc((100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 92px) * .65))}
+  body.focus .mark{border-width:4px}
+  body.focus .mark.g,body.focus .mark.also{border-width:3px}
+  body.focus #focusCap{display:flex;flex:none;align-items:center;justify-content:center;gap:8px;min-width:0;max-width:100%;
+                       height:28px;margin-bottom:8px;font-size:15px}
+  #focusCap b{min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #focusCap .gd[hidden]{display:none}
+  body.focus #pairCap,body.focus #betaCap{font-size:13px}
+  /* said once, on the way in, for whoever got here by accident */
+  body.focus #focusHint{display:block;position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 18px);
+                        transform:translateX(-50%);padding:7px 14px;border-radius:999px;background:var(--ink);color:var(--onink);
+                        font-size:12px;font-weight:600;white-space:nowrap;pointer-events:none;opacity:0;animation:fhint 2.6s ease-out}
+  @keyframes fhint{0%{opacity:0}12%{opacity:.92}70%{opacity:.92}100%{opacity:0}}
   /* iOS starts its own image drag on a sideways swipe, which eats the gesture */
   #board img{-webkit-user-drag:none;user-select:none;pointer-events:none}
   #board img{display:block;width:100%;height:auto}   /* beat the height attribute */
@@ -851,6 +879,7 @@
       </div>
     </div></div>
     <div id="boardCol">
+      <div id="focusCap"><b></b><span class="gd" hidden></span></div>
       <div id="board">
         <img src="board-2016.png" alt="MoonBoard 2016 wall" width="450" height="692">
         <div id="marks"></div>
@@ -859,6 +888,7 @@
       </div>
       <div id="pairCap" hidden></div>
       <div id="betaCap"></div>
+      <div id="focusHint">Double tap to go back</div>
     </div>
   </div>
 </section>
@@ -1171,7 +1201,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-08 11:57';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-08 16:10';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3096,6 +3126,7 @@ function paintBar(){
   paintLogNow();
   paintQuick();
   paintInsta();
+  paintFocusCap();
 }
 
 /* Who has climbed the open problem. It used to run down the gutter left of the
@@ -3549,6 +3580,7 @@ function loadRoute(r, look){
   paintBar();
   betaReset();
   paintInsta();
+  paintFocusCap();
   if (page === 'log') routeHist();       // opened from the log page: its history and its climbers follow
   quickShow(false);                      // the two round buttons were for the route before
   closeSend();
@@ -5009,12 +5041,47 @@ $('igBtn').addEventListener('click', () => {            // the link itself does 
 });
 
 /* ---------- a tap on the board ----------
-   It used to fill the screen. Logging and history have a page of their own now, to
-   the right, so a tap only undoes things: it puts a shrunken board back to its size,
-   and it stops the beta climber. */
-function boardTap(){
+   One tap only undoes things: it puts a shrunken board back to its size, and it stops
+   the beta climber. Two taps, one soon after the other and near it, are for focus (below). */
+let tapAt = 0, tapX = 0, tapY = 0;
+function boardTap(x, y){
+  const now = Date.now();
+  const twice = !betaDraft && now - tapAt < 350 && Math.abs(x - tapX) < 44 && Math.abs(y - tapY) < 44;
+  tapAt = twice ? 0 : now; tapX = x; tapY = y;
+  if (twice){
+    // The click that ends this tap comes after the page has changed under the finger,
+    // and on the way out there are buttons and rows there. That one click is dropped.
+    ghostUntil = now + 350;
+    return focusBoard(!focusOn);
+  }
+  if (focusOn) return;                                 // nothing to undo there
   if (document.body.classList.contains('compact')) return setCompact(false);
   if (betaPlaying){ betaStop(); $('betaSvg').innerHTML = ''; paintBeta(); }
+}
+
+/* ---------- focus ----------
+   The picture over the whole screen with the route's name above it, and nothing to
+   press. In by two taps on the picture and out the same way, or by Back. It is the
+   board's page still, with everything else covered: what the wall does goes on
+   showing, and a swipe on the picture still goes to the next route. */
+let focusOn = false;
+function paintFocusCap(){
+  const cap = $('focusCap');
+  if (!cap) return;
+  cap.firstChild.textContent = current ? current.name : '';
+  cap.lastChild.hidden = !current;
+  if (current) paintPill(cap.lastChild, current.grade);
+}
+function focusBoard(on, fromBack){
+  on = !!on && page === 'board' && !betaDraft && !panelOpen;
+  if (on === focusOn) return;
+  focusOn = on;
+  if (on) setCompact(false);                           // it comes back at full size
+  document.body.classList.toggle('focus', on);
+  if (on) return layerOpen('focus');
+  if (!fromBack) layerShut('focus');
+  const row = $('results').querySelector('.rt.sel');   // the routes may have been stepped through meanwhile
+  if (row) row.scrollIntoView({ block: 'nearest' });
 }
 
 (function boardSwipe(){
@@ -5028,7 +5095,7 @@ function boardTap(){
     x0 = null;
     // A touch that went nowhere is a tap (boardTap). Anything between a tap and a
     // flick was a wobble, and does nothing.
-    if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return boardTap();
+    if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return boardTap(x, y);
     if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
     stepProblem(dx < 0 ? 1 : -1);               // flick left for the next one
   };
@@ -5603,6 +5670,7 @@ $('pairGo').onclick = lightSecond;
 $('pairClose').onclick = () => showPanel(null);
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
+  if (focusOn) return focusBoard(false);
   if (sendOpen) closeSend(); else if (quickOpen) quickShow(false); else showPage('board');
 });
 $('q').oninput = () => { searchQ = $('q').value; showName = false; paintQBox(); renderResults(); };
@@ -5639,6 +5707,7 @@ const PAGES = ['list', 'board', 'log', 'set'];
 function showPage(which, fromBack, ghost){
   if (which === page || !PAGES.includes(which)) return;
   if (page === 'board' && (betaDraft || panelOpen)) return;
+  if (focusOn) focusBoard(false);
   const was = page;
   if (was === 'board' && betaPlaying){ betaStop(); $('betaSvg').innerHTML = ''; paintBeta(); }   // nobody is watching him now
   quickShow(false);
@@ -5687,7 +5756,7 @@ document.body.addEventListener('animationend', e => {
   const off = '#board, #kb, select, #quick, #gSlide, #sendFan, #setPanel input, #log, #logPanel, #pairPanel, #snakePanel, #entryPanel, #gamePanel';
   document.addEventListener('pointerdown', e => {
     x0 = null;
-    if (betaDraft || panelOpen) return;
+    if (betaDraft || panelOpen || focusOn) return;
     if (e.target.closest && e.target.closest(off)) return;
     x0 = e.clientX; y0 = e.clientY;
   }, { passive: true });
@@ -6071,6 +6140,7 @@ window.addEventListener('popstate', () => {
   const name = layers.pop();
   if (name === 'panel') showPanel(null, true);
   else if (name === 'fan'){ closeSend(true); quickShow(false, true); }
+  else if (name === 'focus') focusBoard(false, true);
   else if (name === 'list' || name === 'log' || name === 'set') showPage('board', true);
 });
 
