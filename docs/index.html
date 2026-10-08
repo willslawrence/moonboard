@@ -1290,7 +1290,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-08 18:34';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-08 20:42';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3100,7 +3100,9 @@ function setBoard(key, fromServer){
   $('board').querySelector('img').alt = boardNow().label + ' wall';
   picks = {}; holdFilter = [];           // holds picked on the other set mean nothing on this one
   paintPicks();
-  if (current && current.board !== key) clearRoute();
+  // A change that came from the crew's setting is not this phone's to act on at the
+  // wall: whoever switched it lights what goes up next.
+  if (current && current.board !== key) clearRoute(fromServer);
   else { paint(); renderResults(); }
   log('board: ' + boardNow().label + (fromServer ? ' (set for the crew)' : ''));
 }
@@ -3695,7 +3697,7 @@ function loadRoute(r, look){
   if (page === 'list') showPage('board');     // picked from the page of routes: back to the board, with it open
 }
 
-function clearRoute(){
+function clearRoute(leaveWall){
   for (const k in state) delete state[k];
   current = null; gradeCells = {};
   second = null;
@@ -3705,7 +3707,7 @@ function clearRoute(){
   paint();
   renderResults();
   paintBar();
-  if (canSend() && !standby()) write('l##');
+  if (!leaveWall && canSend() && !standby()) write('l##');
 }
 
 /* ---------- BLE ---------- */
@@ -3734,14 +3736,18 @@ async function connect(){
       filters: [{ services: [NUS] }, { namePrefix: 'Moon' }],
       optionalServices: [NUS]
     });
-    device.addEventListener('gattserverdisconnected', () => {
-      rx = null;
-      lastWrite = null; told = ''; setWallNow(null);  // not ours to say any more
-      bridgeSeen = null;                              // unknown again until we try
-      if (relayWant) relayDisconnect();               // no board, nothing to bridge
-      setLive(false);
-      log('disconnected.');
-    });
+    // The browser hands back the same device each time, so this is put on it once.
+    if (!device.mbBound){
+      device.mbBound = true;
+      device.addEventListener('gattserverdisconnected', () => {
+        rx = null;
+        lastWrite = null; told = ''; setWallNow(null);  // not ours to say any more
+        bridgeSeen = null;                              // unknown again until we try
+        if (relayWant) relayDisconnect();               // no board, nothing to bridge
+        setLive(false);
+        log('disconnected.');
+      });
+    }
     log('connecting to ' + (device.name || '(unnamed)') + ' …');
     const server = await device.gatt.connect();
     const svc = await server.getPrimaryService(NUS);
@@ -3895,7 +3901,18 @@ async function write(str, quiet, meta, asked){
     if (relayRoom()) return relaySend(str, quiet, meta);
     return log('not connected — tap Connect, or set a relay room code in Settings.');
   }
-  if (BLOCKED.some(b => rx.uuid.toLowerCase().includes(b))) return log('refusing — DFU characteristic.');
+  // One write at a time: a payload goes out in pieces, and two at once would mix them.
+  // A game's frame that a newer write has overtaken while it waited is not sent at all.
+  const mine = ++writeSeq;
+  const run = writeTail.then(() => (quiet && mine !== writeSeq) ? false : bleWrite(str, quiet, meta, asked));
+  writeTail = run.catch(() => {});
+  return run;
+}
+let writeSeq = 0, writeTail = Promise.resolve();
+/* true once the box has the whole payload; false, with a line in the log, if not. */
+async function bleWrite(str, quiet, meta, asked){
+  if (!rx){ log('write failed: the board is no longer connected.'); return false; }
+  if (BLOCKED.some(b => rx.uuid.toLowerCase().includes(b))){ log('refusing — DFU characteristic.'); return false; }
   const bytes = new TextEncoder().encode(str);
   const size = CHUNK_BYTES;
   if (!quiet) log('→ ' + str + '  (' + bytes.length + 'B, ' + Math.ceil(bytes.length / size) + ' chunk(s))');
@@ -3912,7 +3929,8 @@ async function write(str, quiet, meta, asked){
     }
     if (!quiet) log('written.');
     wrote(str, meta, asked);
-  }catch(e){ log('write failed: ' + e.message); }
+    return true;
+  }catch(e){ log('write failed: ' + e.message); return false; }
 }
 
 /* One write puts the whole wall up. There is no partial update in the protocol,
@@ -3973,16 +3991,7 @@ function tellRelay(again){
    list. The grade meter on row 1 is ours rather than the problem's, so it is
    tried with and without. */
 let sigFor = null, sigMap = null;
-function routeSig(r){
-  const cells = {};
-  [[r.s, 'S'], [r.m, 'P'], [r.e, 'E']].forEach(([str, tag]) => (str || '').split(',').forEach(h => {
-    const m = /^([A-K])(\d{1,2})$/.exec(h.trim().toUpperCase());
-    if (!m) return;
-    const col = LETTERS.indexOf(m[1]) + 1, row = +m[2];
-    if (col >= 1 && row >= 1 && row <= ROWS) cells[holdNum(col, row)] = tag;
-  }));
-  return Object.keys(cells).map(Number).sort((a, b) => a - b).map(n => cells[n] + n).join(',');
-}
+const routeSig = r => payloadOf(cellsOf(r)).slice(2, -1);     // the payload it is lit with, less the l# and #
 function routeFromPayload(payload){
   if (sigFor !== boardKey){
     sigMap = new Map();
@@ -4305,20 +4314,23 @@ function openRelay(room){
     }
     log('relay → ' + m.payload);
     try{
-      await write(m.payload, false, m.now || null, true);
-      ws.send(JSON.stringify({ type: 'result', id: m.id, ok: true }));
+      // write() logs a failure and does not throw, so what it hands back is what counts
+      const ok = await write(m.payload, false, m.now || null, true);
+      ws.send(JSON.stringify(ok === true ? { type: 'result', id: m.id, ok: true }
+        : { type: 'result', id: m.id, error: 'the write to the board failed — check the phone at the wall' }));
     }catch(err){
       ws.send(JSON.stringify({ type: 'result', id: m.id, error: String(err && err.message || err) }));
     }
   };
 
   ws.onclose = () => {
+    if (ws !== relayWS) return;          // one that was replaced or switched off: not this socket's to mend
     $('relayBtn').textContent = 'Connect relay';
     wallState();
     if (!relayWant) return relayState('relay off');
     const wait = Math.min(30000, 1000 * Math.pow(2, relayTries++));
     relayState('relay dropped — retrying in ' + Math.round(wait / 1000) + 's');
-    setTimeout(() => { if (relayWant) openRelay(room); }, wait);
+    setTimeout(() => { if (relayWant && ws === relayWS) openRelay(room); }, wait);
   };
 
   ws.onerror = () => relayState('relay error');
@@ -4655,15 +4667,17 @@ async function openLog(){
   loadLog();
 }
 
+let logLoad = 0;                          // guards against a slow answer landing on a later one's rows
 async function loadLog(){
-  const who = $('logWho').value;
+  const who = $('logWho').value, mine = ++logLoad;
   $('logRows').innerHTML = '';
   $('logSum').textContent = 'loading\u2026';
   let entries = [];
   try{
     const r = await fetch(LISTS_API + '/lists/log?limit=2000&person=' + encodeURIComponent(who));
     entries = (await r.json()).entries || [];
-  }catch(e){ $('logSum').textContent = 'logbook unreachable'; return; }
+  }catch(e){ if (mine === logLoad) $('logSum').textContent = 'logbook unreachable'; return; }
+  if (mine !== logLoad) return;
   tagRepeats(entries);
 
   const sends = entries.filter(e => e.result !== 'try');
@@ -5940,10 +5954,12 @@ function c4Drop(col){
   if (c4.grid[col].length >= C4_ROWS) return;
   c4.grid[col].push(c4.turn);
   c4.win = c4Winner();
+  // every column full and no line: nobody's game, and nobody's clock runs on
+  if (!c4.win && c4.grid.every(g => g.length >= C4_ROWS)) c4.win = { who: 0, line: [], draw: true };
   if (!c4.win) c4.turn = c4.turn === 1 ? 2 : 1;
   c4Draw();
   c4Send();
-  if (c4.win){ c4StopClock(); c4Clocks(); c4Award(c4.win.who); }
+  if (c4.win){ c4StopClock(); c4Clocks(); if (!c4.win.draw) c4Award(c4.win.who); }
   else c4RunClock();
 }
 
@@ -5983,6 +5999,9 @@ function c4Draw(){
   if (!c4){
     turn.className = 'idle'; dot.style.background = 'var(--box2)';
     turn.querySelector('span').textContent = 'not started';
+  } else if (c4.win && c4.win.draw){
+    turn.className = 'over'; dot.style.background = 'var(--box2)';
+    turn.querySelector('span').textContent = 'A draw';
   } else if (c4.win){
     turn.className = 'over';
     dot.style.background = c4.win.who === 1 ? '#22c55e' : '#2563eb';
@@ -6783,7 +6802,7 @@ function showPanel(which, fromBack){  // a key of PANELS, or null for none
   $('pairPanel').hidden = which !== 'pair';
   $('snakePanel').hidden = which !== 'snake';
   $('entryPanel').hidden = which !== 'entry';
-  if (which !== 'snake' && which !== 'entry' && snTimer) snStop();     // don't leave it running unseen
+  if (which !== 'snake' && which !== 'entry' && sn) snStop();          // don't leave it running unseen, or a finished one on the wall
   if (PANELS[which]) $(PANELS[which]).scrollTop = 0;   // open at the top, always
   // One step in the history for "a sheet is open", however many are swapped through.
   const open = !!PANELS[which];
