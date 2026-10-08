@@ -1116,7 +1116,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-08 09:19';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-08 09:44';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -4883,23 +4883,33 @@ function stepProblem(delta){
   if (row) row.scrollIntoView({ block: 'nearest' });
 }
 
-/* The MoonBoard app has a button on each problem that opens Instagram at the tag
-   climbers put on their videos of it. This is the same button. The tag is the
-   problem's name with everything but its letters and numbers taken out - a guess at
-   the app's own rule until Will has looked at what the app opens. */
-const INSTA_ON = false;            // off until the tag rule is known to match the app's
-function instaTag(r){
-  return r.name.normalize('NFKD').toLowerCase().replace(/[^a-z0-9]/g, '');
+/* Instagram, the way the MoonBoard app does it (Will sent a picture of its "Beta
+   videos" screen, 2026-10-08). There is no tag per problem. The app copies a caption
+   with the problem's details and Moon's tags, the climber pastes it into a post and
+   tags @moonclimbing, and Moon's own servers pick the post up and show it in their
+   app. That gallery is Moon's and cannot be read from here. So this button does the
+   two halves that can be done: it copies the same caption, ready to paste into a
+   post, and it opens Instagram searching for the problem's name, which is where the
+   videos posted with that caption turn up. */
+const INSTA_ON = true;
+function instaCaption(r){
+  const [year, angle] = boardKey.split('-');
+  return r.name + ', ' + GRADES[r.grade] + '/V' + VGRADE[r.grade] + ' benchmark, ' + angle + '\u00b0, MoonBoard ' + year +
+    ' setup, set by ' + r.setter + '. - @moonclimbing #moonboard #moonclimbing #moonboardchallenge #trainhardclimbharder';
 }
 function paintInsta(){
   const a = $('igBtn');
   if (!a) return;
-  const tag = (INSTA_ON && current) ? instaTag(current) : '';
-  a.hidden = !tag;
-  if (!tag) return;
-  a.href = 'https://www.instagram.com/explore/tags/' + encodeURIComponent(tag) + '/';
-  a.title = 'Videos tagged #' + tag + ' on Instagram';
+  const on = INSTA_ON && !!current;
+  a.hidden = !on;
+  if (!on) return;
+  a.href = 'https://www.instagram.com/explore/search/keyword/?q=' + encodeURIComponent(current.name + ' moonboard');
+  a.title = 'Copies a caption for your own video, and opens Instagram at videos of ' + current.name;
 }
+$('igBtn').addEventListener('click', () => {            // the link itself does the opening
+  if (!current) return;
+  try{ navigator.clipboard.writeText(instaCaption(current)).then(() => log('caption copied for Instagram'), () => {}); }catch(e){}
+});
 
 /* ---------- a tap on the board ----------
    It used to fill the screen. Logging and history have a page of their own now, to
