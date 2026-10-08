@@ -75,8 +75,8 @@
        height:100dvh;display:flex;flex-direction:column;padding:0 var(--pad);}
   /* No -webkit-overflow-scrolling:touch here - on iOS it makes this a containing
      block for position:fixed descendants, which trapped the game sheet inside it. */
-  #scroll{flex:1 1 auto;min-height:110px;overflow-y:auto;overscroll-behavior:contain;
-          padding-bottom:calc(env(safe-area-inset-bottom) + 20px)}
+  #scroll{flex:1 1 auto;min-height:88px;overflow-y:auto;overscroll-behavior:contain;
+          padding-bottom:6px}
 
   /* Everything above the problem list rides in one sticky block, so the board
      and the search stay put while only the list scrolls. */
@@ -174,8 +174,8 @@
      On most phones that is a quarter to a third more picture than before. */
   #boardWrap{padding:6px 0;margin:0}
   #board{position:relative;margin:0;border-radius:6px;overflow:hidden;touch-action:pan-y;
-         width:min(calc(105vw - 113px),calc(100vw - 92px),40.3vh,calc((100vh - 252px) * .65))}
-  #board{width:min(calc(105vw - 113px),calc(100vw - 92px),40.3vh,calc((100dvh - 252px) * .65))}
+         width:min(calc(105vw - 113px),calc(100vw - 92px),40.3vh,calc((100vh - 302px) * .65))}
+  #board{width:min(calc(105vw - 113px),calc(100vw - 92px),40.3vh,calc((100dvh - 302px) * .65))}
   /* ---- the board steps aside ----
      Scroll the short list under it and the picture shrinks into the top right-hand
      corner, so the list has the room; the wall's story beside it gets wider and
@@ -228,14 +228,14 @@
      routes. On that page it is the search itself, with the filters to its left. */
   #bar{background:var(--bg);padding:5px 0 7px}
   #barTxt{display:flex;align-items:center;gap:6px;min-width:0}
-  #barTxt #filtBtn{flex:none;width:34px;height:32px;padding:0;font-size:16px}
-  #barTxt #setBtn{flex:none;width:34px;height:32px;padding:0;display:grid;place-items:center;border-radius:8px}
+  #barTxt #filtBtn{flex:none;width:38px;height:38px;padding:0;font-size:16px}
+  #barTxt #setBtn{flex:none;width:38px;height:38px;padding:0;display:grid;place-items:center;border-radius:8px}
   #barTxt #setBtn svg{width:18px;height:18px;display:block}
-  #barTxt #toBoard,#barTxt #toLog{flex:none;width:auto;height:32px;padding:0 10px;font-size:13px;white-space:nowrap}
+  #barTxt #toBoard,#barTxt #toLog{flex:none;width:auto;height:38px;padding:0 10px;font-size:13px;white-space:nowrap}
   #barTxt #toLog{border-radius:9px}
   body.listPage #toLog{display:none}
   body.betaEdit #toLog{visibility:hidden}      /* no leaving mid-edit */
-  #qBox{flex:1;min-width:0;height:32px;display:flex;align-items:center;gap:5px;
+  #qBox{flex:1;min-width:0;height:38px;display:flex;align-items:center;gap:5px;
         padding:0 4px 0 9px;background:var(--panel2);border:1px solid var(--box);border-radius:9px}
   #qBox.on,#qBox:focus-within{border-color:#8b8b93}
   #qBox .mag{flex:none;width:14px;height:14px;color:var(--dimmer)}
@@ -277,14 +277,15 @@
     body.slideL #top,body.slideL #scroll,body.slideL #logPage,
     body.slideR #top,body.slideR #scroll,body.slideR #logPage{animation:none}
   }
-  /* three dots at the foot of the screen say there are three pages, and which this is */
-  #pgDots{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 5px);transform:translateX(-50%);
-          display:flex;gap:6px;padding:4px 8px;z-index:5;pointer-events:none}
-  /* a little of the page's own colour behind them, so a row of the list passing under does not swallow them */
-  #pgDots::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:8px;background:var(--bg);opacity:.82}
-  #pgDots i{width:6px;height:6px;border-radius:50%;background:var(--dimmer);opacity:.45}
-  #pgDots[data-at="list"] i:nth-child(1),#pgDots[data-at="board"] i:nth-child(2),
-  #pgDots[data-at="log"] i:nth-child(3){background:var(--ink);opacity:.95}
+  /* Three pages, named, at the foot of the screen; the one you are on is filled. (They
+     were three small dots until Will asked, on the design canvas, for it to be obvious.) */
+  #pgDots{flex:none;display:flex;gap:4px;margin:4px 40px calc(env(safe-area-inset-bottom) + 8px);padding:3px;
+          border-radius:12px;background:var(--panel);border:1px solid var(--edge)}
+  #pgDots button{flex:1 1 0;min-width:0;height:30px;padding:0;border:0;border-radius:9px;background:transparent;
+                 color:var(--dim);font-size:12px;font-weight:600}
+  #pgDots[data-at="list"] button[data-go="list"],#pgDots[data-at="board"] button[data-go="board"],
+  #pgDots[data-at="log"] button[data-go="log"]{background:var(--ink);color:var(--onink);font-weight:700}
+  body.betaEdit #pgDots{visibility:hidden}
   #kb:not([hidden]) ~ #pgDots{display:none}
   /* ---- the page to the right: logging, and what you have climbed ----
      Under the app's own header, so the name picker is at hand. Everything else on
@@ -333,7 +334,7 @@
   #lpNow .top .gd[hidden]{display:none}
   #lpNow .sub{margin-top:3px;font-size:12px;color:var(--dim);line-height:1.4}
   #lpNow .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px}
-  #lpNow .btns button{padding:14px 6px;font-size:16px;font-weight:700;border-radius:12px}
+  #lpNow .btns button{padding:7px 6px;font-size:16px;font-weight:700;border-radius:12px}
   /* under them, smaller: the beta, and the whole logbook */
   #lpNow .more3{display:flex;gap:8px;margin-top:8px}
   #lpNow .more3 button,#lpNow .more3 a{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;
@@ -391,7 +392,7 @@
   /* The row over the board: the line on the left, the bulb in the middle, the second
      bulb on the right. As thin as the search box, so it reads as one more row. */
   #actRow{display:flex;gap:6px;padding-top:6px}
-  #actRow button{flex:1 1 0;min-width:0;height:32px;padding:0 6px;font-size:13px;border-radius:9px}
+  #actRow button{flex:1 1 0;min-width:0;height:38px;padding:0 6px;font-size:13px;border-radius:9px}
   #actRow button[hidden]{display:none}
   #actRow #send{flex:1.35 1 0;font-size:14px}
   /* the second bulb: orange, the colour the picture draws a second problem in */
@@ -446,7 +447,7 @@
   #filtBtn{position:relative}
   /* same 32px as the search box above, so the panel reads as part of it */
   #filters{border-top:1px solid var(--edge);padding-top:6px;margin-top:7px}
-  #filters select{height:32px;padding:0 8px;font-size:16px;border-radius:9px}
+  #filters select{text-align:center;text-align-last:center;height:38px;padding:0 8px;font-size:16px;border-radius:9px}
   #filters .lbl{margin-bottom:2px;margin-top:0}
   /* ---- grades, by sliding ----
      A line with a dot at each end of the range. The row is as tall as a fingertip so
@@ -628,23 +629,34 @@
      would cut the red one off on the left. On a wide panel they sit in the middle,
      further apart. A finger that went down on the button can slide on to one of them,
      so the browser must not take the slide for a scroll. */
-  #quick{flex:none;position:relative;margin-top:6px;touch-action:none}
-  #quickBtn{display:block;width:100%;height:36px;padding:0 4px;font-size:12px;border-radius:18px;touch-action:none}
-  #quickBtn.open{background:var(--ink);border-color:var(--ink);color:var(--onink)}
-  #quickBtn.tried{background:#ef4444;border-color:#ef4444;color:#fff}
-  #quickBtn.sent{background:#22c55e;border-color:#22c55e;color:#06240e}
-  #quickBtn.bad{border-color:#ef4444;color:#ef4444}
-  #quickFan{position:absolute;z-index:6;left:0;bottom:calc(100% + 9px);width:max(100%,88px);
-            display:flex;justify-content:center;gap:clamp(4px,calc((100% - 84px) / 3),26px);pointer-events:none}
+  #quick{flex:none;position:relative;z-index:6;width:58px;height:38px;touch-action:none}
+  #quickBtn{display:grid;place-items:center;width:58px;height:38px;padding:0;font-size:11.5px;line-height:1.05;
+            border-radius:9px;touch-action:none;white-space:normal}
+  #quickBtn svg{width:16px;height:16px}
+  #quickFan{position:absolute;left:50%;bottom:100%;width:140px;height:100px;margin-left:-70px;pointer-events:none}
   #quickFan[hidden]{display:none}
-  #quickFan button{flex:none;width:42px;height:42px;padding:0;border:0;border-radius:50%;pointer-events:auto;
-                   font-size:11px;font-weight:700;letter-spacing:-.01em;touch-action:none;
-                   box-shadow:0 0 0 2px var(--bg),0 3px 10px rgba(0,0,0,.45);animation:quickIn .13s ease-out}
-  #quickTry{background:#ef4444;color:#fff;transform-origin:100% 130%}
-  #quickSend{background:#22c55e;color:#06240e;transform-origin:0 130%}
+  #quickFan .arm{position:absolute;left:69px;bottom:0;width:2px;height:76px;border-radius:1px;background:var(--ink);
+                 transform-origin:50% 100%}
+  #quickFan .arm.l{transform:rotate(-30deg)}
+  #quickFan .arm.r{transform:rotate(30deg)}
+  #quickFan button{position:absolute;bottom:40px;width:58px;height:58px;padding:0;border:0;border-radius:50%;
+                   pointer-events:auto;font-size:13px;font-weight:700;touch-action:none;
+                   box-shadow:0 4px 14px rgba(0,0,0,.45);animation:quickIn .2s cubic-bezier(.2,.9,.3,1.25) both}
+  #quickTry{left:2px;background:#dc2626;color:#fff;transform-origin:120% 160%}
+  #quickSend{left:80px;background:#22c55e;color:#06240e;transform-origin:-20% 160%}
   #quickFan button:active,#quickFan button.at{filter:brightness(1.18);transform:scale(1.08)}
-  @keyframes quickIn{from{transform:scale(.45);opacity:0}to{transform:none;opacity:1}}
+  @keyframes quickIn{from{transform:scale(.3);opacity:0}to{transform:none;opacity:1}}
   @media (prefers-reduced-motion:reduce){ #quickFan button{animation:none} }
+  /* the rest of the screen dims while the two are out, and a touch on it puts them away */
+  #quickScrim{position:fixed;inset:0;z-index:5;background:rgba(8,8,10,.55)}
+  #quickScrim[hidden]{display:none}
+  body.listPage #quick{display:none}
+  /* what was logged, said for a moment over the search row */
+  #quickToast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 64px);z-index:7;transform:translateX(-50%);
+              padding:8px 14px;border-radius:20px;background:var(--ink);color:var(--onink);font-size:13px;font-weight:600;
+              white-space:nowrap;max-width:88vw;overflow:hidden;text-overflow:ellipsis;box-shadow:0 4px 14px rgba(0,0,0,.45)}
+  #quickToast[hidden]{display:none}
+  #quickToast.bad{background:#ef4444;color:#fff}
   body.betaEdit #quick{display:none}           /* the tools for hands and feet have the panel then */
   /* ---- on the wall: the problem someone has lit, and who lit it ----
      Top of the panel beside the board. One tap opens it. Blue because it came
@@ -684,7 +696,19 @@
             letter-spacing:.08em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
   .stackSep[hidden]{display:none}
   .stackSep::before,.stackSep::after{content:'';flex:1;height:1px;background:var(--box2)}
-  #nextSep{color:var(--next-cap);margin-top:2px}
+  /* the panel left of the board, as Will laid it out on the design canvas: the Next up
+     button on top, then the line with whoever is next nearest the wall, a filled band
+     that names it, and what is on the wall at the foot */
+  #wallCol #nextBtn{flex:none;width:100%;height:40px;font-size:12px;border-radius:9px}
+  #wallCol #nextBtn[hidden]{display:none}
+  #wallNext{flex-direction:column-reverse !important}
+  #nextSep{display:block;margin:2px 0 0;padding:5px 0;border-radius:6px;background:var(--next-bg);color:var(--next-cap);
+           font-size:9px;font-weight:700;letter-spacing:.1em;text-align:center}
+  #nextSep::before,#nextSep::after{display:none}
+  .nrow{border-style:dashed !important;border-width:1.5px !important}
+  .nrow .put{align-self:flex-start;width:auto !important;padding:3px 8px !important;font-size:8.5px !important}
+  #nowBtn{border-width:2px !important}
+  #nowBtn .cap{align-self:center;font-size:10px !important;font-weight:700;letter-spacing:.08em !important}
   #histBar{flex:none;display:flex;align-items:center;justify-content:center;gap:5px;width:100%;height:22px;
            padding:0;border-radius:7px;border:1px solid var(--edge);background:transparent;color:var(--dim);
            font-size:9px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap}
@@ -744,7 +768,6 @@
      else that used to stand in a column beside the board has moved - logging to the
      page on the right, the games to Settings, the rest out of the way. -->
 <div id="actRow">
-  <button id="nextBtn" class="mini" disabled hidden>Next up</button>
   <button id="send" class="mini solid" disabled aria-label="Light up">&#128161; Light up</button>
   <button id="pairBtn" class="mini" disabled aria-label="Light up as the second route">2nd &#128161;</button>
 </div>
@@ -757,21 +780,12 @@
            its bar is tapped: what has been up tonight. While a beta is being entered
            its tools stand here instead. -->
       <div id="wallCol">
+        <button id="nextBtn" class="mini" disabled hidden>Next up</button>
         <button id="histBar" hidden></button>
         <div id="wallHist" hidden></div>
-        <button id="nowBtn" hidden><span class="cap">On the wall</span><b class="nm3"></b><b class="nm4"></b><span class="by"></span></button>
-        <div id="nextSep" class="stackSep" hidden>Next up</div>
         <div id="wallNext"></div>
-      </div>
-      <!-- Quick log, at the foot of the wall's panel: one tap opens two round buttons
-           over it, red for a try and green for a send, and a tap on one logs it against
-           the open route. Or press, slide on to one, and let go. -->
-      <div id="quick">
-        <div id="quickFan" hidden>
-          <button id="quickTry" data-q="try" aria-label="Log a try">Try</button>
-          <button id="quickSend" data-q="send" aria-label="Log a send">Send</button>
-        </div>
-        <button id="quickBtn" class="mini" disabled aria-expanded="false">Quick log</button>
+        <div id="nextSep" class="stackSep" hidden>Next up</div>
+        <button id="nowBtn" hidden><span class="cap">On wall</span><b class="nm3"></b><b class="nm4"></b><span class="by"></span></button>
       </div>
       <div id="betaTools">
         <div id="betaLimbs">
@@ -830,6 +844,15 @@
     </div>
     <button id="setBtn" class="ghost" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor"><circle cx="12" cy="12" r="5.6" stroke-width="2"/><circle cx="12" cy="12" r="2" stroke-width="1.8"/><path stroke-width="3" d="M12 2.6v3.2M12 18.2v3.2M2.6 12h3.2M18.2 12h3.2M5.35 5.35l2.26 2.26M16.39 16.39l2.26 2.26M5.35 18.65l2.26-2.26M16.39 7.61l2.26-2.26"/></g></svg></button>
     <button id="toBoard" class="ghost" aria-label="Back to the board">Board &#8250;</button>
+    <!-- Quick log: a press opens a red Try and a green Send on two arms over it. -->
+    <div id="quick">
+      <div id="quickFan" hidden>
+        <span class="arm l"></span><span class="arm r"></span>
+        <button id="quickTry" data-q="try" aria-label="Log a try">Try</button>
+        <button id="quickSend" data-q="send" aria-label="Log a send">Send</button>
+      </div>
+      <button id="quickBtn" class="mini solid" disabled aria-expanded="false" aria-label="Quick log"></button>
+    </div>
     <button id="toLog" aria-label="Log a go, and what you have climbed">Log &#8250;</button>
   </div>
   <div id="filters" hidden>
@@ -911,7 +934,7 @@
   <div class="sublbl" id="lpFeedLbl" hidden>The crew this session</div>
   <div id="lpFeed"></div>
 
-  <div class="lbl">This session</div>
+  <div class="lbl" id="lpSesLbl">This session</div>
   <div id="lpSession"></div>
   <div id="lpHero" hidden>
     <div class="kick"></div>
@@ -931,7 +954,9 @@
 <div id="kb" hidden></div>
 
 <!-- three pages: routes, the board, the log -->
-<div id="pgDots" data-at="board" aria-hidden="true"><i></i><i></i><i></i></div>
+<div id="quickScrim" hidden></div>
+<div id="quickToast" hidden></div>
+<nav id="pgDots" data-at="board" aria-label="Pages"><button data-go="list">&#8249; Routes</button><button data-go="board">Board</button><button data-go="log">Log &#8250;</button></nav>
 
 <div id="setPanel" hidden>
   <div id="gameHead">
@@ -1116,7 +1141,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-08 09:44';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-08 09:55';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3073,7 +3098,7 @@ function doTry(){
   const me = meNow(); if (!me || !current) return;
   const id = current.id;
   listsCall('/lists/log', { person: me, id, result: 'try' })
-    .then(ok => quickSay(ok ? '\u2713 Try ' + myTries(id) : 'Not saved', ok ? 'tried' : 'bad'));
+    .then(ok => quickSay(ok ? 'Try ' + myTries(id) + ' logged \u00b7 ' + (byId[id] ? byId[id].name : '') : 'Not saved', ok ? 'tried' : 'bad'));
 }
 
 /* Climbed no longer writes straight away - it asks how it went, with the answer
@@ -3118,8 +3143,9 @@ function openSend(){
 
 function logSend(result){
   const me = meNow(); if (!me || !current) return;
+  const name = current.name;
   listsCall('/lists/log', { person: me, id: current.id, result })
-    .then(ok => quickSay(ok ? '\u2713 Sent' : 'Not saved', ok ? 'sent' : 'bad'));
+    .then(ok => quickSay(ok ? 'Send logged \u00b7 ' + name : 'Not saved', ok ? 'sent' : 'bad'));
   showPanel(null);
 }
 function runPending(){
@@ -5478,6 +5504,8 @@ $('nowBtn').onclick = gotoWall;
 $('nextBtn').onclick = () => { if (!needName('next')) doNext(); };
 $('toBoard').onclick = () => showPage('board');
 $('toLog').onclick = () => showPage('log');
+$('pgDots').querySelectorAll('button').forEach(b => { b.onclick = () => showPage(b.dataset.go); });
+$('quickScrim').addEventListener('pointerdown', () => quickShow(false));
 $('lpBack').onclick = () => showPage('board');
 $('lpUndo').onclick = () => {
   const me = meNow();
@@ -5721,13 +5749,7 @@ async function crewFeed(me, mine){
   });
   const rows = [...by.values()].sort((a, b) => b.t - a.t).slice(0, 12);
   box.innerHTML = '';
-  lbl.hidden = false;
-  if (!rows.length){
-    const d = document.createElement('div');
-    d.className = 'none';
-    d.textContent = 'Nobody else has logged a go in the last few hours.';
-    box.appendChild(d);
-  }
+  lbl.hidden = !rows.length;          // nobody else on tonight: say nothing (Will struck the line out)
   rows.forEach(x => {
     const row = lpRow(x, true);
     const em = row.querySelector('em');
@@ -5748,6 +5770,7 @@ async function paintLogPage(){
   const hero = $('lpHero'), ses = $('lpSession'), ear = $('lpEarlier'), foot = $('lpFoot');
   const blank = why => {
     lpLast = null; paintUndo();
+    $('lpSesLbl').hidden = false;
     hero.hidden = true;                      // no session, no numbers: the line under the label says why
     hero.className = 'idle';
     hero.querySelector('.kick').textContent = 'No session yet';
@@ -5775,6 +5798,7 @@ async function paintLogPage(){
   // this session
   if (live){
     const sum = sessionSum(live);
+    $('lpSesLbl').hidden = false;
     hero.hidden = false;
     hero.className = '';
     hero.querySelector('.kick').textContent = sessionDay(live) + ' \u00b7 since ' +
@@ -5785,8 +5809,9 @@ async function paintLogPage(){
     ses.innerHTML = '';
     sessionRoutes(live).forEach(x => ses.appendChild(lpRow(x, true)));
   } else {
-    blank(earlier.length ? 'Nothing logged yet today. You were last on the wall ' + sessionDay(earlier[0]) + '.'
-                         : 'Log a try or a send and your session starts here.');
+    blank('');                             // no session yet: no heading and no line (Will struck it out)
+    ses.innerHTML = '';
+    $('lpSesLbl').hidden = true;
   }
 
   // earlier sessions: a line each, their routes when tapped
@@ -5848,9 +5873,9 @@ function paintQuick(){
   const b = $('quickBtn');
   b.disabled = !current;
   if (!current && quickOpen) return quickShow(false);
-  if (Date.now() < quickUntil) return;               // still saying what was logged
-  b.textContent = 'Quick log';
-  b.className = 'mini' + (quickOpen ? ' open' : '');
+  b.innerHTML = quickOpen
+    ? '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
+    : '<span>Quick<br>log</span>';
   b.setAttribute('aria-expanded', quickOpen ? 'true' : 'false');
 }
 function quickShow(on){
@@ -5859,17 +5884,18 @@ function quickShow(on){
   if (on === quickOpen) return;
   quickOpen = on;
   $('quickFan').hidden = !on;
-  if (on){ quickUntil = 0; quickShut = setTimeout(() => quickShow(false), 6000); }
+  $('quickScrim').hidden = !on;
+  if (on) quickShut = setTimeout(() => quickShow(false), 6000);
   paintQuick();
 }
-function quickSay(txt, cls){
-  const b = $('quickBtn');
+function quickSay(txt, cls){              // a line over the search row, for a moment
+  const t = $('quickToast');
   quickShow(false);
-  b.textContent = txt;
-  b.className = 'mini ' + cls;
-  quickUntil = Date.now() + 1800;
+  t.textContent = txt;
+  t.className = cls === 'bad' ? 'bad' : '';
+  t.hidden = false;
   clearTimeout(quickBack);
-  quickBack = setTimeout(() => { quickUntil = 0; paintQuick(); }, 1850);
+  quickBack = setTimeout(() => { t.hidden = true; }, 1800);
 }
 function quickPick(which){
   quickShow(false);
