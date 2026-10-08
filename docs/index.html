@@ -1290,7 +1290,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-08 16:57';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-08 18:34';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3053,6 +3053,7 @@ let wallKnown = false;     // the relay is new enough to say what is on the wall
 let lastWrite = null;      // {payload, meta} this phone last put up over Bluetooth
 let told = '';             // what the relay has been told, so a game's frames aren't each reported
 let page = 'board';        // which of the two pages is showing: 'board', or 'list' to its left
+let listHand = 0;          // until when a scroll of the list counts as the climber's own (see "the board steps aside")
 let panelOpen = false;     // a sheet (settings, logbook, a game, a question) is over the page
 let ghostUntil = 0;        // until then a click is the tail of the tap that changed the page, and is dropped
 const layers = [];         // what Back would close next, innermost last: 'list' or 'log', then 'panel' or 'fan'
@@ -6164,6 +6165,11 @@ function showPage(which, fromBack, ghost){
      That is why the search would not stay open there unless you held it. That one
      click is dropped. */
   ghostUntil = ghost ? Date.now() + ghost : 0;
+  /* A finger on the list of the page before is not a scroll of the short list on this
+     one. Without this, the tap that picked a route on the page of routes still counted
+     a moment later, when the board's page brought that route's row into view, and the
+     board came back shrunken. Will, 2026-10-08: "I've picked a route and I want to see it". */
+  listHand = 0;
   // Back steps from either side page to the board
   if (was !== 'board' && !fromBack) layerShut(was);
   if (which !== 'board') layerOpen(which);
@@ -6543,11 +6549,10 @@ function setCompact(on){
 }
 (function listScroll(){
   const sc = $('scroll');
-  let hand = 0;                                        // until when a scroll counts as the climber's own
-  const mine = () => { hand = Date.now() + 1200; };
+  const mine = () => { listHand = Date.now() + 1200; };
   ['touchstart', 'touchmove', 'wheel'].forEach(t => sc.addEventListener(t, mine, { passive: true }));
   sc.addEventListener('scroll', () => {
-    if (page !== 'board' || Date.now() > hand || Date.now() - compactAt < 450) return;
+    if (page !== 'board' || Date.now() > listHand || Date.now() - compactAt < 450) return;
     if (sc.scrollTop > 24) setCompact(true);
   }, { passive: true });
 })();
