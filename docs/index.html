@@ -178,6 +178,10 @@
   #board{position:relative;margin:0;border-radius:6px;overflow:hidden;touch-action:pan-y;
          width:min(calc(105vw - 113px),calc(100vw - 92px),40.3vh,calc((100vh - 302px) * .65))}
   #board{width:min(calc(105vw - 113px),calc(100vw - 92px),40.3vh,calc((100dvh - 302px) * .65))}
+  /* The red line that says the board is not reached takes room as well, up to two lines
+     of it. Until this was here it pushed the row of pages off the foot of the screen. */
+  body.noWall #board{width:min(calc(105vw - 113px),calc(100vw - 92px),40.3vh,calc((100vh - 358px) * .65))}
+  body.noWall #board{width:min(calc(105vw - 113px),calc(100vw - 92px),40.3vh,calc((100dvh - 358px) * .65))}
   /* ---- the board steps aside ----
      Scroll the short list under it and the picture shrinks into the top right-hand
      corner, so the list has the room; the wall's story beside it gets wider and
@@ -196,12 +200,14 @@
   body.focus #boardCol{position:fixed;inset:0;z-index:55;background:var(--bg);display:flex;flex-direction:column;
                        align-items:center;justify-content:center;
                        padding:calc(env(safe-area-inset-top) + 8px) 6px calc(env(safe-area-inset-bottom) + 8px)}
-  /* as wide as the screen, or as tall as it once the name's line (and, with two routes
-     up, the second one's) has had its room: 52px and 92px with the padding */
-  body.focus #board{flex:none;transition:none;width:min(100%,calc((100vh - 52px) * .65))}
-  body.focus #board{width:min(100%,calc((100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 52px) * .65))}
-  body.focus.pair #board{width:min(100%,calc((100vh - 92px) * .65))}
-  body.focus.pair #board{width:min(100%,calc((100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 92px) * .65))}
+  /* as wide as the screen, or as tall as it once the name's line, the row of buttons for
+     picked holds (56px, kept whether they show or not, so the picture does not move
+     under the finger at the first tap) and, with two routes up, the second one's line
+     have had their room: 108px and 148px with the padding */
+  body.focus #board{flex:none;transition:none;width:min(100%,calc((100vh - 108px) * .65))}
+  body.focus #board{width:min(100%,calc((100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 108px) * .65))}
+  body.focus.pair #board{width:min(100%,calc((100vh - 148px) * .65))}
+  body.focus.pair #board{width:min(100%,calc((100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 148px) * .65))}
   body.focus .mark{border-width:4px}
   body.focus .mark.g,body.focus .mark.also{border-width:3px}
   body.focus #focusCap{display:flex;flex:none;align-items:center;justify-content:center;gap:8px;min-width:0;max-width:100%;
@@ -210,10 +216,33 @@
   #focusCap .gd[hidden]{display:none}
   body.focus #pairCap,body.focus #betaCap{font-size:13px}
   /* said once, on the way in, for whoever got here by accident */
-  body.focus #focusHint{display:block;position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 18px);
+  body.focus #focusHint{display:block;position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 74px);
                         transform:translateX(-50%);padding:7px 14px;border-radius:999px;background:var(--ink);color:var(--onink);
                         font-size:12px;font-weight:600;white-space:nowrap;pointer-events:none;opacity:0;animation:fhint 2.6s ease-out}
   @keyframes fhint{0%{opacity:0}12%{opacity:.92}70%{opacity:.92}100%{opacity:0}}
+  body.focus #focusHint.bad{background:#ef4444;color:#fff}
+  /* ---- picking holds, in focus ----
+     A tap on a hold rings it in violet, a colour no route uses; another tap lets it
+     go. With one picked, two buttons come up under the picture: light the picked holds
+     on the wall, or list the routes that use every one of them. The route's own rings
+     fade a little meanwhile, so the picked ones are the ones that show. */
+  .mark.pick{display:none;width:11.6%;border-width:4px;border-color:#7c3aed;background:rgba(124,58,237,.2)}
+  body.focus .mark.pick{display:block}
+  body.focus.picking .mark:not(.pick){opacity:.5}
+  #pickBar{display:none}
+  body.focus #pickBar{display:flex;flex:none;gap:8px;width:min(100%,430px);height:46px;margin-top:10px;visibility:hidden}
+  body.focus.picking #pickBar{visibility:visible}
+  #pickBar button{height:46px;padding:0 10px;font-size:14px;font-weight:700;border-radius:11px;white-space:nowrap}
+  #pickGo{flex:1.3 1 0}
+  #pickFind{flex:1 1 0}
+  #pickBar #pickClear{flex:none;width:46px;padding:0;font-size:15px}
+  /* ---- the list narrowed to routes that use the picked holds: said over the list, with the way out ---- */
+  #holdChip{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:6px 6px 6px 10px;
+            border:1px solid #7c3aed;border-radius:9px;background:var(--panel2);font-size:12px;color:var(--ink)}
+  #holdChip[hidden]{display:none}
+  #holdChip span{flex:1;min-width:0;line-height:1.35}
+  #holdChip b{font-weight:700}
+  #holdChip button{flex:none;width:34px;height:30px;padding:0;font-size:13px}
   /* iOS starts its own image drag on a sideways swipe, which eats the gesture */
   #board img{-webkit-user-drag:none;user-select:none;pointer-events:none}
   #board img{display:block;width:100%;height:auto}   /* beat the height attribute */
@@ -926,7 +955,13 @@
       </div>
       <div id="pairCap" hidden></div>
       <div id="betaCap"></div>
-      <div id="focusHint">Double tap to go back</div>
+      <!-- holds picked in focus: light them, or find the routes that use them -->
+      <div id="pickBar">
+        <button id="pickGo" class="mini solid">&#128161; Light up taps</button>
+        <button id="pickFind" class="mini">Search routes</button>
+        <button id="pickClear" class="mini ghost" aria-label="Let all the picked holds go" title="Let them all go">&#10005;</button>
+      </div>
+      <div id="focusHint"></div>
     </div>
   </div>
 </section>
@@ -998,6 +1033,7 @@
 <div id="scroll">
 
 <section>
+  <div id="holdChip" hidden><span></span><button id="holdX" class="ghost mini" aria-label="Show every route again">&#10005;</button></div>
   <div id="count"></div>
   <div id="results"></div>
 </section>
@@ -1254,7 +1290,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-08 16:38';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-08 16:57';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -1268,6 +1304,16 @@ const BLOCKED = ['0000fe59','00001530-1212-efde-1523-785feabcd123'];
 let device = null, rx = null, tx = null;
 const state = {};                      // "col,row" -> 'S' | 'P' | 'E'
 let gradeCells = {};                   // "col,1"   -> the row-1 grade meter
+let picks = {};                        // "col,row" -> true: holds tapped in focus (see "picking holds")
+let holdFilter = [];                   // the same keys, once "Search routes" is tapped: the list is only routes that use them all
+const CUSTOM_ID = 0;
+const PICK_HOLD = 'P';               // how the picked holds are lit: blue
+const PICK_MAX = 30;                 // more than a problem ever has, and well inside what the box will take in one write
+const wallCustom = () => !!(rx || bridgeLive) && !!wallNow && wallNow.id === CUSTOM_ID &&
+                         (wallNow.board || boardKey) === boardKey;
+const holdSet = r => r.hs || (r.hs = new Set(Object.keys(cellsOf(r))));
+const holdName = k => { const [c, w] = k.split(',').map(Number); return LETTERS[c - 1] + w; };
+const pickKeys = () => Object.keys(picks);
 let second = null;                     // the second problem on the wall, drawn with the open one (see "two at once")
 const $ = id => document.getElementById(id);
 
@@ -1328,6 +1374,7 @@ function paint(){
   // A hold both problems use is lit as the open problem's. Ring it again, so the
   // second one still reads whole on the picture.
   for (const k in two) if (state[k]) ring(k, 'also');
+  for (const k in picks) ring(k, 'pick');              // shown in focus only (the styles see to that)
 }
 /* cells: "col,row" -> 'S' | 'P' | 'E', one entry a hold, as the wall is to show them */
 function payloadOf(cells){
@@ -3050,6 +3097,8 @@ function setBoard(key, fromServer){
   fillGradeSelects();
   $('board').querySelector('img').src = boardNow().img;
   $('board').querySelector('img').alt = boardNow().label + ' wall';
+  picks = {}; holdFilter = [];           // holds picked on the other set mean nothing on this one
+  paintPicks();
   if (current && current.board !== key) clearRoute();
   else { paint(); renderResults(); }
   log('board: ' + boardNow().label + (fromServer ? ' (set for the crew)' : ''));
@@ -3360,7 +3409,9 @@ function filtered(){
   const mine = who ? new Set(lists[who] || []) : null;
   const me = meNow();
   const hide = me && $('hideDone').value === '1';   // needs a name to know what's yours
+  const need = holdFilter;
   let out = PROBLEMS.filter(r => r.grade >= lo && r.grade <= hi &&
+    (!need.length || need.every(k => holdSet(r).has(k))) &&
     (!mine || mine.has(r.id)) &&
     !(hide && (done[r.id] || []).includes(me)) &&
     (!q || r.name.toLowerCase().includes(q) || r.setter.toLowerCase().includes(q)));
@@ -3387,7 +3438,7 @@ function renderResults(){
   const hits = filtered();
   lastHits = hits;
   const key = [searchQ, $('gmin').value, $('gmax').value, whoNow(),
-               $('hideDone').value, $('sort').value].join('|');
+               $('hideDone').value, $('sort').value, holdFilter.join(' ')].join('|');
   if (key !== limitKey){ limitKey = key; limit = PAGE; }
   const at = current ? hits.indexOf(current) : -1;          // keep the pick on screen
   if (at >= limit) limit = Math.ceil((at + 1) / PAGE) * PAGE;
@@ -3425,7 +3476,8 @@ function renderResults(){
   const hidden = (me && $('hideDone').value === '1')
     ? Object.entries(done).filter(([, who]) => who.includes(me)).length : 0;
   $('count').textContent = hits.length ? ''
-    : (view ? 'Nothing saved here yet'
+    : (holdFilter.length ? (holdFilter.length > 1 ? 'No route here uses all ' + holdFilter.length + ' of those holds' : 'No route here uses that hold')
+       : view ? 'Nothing saved here yet'
             : hidden ? "You've climbed everything that matches" : 'Nothing matches');
   markFilters();
   const cap = $('listCap');
@@ -3743,6 +3795,7 @@ function wallState(){
   const el = $('noWall');
   const lost = !rx && bridgeSeen === false;
   el.hidden = !lost;
+  document.body.classList.toggle('noWall', lost);      // the picture gives it its room (see the styles)
   // The usual reason for nobody bridging is a phone on a different room code.
   const off = relayRoom() && relayRoom() !== DEFAULT_ROOM;
   el.textContent = off ? 'Not reaching the board \u2014 this phone is set to another wall. Tap to check'
@@ -3944,7 +3997,7 @@ function routeFromPayload(payload){
 }
 
 function wallRoute(){
-  if (!wallNow) return null;
+  if (!wallNow || wallNow.id === CUSTOM_ID) return null;
   const named = wallNow.id != null ? byId[wallNow.id] : null;
   const r = named || routeFromPayload(wallNow.payload);
   return r && r.board === boardKey ? r : null;
@@ -3975,6 +4028,27 @@ function paintNow(){
   const b = $('nowBtn');
   if (!b) return;
   // Only when this phone can know: it holds the Bluetooth, or someone else does.
+  if (wallCustom()){
+    // Holds somebody picked, not a problem off the list: it has no name but theirs.
+    const by = (wallNow.by || '').trim();
+    b.hidden = false;
+    b.classList.remove('here');
+    b.querySelector('.nm3').textContent = 'Custom route';
+    b.querySelector('.nm4').textContent = '';
+    const who = b.querySelector('.by');
+    who.textContent = '';
+    if (by){
+      const chip = document.createElement('i');
+      chip.textContent = chipFor(by);
+      chip.style.background = personColor(by);
+      const nm = document.createElement('span');
+      nm.textContent = by;
+      who.append(chip, nm);
+    }
+    b.title = 'A custom route' + (by ? ', put up by ' + by : '') + ' \u2014 tap to see its holds';
+    b.setAttribute('aria-label', 'On the wall: a custom route' + (by ? ', put up by ' + by : ''));
+    return;
+  }
   const r = wallMain();
   if (!r){ b.hidden = true; return; }
   const r2 = wallSecond();
@@ -4001,6 +4075,12 @@ function paintNow(){
 }
 
 function gotoWall(){
+  if (wallCustom()){                     // its holds, picked on the picture, where they can be changed and lit again
+    if (betaDraft) return;
+    picks = cellsFromPayload(wallNow.payload);
+    paintPicks();
+    return focusBoard(true);
+  }
   const r = wallRoute();
   if (!r || betaDraft || (current && current.id === r.id)) return;
   loadRoute(r, true);                    // a look, not a send - it is already up there
@@ -5303,19 +5383,25 @@ $('igClose').onclick = () => showPanel(null);
 
 /* ---------- a tap on the board ----------
    One tap only undoes things: it puts a shrunken board back to its size, and it stops
-   the beta climber. Two taps, one soon after the other and near it, are for focus (below). */
-let tapAt = 0, tapX = 0, tapY = 0;
+   the beta climber. Two taps, one soon after the other and near it, are for focus
+   (below). In focus one tap picks the hold under it, so there two taps count as a pair
+   only when both land on the same hold: two neighbours tapped quickly are two picks. */
+let tapAt = 0, tapX = 0, tapY = 0, tapCell = null;
 function boardTap(x, y){
   const now = Date.now();
-  const twice = !betaDraft && now - tapAt < 350 && Math.abs(x - tapX) < 44 && Math.abs(y - tapY) < 44;
-  tapAt = twice ? 0 : now; tapX = x; tapY = y;
+  const cell = focusOn && !betaDraft ? cellAt(x, y) : null;
+  const near = Math.abs(x - tapX) < 44 && Math.abs(y - tapY) < 44;
+  const twice = !betaDraft && now - tapAt < 350 && near && (!focusOn || cell === tapCell);
   if (twice){
+    tapAt = 0;
+    if (focusOn && cell) pickToggle(cell);             // the first of the two picked it, or let it go: that is put back
     // The click that ends this tap comes after the page has changed under the finger,
     // and on the way out there are buttons and rows there. That one click is dropped.
     ghostUntil = now + 350;
     return focusBoard(!focusOn);
   }
-  if (focusOn) return;                                 // nothing to undo there
+  tapAt = now; tapX = x; tapY = y; tapCell = cell;
+  if (focusOn){ if (cell) pickToggle(cell); return; }
   if (document.body.classList.contains('compact')) return setCompact(false);
   if (betaPlaying){ betaStop(); $('betaSvg').innerHTML = ''; paintBeta(); }
 }
@@ -5337,13 +5423,104 @@ function focusBoard(on, fromBack){
   on = !!on && page === 'board' && !betaDraft && !panelOpen;
   if (on === focusOn) return;
   focusOn = on;
-  if (on) setCompact(false);                           // it comes back at full size
+  if (on){
+    setCompact(false);                                 // it comes back at full size
+    $('focusHint').className = '';
+    $('focusHint').textContent = 'Tap a hold to pick it \u00b7 Double tap to go back';
+  }
   document.body.classList.toggle('focus', on);
   if (on) return layerOpen('focus');
   if (!fromBack) layerShut('focus');
   const row = $('results').querySelector('.rt.sel');   // the routes may have been stepped through meanwhile
   if (row) row.scrollIntoView({ block: 'nearest' });
 }
+
+/* ---------- picking holds ----------
+   Will, 2026-10-08: in focus, a tap on a hold highlights it and another tap lets it
+   go; with holds picked two buttons come up. "Light up taps" puts just those holds on
+   the wall, all in blue: a custom route, which "on the wall" then names as that, with
+   whose it is. "Search routes" narrows the list to the routes that use every one of
+   the picked holds. (The small cross beside them lets all the holds go; it is mine.)
+
+   A custom route has no id of its own. The relay wants a number, so it gets 0, which
+   is no problem's: phones on an older page find no problem for it and show nothing,
+   as they do for a game. The line and tonight's history leave it out, since neither
+   keeps the holds and a row that could not be opened would be no use. */
+
+// the hold a touch at (x, y) on the screen is on, or null when it is off the grid
+function cellAt(x, y){
+  const r = $('board').getBoundingClientRect();
+  if (!r.width || !r.height) return null;
+  let best = null, bd = Infinity;
+  for (let c = 1; c <= COLS; c++) for (let w = 1; w <= ROWS; w++){
+    const d = Math.hypot(r.left + markX(c) / 100 * r.width - x, r.top + markY(w) / 100 * r.height - y);
+    if (d < bd){ bd = d; best = c + ',' + w; }
+  }
+  const step = Math.abs(markX(2) - markX(1)) / 100 * r.width;   // from one hold to the next
+  return bd <= step * 0.72 ? best : null;                        // anywhere among the holds is the nearest one's
+}
+function cellsFromPayload(payload){
+  const at = {};
+  for (let c = 1; c <= COLS; c++) for (let w = 1; w <= ROWS; w++) at[holdNum(c, w)] = c + ',' + w;
+  const out = {};
+  String(payload || '').slice(2, -1).split(',').forEach(part => { const k = part ? at[+part.slice(1)] : null; if (k) out[k] = true; });
+  return out;
+}
+function focusSay(txt, bad){             // a word in the pill over the buttons, for a moment
+  const h = $('focusHint');
+  h.textContent = txt;
+  h.className = bad ? 'bad' : '';
+  h.style.animation = 'none';
+  void h.offsetWidth;                    // so it plays again
+  h.style.animation = '';
+}
+function paintPicks(){
+  document.body.classList.toggle('picking', pickKeys().length > 0);
+  paint();
+}
+function pickToggle(k){
+  if (picks[k]) delete picks[k];
+  else if (pickKeys().length >= PICK_MAX) return focusSay(PICK_MAX + ' holds at most', true);
+  else picks[k] = true;
+  paintPicks();
+}
+function paintHoldChip(){
+  const chip = $('holdChip');
+  chip.hidden = !holdFilter.length;
+  if (chip.hidden) return;
+  const names = holdFilter.slice().sort((a, b) => { const [ac, ar] = a.split(',').map(Number), [bc, br] = b.split(',').map(Number); return ar - br || ac - bc; }).map(holdName);
+  const sp = chip.querySelector('span');
+  sp.textContent = 'Routes that use ';
+  const b = document.createElement('b');
+  b.textContent = names.join(' \u00b7 ');
+  sp.appendChild(b);
+}
+$('pickGo').onclick = async () => {
+  const keys = pickKeys();
+  if (!keys.length) return;
+  if (!canSend()) return focusSay('Not reaching the board', true);
+  const cells = {};
+  keys.forEach(k => { cells[k] = PICK_HOLD; });
+  const payload = payloadOf(cells);
+  log('custom route: ' + keys.map(holdName).join(' '));
+  await write(payload, false, { id: CUSTOM_ID, by: meNow(), board: boardKey });
+  // this phone hears at once whether it went up: it wrote it, or the relay said who did
+  const up = !!wallNow && wallNow.payload === payload;
+  if (focusOn) focusSay(up ? 'On the wall' : 'Not reaching the board', !up);
+};
+$('pickFind').onclick = () => {
+  const keys = pickKeys();
+  if (!keys.length) return;
+  holdFilter = keys;
+  paintHoldChip();
+  focusBoard(false);
+  showPage('list');
+  kbClose();                             // the list is what was asked for, not the keys
+  renderResults();
+  $('scroll').scrollTop = 0;
+};
+$('pickClear').onclick = () => { picks = {}; paintPicks(); };
+$('holdX').onclick = () => { holdFilter = []; paintHoldChip(); renderResults(); };
 
 (function boardSwipe(){
   const el = $('board');
@@ -6581,7 +6758,7 @@ function paintGradeSlide(held){
    bug rather than a setting. */
 function markFilters(){
   const narrowed = +$('gmin').value > gradeLo || +$('gmax').value < gradeHi;
-  const on = narrowed || whoNow() || (meNow() && $('hideDone').value === '1');
+  const on = narrowed || whoNow() || (meNow() && $('hideDone').value === '1') || holdFilter.length;
   $('filtBtn').classList.toggle('active', !!on);
 }
 function showFilters(on){
