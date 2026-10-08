@@ -370,7 +370,8 @@ In Settings, under *Games on the wall*. Opens as a full screen sheet and starts 
 
 Each seat takes a climber from the name picker's roster, and a chess clock gives both the same
 budget - two minutes by default - counting down only on their own turn. Run out and you lose
-on time. A win is recorded against the winner's name and the ranking below the board shows
+on time. A board that fills with no line is a draw: the clocks stop and nobody is given the
+win. A win is recorded against the winner's name and the ranking below the board shows
 who's ahead; top of the pile is king of the board. Wins only count when both seats are
 named, so a knockabout doesn't pollute the record. Seven columns on C–I, six rows on 7–12 — middle of the
 wall, clear of the dead A2 and A4 holds. Green plays first, blue second, and a winning
