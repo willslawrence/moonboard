@@ -18,8 +18,9 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>MoonBoard Direct</title>
 <script>
-  // the background this phone chose (light foggy grey until it chooses), on before the first paint (see "backgrounds" in the styles)
-  try{ var mbBg = localStorage.getItem('mb-bg'); if (mbBg === null) mbBg = 'fog'; if (mbBg) document.documentElement.setAttribute('data-bg', mbBg); }catch(e){}
+  // the background this phone chose (light foggy grey until it chooses), on before the first paint.
+  // 'mb-bg2': Will asked for everyone to be put on the grey once, so choices kept under 'mb-bg' are not read. (see "backgrounds" in the styles)
+  try{ var mbBg = localStorage.getItem('mb-bg2'); if (mbBg === null) mbBg = 'fog'; if (mbBg) document.documentElement.setAttribute('data-bg', mbBg); }catch(e){}
 </script>
 <style>
   :root{
@@ -1170,7 +1171,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-08 11:02';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-08 11:57';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -4981,8 +4982,7 @@ function stepProblem(delta){
    tags @moonclimbing, and Moon's own servers pick the post up and show it in their
    app. That gallery is Moon's and cannot be read from here. So this button does the
    two halves that can be done: it copies the same caption, ready to paste into a
-   post, and it opens Instagram searching for the problem's name, which is where the
-   videos posted with that caption turn up. */
+   post, and it looks for videos of the problem on Instagram (see paintInsta for how). */
 const INSTA_ON = true;
 function instaCaption(r){
   const [year, angle] = boardKey.split('-');
@@ -4996,8 +4996,12 @@ function paintInsta(){
   a.hidden = !INSTA_ON;
   a.classList.toggle('off', !on);
   if (!on) return a.removeAttribute('href');
-  a.href = 'https://www.instagram.com/explore/search/keyword/?q=' + encodeURIComponent(current.name + ' moonboard');
-  a.title = 'Copies a caption for your own video, and opens Instagram at videos of ' + current.name;
+  /* It opened Instagram's own search at first. On a phone with the Instagram app that
+     link opens the app at its front page and the search is lost (a friend of Will's
+     tried it), and the app takes no link that carries a search. So: a web search kept
+     to instagram.com. Each result is one video, and a tap on it opens that video. */
+  a.href = 'https://www.google.com/search?q=' + encodeURIComponent('site:instagram.com "' + current.name + '" moonboard');
+  a.title = 'Copies a caption for your own video, and finds Instagram videos of ' + current.name;
 }
 $('igBtn').addEventListener('click', () => {            // the link itself does the opening
   if (!current) return;
@@ -6344,7 +6348,7 @@ function setBg(v){
   if (meta) meta.setAttribute('content', getComputedStyle(el).getPropertyValue('--bg').trim() || '#0e0e0f');
 }
 $('bgSel').onchange = () => {
-  try{ localStorage.setItem('mb-bg', $('bgSel').value); }catch(e){}
+  try{ localStorage.setItem('mb-bg2', $('bgSel').value); }catch(e){}
   setBg($('bgSel').value);
 };
 $('gbar').onchange = () => {
@@ -6444,7 +6448,7 @@ try{
   // What the wall shows on connect is WW for everyone now; a choice saved before
   // that setting was hidden is left alone and ignored.
   $('auto').checked = localStorage.getItem('mb-auto') === '1';
-  const bgKept = localStorage.getItem('mb-bg'), bg = bgKept === null ? 'fog' : bgKept;   // nothing chosen yet: the foggy grey
+  const bgKept = localStorage.getItem('mb-bg2'), bg = bgKept === null ? 'fog' : bgKept;   // nothing chosen yet: the foggy grey
   if ($('bgSel').querySelector('option[value="' + bg + '"]')){ $('bgSel').value = bg; setBg(bg); }
   const m = localStorage.getItem('mb-me') || w;
   if (m){ $('me').appendChild(new Option(m, m)); $('me').value = m; lastMe = m; }
