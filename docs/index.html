@@ -567,6 +567,11 @@
   #igG .gsc-control-cse,#igG .gsc-control-cse div,#igG .gsc-control-cse table,#igG .gsc-control-cse td{background-color:transparent !important;border-color:transparent !important}
   #igG .gsc-tabsArea,#igG .gsc-refinementsArea,#igG .gsc-above-wrapper-area,#igG .gsc-cursor-box,
   #igG .gsc-search-box,#igG .gcsc-find-more-on-google-root,#igG .gcsc-more-maybe-branding-root{display:none !important}
+  /* Should Google's box come up over the page all the same, it is kept in its place and its dimming off. */
+  .gsc-modal-background-image{display:none !important}
+  #igG .gsc-results-wrapper-overlay{position:static !important;width:auto !important;height:auto !important;padding:0 !important;
+                                    box-shadow:none !important;border:0 !important;background:transparent !important;overflow:visible !important}
+  #igG .gsc-results-close-btn,#igG2 .gsc-results-wrapper-overlay{display:none !important}
   /* the search for pictures: only what it finds is wanted, to put a picture on a row */
   #igG2{position:absolute;left:-9999px;top:0;width:320px;height:1px;overflow:hidden}
   #pairFor{font-size:15px;font-weight:600}
@@ -1249,7 +1254,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-08 16:20';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-08 16:38';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -5107,8 +5112,9 @@ $('igBtn').addEventListener('click', e => {
    The pictures Instagram's own pages name cannot be used: those links stop working.
 
    IG_CX is that engine's id (programmablesearchengine.google.com, sites to search:
-   instagram.com, image search on). While it is empty the button opens the web search. */
-const IG_CX = '';
+   instagram.com, image search on). Will made it on 2026-10-08. Were it empty, the
+   button would open the web search, as it did before. */
+const IG_CX = 'c62b09e17f95e4507';
 const IG_KEEP = 30 * 60000;          // a sheet opened again within the half hour does not ask again
 let igReady = null;                  // Google's script, once asked for: a promise of its search element
 let igWait = null;                   // the search under way
@@ -5137,8 +5143,10 @@ function igLoad(){
         begun = true;
         try{
           const el = google.search.cse.element;
-          // no history: Google's would write the search into the address, where the wall's code is kept
-          const quiet = { enableHistory: false, autoSearchOnLoad: false };
+          // No history: Google's would write the search into the address, where the wall's code
+          // is kept. And no overlay: an engine set to "overlay" (Will's is, it is the default)
+          // would lay Google's own white box over the sheet and dim the page behind it.
+          const quiet = { enableHistory: false, autoSearchOnLoad: false, overlayResults: false };
           el.render({ div: 'igG', tag: 'searchresults-only', gname: 'igWeb', attributes: quiet });
           el.render({ div: 'igG2', tag: 'searchresults-only', gname: 'igImg',
                       attributes: Object.assign({ enableImageSearch: true, defaultToImageSearch: true, disableWebSearch: true }, quiet) });
