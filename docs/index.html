@@ -394,9 +394,9 @@
   #actRow{display:flex;gap:6px;padding-top:6px}
   #actRow button{flex:1 1 0;min-width:0;height:38px;padding:0 6px;font-size:13px;border-radius:9px}
   #actRow button[hidden]{display:none}
-  #actRow #send{flex:1.35 1 0;font-size:14px}
+  #actRow #send{flex:7 1 0;font-size:14px}                /* Will, on the canvas: 70% of the row, and the second bulb the rest */
   /* the second bulb: orange, the colour the picture draws a second problem in */
-  #actRow #pairBtn{border-color:#8a4b17;color:var(--second)}
+  #actRow #pairBtn{flex:3 1 0;padding:0 4px;font-size:12px;border-color:#8a4b17;color:var(--second)}
   #actRow #pairBtn.on{background:#fb923c;border-color:#fb923c;color:#0e0e0f}
   body.betaEdit #actRow{visibility:hidden}     /* nothing to light while placing hands and feet */
   /* The wall's story on the left takes what the board leaves; the board keeps its
@@ -490,19 +490,18 @@
   #gamePanel[hidden]{display:none}
   #snakePanel{gap:8px !important}
   #snakePanel #snPad{margin-top:auto}      /* pushed to the bottom of the sheet */
-  #sendPanel,#logPanel,#snakePanel,#entryPanel,#setPanel,#pairPanel{position:fixed;inset:0;z-index:60;background:var(--bg);
+  #logPanel,#snakePanel,#entryPanel,#setPanel,#pairPanel{position:fixed;inset:0;z-index:60;background:var(--bg);
              display:flex;flex-direction:column;gap:12px;overflow-y:auto;
              padding:calc(env(safe-area-inset-top) + 16px) 16px
                      calc(env(safe-area-inset-bottom) + 16px)}
-  #sendPanel[hidden],#logPanel[hidden],#snakePanel[hidden],#entryPanel[hidden],#setPanel[hidden],#pairPanel[hidden]{display:none}
-  #sendFor,#pairFor{font-size:15px;font-weight:600}
-  #sendFor span,#pairFor span{display:block;font-size:12px;color:var(--dimmer);font-weight:400;margin-top:2px}
+  #logPanel[hidden],#snakePanel[hidden],#entryPanel[hidden],#setPanel[hidden],#pairPanel[hidden]{display:none}
+  #pairFor{font-size:15px;font-weight:600}
+  #pairFor span{display:block;font-size:12px;color:var(--dimmer);font-weight:400;margin-top:2px}
   /* ---- the second bulb's one question ---- */
   #pairAsk{font-size:17px;font-weight:700;line-height:1.3}
   #pairGo{padding:18px 12px;font-size:17px;font-weight:700;border-radius:12px;
           background:#fb923c;border-color:#fb923c;color:#0e0e0f}
   #pairGo[hidden]{display:none}
-  #sendPicks{display:grid;gap:8px}
   button.res{padding:15px;font-size:15px;font-weight:600;border-radius:9px}
   button.res.pick{background:var(--ink);border-color:var(--ink);color:var(--onink)}
   #logWho{max-width:220px}
@@ -652,7 +651,31 @@
   #quickScrim[hidden]{display:none}
   body.listPage #quick{display:none}
   /* what was logged, said for a moment over the search row */
-  #quickToast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 64px);z-index:7;transform:translateX(-50%);
+  /* ---- how did the send go: four bubbles in an arc ----
+     Everything here is placed by openSend, around the button that was pressed. The
+     colours are fixed, not the theme's: the layer is dark whatever the background. */
+  #sendFan{position:fixed;inset:0;z-index:8;background:rgba(8,8,10,.6);touch-action:none;animation:fanFade .16s ease-out both}
+  #sendFan[hidden]{display:none}
+  #sendFan .arm{position:absolute;width:2px;height:72px;border-radius:1px;background:#e9e9ec;animation:fanFade .2s ease-out both}
+  #sendFan button[data-r]{position:absolute;width:52px;height:52px;padding:0;border:0;border-radius:50%;
+                          background:#22c55e;color:#06240e;font-size:13px;font-weight:700;
+                          box-shadow:0 4px 14px rgba(0,0,0,.45);animation:fanPop .24s cubic-bezier(.2,.9,.3,1.25) both}
+  #sendFan button[data-r="flash"]{font-size:12px}
+  #sendFan button[data-r="2nd"]{animation-delay:.03s}
+  #sendFan button[data-r="3rd"]{animation-delay:.06s}
+  #sendFan button[data-r="4+"]{animation-delay:.09s}
+  /* the one the tries point to */
+  #sendFan button[data-r].pick{box-shadow:0 0 0 3px #e9e9ec,0 4px 14px rgba(0,0,0,.45)}
+  #sendFan button[data-r]:active{filter:brightness(1.18)}
+  #sendFan .cap{position:absolute;transform:translateX(-50%);padding:4px 10px;border-radius:12px;background:#1e1e21;
+                border:1px solid #33333a;color:#e9e9ec;font-size:11px;font-weight:600;white-space:nowrap;
+                animation:fanFade .2s ease-out .14s both}
+  #sendFan .x{position:absolute;padding:0;border:1px solid #e9e9ec;background:#e9e9ec;color:#0e0e0f;display:grid;place-items:center}
+  #sendFan .x svg{width:16px;height:16px}
+  @keyframes fanFade{from{opacity:0}to{opacity:1}}
+  @keyframes fanPop{from{opacity:0;transform:translate(var(--fx,0),var(--fy,0)) scale(.3)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){ #sendFan,#sendFan .arm,#sendFan button[data-r],#sendFan .cap{animation:none} }
+  #quickToast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 64px);z-index:9;transform:translateX(-50%);
               padding:8px 14px;border-radius:20px;background:var(--ink);color:var(--onink);font-size:13px;font-weight:600;
               white-space:nowrap;max-width:88vw;overflow:hidden;text-overflow:ellipsis;box-shadow:0 4px 14px rgba(0,0,0,.45)}
   #quickToast[hidden]{display:none}
@@ -768,8 +791,8 @@
      else that used to stand in a column beside the board has moved - logging to the
      page on the right, the games to Settings, the rest out of the way. -->
 <div id="actRow">
-  <button id="send" class="mini solid" disabled aria-label="Light up">&#128161; Light up</button>
-  <button id="pairBtn" class="mini" disabled aria-label="Light up as the second route">2nd &#128161;</button>
+  <button id="send" class="mini solid" disabled aria-label="Light up Route">&#128161; Light up Route</button>
+  <button id="pairBtn" class="mini" disabled aria-label="Show the open route as the second route">Show 2nd route</button>
 </div>
 
 <section id="boardWrap">
@@ -956,6 +979,18 @@
 <!-- three pages: routes, the board, the log -->
 <div id="quickScrim" hidden></div>
 <div id="quickToast" hidden></div>
+<!-- How a send went, asked in bubbles and not on a sheet: four of them swing out in an
+     arc from the button that was pressed - under Log send, over Quick log. The layer
+     itself is the dimming; the button with the cross sits where the pressed one is. -->
+<div id="sendFan" hidden>
+  <span class="arm"></span><span class="arm"></span><span class="arm"></span><span class="arm"></span>
+  <button data-r="flash">Flash</button>
+  <button data-r="2nd">2nd</button>
+  <button data-r="3rd">3rd</button>
+  <button data-r="4+">4+</button>
+  <div class="cap"></div>
+  <button class="x" aria-label="Close"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+</div>
 <nav id="pgDots" data-at="board" aria-label="Pages"><button data-go="list">&#8249; Routes</button><button data-go="board">Board</button><button data-go="log">Log &#8250;</button></nav>
 
 <div id="setPanel" hidden>
@@ -1028,22 +1063,6 @@
   <div id="log">idle.</div>
   <div style="margin-top:10px"><button id="copy" class="ghost">Copy log</button></div>
   <div id="ver"></div>
-</div>
-
-<div id="sendPanel" hidden>
-  <div id="gameHead">
-    <b>How did it go?</b>
-    <button id="sendClose" class="ghost mini">Cancel</button>
-  </div>
-  <div id="sendFor"></div>
-  <div id="sendPicks">
-    <button class="res" data-r="flash">Flash</button>
-    <button class="res" data-r="2nd">2nd go</button>
-    <button class="res" data-r="3rd">3rd go</button>
-    <button class="res" data-r="4+">4+ goes</button>
-  </div>
-  <button id="sendUndo" class="ghost mini">Undo my last entry</button>
-  <div class="hint" id="sendHint"></div>
 </div>
 
 <div id="pairPanel" hidden>
@@ -1141,7 +1160,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-08 09:55';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-08 10:19';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -2895,7 +2914,7 @@ let told = '';             // what the relay has been told, so a game's frames a
 let page = 'board';        // which of the two pages is showing: 'board', or 'list' to its left
 let panelOpen = false;     // a sheet (settings, logbook, a game, a question) is over the page
 let ghostUntil = 0;        // until then a click is the tail of the tap that changed the page, and is dropped
-const layers = [];         // what Back would close next, innermost last: 'list' or 'log', then 'panel'
+const layers = [];         // what Back would close next, innermost last: 'list' or 'log', then 'panel' or 'fan'
 let backSkip = 0;          // steps back through the history this page asked for itself
 
 /* ---------- tick lists ----------
@@ -3109,44 +3128,79 @@ function doTry(){
    happens in the logbook, where you can see what you're deleting. */
 function doDone(){
   const me = meNow(); if (!me || !current) return;
-  openSend();
+  openSend(page === 'log' ? $('done') : $('quickBtn'));
 }
 
+/* ---------- how did the send go? ----------
+   Asked in bubbles, not on a sheet (Will, on the design canvas, 2026-10-08). Four of
+   them swing out in an arc from the button that was pressed - Flash, 2nd, 3rd, 4+,
+   left to right - away from the nearer edge of the screen: under Log send, which is
+   near the top of its page, and over Quick log, which is near the foot of its. The one
+   the tries point to has a white ring. For a route sent before they are session
+   sends, and a small line says so; the words on the bubbles stay short.
+
+   The layer the bubbles sit on is the dimming, and covers everything, so nothing under
+   it can be touched: a tap on it, on the cross where the button was, or Back, puts
+   them away. It closes on the click and not on the touch going down, because a layer
+   that went on the touch would let the click that follows fall on whatever is under. */
 const SEND_LABELS = { flash: 'Flash', '2nd': '2nd go', '3rd': '3rd go', '4+': '4+ goes' };
-function openSend(){
-  const again = sentBefore(current.id);            // sent before: this one is a session send
-  const t = again ? sessionTries(current.id) : myTries(current.id), pick = derivedResult(current.id);
-  const word = r => again ? RESULT_WORDS['s' + r] : SEND_LABELS[r];
-  $('sendFor').innerHTML = '';
-  const b = document.createElement('b'); b.textContent = current.name;
-  const sub = document.createElement('span');
-  sub.textContent = GRADES[current.grade] + ' \u00b7 V' + VGRADE[current.grade] +
-    ' \u00b7 ' + (t ? t + (t === 1 ? ' try logged' : ' tries logged') : 'no tries logged') + (again ? ' this session' : '');
-  $('sendFor').append(b, sub);
-  document.querySelectorAll('#sendPicks .res').forEach(el => {
-    el.className = 'res' + (el.dataset.r === pick ? ' pick' : '');
-    el.textContent = word(el.dataset.r);
+let sendOpen = false;
+function openSend(from){
+  const fan = $('sendFan'), a = from.getBoundingClientRect();
+  if (!current || !a.width) return;
+  const again = sentBefore(current.id), pick = derivedResult(current.id);
+  const R = 26, edge = 6 + R + 84.5;                   // half a bubble, and how near the side the arc's middle may come
+  const up = a.top + a.height / 2 > innerHeight / 2;
+  const cx = Math.min(innerWidth - edge, Math.max(edge, a.left + a.width / 2)), cy = a.top + a.height / 2;
+  const at = [[-84.5, 45.5], [-33.8, 89.9], [33.8, 89.9], [84.5, 45.5]];     // each bubble's middle from the arc's, going down
+  fan.querySelectorAll('button[data-r]').forEach((b, i) => {
+    const dx = at[i][0], dy = (up ? -1 : 1) * at[i][1];
+    b.style.left = (cx + dx - R) + 'px';
+    b.style.top = (cy + dy - R) + 'px';
+    b.style.setProperty('--fx', (-dx) + 'px');         // it grows out of the button
+    b.style.setProperty('--fy', (-dy) + 'px');
+    b.classList.toggle('pick', b.dataset.r === pick);
+    b.setAttribute('aria-label', again ? RESULT_WORDS['s' + b.dataset.r] : SEND_LABELS[b.dataset.r]);
   });
-  const already = (done[current.id] || []).includes(meNow());
-  $('sendHint').textContent = again
-    ? 'You have sent this before, so this is a session send: ' +
-      (t ? 'your ' + t + (t === 1 ? ' try' : ' tries') + ' this session ' + (t === 1 ? 'makes' : 'make') + ' it a ' + word(pick) + '.'
-         : 'first go today makes it a ' + word(pick) + '.') +
-      ' Tap another if that is not right. It adds a send; your first one stays, and is the one that scores.'
-    : (t
-      ? 'Your ' + t + ' logged ' + (t === 1 ? 'try makes' : 'tries make') + ' this a ' +
-        pick + '. Tap another if that is not right.'
-      : 'No tries logged, so this counts as a flash. Tap another if that is not right.') +
-      (already ? ' You have sent this before - this adds another, it does not replace it.' : '');
-  showPanel('send');
+  // An arm to each bubble, from the middle of the button itself: near the side of the
+  // screen the arc has had to shift over, and the arms should still leave the button.
+  const bx = a.left + a.width / 2;
+  fan.querySelectorAll('.arm').forEach((arm, i) => {
+    const vx = cx + at[i][0] - bx, vy = at[i][1];
+    const len = Math.hypot(vx, vy) - R + 2;
+    const deg = Math.atan2(-vx, vy) * 180 / Math.PI;                   // from straight down, turning towards the left
+    arm.style.height = len + 'px';
+    arm.style.left = (bx - 1) + 'px';
+    arm.style.top = (up ? cy - len : cy) + 'px';
+    arm.style.transformOrigin = up ? '50% 100%' : '50% 0';
+    arm.style.transform = 'rotate(' + (up ? -deg : deg) + 'deg)';
+  });
+  const cap = fan.querySelector('.cap');
+  cap.textContent = again ? 'Session send \u00b7 which go?' : 'Which go?';
+  cap.style.left = cx + 'px';
+  cap.style.top = (up ? cy - 156 : cy + 130) + 'px';
+  const x = fan.querySelector('.x');
+  x.style.left = a.left + 'px'; x.style.top = a.top + 'px';
+  x.style.width = a.width + 'px'; x.style.height = a.height + 'px';
+  x.style.borderRadius = getComputedStyle(from).borderRadius;
+  $('quickToast').hidden = true;                       // a line still up from the last go would sit on the bubbles
+  fan.hidden = false;
+  sendOpen = true;
+  layerOpen('fan');
+}
+function closeSend(fromBack){
+  if (!sendOpen) return;
+  sendOpen = false;
+  $('sendFan').hidden = true;
+  if (!fromBack) layerShut('fan');
 }
 
 function logSend(result){
   const me = meNow(); if (!me || !current) return;
-  const name = current.name;
+  const said = (sentBefore(current.id) ? RESULT_WORDS['s' + result] : SEND_LABELS[result]) + ' logged \u00b7 ' + current.name;
+  closeSend();
   listsCall('/lists/log', { person: me, id: current.id, result })
-    .then(ok => quickSay(ok ? 'Send logged \u00b7 ' + name : 'Not saved', ok ? 'sent' : 'bad'));
-  showPanel(null);
+    .then(ok => quickSay(ok ? said : 'Not saved', ok ? 'sent' : 'bad'));
 }
 function runPending(){
   const a = pending; pending = null;
@@ -3485,6 +3539,7 @@ function loadRoute(r, look){
   paintInsta();
   if (page === 'log') routeHist();       // opened from the log page: its history and its climbers follow
   quickShow(false);                      // the two round buttons were for the route before
+  closeSend();
   log('loaded "' + r.name + '" \u2014 ' + GRADES[r.grade] + ' (V' + VGRADE[r.grade] + '), set by ' + r.setter);
   if (!look && $('auto').checked && rx) sendProblem();
   if (page === 'list') showPage('board');     // picked from the page of routes: back to the board, with it open
@@ -5505,7 +5560,14 @@ $('nextBtn').onclick = () => { if (!needName('next')) doNext(); };
 $('toBoard').onclick = () => showPage('board');
 $('toLog').onclick = () => showPage('log');
 $('pgDots').querySelectorAll('button').forEach(b => { b.onclick = () => showPage(b.dataset.go); });
-$('quickScrim').addEventListener('pointerdown', () => quickShow(false));
+// On the click, not on the touch going down: a layer that went on the touch would let
+// the click that follows land on whatever is under it - a row of the list, usually.
+$('quickScrim').addEventListener('click', () => quickShow(false));
+$('sendFan').addEventListener('click', e => {
+  const b = e.target.closest ? e.target.closest('button') : null;
+  if (b && b.dataset.r) return logSend(b.dataset.r);
+  closeSend();                                         // the cross, or the dimming itself
+});
 $('lpBack').onclick = () => showPage('board');
 $('lpUndo').onclick = () => {
   const me = meNow();
@@ -5525,7 +5587,8 @@ $('pairBtn').onclick = openPair;
 $('pairGo').onclick = lightSecond;
 $('pairClose').onclick = () => showPanel(null);
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') showPage('board');
+  if (e.key !== 'Escape') return;
+  if (sendOpen) closeSend(); else if (quickOpen) quickShow(false); else showPage('board');
 });
 $('q').oninput = () => { searchQ = $('q').value; showName = false; paintQBox(); renderResults(); };
 $('q').addEventListener('focus', () => {          // with a mouse and real keys: the box is the way to the page of routes
@@ -5564,6 +5627,7 @@ function showPage(which, fromBack, ghost){
   const was = page;
   if (was === 'board' && betaPlaying){ betaStop(); $('betaSvg').innerHTML = ''; paintBeta(); }   // nobody is watching him now
   quickShow(false);
+  closeSend();
   page = which;
   const b = document.body;
   b.classList.toggle('listPage', which === 'list');
@@ -5603,7 +5667,7 @@ document.body.addEventListener('animationend', e => {
 
 (function pageSwipe(){
   let x0 = null, y0 = null;
-  const off = '#board, #kb, select, #quick, #gSlide, #setPanel, #logPanel, #sendPanel, #pairPanel, #snakePanel, #entryPanel, #gamePanel';
+  const off = '#board, #kb, select, #quick, #gSlide, #sendFan, #setPanel, #logPanel, #pairPanel, #snakePanel, #entryPanel, #gamePanel';
   document.addEventListener('pointerdown', e => {
     x0 = null;
     if (betaDraft || panelOpen) return;
@@ -5878,19 +5942,29 @@ function paintQuick(){
     : '<span>Quick<br>log</span>';
   b.setAttribute('aria-expanded', quickOpen ? 'true' : 'false');
 }
-function quickShow(on){
+function quickShow(on, keep){             // keep: something else takes its step in the history over
   on = !!on && !!current && page === 'board' && !betaDraft;
   clearTimeout(quickShut);
   if (on === quickOpen) return;
   quickOpen = on;
   $('quickFan').hidden = !on;
   $('quickScrim').hidden = !on;
-  if (on) quickShut = setTimeout(() => quickShow(false), 6000);
+  if (on){ quickShut = setTimeout(() => quickShow(false), 6000); layerOpen('fan'); $('quickToast').hidden = true; }
+  else if (!keep) layerShut('fan');
   paintQuick();
 }
-function quickSay(txt, cls){              // a line over the search row, for a moment
-  const t = $('quickToast');
+/* Where the line goes: just over the search row on the board's page, just under the
+   two big buttons on the log page; anywhere else, where the stylesheet puts it. */
+function toastY(){
+  const r = page === 'log' ? $('done').getBoundingClientRect() : page === 'board' ? $('bar').getBoundingClientRect() : null;
+  if (!r || !r.height) return null;
+  return Math.max(56, Math.min(innerHeight - 110, page === 'log' ? r.bottom + 40 : r.top - 44));
+}
+function quickSay(txt, cls){              // what was logged, said for a moment
+  const t = $('quickToast'), y = toastY();
   quickShow(false);
+  t.style.top = y === null ? '' : y + 'px';
+  t.style.bottom = y === null ? '' : 'auto';
   t.textContent = txt;
   t.className = cls === 'bad' ? 'bad' : '';
   t.hidden = false;
@@ -5898,9 +5972,10 @@ function quickSay(txt, cls){              // a line over the search row, for a m
   quickBack = setTimeout(() => { t.hidden = true; }, 1800);
 }
 function quickPick(which){
-  quickShow(false);
-  if (which === 'try'){ if (!needName('try')) doTry(); }
-  else if (!needName('done')) doDone();
+  if (which === 'try'){ quickShow(false); if (!needName('try')) doTry(); return; }
+  if (needName('done')) return quickShow(false);
+  quickShow(false, true);                // the four take the place of the two, on the same step back
+  doDone();
 }
 (function quickLog(){
   const btn = $('quickBtn'), fan = $('quickFan');
@@ -5918,10 +5993,7 @@ function quickPick(which){
   });
   document.addEventListener('pointercancel', () => { pressed = false; lit(null); });
   fan.querySelectorAll('button').forEach(b => { b.onclick = () => quickPick(b.dataset.q); });
-  // a touch anywhere else puts them away
-  document.addEventListener('pointerdown', e => {
-    if (quickOpen && !(e.target.closest && e.target.closest('#quick'))) quickShow(false);
-  }, true);
+  // a touch anywhere else lands on the dimming, which puts them away (see quickScrim)
 })();
 
 /* ---------- the board steps aside ----------
@@ -5981,6 +6053,7 @@ window.addEventListener('popstate', () => {
   if (backSkip > 0){ backSkip--; return; }             // our own tidying up, not the button
   const name = layers.pop();
   if (name === 'panel') showPanel(null, true);
+  else if (name === 'fan'){ closeSend(true); quickShow(false, true); }
   else if (name === 'list' || name === 'log') showPage('board', true);
 });
 
@@ -6171,13 +6244,12 @@ function showFilters(on){
 $('filtBtn').onclick = () => showFilters($('filters').hidden);
 
 const PANELS = { game: 'gamePanel', set: 'setPanel', log: 'logPanel',
-                 send: 'sendPanel', snake: 'snakePanel', entry: 'entryPanel', pair: 'pairPanel' };
+                 snake: 'snakePanel', entry: 'entryPanel', pair: 'pairPanel' };
 
 function showPanel(which, fromBack){  // a key of PANELS, or null for none
   $('gamePanel').hidden = which !== 'game';
   $('setPanel').hidden  = which !== 'set';
   $('logPanel').hidden  = which !== 'log';
-  $('sendPanel').hidden = which !== 'send';
   $('pairPanel').hidden = which !== 'pair';
   $('snakePanel').hidden = which !== 'snake';
   $('entryPanel').hidden = which !== 'entry';
@@ -6238,15 +6310,6 @@ $('snRankBtn').onclick = () => {
   });
 })();
 $('logWho').onchange = loadLog;
-$('sendClose').onclick = () => showPanel(null);
-document.querySelectorAll('#sendPicks .res').forEach(el =>
-  el.onclick = () => logSend(el.dataset.r));
-$('sendUndo').onclick = () => {
-  const me = meNow(); if (!me) return;
-  listsCall('/lists/log/undo', { person: me });
-  showPanel(null);
-};
-
 $('c4new').onclick = c4New;
 $('c4off').onclick = c4Stop;
 $('c4pg').onchange = $('c4pb').onchange = () => c4Draw();
