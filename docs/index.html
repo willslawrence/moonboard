@@ -200,7 +200,6 @@
      orange, so its holds are not taken for the open problem's own red finish. A hold
      the two share is lit as the open problem's, and gets a dashed ring around it. */
   .mark.two{border-style:dashed;border-color:#fb923c}
-  .mark.two.S{border-color:#22c55e}
   .mark.also{width:12.4%;border-style:dashed;border-color:#fb923c;border-width:2px}
 
   /* ---- who has climbed a route: a row a climber, on the log page ---- */
@@ -219,7 +218,8 @@
   #pairCap[hidden]{display:none}
   #pairCap b{min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #pairCap .gd{font-size:9px}
-  #pairCap .leg{display:none;flex:none;color:var(--dim);white-space:nowrap}
+  #pairCap{flex-wrap:wrap}
+  #pairCap .leg{flex:0 0 100%;text-align:center;font-size:10px;color:var(--dim)}
 
   /* ---- route name / search: sits under the board ----
      A filled, rounded box with a magnifier, so it reads as the search and never
@@ -1116,7 +1116,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-08 01:29';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-08 09:19';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3304,7 +3304,12 @@ function parseHolds(str, tag, into){
    Nothing about it is kept on the phone. Which two are up is read from the wall
    (wallRoute, wallSecond), so every phone sees the same thing and none can be left
    showing a second problem that has gone. */
-const SECOND_HOLD = 'E', SECOND_END = 'S';
+/* 2026-10-08, Will: with two up, each route has one colour - the main one all blue,
+   the second all green - and a hold they share is red, steady. (Alternating a shared
+   hold would mean rewriting the whole wall every second, which flickers; a light under
+   the start lands on a real hold one pair in eight.) Starts are shown on the phone;
+   every benchmark tops out on row 18. A second route put up alone is all green. */
+const MAIN_HOLD = 'P', SECOND_HOLD = 'S', SECOND_END = 'S', BOTH_HOLD = 'E';
 
 function cellsOf(r){               // a problem as it is lit on its own
   const c = {};
@@ -3318,7 +3323,13 @@ function secondCells(r){           // a problem as it is lit when it is the seco
   return c;
 }
 // what the wall is sent for these two together: no grade meter, the main one's holds win
-const pairPayload = (r, r2) => payloadOf(Object.assign({}, secondCells(r2), cellsOf(r)));
+function pairCells(r, r2){
+  const a = cellsOf(r), b = secondCells(r2), c = {};
+  for (const k in b) c[k] = b[k];
+  for (const k in a) c[k] = (k in b) ? BOTH_HOLD : MAIN_HOLD;
+  return c;
+}
+const pairPayload = (r, r2) => payloadOf(pairCells(r, r2));
 
 // the problem this phone knows to be on the wall, or null
 function wallMain(){ return (rx || bridgeLive) ? wallRoute() : null; }
@@ -3362,7 +3373,7 @@ function paintPair(){
   const nm = document.createElement('b');
   const leg = document.createElement('span');
   leg.className = 'leg';
-  leg.textContent = 'red on the wall \u00b7 finish green';
+  leg.textContent = kind === 'plus' ? 'on the wall: this one blue, 2nd green, shared red' : 'on the wall: green, shared holds red';
   if (kind === 'plus'){
     nm.textContent = '+ ' + second.name;
     const gd = document.createElement('span');
@@ -3395,14 +3406,14 @@ function openPair(){
     go.hidden = true;
   } else if (place === 'main'){
     ask.textContent = 'This one is already up as the main route.';
-    hint.textContent = 'Open the route you want to add and tap 2nd there. It goes up beside this one in red, with a green finish.';
+    hint.textContent = 'Open the route you want to add and tap 2nd there. This one turns blue, the one you add goes up green, and any hold they share is red.';
     go.hidden = true;
   } else if (other){
     const was = wallSecond();
-    hint.textContent = other.name + ' stays up as the main route. This one goes up beside it in red, with a green finish.' +
+    hint.textContent = other.name + ' stays up as the main route. On the wall the main route turns blue, this one is green, and any hold they share is red.' +
       (was && was.id !== r.id ? ' It takes the place of ' + was.name + '.' : '');
   } else {
-    hint.textContent = 'Nothing else is on the wall that this phone knows of, so it goes up on its own: in red, with a green finish.';
+    hint.textContent = 'Nothing else is on the wall that this phone knows of, so it goes up on its own, all green.';
   }
   showPanel('pair');
 }
