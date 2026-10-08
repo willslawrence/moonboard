@@ -66,9 +66,27 @@ The page you climb from, top to bottom:
   it back.
 
 There is no Hide button: once a problem is open the board stays, and taking a problem
-off the wall is not something a stray tap should do with other people climbing. A tap on
+off the wall is not something a stray tap should do with other people climbing. One tap on
 the picture never opens anything either. It only undoes: it puts a shrunken picture back
-and stops the beta climber.
+and stops the beta climber. Two taps are for focus.
+
+### Focus, and picking holds
+
+Two taps on the picture and it fills the screen, with the open problem's name and grade
+over it and nothing to press. Two more taps put the page back, and so does Back. A flick
+still steps through the list.
+
+In focus a tap on a hold rings it in violet, and another tap lets it go. With a hold
+picked, two buttons come up under the picture, and a small cross that lets every hold go:
+
+- **Light up taps** puts just those holds on the wall, all blue. It is a custom route:
+  *On wall* names it that, with whoever lit it (see *What's on the wall*).
+- **Search routes** goes to the page of routes with the list narrowed to the routes that
+  use every picked hold. A note over the list says which holds, and its cross shows every
+  route again.
+
+Two taps leave focus only when both land on the same hold, so two neighbours tapped
+quickly are two picks. Thirty holds can be picked at most.
 
 ### Routes
 
@@ -79,6 +97,9 @@ that say the same thing, **Sent** to show or hide what you have climbed, and **S
 (popular, best, easiest, hardest, A–Z). The filter button carries a green dot whenever
 something is filtering, so a short list never looks like a bug. Pick a route and you are
 back at the board with it open.
+
+The list can also be narrowed to the routes that use certain holds, picked on the picture
+(see *Focus, and picking holds*). While it is, a note over the list says which holds.
 
 ### Log
 
@@ -151,10 +172,20 @@ the picture is tapped. The line under the picture says who entered it, and lets 
 
 The MoonBoard app has no tag for each problem. Its *Beta videos* screen copies a caption
 with the problem's name, grade, angle, setup and setter, and Moon's own servers gather
-the posts that tag `@moonclimbing`. That gallery cannot be read from here. So the
-Instagram button, at the end of the search row, does the two halves that can be done: it
-copies the same caption, ready to paste into a post, and it opens Instagram searching
-for the problem's name.
+the posts that tag `@moonclimbing`. That gallery cannot be read from here, and the
+Instagram app takes no link that carries a search: a link to Instagram's own search
+opens the app at its front page.
+
+So the Instagram button, at the end of the search row, opens a sheet of videos found by
+Google. A Programmable Search engine kept to instagram.com is asked by Google's own script,
+which is fetched the first time the sheet is opened and not before. Each row is one post:
+a small picture where Google has one (about half of them), how the caption begins, who
+posted it and when. A tap opens that post in Instagram. At the foot is a plain web search
+for more, and Google's mark. New posts take a while to turn up, because Google has to
+find them first.
+
+The button still copies the app's caption, ready to paste into a post of your own. The
+engine's id is `IG_CX` in the page; were it empty, the button would open the web search.
 
 ### Settings
 
@@ -163,7 +194,7 @@ the search row until the cog moved down there.
 
 - **Games on the wall**: Snake and Connect four. They open over the page.
 - **Background**, for this phone only: light foggy grey, which every phone starts on,
-  light taupe, or black.
+  light taupe, or black. (Every phone was put back on the grey once, on 2026-10-08.)
 - **Light the wall as soon as I pick a problem**, off unless a phone turns it on.
 - **Show the grade on row 1**. Row 1 carries no holds on any 2016 benchmark, so it reads
   out the grade from A1 onward, one light per V-grade: five green up to V5, two blue for
@@ -202,6 +233,12 @@ routes. The logbook, the climbers and the hold-set setting are still one shared 
 When someone lights a problem, every other phone gets an **On wall** card naming it and who
 put it up. One tap opens that problem. It sits at the foot of the panel left of the board,
 and it settles into a plain label once you are looking at the problem that is up.
+
+A custom route, lit from holds picked on the picture, has no name of its own, so the card
+reads **Custom route** with whoever lit it. A tap opens the picture in focus with those
+holds picked, to look at, change and light again. The line and tonight's history leave
+custom routes out, because neither keeps the holds. A phone on an older build shows
+nothing for one.
 
 Opening it is a look, not a send - the problem is already lit, and re-sending would only put
 your name on someone else's pick. For the same reason **Light the wall as soon as I pick a
