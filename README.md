@@ -240,10 +240,19 @@ comes back. The phone remembers which wall it was on (`mb-wall`), and the MoonBo
 which is what a Home Screen icon opens, sends a phone that was last on the Sun board
 straight there. A phone on another MoonBoard is not offered the Sun board.
 
-**The wall.** Five pictures: the whole room, the straight wall, the overhang with the
-roof strip above it, the kicker under the overhang, and the box on the ceiling. On the
-picture of the room a tap on a wall goes to that wall. Two fingers zoom a picture, one
-drags it, and the plus and minus do the same for one hand.
+**The same app.** The page is laid out as the MoonBoard page is, on purpose: Routes, Board,
+Log and the cog along the foot; on the board a row over the picture, the picture, a row with
+the open route (which is also the way to the search) and **Quick log**, then a short list;
+two taps on the picture for focus. Where a style rule has a twin on the MoonBoard page it is
+written the same way.
+
+**The wall.** Three pictures, chosen in the row over the picture where the MoonBoard has its
+lights: the room, the straight wall with the island box that hangs from the ceiling over it,
+and the overhang with its roof strip above and the kicker below. No one photo shows the last
+two, so they are put together from several (see *How the map is made*): the straight wall
+is squared up and the box set above it; the overhang is unfolded, roof, panel and kicker
+each squared up and stacked. On the picture of the room a tap on a wall goes to that wall.
+Two fingers zoom a picture and one drags it.
 
 **Holds.** `docs/sun/wall.json` is the map: for each picture, the outline of every hold on
 it, as fractions of the picture's width and height. A volume is a hold. Each side of a
@@ -251,23 +260,33 @@ wooden volume is a hold of its own, because it is one. A hold bolted to a volume
 hold. A tap picks the smallest outline under the finger, so a hold on a volume before the
 volume, and if the finger is on none, the nearest within a finger's width.
 
-**Routes.** "+ New route", then tap the holds: the brush says what the next tap marks
-(start, hold, foot only, finish), a tap on a marked hold with the same brush lets it go,
-and with another brush changes what it is for. A route can run across pictures. A spot
-with no outline can still be marked: the tap leaves a ring there. A route needs a start
-and a finish, a name, a V grade, and a rule for feet (any feet, feet follow hands, marked
-feet only); it can carry the tape it has on the wall and a note. Once saved everyone has
-it. Only its setter is offered "Change it" and "Take it down"; a route taken down leaves
-the list and keeps what was logged on it. With no route open, tapping holds picks them:
-"Routes on them" lists the routes that use every picked hold, "Make a route" starts one
-from them.
+**Focus, and making a route.** As on the MoonBoard, one tap on the picture does nothing and
+two taps make it the whole screen, with every hold outlined; two more taps, a stroke
+upwards or the cross go back. In focus a tap on a hold picks it, and with a hold picked two
+buttons come up where the MoonBoard has *Light up taps* and *Search routes*: **Save as a
+route** and **Search routes**. There is no lighting a wall with no lights, so what is done
+with picked holds here is to keep them. *Save as a route* asks first, then goes on to
+marking: the brush says what a tap marks (start, hold, foot only, finish), a tap on a
+marked hold with the same brush lets it go, and with another brush changes what it is for.
+A route can run across pictures. A spot with no outline can still be marked: the tap
+leaves a ring there. A route needs a start and a finish, a name, a V grade, and a rule for
+feet (any feet, feet follow hands, marked feet only); it can carry the tape it has on the
+wall and a note. Once saved everyone has it. *Search routes* lists the routes that use
+every picked hold. Making a route is deliberately not on the front of the page: Will asked
+for it to be found the way the MoonBoard's custom route is.
 
-**Logbook and points.** A try, or a send with how many goes it took, as on the MoonBoard.
+**Changing a route.** Only its setter is offered **Change it** and **Take it down**, on
+the log page. A route taken down leaves the list and keeps what was logged on it.
+
+**Logbook and points.** A try, or a send with how many goes it took, as on the MoonBoard:
+from **Quick log** on the board or from the log page, and a send asks which go it was with
+the likely answer ringed.
 A route scores once, the first time it is sent: its V number plus one, and one more for a
 flash. Tries score nothing. The points are the Sun board's own.
 
 **Putting the map right.** The outlines are drawn from photos by a program, and it gets
-some wrong, so anyone at the wall can fix it (Settings, "Fix the map of holds"): tap a
+some wrong, so anyone at the wall can fix it (Settings, "Fix the map of holds", which
+opens the picture in focus with three brushes): tap a
 hold that has no outline, an outline that is only tape, or an outline of the wrong shape.
 A fix is kept by the store and reaches every phone at once: a dropped outline can no
 longer be picked, and a missed hold is a ring that can, under the name `x<number>`. When
@@ -282,8 +301,10 @@ the hold is.
 notes (`sun-board-2026-10-09/pipeline`). In short: `detect.py` finds what stands out from
 the board, `sam_points.py` asks a segmentation model (MobileSAM) for the outline of what
 is at each of those places, `pick.py` keeps the outlines that are holds and not tape, and
-`build_wall.py` crops the pictures, adds the volumes (which are drawn in by hand) and
-writes `wall.json`.
+`build_wall.py` adds the volumes (which are drawn in by hand) and writes a map with a
+picture per photo, and `merge_views.py` puts the photos together into the three pictures
+and moves every outline through the same change as the pixels under it, so that no hold
+is found again and every name stays.
 
 **Where it is kept.** `store/store.js` is the whole of it and says at its head what it
 keeps and how to ask. It runs as a Pages Function (`functions/api/[[path]].js`) on a D1
