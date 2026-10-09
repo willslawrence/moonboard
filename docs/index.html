@@ -187,9 +187,14 @@
      corner, so the list has the room; the wall's story beside it gets wider and
      shorter. It stays small while routes are picked, and a tap on it puts it back.
      A trial, alongside the page of routes. */
-  #board{transition:width .18s ease-out}
+  /* Only the stepping aside is drawn out (setCompact puts "stepping" on for as long as
+     it takes). Any other change of size happens at once. Out of focus it used to be drawn
+     out too, and went wrong: half way between two widths the picture is as wide as its
+     column allows, so it stood at the left, shrank there and then jumped to the right
+     (Will, 2026-10-09: "the board starts on the left and then slides right"). */
+  body.stepping #board{transition:width .18s ease-out}
   body.compact #board{width:min(calc(100vw - 108px),16.56vh)}
-  @media (prefers-reduced-motion:reduce){ #board{transition:none} }
+  @media (prefers-reduced-motion:reduce){ body.stepping #board{transition:none} }
   /* ---- focus: the picture and nothing else ----
      Two taps on the picture and it fills the screen: no buttons, only the route's name
      over it. Two more taps put the page back, and so do Back and a swipe upwards. A
@@ -1306,7 +1311,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-09 11:31';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-09 12:53';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -4122,7 +4127,7 @@ function gotoWall(){
   if (!r || betaDraft || (current && current.id === r.id)) return;
   loadRoute(r, true);                    // a look, not a send - it is already up there
   const row = $('results').querySelector('.rt.sel');
-  if (row) row.scrollIntoView({ block: 'nearest' });
+  rowShow(row);
 }
 
 
@@ -4271,7 +4276,7 @@ function stackOpen(r){
   if (betaDraft) return;
   if (!current || current.id !== r.id) loadRoute(r, true);
   const row = $('results').querySelector('.rt.sel');
-  if (row) row.scrollIntoView({ block: 'nearest' });
+  rowShow(row);
 }
 
 /* The one tap that changes the wall. It goes up under the name of whoever was
@@ -5169,6 +5174,21 @@ $('betaBtn').onclick = () => {
   if (beta) betaPlay(); else betaFetch(current.id).then(() => betaPlay());
 };
 
+/* Bring a row of the list into view by moving the list alone, up or down (mid: to its
+   middle). The browser's own scrollIntoView moves everything that can be scrolled, and
+   sideways too. While the board's page slid in from the right its rows stood past the
+   edge of the screen, so the whole page was pushed to the left to fetch one, and the
+   board with it (Will, 2026-10-09: picking a route on the page of routes, "the board
+   starts on the left and then slides right"). */
+function rowShow(row, mid){
+  const sc = $('scroll');
+  if (!row || !sc.contains(row)) return;
+  const r = row.getBoundingClientRect(), s = sc.getBoundingClientRect();
+  if (mid) sc.scrollTop += (r.top + r.height / 2) - (s.top + s.height / 2);
+  else if (r.top < s.top) sc.scrollTop += r.top - s.top;
+  else if (r.bottom > s.bottom) sc.scrollTop += r.bottom - s.bottom;
+}
+
 /* ---------- swipe the board for the next problem ----------
    The list is right there but the board is what you're looking at, so a flick
    across it steps through whatever the list currently shows. */
@@ -5180,7 +5200,7 @@ function stepProblem(delta){
   if (!next) return;
   loadRoute(next);
   const row = $('results').querySelector('.rt.sel');         // the list follows along
-  if (row) row.scrollIntoView({ block: 'nearest' });
+  rowShow(row);
 }
 
 /* Instagram, the way the MoonBoard app does it (Will sent a picture of its "Beta
@@ -5520,6 +5540,7 @@ function boardTap(x, y){
    board's page still, with everything else covered: what the wall does goes on
    showing, and a swipe on the picture still goes to the next route. */
 let focusOn = false;
+let stepping = 0;                    // the timer that takes "stepping" off again once the picture has stepped aside (setCompact)
 function paintFocusCap(){
   const cap = $('focusCap');
   if (!cap) return;
@@ -5536,11 +5557,12 @@ function focusBoard(on, fromBack){
     $('focusHint').className = '';
     $('focusHint').textContent = 'Tap a hold to pick it \u00b7 Swipe up to go back';
   }
+  clearTimeout(stepping); document.body.classList.remove('stepping');
   document.body.classList.toggle('focus', on);
   if (on) return layerOpen('focus');
   if (!fromBack) layerShut('focus');
   const row = $('results').querySelector('.rt.sel');   // the routes may have been stepped through meanwhile
-  if (row) row.scrollIntoView({ block: 'nearest' });
+  rowShow(row);
 }
 
 /* ---------- picking holds ----------
@@ -6328,7 +6350,7 @@ function showPage(which, fromBack, ghost){
   if (which === 'log'){ $('logPage').scrollTop = 0; paintLogPage(); }
   if (which === 'set') $('setPanel').scrollTop = 0;
   const row = $('results').querySelector('.rt.sel');   // the open route stays in view on both
-  if (row && which !== 'log' && which !== 'set') row.scrollIntoView({ block: which === 'list' ? 'center' : 'nearest' });
+  if (which !== 'log' && which !== 'set') rowShow(row, which === 'list');
 }
 document.addEventListener('click', e => {
   if (Date.now() >= ghostUntil) return;
@@ -6683,12 +6705,15 @@ function setCompact(on){
   const b = document.body;
   on = !!on && page === 'board' && !betaDraft;
   if (on === b.classList.contains('compact')) return;
+  b.classList.add('stepping');                         // this change of size, and only this one, glides
+  clearTimeout(stepping);
+  stepping = setTimeout(() => b.classList.remove('stepping'), 260);
   b.classList.toggle('compact', on);
   compactAt = Date.now();
   if (on) return;
   setTimeout(() => {                                   // back at full size: the open route may have slid out of view
     const row = $('results').querySelector('.rt.sel');
-    if (row && page === 'board') row.scrollIntoView({ block: 'nearest' });
+    if (page === 'board') rowShow(row);
   }, 230);
 }
 (function listScroll(){
