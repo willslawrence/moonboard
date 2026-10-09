@@ -1,15 +1,16 @@
 # Will's Wall
 
 The crew's app for the wall at Will's. It was called MoonBoard Direct until 9 October 2026,
-and was renamed so that nobody takes it for Moon's own app; the address and the repository
-keep the old name.
+and was renamed so that nobody takes it for Moon's own app. The same day it moved to
+<https://wills-wall.pages.dev/> (see [Where it is served](#where-it-is-served)); the
+repository and the relay keep the old name.
 
 Drive a MoonBoard v1 LED controller directly over BLE — no Arduino replacement
 controller, no Raspberry Pi. We act as the BLE central and write the same
 `l#S5,P9,E18#` ASCII string to the Nordic UART Service that the official app uses.
 
-- **`docs/index.html`** — the app, one page, served by GitHub Pages at
-  <https://willslawrence.github.io/moonboard/>. The benchmarks for five hold-set and
+- **`docs/index.html`** — the app, one page, served by Cloudflare Pages at
+  <https://wills-wall.pages.dev/>. The benchmarks for five hold-set and
   angle combinations are built in, 1,580 problems in all. Find a route, light it, queue
   for the wall, log tries and sends, and see what the rest of the crew are on. On an
   iPhone the phone that holds the Bluetooth needs
@@ -463,6 +464,40 @@ shows the old ones until it is deleted and added again.
 python3 -m venv .venv && ./.venv/bin/pip install bleak
 ./go.sh
 ```
+
+## Where it is served
+
+Cloudflare Pages, project `wills-wall`, wired to this repository: a push to `main` is live
+at <https://wills-wall.pages.dev/> about half a minute later (no build step, the site is
+the `docs/` folder as it stands). Any other branch that is pushed gets an address of its
+own, `<branch>.wills-wall.pages.dev`, which is how a change is tried on a phone before
+everyone has it. The build stamp at the foot of Settings says which build a phone has.
+
+Until 9 October 2026 the app was at `willslawrence.github.io/moonboard`, served by GitHub
+Pages from the same folder. That address is switched off when the repository is made
+private. Until then it serves this same page, which does only one thing there (see "moved"
+in the first lines of `docs/index.html`):
+
+- in a browser it goes straight to the new address and takes along what the phone had
+  chosen (who you are, the wall's code, the look), because a new address starts every
+  phone from nothing, and a phone on a wall of its own would otherwise land in the crew's
+  room. The new address takes that in once, on a phone that has not yet said who it is,
+  wipes it off the link, and shows a notice;
+- opened from a Home Screen icon it stays put and says how to make a new icon, because an
+  icon keeps opening the address it was made at.
+
+What the crew logged is not on any phone: it is kept by the relay, and the move did not
+touch it. The phone that holds the Bluetooth is asked to pair again at the new address.
+
+`homewall.pages.dev` is held by an empty Pages project of that name, for a later version
+of this app for other people's walls.
+
+Two traps met on the day. `wrangler pages project create` and `wrangler pages deploy`, run
+by a coding agent for a project that does not exist yet, are turned into a Worker deploy of
+whatever `wrangler.toml` is in the folder they are run from: run from `relay/`, that put a
+copy of the relay online under the new name. Run anything about the account from an empty
+folder, and add `--force` to get a real Pages project. And the dashboard's upload page only
+checks a name; it holds nothing until a file is uploaded.
 
 ## Relay (drive the wall remotely)
 

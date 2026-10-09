@@ -18,6 +18,53 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Will's Wall</title>
 <script>
+  /* ---- moved ----
+     The app left willslawrence.github.io/moonboard for wills-wall.pages.dev on 2026-10-09
+     (Cloudflare, so the repository can be private). The copy GitHub still serves is this
+     same page, and there all it does is send people on:
+       - in a browser, straight to the new address, taking along what this phone had
+         chosen here (who you are, the wall's code, the look), because a new address
+         starts every phone from nothing. A phone on a wall of its own would otherwise
+         land in the crew's room and light Will's wall;
+       - opened from a Home Screen icon it stays put and says how to make a new icon,
+         because an icon keeps opening the address it was made at.
+     The new address takes in what was sent along once, on a phone that has not yet
+     said who it is, and wipes it off the link. */
+  var MB_OLD_HOST = 'willslawrence.github.io', MB_NEW_HOME = 'https://wills-wall.pages.dev/';
+  var MB_MOVED = false, MB_ARRIVED = false, MB_MOVE_LINK = MB_NEW_HOME;
+  (function(){
+    var KEYS = /^mb-(me|who|room|room-other|bg2|ply|pic|sort|hide|gmin|gmax|board|auto|standby)$/;
+    var fits = function(k, v){ return KEYS.test(k) && typeof v === 'string' && v.length <= 200 && !/[<>]/.test(v); };
+    try{
+      if (location.hostname === MB_OLD_HOST){
+        MB_MOVED = true;
+        document.documentElement.className += ' moved';
+        var carry = {}, room = (location.hash.match(/room=([\w-]+)/) || [])[1];
+        try{
+          for (var i = 0; i < localStorage.length; i++){
+            var k = localStorage.key(i), v = localStorage.getItem(k);
+            if (fits(k, v)) carry[k] = v;
+          }
+        }catch(e){}
+        MB_MOVE_LINK = MB_NEW_HOME + '#moved=' + encodeURIComponent(JSON.stringify(carry)) + (room ? '&room=' + room : '');
+        var icon = navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+        if (!icon) location.replace(MB_MOVE_LINK);
+        return;
+      }
+      var sent = location.hash.match(/moved=([^&]*)/);
+      if (sent){
+        MB_ARRIVED = true;
+        var keep = (location.hash.match(/[#&]room=([\w-]+)/) || [])[1];
+        history.replaceState(null, '', location.pathname + location.search + (keep ? '#room=' + keep : ''));
+        if (localStorage.getItem('mb-me') === null){
+          var got = JSON.parse(decodeURIComponent(sent[1]));
+          for (var key in got) if (fits(key, got[key])) localStorage.setItem(key, got[key]);
+        }
+      }
+    }catch(e){}
+  })();
+</script>
+<script>
   // the background this phone chose (light foggy grey until it chooses), on before the first paint.
   // 'mb-bg2': Will asked for everyone to be put on the grey once, so choices kept under 'mb-bg' are not read. (see "backgrounds" in the styles)
   try{ var mbBg = localStorage.getItem('mb-bg2'); if (mbBg === null) mbBg = 'fog'; if (mbBg) document.documentElement.setAttribute('data-bg', mbBg); }catch(e){}
@@ -796,6 +843,28 @@
               padding:8px 14px;border-radius:20px;background:var(--ink);color:var(--onink);font-size:13px;font-weight:600;
               white-space:nowrap;max-width:88vw;overflow:hidden;text-overflow:ellipsis;box-shadow:0 4px 14px rgba(0,0,0,.45)}
   #quickToast[hidden]{display:none}
+  /* ---- moved ---- (see the first lines of the page)
+     On the address the app has left, the card is all there is. */
+  #movedCard{display:none}
+  html.moved body > *{display:none !important}
+  html.moved body > #movedCard{display:flex !important;position:fixed;inset:0;z-index:99;align-items:center;justify-content:center;
+    padding:calc(env(safe-area-inset-top) + 20px) 20px calc(env(safe-area-inset-bottom) + 20px);background:var(--bg);overflow:auto}
+  #movedCard .mvBox{width:100%;max-width:360px;background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:22px 18px 18px}
+  #movedCard .mvHead{margin:0 0 6px;font-size:21px;font-weight:800;line-height:1.2;color:var(--bright)}
+  #movedCard .mvAddr{margin:0 0 14px;font-size:17px;font-weight:700;color:var(--blue-ink);word-break:break-all}
+  #movedCard p, #movedCard ol{margin:0 0 12px;font-size:14.5px;line-height:1.45;color:var(--ink)}
+  #movedCard ol{padding-left:20px}
+  #movedCard li{margin:0 0 6px}
+  #movedCard .mvSafe{color:var(--dim)}
+  #movedCard .mvBtn{display:block;box-sizing:border-box;width:100%;margin-top:10px;padding:13px 12px;border-radius:8px;border:1px solid var(--edge);
+    background:var(--ink);color:var(--onink);font:inherit;font-size:15px;font-weight:700;text-align:center;text-decoration:none}
+  #movedCard .mvBtn.alt{background:transparent;color:var(--ink);font-weight:600}
+  /* On the new address, for a phone the old one sent: a line across the top, once. */
+  #arrived{position:fixed;left:10px;right:10px;top:calc(env(safe-area-inset-top) + 10px);z-index:70;display:flex;flex-direction:column;gap:6px;
+    padding:14px 14px 12px;border-radius:12px;border:1px solid var(--now-edge);background:var(--now-bg);color:var(--ink);
+    box-shadow:0 8px 28px rgba(0,0,0,.35);font-size:14px;line-height:1.4}
+  #arrived b{font-size:16px;color:var(--bright)}
+  #arrived button{align-self:flex-end;width:auto;margin-top:4px;padding:9px 22px}
   #quickToast.bad{background:#ef4444;color:#fff}
   body.betaEdit #quick{display:none}           /* the tools for hands and feet have the panel then */
   /* ---- on the wall: the problem someone has lit, and who lit it ----
@@ -892,6 +961,37 @@
 </style>
 </head>
 <body>
+
+<!-- Shown only by the copy of the page at the address the app has left: see "moved" in
+     the first lines of the page. -->
+<div id="movedCard">
+  <div class="mvBox">
+    <div class="mvHead">Will’s Wall has moved</div>
+    <p class="mvAddr">wills-wall.pages.dev</p>
+    <p id="mvGo">Taking you there now.</p>
+    <ol id="mvSteps" hidden>
+      <li>Tap <b>Open the new address</b>, or copy the link and paste it into your browser.</li>
+      <li>In the browser, add it to your Home Screen from the share menu.</li>
+      <li>Delete this old icon. It stops working soon.</li>
+    </ol>
+    <p class="mvSafe">Your logbook and points are safe. They are kept with the wall, not on this phone.</p>
+    <a id="mvOpen" class="mvBtn" href="https://wills-wall.pages.dev/">Open the new address</a>
+    <button id="mvCopy" class="mvBtn alt" type="button">Copy the link</button>
+  </div>
+</div>
+<script>
+  if (MB_MOVED) (function(){
+    var el = function(id){ return document.getElementById(id); };
+    var icon = navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+    el('mvOpen').href = MB_MOVE_LINK;
+    el('mvGo').hidden = icon; el('mvSteps').hidden = !icon;
+    el('mvCopy').onclick = function(){
+      var b = this, said = function(ok){ b.textContent = ok ? 'Copied' : 'Copy it by hand: wills-wall.pages.dev'; };
+      try{ navigator.clipboard.writeText(MB_NEW_HOME).then(function(){ said(true); }, function(){ said(false); }); }
+      catch(e){ said(false); }
+    };
+  })();
+</script>
 
 <div id="top">
 
@@ -1308,10 +1408,13 @@
 </div>
 
 <script>
+/* On the address the app has left, nothing below runs: the first lines of the page are
+   already sending this phone on, and the card is on the screen. */
+if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-09 12:53';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-09 22:44';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -7121,6 +7224,17 @@ $('boardSel').onchange = () => {
 };
 paint();
 $('ver').textContent = 'build ' + BUILD;
+/* Sent here by the old address (see "moved" in the first lines of the page): say so once,
+   because this phone's bookmark or icon still points at the old one. */
+if (MB_ARRIVED){
+  const box = document.createElement('div');
+  box.id = 'arrived';
+  box.innerHTML = '<b>Will’s Wall has moved here</b>' +
+    '<span>The new address is <b>wills-wall.pages.dev</b>. Save this page, or add it to your Home Screen. ' +
+    'The old link stops working soon.</span><button type="button">OK</button>';
+  box.querySelector('button').onclick = () => box.remove();
+  document.body.appendChild(box);
+}
 paintWall();
 fillGradeSelects();
 c4Draw();
