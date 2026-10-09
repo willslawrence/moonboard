@@ -15,6 +15,8 @@
 <link rel="apple-touch-icon" href="../icon-180.png">
 <title>Sun board · Will's Wall</title>
 <script>
+  // The app left this address on 2026-10-09 (see "moved" in ../index.html). The Sun board was never here; send anyone who lands on it across.
+  if (location.hostname === 'willslawrence.github.io') location.replace('https://wills-wall.pages.dev/sun/');
   // the background this phone chose on either wall (light foggy grey until it chooses), on before the first paint
   try{ var mbBg = localStorage.getItem('mb-bg2'); if (mbBg === null) mbBg = 'fog'; if (mbBg) document.documentElement.setAttribute('data-bg', mbBg); }catch(e){}
 </script>
@@ -433,7 +435,7 @@
      { v: 'over', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-10 00:14';
+const BUILD = '2026-10-10 00:34';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -1140,8 +1142,8 @@ function paintAll(){
 
 /* ---------- which wall ---------- */
 /* This phone is on the Sun board until it says otherwise: the MoonBoard page one folder up
-   reads the same note and sends a Home Screen icon here. */
-ls.set('mb-wall', 'sun');
+   reads the same note (mb-wall) and sends a Home Screen icon here. The note is only left
+   once the wall has loaded (see "start"), so a phone is never sent to a page that is not working. */
 $('toMoon').onclick = $('setMoon').onclick = () => { ls.set('mb-wall', 'moon'); location.href = '../'; };
 
 /* ---------- settings ---------- */
@@ -1161,7 +1163,11 @@ try{ const kept = JSON.parse(ls.get('sb-snap-' + WALL) || 'null'); if (kept && A
 paintMe();
 (async () => {
   try{ loadWall(await (await fetch('wall.json')).json()); }
-  catch(e){ $('picNote').textContent = 'The wall’s pictures did not load. Check the connection and open the page again.'; return; }
+  catch(e){
+    ls.set('mb-wall', 'moon');            // next time the app opens on the MoonBoard, which does not need this
+    $('picNote').textContent = 'The wall’s pictures did not load. Check the connection and open the page again.'; return;
+  }
+  ls.set('mb-wall', 'sun');
   $('ver').textContent = 'build ' + BUILD + ' · the map of holds is revision ' + wall.rev + ', ' + wall.holds.length + ' holds';
   setView(wall.views[0].key);
   showPage('wall'); paintAll();
