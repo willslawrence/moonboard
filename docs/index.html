@@ -13,10 +13,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="apple-mobile-web-app-title" content="MoonBoard">
+<meta name="apple-mobile-web-app-title" content="Will's Wall">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
-<title>MoonBoard Direct</title>
+<title>Will's Wall</title>
 <script>
   // the background this phone chose (light foggy grey until it chooses), on before the first paint.
   // 'mb-bg2': Will asked for everyone to be put on the grey once, so choices kept under 'mb-bg' are not read. (see "backgrounds" in the styles)
@@ -890,7 +890,7 @@
 
 <header>
   <span id="dot"></span>
-  <h1 id="wallTxt" title="Wall status — tap for Settings">MoonBoard</h1>
+  <h1 id="wallTxt" title="Wall status — tap for Settings">Will's Wall</h1>
   <select id="me" aria-label="Climbing as"></select>
   <button id="connect">Connect</button>
 </header>
@@ -1290,7 +1290,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-08 20:42';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-09 09:30';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3818,7 +3818,7 @@ function wallState(){
     : lost  ? ['Not reaching', 'bad']
     : live  ? ['Via relay', '']
     : live === false ? ['Wall offline', 'off']
-    : ['MoonBoard', ''];
+    : ["Will's Wall", ''];
   $('wallTxt').textContent = txt;
   $('wallTxt').className = cls;
 }
@@ -5202,8 +5202,8 @@ $('igBtn').addEventListener('click', e => {
 
    Two searches are run for a route: the ordinary one, whose results name the route but
    seldom come with a picture, and the one for pictures, which always has a picture but
-   is loose about what it finds. Rows come from the first, and from the second only
-   where the route is named; a picture from either goes on the row for the same post.
+   is loose about what it finds. A row comes from either, but only where the post's own
+   words name the route (igJudge); a picture from either goes on the row for the same post.
    The pictures Instagram's own pages name cannot be used: those links stop working.
 
    IG_CX is that engine's id (programmablesearchengine.google.com, sites to search:
@@ -5303,42 +5303,107 @@ function igPost(u){
   const kind = k[1] === 'p' ? 'p' : k[1] === 'tv' ? 'tv' : 'reel';
   return { kind, code: k[2], url: 'https://www.instagram.com/' + kind + '/' + k[2] + '/' };
 }
-const igFlat = t => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const igFlat = t => String(t || '').normalize('NFD').replace(/\p{M}+/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 /* Who, when and what, out of the line Instagram writes under its pages:
-   '18 likes, 0 comments - someone on July 1, 2024: "the caption".' */
-function igRead(text, title){
+   '18 likes, 0 comments - someone on July 1, 2024: "the caption".'
+   The same line turns up in what Google quotes under a result (quoted), where the
+   pieces are joined with dots and a later piece can be from another post on the page:
+   there the caption is read as far as the first gap and no further. */
+function igRead(text, title, quoted){
   let t = String(text || '').replace(/\s+/g, ' ').trim();
   const cut = t.indexOf(' ... ');
   if (cut >= 0 && cut < 24) t = t.slice(cut + 5);      // the date Google puts in front of what it quotes
   const m = /^(?:[\d.,KkMm]+ likes?, [\d.,KkMm]+ comments? - )?([A-Za-z0-9._]+) on ([A-Z][a-z]+ \d{1,2}, \d{4})\s*:\s*(.*)$/.exec(t);
+  let cap = m ? m[3] : '';
+  if (quoted && cap.indexOf(' ... ') > 0) cap = cap.slice(0, cap.indexOf(' ... '));
   const clean = x => String(x || '').replace(/^["\u201c\u201d\s]+/, '').replace(/["\u201c\u201d\s.]+$/, '').replace(/\s*-\s*Instagram$/, '').replace(/\s*\.\.\.$/, '').trim();
-  if (m && clean(m[3])) return { who: '@' + m[1], when: m[2], say: clean(m[3]) };
-  return { who: m ? '@' + m[1] : '', when: m ? m[2] : '', say: clean(title) || clean(t) };
+  if (m && clean(cap)) return { who: '@' + m[1], when: m[2], say: clean(cap), cap };
+  return { who: m ? '@' + m[1] : '', when: m ? m[2] : '', say: clean(title) || clean(t), cap: '' };
+}
+/* Is a post about this route? (A climber on Android was shown other routes' videos
+   under the right ones, 2026-10-09.) Google matches a whole page, and an Instagram
+   page carries its neighbours' captions too, so a result can be a video of something
+   else. A post is listed only if its own words name the route as a problem:
+     - the name stands whole, and not inside a longer problem's name (TESS WIDE is not
+       TESS, 45 MAGNUM is not MAGNUM);
+     - and it is written the way a problem is: its grade, "benchmark" or "BM" straight
+       after it (the angle may come between), a grade straight before it, "set by" its
+       setter soon after, or, for a name of three words or more, opening the caption.
+       That is what tells RAINY DAY, 6B+/V4 from "the perfect rainy day";
+     - and the caption does not put it on another hold set (a 2024 problem of the same
+       name, when the wall is 2016).
+   It leaves out the odd real video whose caption only says the name. Better that than
+   the wrong route: the web search at the foot of the sheet still has them all. */
+const IG_GRADED = /^(v\d{1,2}|[4-9][abc])$/, IG_ASIDE = /^(v\d{1,2}|[4-9][abc]|benchmarks?|bm)$/;
+const IG_SETS = ['2010', '2016', '2017', '2019', '2020', '2024', '2025'];      // the years Moon's hold sets go by
+function igJudge(route){
+  const seq = t => igFlat(t).split(' ').filter(Boolean);
+  const want = seq(route.name), setter = seq(route.setter), year = String(route.board || boardKey).split('-')[0];
+  if (!want.length) return () => null;
+  const whole = ' ' + want.join(' ') + ' ', longer = [];
+  Object.keys(byId).forEach(k => {
+    const n = seq(byId[k].name);
+    if (n.length > want.length && (' ' + n.join(' ') + ' ').indexOf(whole) >= 0) longer.push(n);
+  });
+  const is = (toks, s, i) => i >= 0 && s.every((w, k) => toks[i + k] === w);
+  const sure = want.length > 1 || want[0].length > 4;  // UP or MOON alone would pass for a word in a sentence
+  // -1: not named as a problem; 0: it opens the caption; 1: it comes further in
+  const named = toks => {
+    let got = -1;
+    for (let i = 0; i + want.length <= toks.length; i++){
+      if (!is(toks, want, i)) continue;
+      const end = i + want.length;
+      if (longer.some(s => { for (let a = i - (s.length - want.length); a <= i; a++) if (is(toks, s, a)) return true; return false; })) continue;
+      let j = end;
+      while (toks[j] === '40' || toks[j] === '25') j++;
+      let ok = IG_ASIDE.test(toks[j] || '') || (sure && i > 0 && IG_GRADED.test(toks[i - 1])) || (i === 0 && want.length > 2);
+      for (let k = end + 1; !ok && setter.length && k <= end + 14 && k < toks.length; k++)
+        ok = (toks[k - 1] === 'by' || toks[k - 1] === 'setter') && is(toks, setter, k);
+      if (!ok) continue;
+      if (i === 0) return 0;
+      got = 1;
+    }
+    return got;
+  };
+  const sets = toks => toks.map((w, i) => {
+    const glued = /^(?:moonboard|masters|mb)(20\d\d)$/.exec(w);
+    if (glued) return glued[1];
+    return /^(moonboard|moon|masters|mini|mb)$/.test(toks[i - 1] || '') || /^(setup|set|layout|holds?|benchmarks?|moonboard|masters)$/.test(toks[i + 1] || '') ? w : '';
+  }).filter(y => IG_SETS.indexOf(y) >= 0);
+  return (titles, caps) => {
+    const T = titles.map(seq), all = T.concat(caps.map(seq)), how = all.map(named);
+    if (!how.some(h => h >= 0)) return null;
+    const said = [].concat(...all.map(sets));
+    if (said.length && said.indexOf(year) < 0) return null;
+    return { lead: how.indexOf(0) >= 0, inTitle: how.slice(0, T.length).some(h => h >= 0) };
+  };
 }
 function igRows(route, web, image){
-  const want = igFlat(route.name), rows = [], seen = {}, pics = {};
+  const judge = igJudge(route), rows = [], seen = {}, pics = {};
   const pic = r => (r && r.thumbnailImage && r.thumbnailImage.url) || '';
+  // a title can open with the account: 'someone on Instagram: "the caption"'
+  const bare = t => String(t || '').replace(/^[^"\u201c]{0,80}? on Instagram:\s*/, '');
   image.forEach(r => { const at = igPost(r.contextUrl || r.originalContextUrl); if (at && pic(r) && !pics[at.code]) pics[at.code] = pic(r); });
-  const add = (at, title, text, thumb, strict) => {
+  const add = (at, titles, caps, read, thumb) => {
     if (!at || seen[at.code]) return;
-    const inTitle = igFlat(title).indexOf(want), inText = igFlat(text).indexOf(want);
-    if (strict && inTitle < 0 && inText < 0) return;   // the picture search is loose: only what names the route
+    const how = judge(titles.map(bare), caps);
+    if (!how) return;                                  // another route's video, or not one at all
     seen[at.code] = 1;
-    const read = igRead(text, title);
     const th = thumb || pics[at.code] || '';
-    const lead = igFlat(read.say).indexOf(want) === 0 || inTitle === 0;
     rows.push({ url: at.url, kind: at.kind, thumb: th, who: read.who, when: read.when, say: read.say,
-                score: (lead ? 4 : inTitle >= 0 ? 3 : inText >= 0 ? 2 : 1) + (at.kind === 'p' ? 0 : .5) + (th ? .25 : 0), n: rows.length });
+                score: (how.lead ? 4 : how.inTitle ? 3 : 2) + (at.kind === 'p' ? 0 : .5) + (th ? .25 : 0), n: rows.length });
   };
   web.forEach(r => {
     const mt = (r.richSnippet && r.richSnippet.metatags) || {};
-    add(igPost(r.url) || igPost(mt.ogUrl), r.titleNoFormatting, mt.ogDescription || r.contentNoFormatting, pic(r), false);
+    // The page's own description where Google passes it on. Failing that the lines Google
+    // quotes, which count only where they are Instagram's own line about this post.
+    const read = mt.ogDescription ? igRead(mt.ogDescription, r.titleNoFormatting) : igRead(r.contentNoFormatting, r.titleNoFormatting, true);
+    add(igPost(r.url) || igPost(mt.ogUrl), [r.titleNoFormatting, mt.ogTitle], [read.cap || mt.ogDescription || ''], read, pic(r));
   });
-  image.forEach(r => add(igPost(r.contextUrl || r.originalContextUrl), r.titleNoFormatting, r.contentNoFormatting, pic(r), true));
+  // the picture search knows a post by its title alone
+  image.forEach(r => add(igPost(r.contextUrl || r.originalContextUrl), [r.titleNoFormatting], [], igRead('', r.titleNoFormatting), pic(r)));
   rows.sort((a, b) => b.score - a.score || a.n - b.n);
-  // Posts that only mention the route somewhere down the page are left out once there are enough that are about it.
-  const about = rows.filter(r => r.score >= 2);
-  return (about.length >= 5 ? about : rows).slice(0, 12);
+  return rows.slice(0, 12);
 }
 const IG_SAY = { wait: 'Looking on Instagram\u2026', none: 'No videos of this one have turned up yet.',
                  fail: 'The search could not be reached. The web search below still works.' };

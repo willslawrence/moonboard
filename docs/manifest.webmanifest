@@ -1,6 +1,6 @@
 {
-  "name": "MoonBoard",
-  "short_name": "MoonBoard",
+  "name": "Will's Wall",
+  "short_name": "Will's Wall",
   "description": "Light problems on the wall and keep your ticks and tries.",
   "start_url": "./",
   "scope": "./",

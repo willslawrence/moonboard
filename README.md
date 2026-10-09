@@ -1,4 +1,8 @@
-# MoonBoard Direct
+# Will's Wall
+
+The crew's app for the wall at Will's. It was called MoonBoard Direct until 9 October 2026,
+and was renamed so that nobody takes it for Moon's own app; the address and the repository
+keep the old name.
 
 Drive a MoonBoard v1 LED controller directly over BLE — no Arduino replacement
 controller, no Raspberry Pi. We act as the BLE central and write the same
@@ -183,6 +187,15 @@ a small picture where Google has one (about half of them), how the caption begin
 posted it and when. A tap opens that post in Instagram. At the foot is a plain web search
 for more, and Google's mark. New posts take a while to turn up, because Google has to
 find them first.
+
+Google matches a whole page, and an Instagram page carries the captions of the posts shown
+beside it, so some of what comes back is a video of another route. A post is listed only
+when its own caption names the route the way a problem is named: the whole name, with its
+grade, "benchmark" or "BM" straight after it, a grade straight before it, or "set by" its
+setter soon after (a name of three words or more may also simply open the caption). A name
+inside a longer problem's name does not count (TESS WIDE is not TESS), and nor does a
+caption that puts the problem on another hold set. This leaves out the odd real video that
+only says the name, which the web search at the foot still finds.
 
 The button still copies the app's caption, ready to paste into a post of your own. The
 engine's id is `IG_CX` in the page; were it empty, the button would open the web search.
@@ -425,6 +438,9 @@ the page lights.
 The page carries the tags and the manifest that let a phone open it full screen from a Home
 Screen icon, with its own icon. An iPhone decides how an icon opens when the icon is made, so
 one made before 7 October 2026 has to be deleted and added again.
+
+The name under the icon is Will's Wall. An iPhone keeps the name an icon was made with, so
+an icon from before 9 October 2026 still says MoonBoard until it is deleted and added again.
 
 ## Setup
 
