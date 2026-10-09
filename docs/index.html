@@ -949,6 +949,12 @@
       <div id="focusCap"><b></b><span class="gd" hidden></span></div>
       <div id="board">
         <img src="board-2016.png" alt="MoonBoard 2016 wall" width="450" height="692">
+        <script>
+          // The picture this phone last showed, put back before anything is painted. Which hold
+          // set is up, and whether this phone asked for plywood, are only read further down.
+          try{ var mbPic = localStorage.getItem('mb-pic'); if (mbPic && mbPic !== 'board-2016.png' && /^board-[a-z0-9-]+\.(png|jpg)$/.test(mbPic)) document.currentScript.previousElementSibling.src = mbPic; }catch(e){}
+          document.currentScript.remove();
+        </script>
         <div id="marks"></div>
         <svg id="betaSvg" viewBox="0 0 450 692" aria-hidden="true"></svg>
         <div id="betaTap"></div>
@@ -1110,6 +1116,12 @@
     <option value="">Black</option>
   </select>
   <div class="hint">For this phone only. Light foggy grey is what everyone starts on.</div>
+
+  <label class="ck"><input type="checkbox" id="plyChk">
+    Show the board on plywood</label>
+  <div class="hint">For this phone only. Unticked, the picture is Moon's yellow board, which
+    is what everyone starts on. Plywood is drawn for the 2016 hold set so far; the other
+    sets keep their own picture.</div>
 
   <label class="ck"><input type="checkbox" id="auto">
     Light the wall as soon as I pick a problem</label>
@@ -1290,7 +1302,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-09 10:24';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-09 10:52';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3019,7 +3031,7 @@ const RETIRED=[[190906,"SUNNY SIDE","Klaus Klein",5,12014,4.3,"B6,C5","E8,E10,E1
 /* The wall rotates between hold sets, and some sets are climbed at two angles.
    Whichever is up decides what the list, the search and the board picture show. */
 const BOARDS = [
-  { key: '2016-40', label: 'MoonBoard 2016 · 40°',     img: 'board-2016.png', geo: 'photo' },
+  { key: '2016-40', label: 'MoonBoard 2016 · 40°',     img: 'board-2016.png', geo: 'photo', ply: 'board-2016-ply.jpg' },
   { key: '2019-40', label: 'Masters 2019 · 40°',       img: 'board-2019.png', geo: 'art' },
   { key: '2019-25', label: 'Masters 2019 · 25°',       img: 'board-2019.png', geo: 'art' },
   { key: '2024-40', label: 'MoonBoard 2024 · 40°',     img: 'board-2024.png', geo: 'art' },
@@ -3038,6 +3050,12 @@ BOARDS.forEach(b => {
 });
 RETIRED.forEach(r => { byId[r[0]] = toProblem(r, '2016-40'); });
 let boardKey = DEFAULT_BOARD;
+/* Which picture of the board. Moon's own is what everyone starts on; a phone can ask in
+   Settings for the same holds on plywood instead (Will, 2026-10-09). The plywood picture
+   is in the same frame as Moon's, so the rings land where they did. A set without one
+   keeps its own picture. */
+let plyOn = false;
+try{ plyOn = localStorage.getItem('mb-ply') === '1'; }catch(e){}
 let PROBLEMS = BY_BOARD[boardKey];     // what's on the wall right now
 const boardNow = () => BOARDS.find(b => b.key === boardKey) || BOARDS[0];
 let current = null;
@@ -3085,6 +3103,12 @@ function personColor(name){
   return 'hsl(' + h + ' 62% 62%)';
 }
 
+function paintBoardPic(){
+  const im = $('board').querySelector('img'), src = (plyOn && boardNow().ply) || boardNow().img;
+  if (im.getAttribute('src') !== src) im.src = src;
+  im.alt = boardNow().label + ' wall';
+  try{ localStorage.setItem('mb-pic', src); }catch(e){}    // for the line under the picture that puts it back on the next visit
+}
 /* Swap to another hold set or angle. The setting is the crew's, not the phone's:
    there is one wall, so it is stored with the tick lists and every phone follows.
    A relay that predates this just never sends one, and the phone keeps its own. */
@@ -3096,8 +3120,7 @@ function setBoard(key, fromServer){
   boardKey = key;
   PROBLEMS = BY_BOARD[key];
   fillGradeSelects();
-  $('board').querySelector('img').src = boardNow().img;
-  $('board').querySelector('img').alt = boardNow().label + ' wall';
+  paintBoardPic();
   picks = {}; holdFilter = [];           // holds picked on the other set mean nothing on this one
   paintPicks();
   // A change that came from the crew's setting is not this phone's to act on at the
@@ -7019,6 +7042,13 @@ paintLoc();
 BOARDS.forEach(b => $('boardSel').appendChild(new Option(b.label + ' — ' + BY_BOARD[b.key].length + ' benchmarks', b.key)));
 $('boardSel').value = boardKey;
 try{ const b = localStorage.getItem('mb-board'); if (b) setBoard(b); }catch(e){}
+$('plyChk').checked = plyOn;
+paintBoardPic();
+$('plyChk').onchange = () => {
+  plyOn = $('plyChk').checked;
+  try{ localStorage.setItem('mb-ply', plyOn ? '1' : ''); }catch(e){}
+  paintBoardPic();
+};
 $('boardSel').onchange = () => {
   const key = $('boardSel').value;
   if (!confirm('Switch the wall to ' + BOARDS.find(b => b.key === key).label + ' for everyone?')){

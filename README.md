@@ -208,6 +208,9 @@ the search row until the cog moved down there.
 - **Games on the wall**: Snake and Connect four. They open over the page.
 - **Background**, for this phone only: light foggy grey, which every phone starts on,
   light taupe, or black. (Every phone was put back on the grey once, on 2026-10-08.)
+- **Show the board on plywood**, for this phone only, off unless a phone turns it on.
+  Unticked, the picture is Moon's yellow board. Plywood is drawn for the 2016 hold set so
+  far; the other sets keep their own picture.
 - **Light the wall as soon as I pick a problem**, off unless a phone turns it on.
 - **Show the grade on row 1**. Row 1 carries no holds on any 2016 benchmark, so it reads
   out the grade from A1 onward, one light per V-grade: five green up to V5, two blue for
@@ -412,6 +415,16 @@ Climbing's — fine for a personal page, not for anything you ship.
 
 The 2019 and 2024 sets have drawn pictures, `board-2019.png` and `board-2024.png`, laid
 out on an even grid, so their rings are placed by row and column alone.
+
+`docs/board-2016-ply.jpg` is the same 2016 holds on a ground of our own, for a phone that
+ticks **Show the board on plywood** in Settings (kept as `mb-ply`; Moon's picture is what
+everyone starts on). The holds are the cut-outs from boardhang's hold-set art, the wood is
+Poly Haven's plywood texture (CC0) laid as three sheets with their seams, there is a bolt
+hole at every point without a hold, and a faint stained WW sits under the holds. It is drawn
+in the same frame as the photo, 650x1000, so the rings land where they did. The hold
+pictures are still Moon Climbing's. A line under the picture in the page puts back the
+picture a phone last showed (`mb-pic`) before anything is painted, so a phone on plywood, or
+on another hold set, does not open on the yellow 2016 board for a moment.
 
 ## Benchmark data
 
