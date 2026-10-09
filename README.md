@@ -439,8 +439,10 @@ The page carries the tags and the manifest that let a phone open it full screen 
 Screen icon, with its own icon. An iPhone decides how an icon opens when the icon is made, so
 one made before 7 October 2026 has to be deleted and added again.
 
-The name under the icon is Will's Wall. An iPhone keeps the name an icon was made with, so
-an icon from before 9 October 2026 still says MoonBoard until it is deleted and added again.
+The name under the icon is Will's Wall, and the icon is Will's own picture: a slate board,
+grey holds, and two white Ws meshed the way the wall shows them on connect. An iPhone keeps
+the name and the picture an icon was made with, so an icon from before 9 October 2026 still
+shows the old ones until it is deleted and added again.
 
 ## Setup
 
