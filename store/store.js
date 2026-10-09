@@ -16,6 +16,9 @@
      POST /api/w/sun/log              { person, route, result }            a try or a send
      POST /api/w/sun/log/undo         { person }                           take back that climber's last entry
      GET  /api/w/sun/log?person=&route=&limit=                             logbook rows, newest first
+     POST /api/w/sun/fix              { by, kind, v, x, y, h?, size? }     the map of holds is wrong here (see below)
+     POST /api/w/sun/fix/undo         { k }                                take that back
+     POST /api/w/sun/fixes/done       { ks }                               these are in the published map now
 
    A write answers with the wall as it now stands, so the phone that wrote is up to date
    without asking again. There are no accounts, as on the rest of the app: a name is a name.
@@ -25,14 +28,23 @@
    the MoonBoard side uses, so the two read alike:
      a  tries since the last send        r  the last send's result, or null
      s  every send's result, in order     d  when the last row was written
-   and it is always worked out again from the rows, so an undo cannot leave it wrong. */
+   and it is always worked out again from the rows, so an undo cannot leave it wrong.
+
+   The map of holds (which outline on which picture is a hold) is a file that ships with the
+   page. It is made from photos by a program, and the program is sometimes wrong, so anyone at
+   the wall can say so: "there is a hold here that has no outline" (add, with a rough size),
+   "this outline is tape, not a hold" (drop), "this is a hold but the outline is the wrong
+   shape" (redo). Those are kept here and go out with the wall, and the page acts on them at
+   once: a dropped outline is gone, an added hold is a ring that can be picked, under the name
+   x<number>. When the map is next made they are worked into it properly and marked done. */
 
 export const RESULTS = ['try', 'flash', '2nd', '3rd', '4+'];
 export const ROLES = ['s', 'h', 'f', 'e'];                 // start, hold, foot only, finish
 export const FEET = ['any', 'follow', 'marked'];           // any feet, feet follow hands, marked feet only
 export const GRADE_MIN = -1, GRADE_MAX = 17;                // VB is -1, then V0 to V17
 const WALLS = { sun: 'Sun board' };                         // the walls there are; "test-..." is any wall a check makes
-const MAX_ROUTES = 3000, MAX_PEOPLE = 300, MAX_MARKS = 80;
+const MAX_ROUTES = 3000, MAX_PEOPLE = 300, MAX_MARKS = 80, MAX_FIXES = 2000;
+const FIX_KINDS = ['add', 'drop', 'redo'], FIX_SIZES = ['s', 'm', 'l'];
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
   status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
@@ -55,6 +67,9 @@ const SCHEMA = [
   `CREATE INDEX IF NOT EXISTS log_wall ON log (wall, k)`,
   `CREATE TABLE IF NOT EXISTS stats (wall TEXT NOT NULL, person TEXT NOT NULL, route INTEGER NOT NULL, a INTEGER NOT NULL,
      r TEXT, s TEXT NOT NULL, d TEXT, PRIMARY KEY (wall, person, route))`,
+  `CREATE TABLE IF NOT EXISTS fixes (k INTEGER PRIMARY KEY AUTOINCREMENT, wall TEXT NOT NULL, t TEXT NOT NULL, who TEXT NOT NULL,
+     kind TEXT NOT NULL, v TEXT NOT NULL, x REAL NOT NULL, y REAL NOT NULL, h TEXT, size TEXT, done INTEGER NOT NULL DEFAULT 0)`,
+  `CREATE INDEX IF NOT EXISTS fixes_wall ON fixes (wall, done, k)`,
 ];
 /* The tables are made the first time this copy of the code is asked for anything; asking
    again costs nothing. A failure is forgotten, so the next request tries afresh. */
@@ -83,10 +98,11 @@ function cleanMarks(v){
 }
 
 async function snapshot(db, wall){
-  const [p, r, s] = await db.batch([
+  const [p, r, s, f] = await db.batch([
     db.prepare('SELECT name FROM people WHERE wall = ? ORDER BY t, name').bind(wall),
     db.prepare('SELECT id, name, grade, setter, marks, feet, tape, note, t, edited, retired FROM routes WHERE wall = ? ORDER BY id').bind(wall),
     db.prepare('SELECT person, route, a, r, s, d FROM stats WHERE wall = ?').bind(wall),
+    db.prepare('SELECT k, who, kind, v, x, y, h, size FROM fixes WHERE wall = ? AND done = 0 ORDER BY k').bind(wall),
   ]);
   const stats = {};
   for (const row of s.results){
@@ -99,6 +115,7 @@ async function snapshot(db, wall){
     wall, people: p.results.map(x => x.name),
     routes: r.results.map(x => ({ ...x, marks: JSON.parse(x.marks), retired: !!x.retired })),
     stats,
+    fixes: f.results.map(x => { const o = { k: x.k, by: x.who, kind: x.kind, v: x.v, x: x.x, y: x.y }; if (x.h) o.h = x.h; if (x.size) o.size = x.size; return o; }),
   };
 }
 
@@ -222,9 +239,41 @@ export async function handle(request, db, now = () => new Date().toISOString()){
     return json({ ...(await snapshot(db, wall)), undone: last.route });
   }
 
+  if (path === '/fix'){
+    const by = clean(body.by, 40), kind = body.kind, v = typeof body.v === 'string' && /^[a-z0-9-]{1,16}$/.test(body.v) ? body.v : '';
+    if (!by || !(await knows(db, wall, by))) return bad('say who you are first', 404);
+    if (!FIX_KINDS.includes(kind) || !v || !unit(body.x) || !unit(body.y)) return bad('a fix is add, drop or redo, at a point on one of the pictures');
+    const h = typeof body.h === 'string' && /^[A-Za-z0-9_.-]{1,16}$/.test(body.h) ? body.h : null;
+    if (kind !== 'add' && !h) return bad('say which hold');
+    const size = kind === 'add' ? (FIX_SIZES.includes(body.size) ? body.size : 'm') : null;
+    // the same thing said twice is said once
+    const same = kind === 'add' ? null
+      : await db.prepare('SELECT k FROM fixes WHERE wall = ? AND done = 0 AND kind = ? AND h = ?').bind(wall, kind, h).first();
+    if (!same){
+      const n = (await db.prepare('SELECT COUNT(*) AS n FROM fixes WHERE wall = ? AND done = 0').bind(wall).first()).n;
+      if (n >= MAX_FIXES) return bad('that is all the fixes this wall can hold until the map is next made', 409);
+      await db.prepare('INSERT INTO fixes (wall, t, who, kind, v, x, y, h, size) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        .bind(wall, now(), by, kind, v, Math.round(body.x * 1e4) / 1e4, Math.round(body.y * 1e4) / 1e4, kind === 'add' ? null : h, size).run();
+    }
+    return json(await snapshot(db, wall));
+  }
+
+  if (path === '/fix/undo'){
+    await db.prepare('DELETE FROM fixes WHERE wall = ? AND k = ? AND done = 0').bind(wall, Number(body.k)).run();
+    return json(await snapshot(db, wall));
+  }
+
+  // said by whoever has just published a map with these worked in
+  if (path === '/fixes/done'){
+    const ks = Array.isArray(body.ks) ? body.ks.map(Number).filter(Number.isInteger).slice(0, MAX_FIXES) : [];
+    for (let i = 0; i < ks.length; i += 50)
+      await db.batch(ks.slice(i, i + 50).map(k => db.prepare('UPDATE fixes SET done = 1 WHERE wall = ? AND k = ?').bind(wall, k)));
+    return json(await snapshot(db, wall));
+  }
+
   // a check clears up after itself; a real wall cannot be emptied this way
   if (path === '/reset' && isTest(wall)){
-    await db.batch(['people', 'routes', 'log', 'stats'].map(t => db.prepare('DELETE FROM ' + t + ' WHERE wall = ?').bind(wall)));
+    await db.batch(['people', 'routes', 'log', 'stats', 'fixes'].map(t => db.prepare('DELETE FROM ' + t + ' WHERE wall = ?').bind(wall)));
     return json(await snapshot(db, wall));
   }
   return bad('not found', 404);

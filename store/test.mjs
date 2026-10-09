@@ -1,18 +1,7 @@
 // The store, on its own: no Cloudflare, no browser. A stand-in for D1 is made from the SQLite
 // that comes with Node, with the few calls the store uses.   node store/test.mjs
-import { DatabaseSync } from 'node:sqlite';
 import { handle } from './store.js';
-
-export function standInD1(){
-  const sql = new DatabaseSync(':memory:');
-  const stmt = (q, args = []) => ({
-    bind: (...a) => stmt(q, a),
-    all: async () => ({ results: /^\s*(SELECT|INSERT[^;]*RETURNING)/i.test(q) ? sql.prepare(q).all(...args) : (sql.prepare(q).run(...args), []) }),
-    first: async () => sql.prepare(q).get(...args) ?? null,
-    run: async () => { const r = sql.prepare(q).run(...args); return { success: true, meta: { changes: Number(r.changes), last_row_id: Number(r.lastInsertRowid) } }; },
-  });
-  return { prepare: q => stmt(q), batch: async list => { const out = []; for (const s of list) out.push(await s.all()); return out; } };
-}
+import { standInD1 } from './stand-in-d1.mjs';
 
 let pass = 0, fail = 0;
 const check = (name, ok, detail) => { ok ? pass++ : fail++; console.log((ok ? '  ok   ' : '  FAIL ') + name + (ok || detail === undefined ? '' : '\n       ' + JSON.stringify(detail))); };
@@ -29,7 +18,7 @@ console.log('a wall that does not exist, and an empty one');
 check('an unknown wall is refused', (await call('GET', '/api/w/moon')).status === 404);
 check('anything outside /api/w is refused', (await call('GET', '/api/lists')).status === 404);
 let s = await call('GET', '/api/w/sun');
-check('the Sun board starts empty', s.status === 200 && s.wall === 'sun' && s.people.length === 0 && s.routes.length === 0 && Object.keys(s.stats).length === 0, s);
+check('the Sun board starts empty', s.status === 200 && s.wall === 'sun' && s.people.length === 0 && s.routes.length === 0 && Object.keys(s.stats).length === 0 && s.fixes.length === 0, s);
 
 console.log('people');
 s = await call('POST', '/api/w/sun/person', { name: '  Will ' });
@@ -101,6 +90,27 @@ check('undoing a climber\'s only row leaves no tally at all', !('Sara' in s.stat
 check('with nothing left there is nothing to undo', (await call('POST', '/api/w/sun/log/undo', { person: 'Sara' })).status === 404);
 for (let i = 0; i < 4; i++) s = await call('POST', '/api/w/sun/log/undo', { person: 'Will' });
 check('undone all the way back, the tally is gone', !('Will' in s.stats) && (await call('GET', '/api/w/sun/log')).entries.length === 0, s.stats);
+
+console.log('fixes to the map of holds');
+check('a stranger cannot fix the map', (await call('POST', '/api/w/sun/fix', { by: 'Nobody', kind: 'add', v: 'kick', x: 0.5, y: 0.5 })).status === 404);
+check('a fix needs a kind, a picture and a point on it', (await call('POST', '/api/w/sun/fix', { by: 'Will', kind: 'paint', v: 'kick', x: 0.5, y: 0.5 })).status === 400 &&
+  (await call('POST', '/api/w/sun/fix', { by: 'Will', kind: 'add', v: 'kick', x: 1.5, y: 0.5 })).status === 400 && (await call('POST', '/api/w/sun/fix', { by: 'Will', kind: 'add', x: 0.5, y: 0.5 })).status === 400);
+check('drop and redo need a hold', (await call('POST', '/api/w/sun/fix', { by: 'Will', kind: 'drop', v: 'kick', x: 0.5, y: 0.5 })).error === 'say which hold');
+s = await call('POST', '/api/w/sun/fix', { by: 'Will', kind: 'add', v: 'kick', x: 0.123456, y: 0.5, size: 'l' });
+check('a missed hold is kept, with where and how big, and goes out with the wall', s.fixes.length === 1 && s.fixes[0].kind === 'add' && s.fixes[0].v === 'kick' && s.fixes[0].x === 0.1235 && s.fixes[0].size === 'l' && s.fixes[0].by === 'Will' && s.fixes[0].k === 1, s.fixes);
+s = await call('POST', '/api/w/sun/fix', { by: 'Sara', kind: 'add', v: 'kick', x: 0.2, y: 0.5, size: 'huge' });
+check('a size that is not one becomes medium', s.fixes[1].size === 'm');
+s = await call('POST', '/api/w/sun/fix', { by: 'Sara', kind: 'drop', v: 'wall', x: 0.3, y: 0.3, h: 'w37' });
+s = await call('POST', '/api/w/sun/fix', { by: 'Will', kind: 'drop', v: 'wall', x: 0.3, y: 0.3, h: 'w37' });
+check('the same outline dropped twice is dropped once', s.fixes.filter(f => f.kind === 'drop').length === 1 && s.fixes.length === 3, s.fixes);
+s = await call('POST', '/api/w/sun/fix', { by: 'Will', kind: 'redo', v: 'wall', x: 0.3, y: 0.3, h: 'w37' });
+check('but it can also be said to be the wrong shape', s.fixes.length === 4 && s.fixes[3].kind === 'redo' && s.fixes[3].h === 'w37');
+s = await call('POST', '/api/w/sun/fix/undo', { k: 3 });
+check('a fix can be taken back', s.fixes.length === 3 && !s.fixes.some(f => f.k === 3));
+s = await call('POST', '/api/w/sun/fixes/done', { ks: [1, 2, 'x', 999] });
+check('fixes worked into the map are done and no longer go out', s.fixes.length === 1 && s.fixes[0].k === 4, s.fixes);
+check('a done one cannot be taken back', (await call('POST', '/api/w/sun/fix/undo', { k: 1 })).fixes.length === 1);
+await call('POST', '/api/w/sun/fixes/done', { ks: [4] });
 
 console.log('walls are apart, and only a check\'s wall can be emptied');
 await call('POST', '/api/w/test-a/person', { name: 'Tess' });

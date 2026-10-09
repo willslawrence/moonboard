@@ -18,6 +18,10 @@ controller, no Raspberry Pi. We act as the BLE central and write the same
   every other phone can use any browser, through the relay.
 - **`relay/`** — a Cloudflare Worker that passes what one phone lights to the phone at
   the wall, and keeps the crew's logbook.
+- **`docs/sun/`** — the Sun board: Will's other wall, which has no lights. A page of its
+  own, with pictures of the wall and a map of its holds. See [The Sun board](#the-sun-board).
+- **`store/`, `functions/`, `wrangler.toml`** — where the Sun board's routes and logbook
+  are kept: a Pages Function on a D1 database, on the same address as the pages.
 - **`moonprobe.py`** — macOS BLE probe. `python3 moonprobe.py go` scans, finds the
   box, and dumps its GATT services. Read-only.
 - **`docs/test.html`** — a bare wall test: single LEDs, a column, a row, the corners,
@@ -221,6 +225,75 @@ the search row until the cog moved down there.
   only switch it when the holds on the wall actually change.
 - **Where you're climbing** (see below), a log of what the page has done, and the build
   stamp.
+
+## The Sun board
+
+Will has a second wall at home: a spray wall with no lights, on which routes used to be
+marked with tape. `docs/sun/` is the app for it. It is deliberately a page of its own and
+not a mode of the MoonBoard page: nothing is shared but the look, the names of the crew and
+the Home Screen icon. Nothing from the MoonBoard shows there and nothing from there shows
+on the MoonBoard.
+
+**Getting there.** On the MoonBoard page, when "Where you're climbing" is Will's Wall, a
+sun in the header and a row in Settings ("Which wall") go across; a moon on the Sun board
+comes back. The phone remembers which wall it was on (`mb-wall`), and the MoonBoard page,
+which is what a Home Screen icon opens, sends a phone that was last on the Sun board
+straight there. A phone on another MoonBoard is not offered the Sun board.
+
+**The wall.** Five pictures: the whole room, the straight wall, the overhang with the
+roof strip above it, the kicker under the overhang, and the box on the ceiling. On the
+picture of the room a tap on a wall goes to that wall. Two fingers zoom a picture, one
+drags it, and the plus and minus do the same for one hand.
+
+**Holds.** `docs/sun/wall.json` is the map: for each picture, the outline of every hold on
+it, as fractions of the picture's width and height. A volume is a hold. Each side of a
+wooden volume is a hold of its own, because it is one. A hold bolted to a volume is a
+hold. A tap picks the smallest outline under the finger, so a hold on a volume before the
+volume, and if the finger is on none, the nearest within a finger's width.
+
+**Routes.** "+ New route", then tap the holds: the brush says what the next tap marks
+(start, hold, foot only, finish), a tap on a marked hold with the same brush lets it go,
+and with another brush changes what it is for. A route can run across pictures. A spot
+with no outline can still be marked: the tap leaves a ring there. A route needs a start
+and a finish, a name, a V grade, and a rule for feet (any feet, feet follow hands, marked
+feet only); it can carry the tape it has on the wall and a note. Once saved everyone has
+it. Only its setter is offered "Change it" and "Take it down"; a route taken down leaves
+the list and keeps what was logged on it. With no route open, tapping holds picks them:
+"Routes on them" lists the routes that use every picked hold, "Make a route" starts one
+from them.
+
+**Logbook and points.** A try, or a send with how many goes it took, as on the MoonBoard.
+A route scores once, the first time it is sent: its V number plus one, and one more for a
+flash. Tries score nothing. The points are the Sun board's own.
+
+**Putting the map right.** The outlines are drawn from photos by a program, and it gets
+some wrong, so anyone at the wall can fix it (Settings, "Fix the map of holds"): tap a
+hold that has no outline, an outline that is only tape, or an outline of the wrong shape.
+A fix is kept by the store and reaches every phone at once: a dropped outline can no
+longer be picked, and a missed hold is a ring that can, under the name `x<number>`. When
+the map is next made the fixes are worked into it, each ring gets a proper outline and a
+proper name, `wall.json` says which (`alias`), and the fixes are marked done.
+
+**A hold's name never changes** once it is published, because a route is a list of names.
+The program that makes the map keeps every hold's name from the map before it, by where
+the hold is.
+
+**How the map is made.** Not in this repository: the photos and the scripts are in Will's
+notes (`sun-board-2026-10-09/pipeline`). In short: `detect.py` finds what stands out from
+the board, `sam_points.py` asks a segmentation model (MobileSAM) for the outline of what
+is at each of those places, `pick.py` keeps the outlines that are holds and not tape, and
+`build_wall.py` crops the pictures, adds the volumes (which are drawn in by hand) and
+writes `wall.json`.
+
+**Where it is kept.** `store/store.js` is the whole of it and says at its head what it
+keeps and how to ask. It runs as a Pages Function (`functions/api/[[path]].js`) on a D1
+database (`wrangler.toml`), at `/api/w/sun` on the site's own address, so it goes out with
+a push like the pages do. The relay and the crew's MoonBoard logbook are not involved,
+except once: the first time anyone opens the Sun board it copies the crew's names across.
+
+**Checking it.** `node store/test.mjs` checks the store alone, on a stand-in for D1 made
+from Node's own SQLite. The page is checked together with the real store in headless
+Chrome by `sun.mjs` in the test rig (in Will's notes, with the other rig scripts).
 
 ## Two phones, one wall
 
@@ -468,8 +541,8 @@ python3 -m venv .venv && ./.venv/bin/pip install bleak
 ## Where it is served
 
 Cloudflare Pages, project `wills-wall`, wired to this repository: a push to `main` is live
-at <https://wills-wall.pages.dev/> about half a minute later (no build step, the site is
-the `docs/` folder as it stands). Any other branch that is pushed gets an address of its
+at <https://wills-wall.pages.dev/> about half a minute later (no build step: the site is
+the `docs/` folder as it stands, and `functions/` beside it is the Sun board's store). Any other branch that is pushed gets an address of its
 own, `<branch>.wills-wall.pages.dev`, which is how a change is tried on a phone before
 everyone has it. The build stamp at the foot of Settings says which build a phone has.
 

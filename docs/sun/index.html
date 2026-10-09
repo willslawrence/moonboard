@@ -1,0 +1,1179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#c6cbd0">
+<!-- The Sun board is the same app as the MoonBoard page one folder up, so it shares that
+     page's manifest and icon: an icon on the Home Screen opens whichever wall this phone
+     was last on (see "which wall" in the first lines of ../index.html). -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Will's Wall">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<title>Sun board · Will's Wall</title>
+<script>
+  // the background this phone chose on either wall (light foggy grey until it chooses), on before the first paint
+  try{ var mbBg = localStorage.getItem('mb-bg2'); if (mbBg === null) mbBg = 'fog'; if (mbBg) document.documentElement.setAttribute('data-bg', mbBg); }catch(e){}
+</script>
+<style>
+  /* The same colours as the MoonBoard page (../index.html, "backgrounds"), so the two walls
+     read as one app. If a colour changes there, change it here. */
+  :root{
+    --pad:7px;
+    --bg:#0e0e0f; --panel:#171719; --panel2:#1e1e21; --edge:#2a2a2e;
+    --ink:#e9e9ec; --dim:#8b8b93; --dimmer:#5c5c65;
+    --line:#1e2024; --press:#2a2a2e; --soft:#16181c; --chip:#22252b;
+    --onink:#0e0e0f; --bright:#fff; --blue-ink:#8fb8ff; --green-ink:#22c55e;
+    --now-bg:#131d33; --now-edge:#2f4a86; --now-cap:#8fb0f5;
+    /* what a hold is for, on the picture and in the words under it */
+    --start:#22c55e; --hold:#3b82f6; --foot:#facc15; --end:#ef4444; --pick:#a78bfa;
+  }
+  html[data-bg="taupe"]{
+    --bg:#c3b6a9; --panel:#cec2b6; --panel2:#d9cec3; --edge:#a39486;
+    --ink:#231d18; --dim:#51463d; --dimmer:#73675c;
+    --line:#b0a294; --press:#c4b7aa; --soft:#cabdb0; --chip:#b3a597;
+    --onink:#f8f4ee; --bright:#000; --blue-ink:#1f4fae; --green-ink:#15803d;
+    --now-bg:#dbe4f8; --now-edge:#6f8fd6; --now-cap:#234a9e;
+  }
+  html[data-bg="fog"]{
+    --bg:#c6cbd0; --panel:#d1d5d9; --panel2:#dce0e3; --edge:#9ca4ac;
+    --ink:#191e23; --dim:#47505a; --dimmer:#69727b;
+    --line:#b2b9c0; --press:#c9ced3; --soft:#cdd2d6; --chip:#b5bcc3;
+    --onink:#f4f6f8; --bright:#000; --blue-ink:#1f4fae; --green-ink:#15803d;
+    --now-bg:#dbe4f8; --now-edge:#6f8fd6; --now-cap:#234a9e;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink);height:100%;overflow:hidden;overscroll-behavior:none;
+            -webkit-text-size-adjust:100%}
+  body{font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+       height:100dvh;display:flex;flex-direction:column;padding:0 var(--pad)}
+  [hidden]{display:none !important}
+  button{padding:13px 12px;border-radius:8px;border:1px solid var(--edge);background:var(--panel2);color:var(--ink);
+         font:600 14px inherit;font-family:inherit}
+  button:active{background:var(--press)}
+  button:disabled{opacity:.35}
+  button.solid{background:var(--ink);border-color:var(--ink);color:var(--onink)}
+  button.ghost{background:transparent;color:var(--dim)}
+  /* 16px is the floor: anything smaller and iOS zooms the page when the box is tapped */
+  input[type=text],select{width:100%;padding:10px;border-radius:8px;border:1px solid var(--edge);background:var(--panel);
+    color:var(--ink);font:16px -apple-system,system-ui,sans-serif;appearance:none}
+  input::placeholder{color:var(--dimmer)}
+
+  header{flex:none;display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top) + 4px) 0 4px;
+         border-bottom:1px solid var(--edge)}
+  h1{flex:1;min-width:0;font-size:11px;margin:0;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
+     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* which wall: the two at Will's, side by side; the one you are on is filled */
+  #walls{flex:none;display:flex;padding:2px;border-radius:9px;background:var(--panel);border:1px solid var(--edge)}
+  #walls button{width:34px;height:26px;padding:0;border:0;border-radius:7px;background:transparent;font-size:14px;line-height:1}
+  #walls button.on{background:var(--ink)}
+  header #me{flex:none;width:136px;padding:2px 8px;font-size:16px;text-overflow:ellipsis}
+  header #me.ask{outline:2px solid var(--blue-ink);outline-offset:1px}
+
+  main{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+  .pg{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+  .scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:8px}
+  .lbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin:16px 0 6px}
+  .hint{font-size:12.5px;color:var(--dim);margin:6px 0 0;line-height:1.4}
+
+  /* ---- the page switcher: the same bar as on the MoonBoard page ---- */
+  #pgDots{flex:none;display:flex;gap:4px;margin:4px 40px calc(env(safe-area-inset-bottom) + 8px);padding:3px;
+          border-radius:12px;background:var(--panel);border:1px solid var(--edge)}
+  #pgDots button{flex:1 1 0;min-width:0;height:30px;padding:0;border:0;border-radius:9px;background:transparent;
+                 color:var(--dim);font-size:12px;font-weight:600}
+  #pgDots button.on{background:var(--ink);color:var(--onink);font-weight:700}
+  #pgDots button[data-go="set"]{flex:none;width:38px;display:grid;place-items:center}
+  #pgDots button[data-go="set"] svg{width:17px;height:17px;display:block}
+  body.setting #pgDots, body.fixing #pgDots{visibility:hidden}       /* while a route is being made there is nowhere else to go */
+
+  /* ---- the wall ---- */
+  #chips{flex:none;display:flex;gap:6px;padding:6px 0;overflow-x:auto;scrollbar-width:none}
+  #chips::-webkit-scrollbar{display:none}
+  #chips button{flex:none;position:relative;padding:6px 11px;border-radius:999px;font-size:13px;font-weight:600;color:var(--dim);background:var(--panel)}
+  #chips button.on{background:var(--ink);border-color:var(--ink);color:var(--onink)}
+  /* a number on a chip: how many of the open route's holds are on that picture */
+  #chips button i{font-style:normal;margin-left:6px;padding:0 5px;border-radius:999px;background:var(--hold);color:#fff;font-size:11px;font-weight:700}
+  #pic{flex:1 1 auto;min-height:150px;position:relative;overflow:hidden;border-radius:10px;background:var(--soft);touch-action:none;
+       user-select:none;-webkit-user-select:none}
+  #stage{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+  #stage img{display:block;width:100%;height:100%;pointer-events:none;-webkit-user-drag:none}
+  #stage svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
+  #stage svg *{vector-effect:none}
+  /* line widths are in picture pixels, so they are divided by the zoom (--z) to stay the same on the screen */
+  .o-all{fill:none;stroke:#fff;stroke-opacity:.55;stroke-width:calc(1.3px / var(--z))}
+  .o-halo{fill:none;stroke:#000;stroke-opacity:.55;stroke-width:calc(7px / var(--z));stroke-linejoin:round}
+  .o-s,.o-h,.o-f,.o-e,.o-p{fill-opacity:.14;stroke-width:calc(3.4px / var(--z));stroke-linejoin:round}
+  .o-s{stroke:var(--start);fill:var(--start)} .o-h{stroke:var(--hold);fill:var(--hold)}
+  .o-f{stroke:var(--foot);fill:var(--foot);stroke-dasharray:calc(7px / var(--z)) calc(5px / var(--z))}
+  .o-e{stroke:var(--end);fill:var(--end)} .o-p{stroke:var(--pick);fill:var(--pick)}
+  /* fixing the map: an outline said not to be a hold, one said to be the wrong shape, a hold said to be missing */
+  .o-x{fill:#ef4444;fill-opacity:.28;stroke:#ef4444;stroke-width:calc(3px / var(--z));stroke-dasharray:calc(5px / var(--z)) calc(4px / var(--z))}
+  .o-r{fill:#f59e0b;fill-opacity:.22;stroke:#f59e0b;stroke-width:calc(3.4px / var(--z))}
+  .o-n{fill:#22c55e;fill-opacity:.22;stroke:#22c55e;stroke-width:calc(3.4px / var(--z))}
+  .zone{fill:#fff;fill-opacity:.07;stroke:#fff;stroke-opacity:.75;stroke-width:calc(1.6px / var(--z))}
+  .zone.has{fill:var(--hold);fill-opacity:.3;stroke:var(--hold);stroke-opacity:1;stroke-width:calc(3px / var(--z))}
+  .zt{fill:#fff;font:700 15px -apple-system,system-ui,sans-serif;font-size:calc(13px / var(--z));paint-order:stroke;stroke:#000;stroke-opacity:.7;
+      stroke-width:calc(3px / var(--z));text-anchor:middle}
+  #picNote{position:absolute;left:12px;right:12px;top:12px;text-align:center;font-size:13.5px;color:var(--dim);pointer-events:none}
+  #zoomBtns{position:absolute;right:8px;bottom:8px;display:flex;flex-direction:column;gap:6px}
+  #zoomBtns button{width:38px;height:38px;padding:0;border-radius:10px;border:0;background:rgba(20,20,22,.72);color:#fff;font-size:20px;line-height:1}
+
+  #card{flex:none;padding:8px 0 2px}
+  #rTop{display:flex;align-items:center;gap:8px}
+  #rTop .nm{flex:1;min-width:0}
+  #rTop .nm b{display:block;font-size:17px;font-weight:700;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #rTop .nm span{display:block;font-size:12.5px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #rTop button{flex:none;width:36px;height:36px;padding:0;font-size:17px;border-radius:9px}
+  .pill{flex:none;padding:2px 7px;border-radius:5px;font:700 12px ui-monospace,Menlo,monospace;letter-spacing:-.02em}
+  #rSay{font-size:12.5px;color:var(--dim);margin:3px 0 0}
+  .two{display:flex;gap:8px;margin-top:8px}
+  .two > *{flex:1 1 0;min-width:0}
+  #tryBtn{background:#ef4444;border-color:#ef4444;color:#fff}
+  #sendBtn{background:#16a34a;border-color:#16a34a;color:#fff}
+  #sendRow{display:flex;gap:6px;margin-top:8px}
+  #sendRow button{flex:1 1 0;min-width:0;padding:11px 4px;background:#16a34a;border-color:#16a34a;color:#fff}
+  #sendRow button.ghost{flex:none;width:44px;background:transparent;border-color:var(--edge);color:var(--dim)}
+  #legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--dim);margin-top:6px}
+  #legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+
+  /* making a route: what the next tap marks */
+  #brush{display:flex;gap:6px}
+  #brush button{flex:1 1 0;min-width:0;padding:9px 2px;font-size:13px;border-width:2px;background:var(--panel)}
+  #brush button i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+  #brush button.on{background:var(--ink);border-color:var(--ink);color:var(--onink)}
+  #fixBrush, #fixSize{display:flex;gap:6px}
+  #fixBrush button{flex:1 1 0;min-width:0;padding:9px 2px;font-size:13px;border-width:2px;background:var(--panel)}
+  #fixBrush button i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+  #fixBrush button.on{background:var(--ink);border-color:var(--ink);color:var(--onink)}
+  #fixSize{margin-top:6px;align-items:center;font-size:12.5px;color:var(--dim)}
+  #fixSize button{flex:1 1 0;padding:7px 2px;font-size:13px;background:var(--panel)}
+  #fixSize button.on{background:var(--ink);border-color:var(--ink);color:var(--onink)}
+  #fixSay{font-size:12.5px;color:var(--dim);margin:6px 0 0;min-height:18px}
+  #draftSay{font-size:12.5px;color:var(--dim);margin:6px 0 0;min-height:18px}
+  #pickBar{display:flex;gap:6px;align-items:center}
+  #pickBar span{flex:1;min-width:0;font-size:13px;color:var(--dim)}
+  #pickBar button{flex:none;padding:10px 12px}
+
+  /* ---- routes ---- */
+  #find{display:flex;gap:6px;padding:6px 0}
+  #find input{flex:1;min-width:0}
+  #find button{flex:none;padding:0 12px}
+  #filtBtn.on{background:var(--ink);border-color:var(--ink);color:var(--onink)}
+  #filters{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding-bottom:6px}
+  #filters select{padding:8px 10px;font-size:16px}
+  #listCap{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim);padding:2px 0 4px}
+  #listCap span{flex:1}
+  #holdChip{display:inline-flex;align-items:center;gap:8px;padding:5px 6px 5px 10px;border-radius:999px;background:var(--pick);color:#1a1033;font-size:12.5px;font-weight:700}
+  #holdChip button{width:22px;height:22px;padding:0;border-radius:50%;border:0;background:rgba(0,0,0,.18);color:inherit;font-size:13px;line-height:1}
+  .row{display:flex;align-items:center;gap:10px;padding:10px 2px;border-top:1px solid var(--line)}
+  .row.on{background:var(--soft)}
+  .row .nm{flex:1;min-width:0;line-height:1.3}
+  .row .nm b{display:block;font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .nm span{font-size:12px;color:var(--dimmer)}
+  .row .st{flex:none;font-size:12px;color:var(--dim);text-align:right;min-width:44px}
+  .row .st.sent{color:var(--green-ink);font-weight:700}
+  .row.gone .nm b{text-decoration:line-through;color:var(--dim)}
+  .empty{padding:26px 10px;text-align:center;color:var(--dim);font-size:14px}
+
+  /* ---- log ---- */
+  .box{border:1px solid var(--edge);border-radius:12px;background:var(--panel);padding:12px;margin-top:10px}
+  .box h3{margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+  .kv{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-top:1px solid var(--line);font-size:14px}
+  .kv:first-of-type{border-top:0}
+  .kv span:last-child{color:var(--dim);text-align:right}
+  .kv b{font-weight:600}
+  .me b{color:var(--blue-ink)}
+  #undo{margin-top:8px;width:100%}
+
+  /* ---- the sheet: naming a route ---- */
+  #scrim{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.45)}
+  #sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;max-height:92dvh;overflow-y:auto;background:var(--bg);
+         border-radius:16px 16px 0 0;border-top:1px solid var(--edge);padding:14px var(--pad) calc(env(safe-area-inset-bottom) + 14px)}
+  #sheet h2{margin:0 0 4px;font-size:18px}
+  .opts{display:flex;flex-wrap:wrap;gap:6px}
+  .opts button{padding:9px 12px;font-size:14px;background:var(--panel)}
+  .opts button.on{background:var(--ink);border-color:var(--ink);color:var(--onink)}
+  #grades{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  #grades::-webkit-scrollbar{display:none}
+  #grades button{flex:none;min-width:48px;padding:9px 6px;font-family:ui-monospace,Menlo,monospace}
+  #saveErr{color:#ef4444;font-size:13px;min-height:18px;margin:8px 0 0}
+
+  #toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 92px);z-index:30;transform:translateX(-50%);
+         max-width:86vw;padding:9px 14px;border-radius:999px;background:var(--ink);color:var(--onink);font-size:13.5px;font-weight:600;
+         box-shadow:0 6px 20px rgba(0,0,0,.3);text-align:center;pointer-events:none}     /* a notice is never in the way of the button under it */
+  #toast.bad{background:#ef4444;color:#fff}
+  #ver{font-size:11px;color:var(--dimmer);margin:18px 0 6px}
+</style>
+</head>
+<body>
+
+<header>
+  <div id="walls" role="group" aria-label="Which wall">
+    <button id="toMoon" aria-label="MoonBoard" title="MoonBoard">&#127769;</button>
+    <button class="on" aria-label="Sun board" title="Sun board" disabled>&#9728;&#65039;</button>
+  </div>
+  <h1>Sun board</h1>
+  <select id="me" aria-label="Climbing as"></select>
+</header>
+
+<main>
+<!-- ============ routes ============ -->
+<section class="pg" id="pgList" hidden>
+  <div id="find">
+    <input type="text" id="q" placeholder="Search routes or setters" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button id="filtBtn">Filters</button>
+    <button id="newBtn2" class="solid">+ New</button>
+  </div>
+  <div id="filters" hidden>
+    <select id="fMin" aria-label="Easiest grade"></select>
+    <select id="fMax" aria-label="Hardest grade"></select>
+    <select id="fWho" aria-label="Whose routes"></select>
+    <select id="fMine" aria-label="Which routes">
+      <option value="all">All routes</option>
+      <option value="todo">Not sent by me</option>
+      <option value="sent">Sent by me</option>
+      <option value="gone">Taken down</option>
+    </select>
+    <select id="fSort" aria-label="Order" style="grid-column:1 / -1">
+      <option value="new">Newest first</option>
+      <option value="up">Easiest first</option>
+      <option value="down">Hardest first</option>
+      <option value="sent">Most climbed first</option>
+      <option value="name">By name</option>
+    </select>
+  </div>
+  <div id="listCap"><span id="listN"></span><span id="holdChip" hidden><span id="holdChipTxt"></span><button id="holdChipX" aria-label="Stop searching by holds">&#10005;</button></span></div>
+  <div class="scroll" id="list"></div>
+</section>
+
+<!-- ============ the wall ============ -->
+<section class="pg" id="pgWall">
+  <div id="chips"></div>
+  <div id="pic">
+    <div id="stage"><img id="vimg" alt=""><svg id="ov" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div id="picNote"></div>
+    <div id="zoomBtns"><button id="zIn" aria-label="Closer">+</button><button id="zOut" aria-label="Further">&#8722;</button></div>
+  </div>
+  <div id="card">
+    <!-- a route is open -->
+    <div id="cOpen" hidden>
+      <div id="rTop">
+        <button id="prevBtn" class="ghost" aria-label="Previous route">&#8249;</button>
+        <div class="nm"><b id="rName"></b><span id="rBy"></span></div>
+        <span class="pill" id="rPill"></span>
+        <button id="nextBtn" class="ghost" aria-label="Next route">&#8250;</button>
+      </div>
+      <div id="rSay"></div>
+      <div class="two" id="logRow">
+        <button id="tryBtn">Log try</button>
+        <button id="sendBtn">Log send</button>
+      </div>
+      <div id="sendRow" hidden>
+        <button data-r="flash">Flash</button><button data-r="2nd">2nd go</button><button data-r="3rd">3rd go</button><button data-r="4+">4+</button>
+        <button class="ghost" id="sendX" aria-label="Not a send">&#10005;</button>
+      </div>
+      <div class="two">
+        <button id="closeBtn" class="ghost">Close</button>
+        <button id="editBtn" class="ghost" hidden>Change it</button>
+        <button id="goneBtn" class="ghost" hidden>Take it down</button>
+      </div>
+    </div>
+    <!-- nothing open -->
+    <div id="cNone" hidden>
+      <div id="pickBar" hidden>
+        <span id="pickSay"></span>
+        <button id="pickFind">Routes on them</button>
+        <button id="pickMake" class="solid">Make a route</button>
+        <button id="pickX" class="ghost" aria-label="Let them go">&#10005;</button>
+      </div>
+      <div id="noneBar">
+        <div class="two" style="margin-top:0">
+          <button id="listBtn">Routes</button>
+          <button id="newBtn" class="solid">+ New route</button>
+        </div>
+        <p class="hint" id="noneHint"></p>
+      </div>
+    </div>
+    <!-- a route is being made -->
+    <div id="cDraft" hidden>
+      <div id="brush">
+        <button data-r="s"><i style="background:var(--start)"></i>Start</button>
+        <button data-r="h"><i style="background:var(--hold)"></i>Hold</button>
+        <button data-r="f"><i style="background:var(--foot)"></i>Foot</button>
+        <button data-r="e"><i style="background:var(--end)"></i>Finish</button>
+      </div>
+      <p id="draftSay"></p>
+      <div class="two">
+        <button id="draftX" class="ghost">Cancel</button>
+        <button id="draftUndo" class="ghost">Undo</button>
+        <button id="draftNext" class="solid">Next</button>
+      </div>
+    </div>
+    <!-- the map of holds is being put right -->
+    <div id="cFix" hidden>
+      <div id="fixBrush">
+        <button data-k="add"><i style="background:#22c55e"></i>Missed hold</button>
+        <button data-k="drop"><i style="background:#ef4444"></i>Not a hold</button>
+        <button data-k="redo"><i style="background:#f59e0b"></i>Wrong shape</button>
+      </div>
+      <div id="fixSize"><span>How big:</span><button data-s="s">Small</button><button data-s="m">Medium</button><button data-s="l">Large</button></div>
+      <p id="fixSay"></p>
+      <div class="two"><button id="fixDone" class="solid">Done</button></div>
+    </div>
+    <div id="legend" hidden>
+      <span><i style="background:var(--start)"></i>start</span><span><i style="background:var(--hold)"></i>hold</span>
+      <span><i style="background:var(--foot)"></i>foot only</span><span><i style="background:var(--end)"></i>finish</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ log ============ -->
+<section class="pg" id="pgLog" hidden>
+  <div class="scroll">
+    <div class="box" id="logRoute" hidden>
+      <h3>This route</h3>
+      <div id="logRouteBody"></div>
+    </div>
+    <div class="box">
+      <h3>Your session</h3>
+      <div id="logSession"></div>
+      <button id="undo" class="ghost" hidden>Undo my last entry</button>
+    </div>
+    <div class="box">
+      <h3>Points on the Sun board</h3>
+      <div id="logPoints"></div>
+      <p class="hint">A route scores once, the first time you send it: its V number plus one (V0 is 1, V4 is 5), and one more for a flash. Tries score nothing. These points are the Sun board's own and are not added to MoonBoard points.</p>
+    </div>
+    <div class="box">
+      <h3>Lately on the Sun board</h3>
+      <div id="logCrew"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ settings ============ -->
+<section class="pg" id="pgSet" hidden>
+  <div class="scroll">
+    <div class="lbl">Which wall</div>
+    <div class="two" style="margin-top:0">
+      <button id="setMoon">&#127769; MoonBoard</button>
+      <button class="solid" disabled>&#9728;&#65039; Sun board</button>
+    </div>
+    <p class="hint">Both are at Will's. The Sun board has no lights: its routes are made here, by picking holds on a picture, and everyone who climbs it sees them. Nothing from the MoonBoard shows here, and nothing from here shows there.</p>
+
+    <div class="lbl">Climbing as</div>
+    <div class="two" style="margin-top:0">
+      <select id="me2" aria-label="Climbing as"></select>
+      <button id="addMe" style="flex:none">Add a name</button>
+    </div>
+    <p class="hint">The same name as on the MoonBoard. There are no passwords: a name is a name.</p>
+
+    <div class="lbl">Background</div>
+    <select id="bgSel">
+      <option value="fog">Light foggy grey</option>
+      <option value="taupe">Light taupe</option>
+      <option value="">Black</option>
+    </select>
+    <p class="hint">For this phone only, and for both walls.</p>
+
+    <div class="lbl">The map of holds</div>
+    <button id="fixBtn" style="width:100%">Fix the map of holds</button>
+    <p class="hint" id="fixHint">The outlines were drawn from photos by a program, and it gets some wrong. Stand at the wall and tap a hold it missed, an outline that is only tape, or one that is the wrong shape. Everyone has your fixes straight away, and the outlines are then redrawn properly from them.</p>
+
+    <div class="lbl">The picture</div>
+    <label style="display:flex;gap:10px;align-items:center;font-size:15px"><input type="checkbox" id="dimChk" style="width:20px;height:20px"> Dim the wall behind an open route</label>
+    <label style="display:flex;gap:10px;align-items:center;font-size:15px;margin-top:10px"><input type="checkbox" id="allChk" style="width:20px;height:20px"> Always outline every hold</label>
+    <p class="hint">Two fingers zoom the picture, one drags it. A hold that has no outline can still be marked: tap it and a ring goes where you tapped.</p>
+
+    <div id="ver"></div>
+  </div>
+</section>
+</main>
+
+<nav id="pgDots" aria-label="Pages"><button data-go="list">&#8249; Routes</button><button data-go="wall">Wall</button><button data-go="log">Log &#8250;</button><button data-go="set" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor"><circle cx="12" cy="12" r="5.6" stroke-width="2"/><circle cx="12" cy="12" r="2" stroke-width="1.8"/><path stroke-width="3" d="M12 2.6v3.2M12 18.2v3.2M2.6 12h3.2M18.2 12h3.2M5.35 5.35l2.26 2.26M16.39 16.39l2.26 2.26M5.35 18.65l2.26-2.26M16.39 7.61l2.26-2.26"/></g></svg></button></nav>
+
+<div id="scrim" hidden></div>
+<div id="sheet" hidden>
+  <h2 id="shTitle">Name the route</h2>
+  <p class="hint" id="shSay" style="margin-top:0"></p>
+  <div class="lbl">Name</div>
+  <input type="text" id="shName" maxlength="60" placeholder="What is it called?" autocomplete="off">
+  <div class="lbl">Grade</div>
+  <div class="opts" id="grades"></div>
+  <div class="lbl">Feet</div>
+  <div class="opts" id="feet">
+    <button data-f="any">Any feet</button><button data-f="follow">Feet follow hands</button><button data-f="marked">Marked feet only</button>
+  </div>
+  <div class="lbl">Tape on the wall <span style="font-weight:400;letter-spacing:0;text-transform:none">(if it has any)</span></div>
+  <input type="text" id="shTape" maxlength="40" placeholder="blue 62" autocomplete="off">
+  <div class="lbl">Note <span style="font-weight:400;letter-spacing:0;text-transform:none">(if it needs one)</span></div>
+  <input type="text" id="shNote" maxlength="200" placeholder="sit start, no arete" autocomplete="off">
+  <p id="saveErr"></p>
+  <div class="two" style="margin-top:4px">
+    <button id="shBack" class="ghost">Back to the holds</button>
+    <button id="shSave" class="solid">Save route</button>
+  </div>
+</div>
+<div id="toast" hidden></div>
+
+<script>
+/* The Sun board: the wall at Will's that has no lights. Routes are made by picking holds on
+   a picture of the wall, named, graded, and shared with everyone who climbs there.
+
+   Three things come from elsewhere:
+     wall.json            the wall: its pictures, and the outline of every hold on each
+     /api/w/sun           the store: who climbs here, the routes, the logbook (../../store/store.js)
+     the MoonBoard relay  only once, for the crew's names, the first time anyone opens this
+
+   A route is a list of marks. A mark is a hold and what it is for:
+     { h: 'w12', r: 's' }                a hold on the map       r: s start, h hold, f foot only, e finish
+     { v: 'over', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
+   A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
+   is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
+const BUILD = '2026-10-10 00:14';
+const WALL = 'sun';
+const API = '/api/w/' + WALL;
+const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const ROLE = { s: 'start', h: 'hold', f: 'foot only', e: 'finish' };
+const FEET = { any: 'any feet', follow: 'feet follow hands', marked: 'marked feet only' };
+const RESULT = { 'try': 'try', flash: 'flash', '2nd': '2nd go', '3rd': '3rd go', '4+': '4+ goes' };
+const GRADE_MIN = -1, GRADE_MAX = 14;                       // VB, then V0 up; the store takes up to V17
+const vName = g => g < 0 ? 'VB' : 'V' + g;
+/* the same colours as the MoonBoard's pill and lights: green to V5, blue for V6 and V7, red above */
+const BANDS = [{ max: 5, bg: '#22c55e', fg: '#06240e' }, { max: 7, bg: '#2563eb', fg: '#eef4ff' }, { max: 99, bg: '#ef4444', fg: '#fff1f1' }];
+function paintPill(el, g){ const b = BANDS.find(x => g <= x.max); el.textContent = vName(g); el.style.background = b.bg; el.style.color = b.fg; }
+const ls = { get: k => { try{ return localStorage.getItem(k); }catch(e){ return null; } }, set: (k, v) => { try{ localStorage.setItem(k, v); }catch(e){} } };
+
+let wall = null;                 // wall.json
+let HOLD = {};                   // id -> hold, with what a tap needs worked out once
+let snap = { people: [], routes: [], stats: {}, fixes: [] };
+let me = ls.get('mb-me') || '';
+let page = 'wall', view = 'room';
+let openId = null;               // the route on the picture
+let draft = null;                // a route being made or changed: { id?, marks, name, grade, feet, tape, note }
+let brush = 's';
+let picks = [];                  // holds tapped with no route open: to search by, or to start a route from
+let holdFilter = [];             // the same ids, once "Routes on them" is tapped
+let dim = ls.get('sb-dim') !== '0', showAll = ls.get('sb-all') === '1';
+let fixing = false, fixKind = 'add', fixSize = 'm';      // putting the map of holds right (see "fixing the map")
+let myLog = [], crewLog = [], logAt = 0, sessionKeys = [];
+
+/* ---------- the store ---------- */
+async function call(path, body){
+  const r = await fetch(API + path, body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } : undefined);
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || 'the store said no');
+  return d;
+}
+function take(d){
+  if (!d || !Array.isArray(d.routes)) return;
+  snap = { people: d.people || [], routes: d.routes, stats: d.stats || {}, fixes: d.fixes || [] };
+  relive();
+  ls.set('sb-snap-' + WALL, JSON.stringify(snap));
+  paintAll();
+}
+async function refresh(){
+  try{ take(await call('')); offline(false); }
+  catch(e){ offline(true); }
+}
+let wasOffline = false;
+function offline(on){ if (on && !wasOffline) toast('Cannot reach the wall just now. Showing what this phone last saw.', true); wasOffline = on; }
+/* The first time anyone opens the Sun board it has no names. The people who climb it are
+   the people who climb the MoonBoard, so their names are brought across, once. */
+async function seedCrew(){
+  if (WALL !== 'sun' || snap.people.length || ls.get('sb-seeded')) return;
+  try{
+    const crew = (await (await fetch(CREW)).json()).people || [];
+    for (const name of crew) take(await call('/person', { name }));
+    ls.set('sb-seeded', '1');
+  }catch(e){}
+}
+/* A name chosen on the MoonBoard page that this wall has not met yet. */
+async function knowMe(){
+  if (!me || snap.people.includes(me)) return;
+  try{ const d = await call('/person', { name: me }); if (d.name && d.name !== me) setMe(d.name, true); take(d); }catch(e){}
+}
+
+/* ---------- small things ---------- */
+let toastT = 0;
+function toast(msg, bad){
+  const t = $('toast'); t.textContent = msg; t.className = bad ? 'bad' : ''; t.hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, bad ? 3800 : 2200);
+}
+const routeById = id => snap.routes.find(r => r.id === id) || null;
+const openRoute = () => openId === null ? null : routeById(openId);
+const statOf = (who, id) => (snap.stats[who] || {})[id] || null;
+const firstSend = (who, id) => { const s = statOf(who, id); return s && s.s && s.s.length ? s.s[0] : null; };
+const senders = id => snap.people.filter(p => firstSend(p, id));
+const ptsOf = (g, first) => Math.max(1, g + 1) + (first === 'flash' ? 1 : 0);
+function scoreFor(who){
+  let total = 0, sends = 0, flashes = 0;
+  for (const id in snap.stats[who] || {}){
+    const r = routeById(+id), f = firstSend(who, +id);
+    if (!r || !f) continue;
+    total += ptsOf(r.grade, f); sends++; if (f === 'flash') flashes++;
+  }
+  return { total, sends, flashes };
+}
+function needMe(){
+  if (me) return true;
+  toast('Say who you are first: the box at the top right.', true);
+  $('me').classList.add('ask'); setTimeout(() => $('me').classList.remove('ask'), 2600);
+  return false;
+}
+const when = iso => {
+  const d = new Date(iso), n = new Date(), day = 86400000;
+  const days = Math.floor((new Date(n.getFullYear(), n.getMonth(), n.getDate()) - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / day);
+  const hm = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  return days === 0 ? hm : days === 1 ? 'yesterday' : days < 7 ? d.toLocaleDateString([], { weekday: 'short' }) : d.toLocaleDateString([], { day: 'numeric', month: 'short' });
+};
+
+/* ---------- who ---------- */
+function setMe(name, quiet){
+  me = name || '';
+  ls.set('mb-me', me);                      // the MoonBoard page reads the same key
+  paintMe(); paintAll();
+  if (!quiet) knowMe();
+}
+function paintMe(){
+  for (const sel of [$('me'), $('me2')]){
+    const names = snap.people.slice();
+    if (me && !names.includes(me)) names.push(me);
+    // only when the names have changed: filling a list that is open under a finger shuts it
+    const key = names.join('\n');
+    if (sel.dataset.key === key){ sel.value = me; continue; }
+    sel.dataset.key = key;
+    sel.innerHTML = '<option value="">Who are you?</option>' + names.map(n => '<option>' + esc(n) + '</option>').join('');
+    sel.value = me;
+  }
+}
+$('me').onchange = () => setMe($('me').value);
+$('me2').onchange = () => setMe($('me2').value);
+$('addMe').onclick = async () => {
+  const name = (prompt('Your name, as the others know you') || '').trim();
+  if (!name) return;
+  try{ const d = await call('/person', { name }); take(d); setMe(d.name || name, true); toast('Climbing as ' + (d.name || name)); }
+  catch(e){ toast(e.message, true); }
+};
+
+/* ---------- the map of holds ---------- */
+function index(h){
+  let x0 = 1, y0 = 1, x1 = 0, y1 = 0, a = 0;
+  const p = h.p;
+  for (let i = 0; i < p.length; i++){
+    const [x, y] = p[i], [u, v] = p[(i + 1) % p.length];
+    x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
+    a += x * v - u * y;
+  }
+  return (HOLD[h.id] = Object.assign({ box: [x0, y0, x1, y1], area: Math.abs(a) / 2 }, h));
+}
+function loadWall(w){
+  wall = w; HOLD = {};
+  w.holds.forEach(index);
+  relive();
+}
+/* The holds as they stand: the published map, less the outlines people have said are not
+   holds, plus the holds they have said are missing. A missing hold is a ring where they
+   tapped, the size they said, under the name x<number>, and can be picked like any other.
+   When the map is next made it gets a proper outline and a proper name, and wall.alias says
+   which, so a route made on the ring still finds its hold. */
+let LIVE = [];
+function relive(){
+  if (!wall) return;
+  const fixes = snap.fixes || [];
+  const dropped = new Set(fixes.filter(f => f.kind === 'drop').map(f => f.h));
+  for (const id in HOLD) if (HOLD[id].fix) delete HOLD[id];
+  LIVE = wall.holds.filter(h => !dropped.has(h.id)).map(h => HOLD[h.id]);
+  for (const f of fixes){
+    const v = wall.views.find(w => w.key === f.v);
+    if (f.kind !== 'add' || !v || v.zones) continue;
+    const r = ({ s: 2, m: 4.5, l: 8 }[f.size] || 4.5) * (v.cm || 5), p = [];
+    for (let i = 0; i < 16; i++) p.push([f.x + r * Math.cos(i / 8 * Math.PI) / v.w, f.y + r * Math.sin(i / 8 * Math.PI) / v.h]);
+    LIVE.push(index({ id: 'x' + f.k, v: f.v, k: f.size === 's' ? 'f' : 'h', p, c: [f.x, f.y], fix: f.k }));
+  }
+}
+const H = id => HOLD[id] || HOLD[(wall.alias || {})[id]] || null;
+const viewNow = () => wall.views.find(v => v.key === view) || wall.views[0];
+const inPoly = (p, x, y) => {
+  let inside = false;
+  for (let i = 0, j = p.length - 1; i < p.length; j = i++){
+    const [xi, yi] = p[i], [xj, yj] = p[j];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+};
+/* how far a point is from an outline's nearest side, with both scaled to the picture's pixels */
+function edgeDist(p, x, y, W, H){
+  let best = 1e9;
+  for (let i = 0, j = p.length - 1; i < p.length; j = i++){
+    const ax = p[j][0] * W, ay = p[j][1] * H, bx = p[i][0] * W, by = p[i][1] * H, px = x * W, py = y * H;
+    const dx = bx - ax, dy = by - ay, t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy || 1)));
+    best = Math.min(best, Math.hypot(px - ax - t * dx, py - ay - t * dy));
+  }
+  return best;
+}
+/* The hold under a finger. Of the outlines the point is inside, the smallest: a hold bolted to
+   a volume before the volume, an edge before the face. If it is inside none, the nearest
+   outline within a finger's width (slop, in picture pixels). */
+function holdAt(x, y, slop){
+  const v = viewNow();
+  let hit = null, near = null, nearD = slop;
+  for (const h of LIVE){
+    if (h.v !== v.key) continue;
+    const b = h.box, sx = slop / v.w, sy = slop / v.h;
+    if (x < b[0] - sx || x > b[2] + sx || y < b[1] - sy || y > b[3] + sy) continue;
+    if (inPoly(h.p, x, y)){ if (!hit || h.area < hit.area) hit = h; }
+    else if (h.k !== 'v'){ const d = edgeDist(h.p, x, y, v.w, v.h); if (d < nearD){ nearD = d; near = h; } }
+  }
+  // a volume's face is a big target; a small hold or an edge just beside the finger is the likelier aim
+  if (hit && hit.k === 'v' && near && nearD < slop * 0.6) return near;
+  return hit || near;
+}
+
+/* ---------- the picture ---------- */
+const Z = { k: 1, x: 0, y: 0 };      // zoom (1 = the whole picture fits) and where its corner is
+let k0 = 1;                            // the scale at which the whole picture fits
+function fit(){
+  if (!wall) return;                     // a turn of the phone before the wall has loaded
+  const v = viewNow(), r = $('pic').getBoundingClientRect();
+  if (!r.width || !r.height) return;
+  k0 = Math.min(r.width / v.w, r.height / v.h);
+  $('stage').style.width = v.w + 'px'; $('stage').style.height = v.h + 'px';
+  place();
+}
+function place(){
+  const v = viewNow(), r = $('pic').getBoundingClientRect(), s = k0 * Z.k, sw = v.w * s, sh = v.h * s;
+  Z.x = sw <= r.width ? (r.width - sw) / 2 : Math.min(0, Math.max(r.width - sw, Z.x));
+  Z.y = sh <= r.height ? (r.height - sh) / 2 : Math.min(0, Math.max(r.height - sh, Z.y));
+  $('stage').style.transform = 'translate(' + Z.x + 'px,' + Z.y + 'px) scale(' + s + ')';
+  $('stage').style.setProperty('--z', s);
+}
+function zoomAt(px, py, k){
+  k = Math.max(1, Math.min(8, k));
+  const s0 = k0 * Z.k, ix = (px - Z.x) / s0, iy = (py - Z.y) / s0;
+  Z.k = k; Z.x = px - ix * k0 * k; Z.y = py - iy * k0 * k;
+  place();
+}
+function setView(key, keepZoom){
+  if (!wall.views.some(v => v.key === key)) return;
+  const changed = key !== view;
+  view = key;
+  if (changed || !keepZoom){ Z.k = 1; Z.x = Z.y = 0; }
+  const v = viewNow();
+  if ($('vimg').getAttribute('src') !== v.img){ $('vimg').removeAttribute('src'); $('vimg').src = v.img; }
+  fit(); paintWall();
+}
+$('zIn').onclick = () => { const r = $('pic').getBoundingClientRect(); zoomAt(r.width / 2, r.height / 2, Z.k * 1.6); };
+$('zOut').onclick = () => { const r = $('pic').getBoundingClientRect(); zoomAt(r.width / 2, r.height / 2, Z.k / 1.6); };
+window.addEventListener('resize', fit);
+
+/* Fingers on the picture. One finger that barely moves is a tap. One that moves drags the
+   picture when it is zoomed, and when it is not, a quick sideways stroke steps to the next
+   route. Two fingers zoom about the point between them. */
+const fingers = new Map();
+let g = null;
+$('pic').addEventListener('pointerdown', e => {
+  if (e.target.closest('#zoomBtns')) return;
+  $('pic').setPointerCapture(e.pointerId);
+  fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  const r = $('pic').getBoundingClientRect();
+  if (fingers.size === 1) g = { kind: 'one', x0: e.clientX, y0: e.clientY, t0: Date.now(), zx: Z.x, zy: Z.y, moved: 0 };
+  else if (fingers.size === 2){
+    const [a, b] = [...fingers.values()];
+    g = { kind: 'two', d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, k: Z.k, mx: (a.x + b.x) / 2 - r.left, my: (a.y + b.y) / 2 - r.top };
+  }
+});
+$('pic').addEventListener('pointermove', e => {
+  if (!fingers.has(e.pointerId) || !g) return;
+  fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  const r = $('pic').getBoundingClientRect();
+  if (g.kind === 'two' && fingers.size >= 2){
+    const [a, b] = [...fingers.values()];
+    const mx = (a.x + b.x) / 2 - r.left, my = (a.y + b.y) / 2 - r.top;
+    zoomAt(g.mx, g.my, g.k * Math.hypot(a.x - b.x, a.y - b.y) / g.d0);
+    Z.x += mx - g.mx; Z.y += my - g.my; g.mx = mx; g.my = my; g.k = Z.k; g.d0 = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+    place();
+  } else if (g.kind === 'one'){
+    const dx = e.clientX - g.x0, dy = e.clientY - g.y0;
+    g.moved = Math.max(g.moved, Math.hypot(dx, dy));
+    if (Z.k > 1.01){ Z.x = g.zx + dx; Z.y = g.zy + dy; place(); }
+  }
+});
+function fingerUp(e){
+  if (!fingers.has(e.pointerId)) return;
+  fingers.delete(e.pointerId);
+  const was = g;
+  if (fingers.size === 0) g = null;
+  else if (fingers.size === 1){ const [a] = [...fingers.values()]; g = { kind: 'one', x0: a.x, y0: a.y, t0: 0, zx: Z.x, zy: Z.y, moved: 99 }; }   // what is left of a pinch is not a tap
+  if (!was || was.kind !== 'one' || e.type === 'pointercancel') return;
+  const dx = e.clientX - was.x0, dy = e.clientY - was.y0, dt = Date.now() - was.t0;
+  if (was.moved < 9 && dt < 600){ const r = $('pic').getBoundingClientRect(); tapAt(e.clientX - r.left, e.clientY - r.top); }
+  else if (Z.k <= 1.01 && !draft && !fixing && Math.abs(dx) > 60 && Math.abs(dx) > 2 * Math.abs(dy) && dt < 700) step(dx < 0 ? 1 : -1);
+}
+$('pic').addEventListener('pointerup', fingerUp);
+$('pic').addEventListener('pointercancel', fingerUp);
+$('pic').addEventListener('wheel', e => {
+  e.preventDefault();
+  const r = $('pic').getBoundingClientRect();
+  zoomAt(e.clientX - r.left, e.clientY - r.top, Z.k * (e.deltaY < 0 ? 1.15 : 1 / 1.15));
+}, { passive: false });
+
+function tapAt(px, py){
+  const v = viewNow(), s = k0 * Z.k, x = (px - Z.x) / s / v.w, y = (py - Z.y) / s / v.h;
+  if (x < 0 || x > 1 || y < 0 || y > 1) return;
+  // on the picture of the whole room a tap goes to the wall under it
+  if (v.zones){
+    for (const key in v.zones) if (inPoly(v.zones[key], x, y)) return setView(key);
+    return;
+  }
+  const h = holdAt(x, y, 16 / s);
+  if (fixing) return fixTap(h, v.key, x, y);
+  if (draft) return draftTap(h, v.key, x, y);
+  if (openRoute()) return;                              // looking at a route: the picture is for looking
+  if (!h) return toast('No hold is outlined there. Start a route to mark the spot anyway.');
+  const i = picks.indexOf(h.id);
+  if (i >= 0) picks.splice(i, 1); else if (picks.length < 40) picks.push(h.id);
+  paintWall();
+}
+
+/* ---------- drawing what is on the picture ---------- */
+const pathOf = (h, v) => 'M' + h.p.map(q => (q[0] * v.w).toFixed(1) + ' ' + (q[1] * v.h).toFixed(1)).join('L') + 'Z';
+const ringOf = (m, v) => { const r = 0.021 * v.w, cx = m.x * v.w, cy = m.y * v.h;
+  return 'M' + (cx - r).toFixed(1) + ' ' + cy.toFixed(1) + 'a' + r.toFixed(1) + ' ' + r.toFixed(1) + ' 0 1 0 ' + (2 * r).toFixed(1) + ' 0a' + r.toFixed(1) + ' ' + r.toFixed(1) + ' 0 1 0 ' + (-2 * r).toFixed(1) + ' 0Z'; };
+const marksNow = () => draft ? draft.marks : openRoute() ? openRoute().marks : [];
+const markView = m => m.h ? (H(m.h) ? H(m.h).v : null) : m.v;
+function paintWall(){
+  if (!wall) return;
+  const v = viewNow(), marks = marksNow(), r = openRoute();
+  // the chips: one a picture, with how many of the route's holds are on it
+  $('chips').innerHTML = wall.views.map(w => {
+    const n = marks.filter(m => markView(m) === w.key).length;
+    return '<button data-v="' + w.key + '"' + (w.key === view ? ' class="on"' : '') + '>' + esc(w.label) + (n ? '<i>' + n + '</i>' : '') + '</button>';
+  }).join('');
+  let svg = '';
+  if (v.zones){
+    // the whole room: where the walls are, and which of them the route is on
+    for (const key in v.zones){
+      const z = v.zones[key], n = marks.filter(m => markView(m) === key).length;
+      const lab = (wall.views.find(w => w.key === key) || {}).label || key;
+      const cx = z.reduce((a, q) => a + q[0], 0) / z.length * v.w, cy = z.reduce((a, q) => a + q[1], 0) / z.length * v.h;
+      svg += '<path class="zone' + (n ? ' has' : '') + '" d="M' + z.map(q => (q[0] * v.w).toFixed(1) + ' ' + (q[1] * v.h).toFixed(1)).join('L') + 'Z"/>' +
+             '<text class="zt" x="' + cx.toFixed(0) + '" y="' + cy.toFixed(0) + '">' + esc(lab) + (n ? ' · ' + n : '') + '</text>';
+    }
+  } else {
+    const mine = marks.filter(m => markView(m) === v.key);
+    const d = m => m.h ? pathOf(H(m.h), v) : ringOf(m, v);
+    if (dim && r && !draft && mine.length)
+      svg += '<mask id="cut"><rect width="' + v.w + '" height="' + v.h + '" fill="#fff"/>' + mine.map(m => '<path d="' + d(m) + '" fill="#000"/>').join('') + '</mask>' +
+             '<rect width="' + v.w + '" height="' + v.h + '" fill="#000" fill-opacity=".45" mask="url(#cut)"/>';
+    if (showAll || draft || fixing || !r)            // with nothing open the outlines show what can be tapped
+      svg += LIVE.filter(h => h.v === v.key && !(fixing && h.fix)).map(h => '<path class="o-all" d="' + pathOf(h, v) + '"/>').join('');
+    if (fixing)
+      svg += (snap.fixes || []).map(f => {
+        const h = f.kind === 'add' ? HOLD['x' + f.k] : HOLD[f.h];
+        return h && h.v === v.key ? '<path class="o-' + ({ add: 'n', drop: 'x', redo: 'r' })[f.kind] + '" d="' + pathOf(h, v) + '"/>' : '';
+      }).join('');
+    svg += mine.map(m => '<path class="o-halo" d="' + d(m) + '"/>').join('') + mine.map(m => '<path class="o-' + m.r + '" d="' + d(m) + '"/>').join('');
+    if (!draft && !r && !fixing)
+      svg += picks.filter(id => HOLD[id] && HOLD[id].v === v.key).map(id => '<path class="o-halo" d="' + pathOf(HOLD[id], v) + '"/><path class="o-p" d="' + pathOf(HOLD[id], v) + '"/>').join('');
+  }
+  $('ov').setAttribute('viewBox', '0 0 ' + v.w + ' ' + v.h);
+  $('ov').innerHTML = svg;
+  paintCard();
+}
+$('chips').onclick = e => { const b = e.target.closest('button[data-v]'); if (b) setView(b.dataset.v); };
+
+function paintCard(){
+  const r = openRoute(), v = viewNow();
+  $('cOpen').hidden = !r || !!draft || fixing; $('cNone').hidden = !!r || !!draft || fixing; $('cDraft').hidden = !draft; $('cFix').hidden = !fixing;
+  $('legend').hidden = !r || !!draft || !!v.zones || fixing;         // the brushes are their own legend
+  document.body.classList.toggle('setting', !!draft);
+  document.body.classList.toggle('fixing', fixing);
+  if (fixing){
+    [...$('fixBrush').children].forEach(b => b.classList.toggle('on', b.dataset.k === fixKind));
+    [...$('fixSize').querySelectorAll('button')].forEach(b => b.classList.toggle('on', b.dataset.s === fixSize));
+    $('fixSize').hidden = fixKind !== 'add';
+    const n = (snap.fixes || []).length;
+    $('fixSay').textContent = ({ add: 'Tap the middle of a hold that has no outline. Tap a green ring to take it back.',
+      drop: 'Tap an outline that is tape, paint, or not a hold at all. Tap it again to take that back.',
+      redo: 'Tap an outline that is on a hold but is the wrong shape. Tap it again to take that back.' })[fixKind] +
+      (n ? '  ' + n + (n === 1 ? ' fix' : ' fixes') + ' so far.' : '');
+    return;
+  }
+  if (draft){
+    [...$('brush').children].forEach(b => b.classList.toggle('on', b.dataset.r === brush));
+    const n = k => draft.marks.filter(m => m.r === k).length;
+    $('draftSay').textContent = draft.marks.length
+      ? [n('s') + ' start', n('h') + ' hold' + (n('h') === 1 ? '' : 's'), n('f') ? n('f') + ' foot only' : '', n('e') + ' finish'].filter(Boolean).join(' · ') +
+        (draft.id ? '   (changing “' + draft.name + '”)' : '')
+      : 'Pick what the next tap marks, then tap the holds. Tap a hold again to let it go.';
+    $('draftUndo').disabled = !draft.marks.length;
+    return;
+  }
+  if (!r){
+    const n = picks.length;
+    $('pickBar').hidden = !n; $('noneBar').hidden = !!n;
+    $('pickSay').textContent = n + ' hold' + (n === 1 ? '' : 's') + ' picked';
+    const live = snap.routes.filter(x => !x.retired).length;
+    $('noneHint').textContent = v.zones ? 'Tap a wall on the picture to go to it. ' + (live ? live + ' route' + (live === 1 ? '' : 's') + ' on the Sun board so far.' : 'No routes yet: be the first to make one.')
+      : 'Tap holds to find the routes that use them, or to start a route from them.';
+    return;
+  }
+  $('rName').textContent = r.name;
+  $('rBy').textContent = 'by ' + r.setter + ' · ' + FEET[r.feet] + (r.tape ? ' · tape: ' + r.tape : '');
+  paintPill($('rPill'), r.grade);
+  const who = senders(r.id), mine = me ? statOf(me, r.id) : null;
+  const bits = [who.length ? who.length + ' sent it' : 'Nobody has sent it yet'];
+  if (mine) bits.push('you: ' + (mine.s && mine.s.length ? RESULT[mine.s[0]] + (mine.s.length > 1 ? ', ' + mine.s.length + ' sends' : '') : mine.a + (mine.a === 1 ? ' try' : ' tries')));
+  if (r.note) bits.push(r.note);
+  if (r.retired) bits.unshift('Taken down');
+  const lost = r.marks.filter(m => m.h && !H(m.h)).length;
+  if (lost) bits.push(lost + ' of its holds ' + (lost === 1 ? 'is' : 'are') + ' no longer on the wall');
+  $('rSay').textContent = bits.join(' · ');
+  $('logRow').hidden = !$('sendRow').hidden || r.retired;
+  $('editBtn').hidden = $('goneBtn').hidden = r.setter !== me;
+  $('goneBtn').textContent = r.retired ? 'Put it back' : 'Take it down';
+}
+
+/* ---------- opening and stepping through routes ---------- */
+const FILTERS = { q: '', min: GRADE_MIN, max: GRADE_MAX, who: '', mine: 'all', sort: 'new' };
+function shown(){
+  const q = FILTERS.q.trim().toLowerCase();
+  const list = snap.routes.filter(r => {
+    if (FILTERS.mine === 'gone' ? !r.retired : r.retired) return false;
+    if (r.grade < FILTERS.min || r.grade > FILTERS.max) return false;
+    if (FILTERS.who && r.setter !== FILTERS.who) return false;
+    if (FILTERS.mine === 'todo' && me && firstSend(me, r.id)) return false;
+    if (FILTERS.mine === 'sent' && !(me && firstSend(me, r.id))) return false;
+    if (holdFilter.length && !holdFilter.every(id => r.marks.some(m => m.h && (H(m.h) || {}).id === id))) return false;
+    if (q && !(r.name.toLowerCase().includes(q) || r.setter.toLowerCase().includes(q) || (r.tape || '').toLowerCase().includes(q))) return false;
+    return true;
+  });
+  const by = { new: (a, b) => b.id - a.id, up: (a, b) => a.grade - b.grade || a.id - b.id, down: (a, b) => b.grade - a.grade || a.id - b.id,
+               sent: (a, b) => senders(b.id).length - senders(a.id).length || b.id - a.id, name: (a, b) => a.name.localeCompare(b.name) };
+  return list.sort(by[FILTERS.sort]);
+}
+function open(id, stay){
+  openId = id; picks = [];
+  $('sendRow').hidden = true;
+  const r = openRoute();
+  if (r){
+    // go to the picture most of it is on, starting from where it starts
+    const count = {};
+    r.marks.forEach(m => { const k = markView(m); if (k) count[k] = (count[k] || 0) + 1 + (m.r === 's' ? 0.5 : 0); });
+    const best = Object.keys(count).sort((a, b) => count[b] - count[a])[0];
+    if (best && !(stay && count[view])) setView(best);
+  }
+  if (!stay) showPage('wall');
+  paintAll();
+}
+function step(dir){
+  const list = shown();
+  if (!list.length) return;
+  const i = list.findIndex(r => r.id === openId);
+  open(list[(i + dir + list.length) % list.length].id, true);
+}
+$('prevBtn').onclick = () => step(-1);
+$('nextBtn').onclick = () => step(1);
+$('closeBtn').onclick = () => { openId = null; $('sendRow').hidden = true; paintAll(); };
+$('listBtn').onclick = () => showPage('list');
+
+/* ---------- the logbook ---------- */
+async function logGo(result){
+  const r = openRoute();
+  if (!r || !needMe()) return;
+  try{
+    await knowMe();
+    take(await call('/log', { person: me, route: r.id, result }));
+    sessionKeys.push(r.id);
+    $('sendRow').hidden = true;
+    toast(result === 'try' ? 'Try logged' : 'Sent: ' + RESULT[result] + '. ' + (firstSend(me, r.id) === result && statOf(me, r.id).s.length === 1 ? '+' + ptsOf(r.grade, result) + ' points' : 'Logged'));
+    logAt = 0; paintAll();
+  }catch(e){ toast(e.message, true); }
+}
+$('tryBtn').onclick = () => logGo('try');
+$('sendBtn').onclick = () => { if (needMe()){ $('sendRow').hidden = false; paintCard(); } };
+$('sendX').onclick = () => { $('sendRow').hidden = true; paintCard(); };
+$('sendRow').onclick = e => { const b = e.target.closest('button[data-r]'); if (b) logGo(b.dataset.r); };
+let undoArmed = 0;
+$('undo').onclick = async () => {
+  if (Date.now() - undoArmed > 4000){ undoArmed = Date.now(); $('undo').textContent = 'Tap again to take it back'; return; }
+  undoArmed = 0;
+  try{ take(await call('/log/undo', { person: me })); sessionKeys.pop(); logAt = 0; toast('Taken back'); paintAll(); }
+  catch(e){ toast(e.message, true); }
+};
+async function loadLog(){
+  if (Date.now() - logAt < 20000) return;
+  logAt = Date.now();
+  try{
+    const [mine, crew] = await Promise.all([me ? call('/log?limit=300&person=' + encodeURIComponent(me)) : { entries: [] }, call('/log?limit=40')]);
+    myLog = mine.entries; crewLog = crew.entries;
+    if (page === 'log') paintLog();
+  }catch(e){}
+}
+function paintLog(){
+  const r = openRoute();
+  $('logRoute').hidden = !r;
+  if (r){
+    const who = senders(r.id);
+    const mine = myLog.filter(e => e.route === r.id);
+    $('logRouteBody').innerHTML =
+      '<div class="kv"><span><b>' + esc(r.name) + '</b></span><span>' + vName(r.grade) + ' · by ' + esc(r.setter) + '</span></div>' +
+      (who.length ? who.map(p => '<div class="kv' + (p === me ? ' me' : '') + '"><span><b>' + esc(p) + '</b></span><span>' + RESULT[firstSend(p, r.id)] + '</span></div>').join('')
+                  : '<div class="kv"><span>Nobody has sent it yet</span><span></span></div>') +
+      (mine.length ? '<div class="kv"><span>Your goes on it</span><span>' + mine.slice().reverse().map(e => RESULT[e.result]).join(', ') + '</span></div>' : '');
+  }
+  // a session is everything since a gap of four hours
+  const sess = [];
+  for (const e of myLog){ if (sess.length && Date.parse(sess[sess.length - 1].t) - Date.parse(e.t) > 4 * 3600000) break; if (!sess.length && Date.now() - Date.parse(e.t) > 4 * 3600000) break; sess.push(e); }
+  $('logSession').innerHTML = !me ? '<div class="kv"><span>Say who you are to keep a logbook.</span><span></span></div>'
+    : sess.length ? sess.map(e => { const x = routeById(e.route); return '<div class="kv"><span><b>' + esc(x ? x.name : 'a route that is gone') + '</b></span><span>' + RESULT[e.result] + ' · ' + when(e.t) + '</span></div>'; }).join('')
+    : '<div class="kv"><span>Nothing logged this session.</span><span></span></div>';
+  $('undo').hidden = !sessionKeys.length;
+  if (Date.now() - undoArmed > 4000) $('undo').textContent = 'Undo my last entry';
+  const rows = snap.people.map(n => ({ n, ...scoreFor(n) })).filter(x => x.total > 0).sort((a, b) => b.total - a.total);
+  $('logPoints').innerHTML = rows.length ? rows.map((x, i) => '<div class="kv' + (x.n === me ? ' me' : '') + '"><span>' + (i + 1) + '. <b>' + esc(x.n) + '</b></span><span>' +
+      x.total + ' points · ' + x.sends + ' sent' + (x.flashes ? ' · ' + x.flashes + ' flashed' : '') + '</span></div>').join('')
+    : '<div class="kv"><span>No sends yet.</span><span></span></div>';
+  $('logCrew').innerHTML = crewLog.length ? crewLog.slice(0, 25).map(e => { const x = routeById(e.route);
+      return '<div class="kv' + (e.person === me ? ' me' : '') + '"><span><b>' + esc(e.person) + '</b> · ' + esc(x ? x.name : 'a route that is gone') + '</span><span>' + RESULT[e.result] + ' · ' + when(e.t) + '</span></div>'; }).join('')
+    : '<div class="kv"><span>Nothing yet.</span><span></span></div>';
+}
+
+/* ---------- the list of routes ---------- */
+function paintList(){
+  const list = shown();
+  const live = snap.routes.filter(r => !r.retired).length;
+  $('listN').textContent = 'Routes · ' + list.length + ' shown' + (list.length !== live && FILTERS.mine !== 'gone' ? ' of ' + live : '');
+  $('holdChip').hidden = !holdFilter.length;
+  $('filtBtn').classList.toggle('on', !$('filters').hidden || narrowed());
+  $('holdChipTxt').textContent = 'on ' + holdFilter.length + ' picked hold' + (holdFilter.length === 1 ? '' : 's');
+  const box = $('list');
+  if (!list.length){
+    box.innerHTML = '<div class="empty">' + (snap.routes.length ? 'No route matches.' : 'No routes yet.<br>Tap <b>+ New</b>, pick the holds on the picture, and name it.') + '</div>';
+    return;
+  }
+  box.innerHTML = list.map(r => {
+    const n = senders(r.id).length, mine = me ? statOf(me, r.id) : null, f = me ? firstSend(me, r.id) : null;
+    const st = f ? '✓ ' + RESULT[f] : mine ? mine.a + (mine.a === 1 ? ' try' : ' tries') : '';
+    return '<div class="row' + (r.id === openId ? ' on' : '') + (r.retired ? ' gone' : '') + '" data-id="' + r.id + '"><div class="nm"><b>' + esc(r.name) + '</b><span>' + esc(r.setter) +
+      ' · ' + FEET[r.feet] + (n ? ' · ' + n + ' sent' : '') + (r.tape ? ' · ' + esc(r.tape) : '') + '</span></div>' +
+      '<span class="st' + (f ? ' sent' : '') + '">' + st + '</span><span class="pill" data-g="' + r.grade + '"></span></div>';
+  }).join('');
+  box.querySelectorAll('.pill').forEach(p => paintPill(p, +p.dataset.g));
+}
+$('list').onclick = e => { const row = e.target.closest('.row'); if (row) open(+row.dataset.id); };
+function fillFilters(){
+  const gs = []; for (let g = GRADE_MIN; g <= GRADE_MAX; g++) gs.push(g);
+  $('fMin').innerHTML = gs.map(g => '<option value="' + g + '">From ' + vName(g) + '</option>').join('');
+  $('fMax').innerHTML = gs.map(g => '<option value="' + g + '">To ' + vName(g) + '</option>').join('');
+  $('fMin').value = FILTERS.min; $('fMax').value = FILTERS.max;
+}
+function fillSetters(){
+  const set = [...new Set(snap.routes.map(r => r.setter))].sort((a, b) => a.localeCompare(b));
+  if ($('fWho').dataset.key === set.join('\n')) return;
+  $('fWho').dataset.key = set.join('\n');
+  $('fWho').innerHTML = '<option value="">Anyone’s routes</option>' + set.map(n => '<option>' + esc(n) + '</option>').join('');
+  if (FILTERS.who && !set.includes(FILTERS.who)) FILTERS.who = '';
+  $('fWho').value = FILTERS.who;
+}
+$('q').oninput = () => { FILTERS.q = $('q').value; paintList(); };
+$('fMin').onchange = () => { FILTERS.min = +$('fMin').value; if (FILTERS.max < FILTERS.min){ FILTERS.max = FILTERS.min; $('fMax').value = FILTERS.max; } paintList(); };
+$('fMax').onchange = () => { FILTERS.max = +$('fMax').value; if (FILTERS.min > FILTERS.max){ FILTERS.min = FILTERS.max; $('fMin').value = FILTERS.min; } paintList(); };
+$('fWho').onchange = () => { FILTERS.who = $('fWho').value; paintList(); };
+$('fMine').onchange = () => { FILTERS.mine = $('fMine').value; paintList(); };
+$('fSort').onchange = () => { FILTERS.sort = $('fSort').value; paintList(); };
+$('holdChipX').onclick = () => { holdFilter = []; paintList(); };
+/* The filters are out of the way until asked for; the button stays dark while any of them is narrowing the list. */
+const narrowed = () => FILTERS.min > GRADE_MIN || FILTERS.max < GRADE_MAX || !!FILTERS.who || FILTERS.mine !== 'all';
+$('filtBtn').onclick = () => { $('filters').hidden = !$('filters').hidden; paintList(); };
+
+/* ---------- picking holds with no route open ---------- */
+$('pickX').onclick = () => { picks = []; paintWall(); };
+$('pickFind').onclick = () => { holdFilter = picks.slice(); picks = []; showPage('list'); paintAll(); };
+$('pickMake').onclick = () => { if (!needMe()) return; const from = picks.slice(); picks = []; startDraft(null, from); };
+
+/* ---------- making a route ---------- */
+function startDraft(route, fromPicks){
+  if (!needMe()) return;
+  draft = route ? { id: route.id, marks: route.marks.map(m => ({ ...m })), name: route.name, grade: route.grade, feet: route.feet, tape: route.tape || '', note: route.note || '' }
+                : { marks: (fromPicks || []).map(h => ({ h, r: 'h' })), name: '', grade: null, feet: 'any', tape: '', note: '' };
+  brush = route || (fromPicks && fromPicks.length) ? 'h' : 's';
+  if (!route) openId = null;
+  if (viewNow().zones) setView(wall.views.find(v => !v.zones).key);
+  showPage('wall'); paintAll();
+  if (fromPicks && fromPicks.length) toast('They are all marked as holds. Pick Start or Finish and tap the ones that are.');
+}
+/* A tap while making a route. On a hold: mark it with what the brush says; the same again lets
+   it go. Where nothing is outlined: a ring at the spot, and a tap on a ring lets it go. */
+function draftTap(h, vkey, x, y){
+  const v = viewNow();
+  if (h){
+    const i = draft.marks.findIndex(m => m.h === h.id);
+    if (i < 0) draft.marks.push({ h: h.id, r: brush });
+    else if (draft.marks[i].r === brush) draft.marks.splice(i, 1);
+    else draft.marks[i].r = brush;
+  } else {
+    const rr = 0.021 * v.w;
+    const i = draft.marks.findIndex(m => !m.h && m.v === vkey && Math.hypot((m.x - x) * v.w, (m.y - y) * v.h) < rr * 1.2);
+    if (i >= 0){ if (draft.marks[i].r === brush) draft.marks.splice(i, 1); else draft.marks[i].r = brush; }
+    else draft.marks.push({ v: vkey, x: +x.toFixed(4), y: +y.toFixed(4), r: brush });
+  }
+  if (draft.marks.length >= 80){ draft.marks.length = 80; toast('That is as many holds as a route can have.', true); }
+  // after a start, the next taps are most likely holds (a second start is one tap on Start away)
+  if (brush === 's' && draft.marks.some(m => m.r === 's')) brush = 'h';
+  paintWall();
+}
+$('brush').onclick = e => { const b = e.target.closest('button[data-r]'); if (b){ brush = b.dataset.r; paintCard(); } };
+$('draftUndo').onclick = () => { draft.marks.pop(); paintWall(); };
+$('draftX').onclick = () => {
+  if (draft.marks.length > 2 && !confirm(draft.id ? 'Leave the route as it was?' : 'Throw this route away?')) return;
+  draft = null; paintAll();
+};
+$('newBtn').onclick = $('newBtn2').onclick = () => startDraft(null);
+$('editBtn').onclick = () => startDraft(openRoute());
+$('goneBtn').onclick = async () => {
+  const r = openRoute();
+  if (!r || !confirm(r.retired ? 'Put “' + r.name + '” back on the wall?' : 'Take “' + r.name + '” down? It leaves the list, and what people logged on it is kept.')) return;
+  try{ take(await call('/route/retire', { by: me, id: r.id, retired: !r.retired })); toast(r.retired ? 'Back on the wall' : 'Taken down'); }
+  catch(e){ toast(e.message, true); }
+};
+function draftProblem(){
+  const n = k => draft.marks.filter(m => m.r === k).length;
+  return draft.marks.length < 2 ? 'Pick at least two holds.' : !n('s') ? 'Mark a hold to start on: tap Start, then the hold.' : !n('e') ? 'Mark a hold to finish on: tap Finish, then the hold.' : '';
+}
+$('draftNext').onclick = () => {
+  const p = draftProblem();
+  if (p) return toast(p, true);
+  $('shTitle').textContent = draft.id ? 'Change the route' : 'Name the route';
+  const n = k => draft.marks.filter(m => m.r === k).length;
+  $('shSay').textContent = draft.marks.length + ' holds: ' + n('s') + ' start, ' + n('e') + ' finish' + (n('f') ? ', ' + n('f') + ' foot only' : '') + '.';
+  $('shName').value = draft.name; $('shTape').value = draft.tape; $('shNote').value = draft.note; $('saveErr').textContent = '';
+  $('shSave').textContent = draft.id ? 'Save the change' : 'Save route';
+  paintSheet();
+  $('scrim').hidden = $('sheet').hidden = false;
+};
+function paintSheet(){
+  [...$('grades').children].forEach(b => b.classList.toggle('on', draft.grade !== null && +b.dataset.g === draft.grade));
+  [...$('feet').children].forEach(b => b.classList.toggle('on', b.dataset.f === draft.feet));
+  const on = $('grades').querySelector('.on'); if (on) on.scrollIntoView({ block: 'nearest', inline: 'center' });
+}
+function fillGrades(){
+  let s = ''; for (let g = GRADE_MIN; g <= GRADE_MAX; g++) s += '<button data-g="' + g + '">' + vName(g) + '</button>';
+  $('grades').innerHTML = s;
+}
+$('grades').onclick = e => { const b = e.target.closest('button[data-g]'); if (b){ draft.grade = +b.dataset.g; paintSheet(); } };
+$('feet').onclick = e => { const b = e.target.closest('button[data-f]'); if (b){ draft.feet = b.dataset.f; paintSheet(); } };
+const shutSheet = () => { $('scrim').hidden = $('sheet').hidden = true; };
+$('shBack').onclick = $('scrim').onclick = () => { draft.name = $('shName').value; draft.tape = $('shTape').value; draft.note = $('shNote').value; shutSheet(); };
+$('shSave').onclick = async () => {
+  draft.name = $('shName').value.trim(); draft.tape = $('shTape').value.trim(); draft.note = $('shNote').value.trim();
+  if (!draft.name) return ($('saveErr').textContent = 'It needs a name.');
+  if (draft.grade === null) return ($('saveErr').textContent = 'It needs a grade.');
+  const clash = snap.routes.find(r => !r.retired && r.id !== draft.id && r.name.toLowerCase() === draft.name.toLowerCase());
+  if (clash && !confirm('There is already a route called “' + clash.name + '”, by ' + clash.setter + '. Save this one with the same name?')) return;
+  $('shSave').disabled = true;
+  try{
+    await knowMe();
+    const d = await call('/route', { by: me, id: draft.id, name: draft.name, grade: draft.grade, marks: draft.marks, feet: draft.feet, tape: draft.tape, note: draft.note });
+    const was = draft.id; draft = null; shutSheet(); take(d);
+    open(d.id, true); toast(was ? 'Changed' : 'Saved. Everyone can see it now.');
+  }catch(e){ $('saveErr').textContent = e.message; }
+  $('shSave').disabled = false;
+};
+
+/* ---------- fixing the map ---------- */
+/* The outlines come from a program looking at photos, and some are wrong. Anyone at the wall
+   can put them right, a tap at a time: a hold with no outline, an outline that is not a hold,
+   an outline of the wrong shape. Each tap is kept by the store and reaches every phone with
+   the wall (see relive, above). A tap on something already marked takes the mark back. */
+async function fixTap(h, vkey, x, y){
+  const fixes = snap.fixes || [];
+  try{
+    if (h && h.fix) return take(await call('/fix/undo', { k: h.fix }));                 // a ring someone added: any brush takes it back
+    if (fixKind === 'add'){
+      if (h && h.k !== 'v' && inPoly(h.p, x, y)) return toast('That one has an outline already. If the outline is wrong, tap Wrong shape, then the hold.');
+      return take(await call('/fix', { by: me, kind: 'add', v: vkey, x: +x.toFixed(4), y: +y.toFixed(4), size: fixSize }));
+    }
+    // an outline already said not to be a hold is no longer under the finger, so it is looked for here
+    const gone = fixes.find(f => f.kind === 'drop' && HOLD[f.h] && HOLD[f.h].v === vkey && inPoly(HOLD[f.h].p, x, y));
+    if (gone && (fixKind === 'drop' || !h)) return take(await call('/fix/undo', { k: gone.k }));
+    if (!h) return toast(fixKind === 'drop' ? 'Tap an outline that is not a hold.' : 'Tap the outline that is the wrong shape.');
+    const had = fixes.find(f => f.kind === fixKind && f.h === h.id);
+    if (had) return take(await call('/fix/undo', { k: had.k }));
+    take(await call('/fix', { by: me, kind: fixKind, v: vkey, x: h.c[0], y: h.c[1], h: h.id }));
+  }catch(e){ toast(e.message, true); }
+}
+$('fixBtn').onclick = async () => {
+  if (!needMe()) return;
+  await knowMe();
+  fixing = true; draft = null; openId = null; picks = [];
+  if (viewNow().zones) setView(wall.views.find(v => !v.zones).key);
+  showPage('wall'); paintAll();
+};
+$('fixBrush').onclick = e => { const b = e.target.closest('button[data-k]'); if (b){ fixKind = b.dataset.k; paintCard(); } };
+$('fixSize').onclick = e => { const b = e.target.closest('button[data-s]'); if (b){ fixSize = b.dataset.s; paintCard(); } };
+$('fixDone').onclick = () => { fixing = false; const n = (snap.fixes || []).length; paintAll(); if (n) toast(n + (n === 1 ? ' fix is' : ' fixes are') + ' in. Thank you.'); };
+
+/* ---------- pages ---------- */
+const PAGES = { list: 'pgList', wall: 'pgWall', log: 'pgLog', set: 'pgSet' };
+function showPage(p){
+  page = p;
+  for (const k in PAGES) $(PAGES[k]).hidden = k !== p;
+  [...$('pgDots').children].forEach(b => b.classList.toggle('on', b.dataset.go === p));
+  if (p === 'wall') requestAnimationFrame(fit);
+  if (p === 'log'){ paintLog(); loadLog(); }
+  if (p === 'list') paintList();
+}
+$('pgDots').onclick = e => { const b = e.target.closest('button[data-go]'); if (b) showPage(b.dataset.go); };
+function paintAll(){
+  if (!wall) return;
+  paintMe(); fillSetters(); paintWall();
+  if (page === 'list') paintList();
+  if (page === 'log') paintLog();
+}
+
+/* ---------- which wall ---------- */
+/* This phone is on the Sun board until it says otherwise: the MoonBoard page one folder up
+   reads the same note and sends a Home Screen icon here. */
+ls.set('mb-wall', 'sun');
+$('toMoon').onclick = $('setMoon').onclick = () => { ls.set('mb-wall', 'moon'); location.href = '../'; };
+
+/* ---------- settings ---------- */
+$('bgSel').value = ls.get('mb-bg2') === null ? 'fog' : ls.get('mb-bg2');
+$('bgSel').onchange = () => {
+  const v = $('bgSel').value; ls.set('mb-bg2', v);
+  if (v) document.documentElement.setAttribute('data-bg', v); else document.documentElement.removeAttribute('data-bg');
+};
+$('dimChk').checked = dim; $('allChk').checked = showAll;
+$('dimChk').onchange = () => { dim = $('dimChk').checked; ls.set('sb-dim', dim ? '1' : '0'); paintWall(); };
+$('allChk').onchange = () => { showAll = $('allChk').checked; ls.set('sb-all', showAll ? '1' : '0'); paintWall(); };
+$('ver').textContent = 'build ' + BUILD;
+
+/* ---------- start ---------- */
+fillFilters(); fillGrades();
+try{ const kept = JSON.parse(ls.get('sb-snap-' + WALL) || 'null'); if (kept && Array.isArray(kept.routes)) snap = kept; }catch(e){}
+paintMe();
+(async () => {
+  try{ loadWall(await (await fetch('wall.json')).json()); }
+  catch(e){ $('picNote').textContent = 'The wall’s pictures did not load. Check the connection and open the page again.'; return; }
+  $('ver').textContent = 'build ' + BUILD + ' · the map of holds is revision ' + wall.rev + ', ' + wall.holds.length + ' holds';
+  setView(wall.views[0].key);
+  showPage('wall'); paintAll();
+  await refresh();
+  await seedCrew();
+  await knowMe();
+})();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && wall) refresh(); });
+/* Ask again every minute while the page is being looked at; three times as often while the map is
+   being fixed, when two people at the wall may be at it together. */
+let tick = 0;
+setInterval(() => { tick++; if (document.visibilityState === 'visible' && wall && !draft && (fixing || tick % 3 === 0)) refresh(); }, 20000);
+</script>
+</body>
+</html>

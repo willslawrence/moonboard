@@ -63,6 +63,16 @@
       }
     }catch(e){}
   })();
+  /* ---- which wall ----
+     Will has two walls at home. The other, the Sun board, has no lights and is a page of its
+     own (sun/): routes are made there by picking holds on a picture. A phone that was last on
+     the Sun board opens there, because an icon on the Home Screen always opens this page.
+     Only in the crew's own room (a phone on some other MoonBoard has no Sun board), and never
+     when the link itself says where to go. */
+  try{
+    if (!MB_MOVED && !location.hash && localStorage.getItem('mb-wall') === 'sun' &&
+        (localStorage.getItem('mb-room') || 'moonwall-crew') === 'moonwall-crew') location.replace('sun/');
+  }catch(e){}
 </script>
 <script>
   // the background this phone chose (light foggy grey until it chooses), on before the first paint.
@@ -154,6 +164,9 @@
   #dot.busy{background:var(--dim);animation:pulse 1s infinite}
   @keyframes pulse{50%{opacity:.25}}
   #connect{flex:none;width:auto;padding:4px 11px;font-size:12px;letter-spacing:.02em}
+  /* across to the other wall at Will's (see "which wall"); not shown on anyone else's wall */
+  #sunBtn{flex:none;width:30px;height:26px;padding:0;font-size:14px;line-height:1;border-radius:8px}
+  #sunBtn[hidden]{display:none}
 
   button{width:100%;padding:13px 12px;border-radius:8px;border:1px solid var(--edge);
          background:var(--panel2);color:var(--ink);font:600 14px inherit;font-family:inherit}
@@ -1000,6 +1013,7 @@
 <header>
   <span id="dot"></span>
   <h1 id="wallTxt" title="Wall status — tap for Settings">Will's Wall</h1>
+  <button id="sunBtn" title="Sun board" aria-label="Go to the Sun board">&#9728;&#65039;</button>
   <select id="me" aria-label="Climbing as"></select>
   <button id="connect">Connect</button>
 </header>
@@ -1277,6 +1291,17 @@
   </div>
   <div class="hint" id="relayState">relay off</div>
 
+  <div id="wallPick">
+    <div class="lbl">Which wall</div>
+    <div class="two">
+      <button class="solid" disabled>&#127769; MoonBoard</button>
+      <button id="toSun">&#9728;&#65039; Sun board</button>
+    </div>
+    <div class="hint">Both are at Will's. The Sun board has no lights: its routes are made by
+      picking holds on a picture of it, and it has a list of routes, a logbook and points of
+      its own. The sun at the top of the page goes there too.</div>
+  </div>
+
   <div class="lbl">Log</div>
   <div id="log">idle.</div>
   <div style="margin-top:10px"><button id="copy" class="ghost">Copy log</button></div>
@@ -1414,7 +1439,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-09 22:44';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-10 00:14';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -7161,7 +7186,14 @@ function paintLoc(){
   const home = $('room').value.trim() === DEFAULT_ROOM;
   $('loc').value = home ? 'home' : 'other';
   $('room').hidden = home;
+  $('wallPick').hidden = $('sunBtn').hidden = !home;      // the Sun board is at Will's
 }
+/* Across to the Sun board. The note it leaves is what brings this phone back there the
+   next time the app is opened (see "which wall" in the first lines of the page). */
+$('toSun').onclick = $('sunBtn').onclick = () => {
+  try{ localStorage.setItem('mb-wall', 'sun'); }catch(e){}
+  location.href = 'sun/';
+};
 $('room').oninput = () => {
   const v = $('room').value.trim();
   try{
@@ -7183,6 +7215,7 @@ $('loc').onchange = () => {
   $('room').oninput();
   if (relayWant && relayRoom()) relayConnect();
   if (!home) $('room').focus();
+  if (!home){ try{ localStorage.setItem('mb-wall', 'moon'); }catch(e){} }
   log(home ? 'climbing at Will\u2019s Wall.' : 'climbing at another wall \u2014 it needs a code of its own.');
 };
 $('noWall').onclick = () => {
