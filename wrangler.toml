@@ -1,0 +1,13 @@
+# The site: Cloudflare Pages project "wills-wall", wired to this repository.
+# The pages are docs/ as it stands (no build step). functions/ is the store for the
+# Sun board (see store/store.js), on the D1 database bound here as DB.
+# Since this file exists it is where the project's settings live; the same ones in the
+# dashboard are locked. relay/ has a file of its own and is a separate Worker.
+name = "wills-wall"
+pages_build_output_dir = "docs"
+compatibility_date = "2026-10-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wills-wall"
+database_id = "c13ceb4a-effa-4662-bcaf-ab0c212248a9"
