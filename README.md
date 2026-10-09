@@ -77,8 +77,8 @@ and stops the beta climber. Two taps are for focus.
 ### Focus, and picking holds
 
 Two taps on the picture and it fills the screen, with the open problem's name and grade
-over it and nothing to press. Two more taps put the page back, and so does Back. A flick
-still steps through the list.
+over it and nothing to press. Two more taps put the page back, and so do Back and a swipe
+upwards from anywhere on the screen. A flick across still steps through the list.
 
 In focus a tap on a hold rings it in violet, and another tap lets it go. With a hold
 picked, two buttons come up under the picture, and a small cross that lets every hold go:

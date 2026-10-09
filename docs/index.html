@@ -192,14 +192,18 @@
   @media (prefers-reduced-motion:reduce){ #board{transition:none} }
   /* ---- focus: the picture and nothing else ----
      Two taps on the picture and it fills the screen: no buttons, only the route's name
-     over it. Two more taps put the page back, and so does Back. A swipe on the picture
-     still steps through the routes. (A single tap that filled the screen was retired
-     when the log page came; Will asked for this, as a double tap, on 2026-10-08.) */
+     over it. Two more taps put the page back, and so do Back and a swipe upwards. A
+     swipe across the picture still steps through the routes. (A single tap that filled
+     the screen was retired when the log page came; Will asked for this, as a double tap,
+     on 2026-10-08, and for the swipe up the day after.) */
   #focusCap,#focusHint{display:none}
   #board{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
   body.focus #boardCol{position:fixed;inset:0;z-index:55;background:var(--bg);display:flex;flex-direction:column;
                        align-items:center;justify-content:center;
                        padding:calc(env(safe-area-inset-top) + 8px) 6px calc(env(safe-area-inset-bottom) + 8px)}
+  /* Nothing scrolls here, and a finger going up the screen has to reach the page as a
+     swipe (it closes this). Left to the browser it is taken for a scroll and never ends. */
+  body.focus #boardCol,body.focus #board{touch-action:none}
   /* as wide as the screen, or as tall as it once the name's line, the row of buttons for
      picked holds (56px, kept whether they show or not, so the picture does not move
      under the finger at the first tap) and, with two routes up, the second one's line
@@ -1302,7 +1306,7 @@
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-09 10:52';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-09 11:31';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -5511,7 +5515,8 @@ function boardTap(x, y){
 
 /* ---------- focus ----------
    The picture over the whole screen with the route's name above it, and nothing to
-   press. In by two taps on the picture and out the same way, or by Back. It is the
+   press. In by two taps on the picture and out the same way, or by Back, or by a swipe
+   upwards anywhere on the screen (focusSwipe, further down). It is the
    board's page still, with everything else covered: what the wall does goes on
    showing, and a swipe on the picture still goes to the next route. */
 let focusOn = false;
@@ -5529,7 +5534,7 @@ function focusBoard(on, fromBack){
   if (on){
     setCompact(false);                                 // it comes back at full size
     $('focusHint').className = '';
-    $('focusHint').textContent = 'Tap a hold to pick it \u00b7 Double tap to go back';
+    $('focusHint').textContent = 'Tap a hold to pick it \u00b7 Swipe up to go back';
   }
   document.body.classList.toggle('focus', on);
   if (on) return layerOpen('focus');
@@ -5639,6 +5644,38 @@ $('holdX').onclick = () => { holdFilter = []; paintHoldChip(); renderResults(); 
     if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return boardTap(x, y);
     if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
     stepProblem(dx < 0 ? 1 : -1);               // flick left for the next one
+  };
+
+  if (window.PointerEvent){
+    el.addEventListener('pointerdown', e => start(e.clientX, e.clientY));
+    el.addEventListener('pointerup',   e => end(e.clientX, e.clientY));
+    el.addEventListener('pointercancel', () => { x0 = null; });
+  } else {
+    el.addEventListener('touchstart', e => {
+      if (e.touches.length === 1) start(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    el.addEventListener('touchend', e => {
+      const t = e.changedTouches[0];
+      end(t.clientX, t.clientY);
+    }, { passive: true });
+  }
+})();
+
+/* In focus a swipe upwards closes it as well (Will, 2026-10-09: "a swipe up closes the
+   board as well"). It counts from anywhere on the screen, the room under the picture
+   included, because that is where a thumb sets off from. A swipe up is neither a tap
+   nor a step sideways, so the picture's own handler above lets it go by. */
+(function focusSwipe(){
+  const el = $('boardCol');
+  let x0 = null, y0 = null;
+
+  const start = (x, y) => { x0 = x; y0 = y; };
+  const end = (x, y) => {
+    if (x0 === null) return;
+    const dx = x - x0, dy = y - y0;
+    x0 = null;
+    if (!focusOn || dy > -50 || Math.abs(dx) >= -dy) return;     // not in focus, not far enough, or more across than up
+    focusBoard(false);
   };
 
   if (window.PointerEvent){
