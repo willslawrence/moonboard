@@ -136,6 +136,15 @@ s = await call('POST', '/api/w/test-n/route', { by: 'Nia', name: 'The hundred', 
 check('a hundred holds are not too many', s.id === 2 && s.routes[1].marks.length === 100 && s.routes[1].marks[99].n === 100, s.error);
 check('two hundred and fifty-one are',
   (await call('POST', '/api/w/test-n/route', { by: 'Nia', name: 'x', grade: 5, marks: Array.from({ length: 251 }, (_, i) => ({ h: 'h' + i, r: 'n', n: i + 1 })) })).status === 400);
+// brought in from somewhere else, with the day it really happened
+s = await call('POST', '/api/w/test-n/route', { by: 'Nia', name: 'Old one', grade: 4, marks: [{ h: 'a1', r: 's' }, { h: 'a2', r: 'e' }], t: '2025-12-13T19:25:23.691000+00:00' });
+const old1 = s.routes.find(r => r.name === 'Old one');
+check('a route may say when it was really made', old1.t === '2025-12-13T19:25:23.691Z', old1);
+s = await call('POST', '/api/w/test-n/route', { by: 'Nia', name: 'From the future', grade: 4, marks: [{ h: 'a1', r: 's' }, { h: 'a2', r: 'e' }], t: '2031-01-01T00:00:00Z' });
+check('but not a day that has not come', s.routes.find(r => r.name === 'From the future').t.startsWith('2026-10-'), s.routes.find(r => r.name === 'From the future'));
+await call('POST', '/api/w/test-n/log', { person: 'Nia', route: old1.id, result: '4+', t: '2026-01-05T10:00:00Z' });
+s = await call('GET', '/api/w/test-n/log?person=Nia');
+check('and so may a go', s.entries[0].t === '2026-01-05T10:00:00.000Z' && s.entries[0].result === '4+', s.entries && s.entries[0]);
 await call('POST', '/api/w/test-n/reset', {});
 check('a body that is not JSON is refused',
   (await handle(new Request('https://x.test/api/w/sun/person', { method: 'POST', body: 'name=Will' }), db)).status === 400);

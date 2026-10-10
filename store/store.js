@@ -10,10 +10,10 @@
 
      GET  /api/w/sun                  the wall as it stands: people, routes, everyone's tally
      POST /api/w/sun/person           { name }                             add a climber
-     POST /api/w/sun/route            { by, name, grade, marks, feet, tape, note, id? }
+     POST /api/w/sun/route            { by, name, grade, marks, feet, tape, note, id?, t? }
                                       a new route, or with id the setter's change to one
      POST /api/w/sun/route/retire     { by, id, retired }                  the setter takes it down, or puts it back
-     POST /api/w/sun/log              { person, route, result }            a try or a send
+     POST /api/w/sun/log              { person, route, result, t? }        a try or a send (t: when, if it was before now)
      POST /api/w/sun/log/undo         { person }                           take back that climber's last entry
      GET  /api/w/sun/log?person=&route=&limit=                             logbook rows, newest first
      POST /api/w/sun/fix              { by, kind, v, x, y, h?, size? }     the map of holds is wrong here (see below)
@@ -186,6 +186,13 @@ export async function handle(request, db, now = () => new Date().toISOString()){
     return json({ ...(await snapshot(db, wall)), name: same || name });
   }
 
+  /* A route or a go brought in from somewhere else may say when it really happened ("t", a time in the past).
+     Anything else is now. */
+  const when = () => {
+    const n = now(), t = typeof body.t === 'string' ? Date.parse(body.t) : NaN;
+    return Number.isFinite(t) && t > Date.parse('2015-01-01') && t < Date.parse(n) ? new Date(t).toISOString() : n;
+  };
+
   if (path === '/route'){
     const by = clean(body.by, 40), name = clean(body.name, 60);
     const grade = Number(body.grade), marks = cleanMarks(body.marks);
@@ -214,7 +221,7 @@ export async function handle(request, db, now = () => new Date().toISOString()){
     // the number is taken in the same statement that uses it, so two phones cannot be given the same one
     const made = await db.prepare(`INSERT INTO routes (wall, id, name, grade, setter, marks, feet, tape, note, t)
         SELECT ?, COALESCE(MAX(id), 0) + 1, ?, ?, ?, ?, ?, ?, ?, ? FROM routes WHERE wall = ? RETURNING id`)
-      .bind(wall, name, grade, by, JSON.stringify(marks), feet, tape, note, now(), wall).first();
+      .bind(wall, name, grade, by, JSON.stringify(marks), feet, tape, note, when(), wall).first();
     return json({ ...(await snapshot(db, wall)), id: made.id });
   }
 
@@ -232,7 +239,7 @@ export async function handle(request, db, now = () => new Date().toISOString()){
     if (!person || !(await knows(db, wall, person))) return bad('say who you are first', 404);
     if (!RESULTS.includes(result)) return bad('a try, or how many goes the send took');
     if (!(await db.prepare('SELECT 1 AS ok FROM routes WHERE wall = ? AND id = ?').bind(wall, route).first())) return bad('no such route', 404);
-    await db.prepare('INSERT INTO log (wall, t, person, route, result) VALUES (?, ?, ?, ?, ?)').bind(wall, now(), person, route, result).run();
+    await db.prepare('INSERT INTO log (wall, t, person, route, result) VALUES (?, ?, ?, ?, ?)').bind(wall, when(), person, route, result).run();
     await recount(db, wall, person, route);
     return json(await snapshot(db, wall));
   }
