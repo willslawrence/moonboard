@@ -428,11 +428,12 @@
 
   <div class="lbl">The map of holds</div>
   <button id="fixBtn">Fix the map of holds</button>
-  <p class="hint">The outlines were drawn from photos by a program, and it gets some wrong. Stand at the wall and tap a hold it missed, an outline that is only tape, or one that is the wrong shape. Everyone has your fixes straight away, and the outlines are then redrawn properly from them.</p>
+  <p class="hint">The outlines were drawn from photos by a program, and it gets some wrong. Stand at the wall and tap a hold it missed, an outline that is only tape, or one that is the wrong shape. Everyone has your fixes straight away, and the outlines are then redrawn properly from them. While you fix, the picture is the photo: a hold the map has missed is not in the drawing at all.</p>
 
   <div class="lbl">The picture</div>
   <label class="ck"><input type="checkbox" id="dimChk"> Dim the wall behind an open route</label>
   <label class="ck"><input type="checkbox" id="allChk"> Always outline every hold</label>
+  <label class="ck" id="photoRow" hidden><input type="checkbox" id="photoChk"> Show the photo of the wall, not the drawing</label>
   <p class="hint">Two taps on the picture and it fills the screen; there a tap picks a hold. Two fingers zoom, one drags. A hold that has no outline can still go in a route: tap it while marking the route and a ring goes where you tapped.</p>
 
   <div id="ver"></div>
@@ -489,7 +490,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-10 02:01';
+const BUILD = '2026-10-10 11:45';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -518,6 +519,7 @@ let draft = null;                // a route being made or changed: { id?, marks,
 let brush = 's';
 let fixing = false, fixKind = 'add', fixSize = 'm';      // putting the map of holds right (see "fixing the map")
 let dim = ls.get('sb-dim') !== '0', showAll = ls.get('sb-all') === '1';
+let photo = ls.get('sb-photo') === '1';      // the photo of a wall in place of the drawing made from it (where a view has both)
 let myLog = [], crewLog = [], logAt = 0, mine = [];     // mine: what this phone has logged since it opened, newest last
 
 /* ---------- the store ---------- */
@@ -632,6 +634,7 @@ function index(h){
 function loadWall(w){
   wall = w; HOLD = {};
   w.holds.forEach(index);
+  $('photoRow').hidden = !w.views.some(v => v.photo);
   relive();
 }
 /* The holds as they stand: the published map, less the outlines people have said are not
@@ -721,9 +724,16 @@ function setView(key, keepZoom){
   const changed = key !== view;
   view = key;
   if (changed || !keepZoom){ Z.k = 1; Z.x = Z.y = 0; }
-  const v = viewNow();
-  if ($('vimg').getAttribute('src') !== v.img){ $('vimg').removeAttribute('src'); $('vimg').src = v.img; }
+  paintPic();
   fit(); paintBoard();
+}
+/* A view may have two pictures the same size: a drawing (the board drawn, each hold on the map cut out of the
+   photo) and the photo itself. The drawing is what is shown; the photo when this phone asks for it, and always
+   while the map is being fixed, because a hold the map lacks is only in the photo. */
+function paintPic(){
+  if (!wall) return;
+  const v = viewNow(), src = v.photo && (photo || fixing) ? v.photo : v.img;
+  if ($('vimg').getAttribute('src') !== src){ $('vimg').removeAttribute('src'); $('vimg').src = src; }
 }
 $('zIn').onclick = () => { const r = $('pic').getBoundingClientRect(); zoomAt(r.width / 2, r.height / 2, Z.k * 1.6); };
 $('zOut').onclick = () => { const r = $('pic').getBoundingClientRect(); zoomAt(r.width / 2, r.height / 2, Z.k / 1.6); };
@@ -903,6 +913,7 @@ function paintBars(){
   b.classList.toggle('picking', focus && !draft && !fixing && picks.length > 0);
   b.classList.toggle('setting', focus && !!draft);
   b.classList.toggle('fixing', focus && fixing);
+  paintPic();
   // a different bar under the picture leaves it a different height: fit it again, or its foot is under the bar
   const now = [focus, focus && !!draft, focus && fixing, fixing && fixKind].join();
   if (now !== shape){ shape = now; requestAnimationFrame(fit); }
@@ -1293,6 +1304,8 @@ $('bgSel').onchange = () => {
 $('dimChk').checked = dim; $('allChk').checked = showAll;
 $('dimChk').onchange = () => { dim = $('dimChk').checked; ls.set('sb-dim', dim ? '1' : '0'); paintBoard(); };
 $('allChk').onchange = () => { showAll = $('allChk').checked; ls.set('sb-all', showAll ? '1' : '0'); paintBoard(); };
+$('photoChk').checked = photo;
+$('photoChk').onchange = () => { photo = $('photoChk').checked; ls.set('sb-photo', photo ? '1' : '0'); paintPic(); };
 $('ver').textContent = 'build ' + BUILD;
 
 /* ---------- start ---------- */

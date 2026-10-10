@@ -248,11 +248,19 @@ written the same way.
 
 **The wall.** Three pictures, chosen in the row over the picture where the MoonBoard has its
 lights: the room, the straight wall with the island box that hangs from the ceiling over it,
-and the overhang with its roof strip above and the kicker below. No one photo shows the last
-two, so they are put together from several (see *How the map is made*): the straight wall
-is squared up and the box set above it; the overhang is unfolded, roof, panel and kicker
-each squared up and stacked. On the picture of the room a tap on a wall goes to that wall.
-Two fingers zoom a picture and one drags it.
+and the overhang with the roof extension above it and the kicker below. The room is a
+photo, and a tap on a wall there goes to that wall. The other two are drawings, made to
+Will's measurements of the wall: each flat face square-on and all at one scale, the faces
+set edge to edge as if the wall were unfolded, and the island box opened out above the
+place it hangs. The boards are drawn in their own colours with the tape, the chalk and the
+room left out, and every hold on the map is cut out of a photo and set where it is, so the
+holds are the real ones. Two fingers zoom a picture and one drags it.
+
+**Drawing and photo.** Each drawing is made from a photograph of the same size (`photo` in
+`wall.json`, beside `img`), and the map fits both. The drawing is only as right as the map:
+a hold the map lacks is not in it at all. So while the map is being fixed the page shows
+the photograph, and "Show the photo of the wall, not the drawing" in Settings shows it
+always, on that phone.
 
 **Holds.** `docs/sun/wall.json` is the map: for each picture, the outline of every hold on
 it, as fractions of the picture's width and height. A volume is a hold. Each side of a
@@ -295,16 +303,16 @@ proper name, `wall.json` says which (`alias`), and the fixes are marked done.
 
 **A hold's name never changes** once it is published, because a route is a list of names.
 The program that makes the map keeps every hold's name from the map before it, by where
-the hold is.
+the hold is, and a name that has gone is pointed (`alias`) at the hold now in its place.
 
 **How the map is made.** Not in this repository: the photos and the scripts are in Will's
-notes (`sun-board-2026-10-09/pipeline`). In short: `detect.py` finds what stands out from
-the board, `sam_points.py` asks a segmentation model (MobileSAM) for the outline of what
-is at each of those places, `pick.py` keeps the outlines that are holds and not tape, and
-`build_wall.py` adds the volumes (which are drawn in by hand) and writes a map with a
-picture per photo, and `merge_views.py` puts the photos together into the three pictures
-and moves every outline through the same change as the pixels under it, so that no hold
-is found again and every name stays.
+notes (`sun-board-2026-10-09/pipeline`, with a runbook). In short: `plan.py` holds the
+wall's measurements and where each face's corners are on the photos; `faces.py` squares
+each face up to its measured size and sets them together; `detect.py`, `sam_points.py`
+(a segmentation model, MobileSAM) and `pick.py` find the holds on those pictures;
+`match.py` gives each hold the name it had on the map before; `draw.py` makes the
+drawings and `build.py` writes the pictures and `wall.json`. The pictures' names carry the
+map's revision, so a phone never shows an old picture under a new map.
 
 **Where it is kept.** `store/store.js` is the whole of it and says at its head what it
 keeps and how to ask. It runs as a Pages Function (`functions/api/[[path]].js`) on a D1
