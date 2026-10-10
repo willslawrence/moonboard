@@ -86,20 +86,19 @@
   #boardWrap{padding:0;margin:0}
   #pic{position:relative;overflow:hidden;border-radius:6px;background:var(--soft);touch-action:none;
        min-height:100px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-  /* On the board page the wall has the screen: the picture runs from the header down to the list. The row with the
-     open route's name (which is also the way to the search) and Quick log lies over the foot of the picture, where
-     there is only floor. Under the picture come one route of the list with the top of the next (the whole list is a
-     page of its own) and the bar of pages. */
-  body:not(.listPage):not(.logPage):not(.setPage) #top{position:relative;border-bottom:0;margin-bottom:4px}
-  body:not(.listPage):not(.logPage):not(.setPage) #top,
+  /* On the board page the picture is as tall as the wall needs at this width and no taller (the page works it out,
+     picNeed, and says so in --picH), so that the wall fills it from top to bottom; the list has what is left. The row
+     with the open route's name (which is also the way to the search) and Quick log lies over the foot of the picture,
+     where there is only floor. */
+  body:not(.listPage):not(.logPage):not(.setPage) #top{position:relative;border-bottom:0;margin-bottom:4px;flex:0 1 auto;min-height:0;display:flex;flex-direction:column}
   body:not(.listPage):not(.logPage):not(.setPage) #boardWrap,
   body:not(.listPage):not(.logPage):not(.setPage) #boardCol{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
   body:not(.listPage):not(.logPage):not(.setPage) #pic{flex:1 1 auto;height:auto}
+  body:not(.listPage):not(.logPage):not(.setPage):not(.focus) #pic{flex:0 1 var(--picH, 62vh)}
   body:not(.listPage):not(.logPage):not(.setPage) #bar{position:absolute;left:6px;right:6px;bottom:6px;padding:0;background:transparent}
   body:not(.listPage):not(.logPage):not(.setPage) #filters{display:none}
   body:not(.listPage):not(.logPage):not(.setPage) #quickBtn{box-shadow:0 0 0 1px rgba(255,255,255,.3)}
-  body:not(.listPage):not(.logPage):not(.setPage) #scroll{flex:0 0 72px;min-height:0}
-  body:not(.focus) #zoomBtns{bottom:52px}
+  body:not(.listPage):not(.logPage):not(.setPage) #scroll{flex:1 1 72px;min-height:72px}
   #stage{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
   #stage img{display:block;width:100%;height:100%;pointer-events:none;-webkit-user-drag:none}
   #stage svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
@@ -107,9 +106,15 @@
   #faces{position:absolute;left:0;top:0;width:100%;height:100%;z-index:0;overflow:hidden;background:#24262a}
   #faces[hidden]{display:none}
   #faces .face{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:none;backface-visibility:visible}
-  #turnBar{position:absolute;left:50%;top:6px;transform:translateX(-50%);display:flex;gap:2px;padding:2px;border-radius:10px;background:rgba(20,20,22,.6)}
-  #turnBar button{width:auto;height:26px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:#fff;font-size:11.5px;font-weight:600;white-space:nowrap}
-  #turnBar button.on{background:rgba(255,255,255,.92);color:#111}
+  /* the two ways of looking that have a name: a see-through button in each top corner of the picture, where they
+     take nothing from the wall. A finger goes through them to the picture, which decides what a tap there is (chipAt) */
+  #turnBar{position:absolute;left:0;right:0;top:0;height:0;pointer-events:none}
+  #turnBar button{pointer-events:none;position:absolute;top:6px;width:auto;height:28px;padding:0 11px;border:1px solid rgba(255,255,255,.2);border-radius:9px;
+       background:rgba(20,20,22,.34);color:rgba(255,255,255,.9);font-size:12px;font-weight:600;white-space:nowrap;
+       -webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
+  #turnBar button:first-child{left:6px}
+  #turnBar button:last-child{right:6px}
+  #turnBar button.on{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.55);color:#fff}
   /* line widths are in picture pixels, so they are divided by the zoom (--z) to stay the same on the screen */
   .o-all{fill:none;stroke:#fff;stroke-opacity:.55;stroke-width:calc(1.3px / var(--z))}
   /* a marked hold: a plain line round it in its colour, a little of the colour inside, and a dark edge so that it shows
@@ -135,8 +140,6 @@
   .zt{fill:#fff;font:700 15px -apple-system,system-ui,sans-serif;font-size:calc(13px / var(--z));paint-order:stroke;stroke:#000;stroke-opacity:.7;
       stroke-width:calc(3px / var(--z));text-anchor:middle}
   #picNote{position:absolute;left:12px;right:12px;top:12px;text-align:center;font-size:13.5px;color:var(--dim);pointer-events:none}
-  #zoomBtns{position:absolute;right:6px;bottom:6px;display:flex;flex-direction:column;gap:5px}
-  #zoomBtns button{width:34px;height:34px;padding:0;border-radius:9px;border:0;background:rgba(20,20,22,.6);color:#fff;font-size:19px;line-height:1}
 
   /* ---- focus: two taps on the picture and it is the whole screen, as on the MoonBoard ---- */
   #focusCap,#focusHint,#pickBar,#draftBar,#fixBar{display:none}
@@ -373,7 +376,6 @@
     <div id="pic">
       <div id="stage"><div id="faces" hidden></div><img id="vimg" alt=""><svg id="ov" xmlns="http://www.w3.org/2000/svg"></svg></div>
       <div id="picNote"></div>
-      <div id="zoomBtns"><button id="zIn" aria-label="Closer">+</button><button id="zOut" aria-label="Further">&#8722;</button></div>
       <div id="turnBar" hidden></div>
     </div>
     <div id="pickBar">
@@ -516,7 +518,7 @@
   <div class="lbl">The picture</div>
   <label class="ck"><input type="checkbox" id="dimChk"> Dim the wall behind an open route</label>
   <label class="ck"><input type="checkbox" id="allChk"> Always outline every hold</label>
-  <p class="hint">A finger across the picture looks at the flat wall, at both walls, or at the overhang. Two taps and the picture fills the screen; there a tap picks a hold. Two fingers zoom, and then one drags. A hold that has no outline can still go in a route: tap it while marking the route and a ring goes where you tapped.</p>
+  <p class="hint">A finger across the picture turns your head, from the flat wall round to the overhang, and it stays where you leave it. Flat and Overhang in the picture's corners go back to those two views. Two taps and the picture fills the screen; there a tap picks a hold. Two fingers zoom. A hold that has no outline can still go in a route: tap it while marking the route and a ring goes where you tapped.</p>
 
   <div id="ver"></div>
 </div>
@@ -581,7 +583,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-10 16:31';
+const BUILD = '2026-10-10 17:39';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -785,16 +787,16 @@ function toPic(v, key, x, y){
 /* ---------- the wall as a model that turns ----------
    A picture of this kind ("faces" in wall.json) is the wall stood up in the room: each face is a flat picture and
    says where it stands (the room's centimetres at fractions x, y of its wall's picture are o + x*u + y*v). The eye
-   is where a climber would stand back to look, and looks one of three ways (see CAM). Closer and further are
-   the picture's own zoom, as on every other picture, and when it is zoomed a finger moves it instead of turning. Nothing here is kept: a hold is still a place on its own wall,
+   is where a climber would stand back to look, and turns its head from the flat wall to the overhang (see CAM).
+   Closer and further are the picture's own zoom, as on every other picture. Nothing here is kept: a hold is still a place on its own wall,
    and this is one more way of looking at it. The picture's size is the screen's, so its fractions are of the screen. */
-/* One stands back from the corner, level, and looks one of a few ways (the poses): at the flat wall, at both walls,
-   at the overhang. A pose may stand a little aside from the rest (its own "at"): the overhang is looked at from a
-   step further round, so that it is seen more squarely. CAM.t says which pose, counting along them; between two it
-   is part-way, while a finger is turning. */
-const CAM = { t: 1, ver: 0, of: '' };
-const POSES = [{ key: 'flat', label: 'Flat', fit: ['flat', 'isl-front', 'isl-left', 'isl-right', 'isl-end'], side: 'l' },
-               { key: 'both', label: 'Both', side: 'c' },
+/* One stands back from the corner, level. Two ways of looking have a name (the poses): at the flat wall and at the
+   overhang. A pose may stand a little aside from the other (its own "at"): the overhang is looked at from a step
+   further round, so that it is seen more squarely. CAM.t says where the head is: 0 is the first pose, 1 the second,
+   and anything between is part-way, wherever a finger left it. Nothing snaps to a pose; the two buttons go to them.
+   (y0 and y1 are the top and the foot of what is in sight on the unzoomed picture: the picture is held to them.) */
+const CAM = { t: 1, ver: 0, of: '', y0: 0, y1: 0 };
+const POSES = [{ key: 'flat', label: 'Flat', fit: ['flat', 'isl-front', 'isl-left', 'isl-right', 'isl-end', 'isl-top'], side: 'l' },
                { key: 'over', label: 'Overhang', fit: ['kicker', 'panel', 'roof'], side: 'r', at: [-100, 155, 340] }];
 const posesOf = v => (v.eye && v.eye.poses) || POSES;
 const eyeOf = (v, i) => posesOf(v)[i].at || (v.eye && v.eye.at) || [-52, 155, 424];
@@ -833,19 +835,19 @@ function clipX(poly, a, b){
   }
   return poly;
 }
-/* How much of the picture's height is spoken for: the row of ways at its head, and at its foot (on the page) the row
+/* How much of the picture's height is spoken for: a little at its head, and at its foot (on the board page) the row
    with the open route's name. */
-const picRoom = () => [40, focus ? 8 : $('bar').offsetHeight + 14];
-/* The camera for one pose at the picture's present size: where it stands, which way it looks, how long its lens is,
-   and where the middle of its picture falls. What the pose is about fills the width between the margins (at the
-   left, at the right, or in the middle). Then whatever of ANY face is on the picture must be on it from top to
-   bottom, so the lens is shortened until it is: no top or bottom edge is ever cut off. The eye stays level and the
-   picture is slid up or down instead (a shift lens), so what is upright on the wall is upright on the screen; and
-   it is slid so that the wall stands on the foot of the picture, just over the row with the name, with whatever
-   height is spare above it. */
-function poseCam(v, i){
+const picRoom = () => [8, focus ? 8 : $('bar').offsetHeight + 14];
+/* The camera for one pose in a picture of a given size (the picture's own, unless another is asked about): where it
+   stands, which way it looks, how long its lens is, and where the middle of its picture falls. What the pose is about
+   fills the width between the margins (at the left or at the right). Then whatever of ANY face is on the picture
+   must be on it from top to bottom, so the lens is shortened until it is: unzoomed, no top or bottom edge is ever
+   cut off. The eye stays level and the picture is slid up or down instead (a shift lens), so what is upright on the
+   wall is upright on the screen; and it is slid so that the wall stands on the foot of the picture, just over the
+   row with the name. (tall: how high the wall then stands, in the picture's pixels.) */
+function poseCam(v, i, size){
   v.cams = v.cams || {};
-  const [head, foot] = picRoom(), key = [i, Math.round(v.w), Math.round(v.h), head, foot].join();
+  const [head, foot] = picRoom(), W = size ? size[0] : v.w, Hh = size ? size[1] : v.h, key = [i, Math.round(W), Math.round(Hh), head, foot].join();
   if (v.cams[key]) return v.cams[key];
   const pose = posesOf(v)[i], m = (v.eye && v.eye.margin) || 0.035, E = eyeOf(v, i);
   const all = v.faces.map(F => ({ F, c: corners3(F, E) })), want = all.filter(o => !pose.fit || pose.fit.includes(o.F.key));
@@ -855,27 +857,104 @@ function poseCam(v, i){
   const flat = q => { const w = Math.max(1, q[0] * d[0] + q[2] * d[1]); return [(q[0] * r[0] + q[2] * r[1]) / w, -q[1] / w]; };     // on a picture one unit in front of the eye
   let x0 = 9, x1 = -9;
   want.forEach(o => o.c.forEach(q => { const u = flat(q); x0 = Math.min(x0, u[0]); x1 = Math.max(x1, u[0]); }));
-  const room = Math.max(60, v.h - head - foot);
-  let f = v.w * (1 - 2 * m) / (x1 - x0), cx = 0, y0 = 0, y1 = 0;
+  const room = Math.max(60, Hh - head - foot);
+  let f = W * (1 - 2 * m) / (x1 - x0), cx = 0, y0 = 0, y1 = 0;
   const span = () => {
-    cx = pose.side === 'l' ? m * v.w - f * x0 : pose.side === 'r' ? v.w * (1 - m) - f * x1 : v.w / 2 - f * (x0 + x1) / 2;
+    cx = pose.side === 'l' ? m * W - f * x0 : pose.side === 'r' ? W * (1 - m) - f * x1 : W / 2 - f * (x0 + x1) / 2;
     y0 = 9; y1 = -9;
-    all.forEach(o => clipX(o.c.map(flat).map(u => [cx + f * u[0], u[1]]), 0, v.w).forEach(u => { y0 = Math.min(y0, u[1]); y1 = Math.max(y1, u[1]); }));
+    all.forEach(o => clipX(o.c.map(flat).map(u => [cx + f * u[0], u[1]]), 0, W).forEach(u => { y0 = Math.min(y0, u[1]); y1 = Math.max(y1, u[1]); }));
   };
   for (let k = 0; k < 8; k++){ span(); const need = f * (y1 - y0); if (need <= room * 1.002) break; f *= room / need; }
   span();
-  return (v.cams[key] = { yaw, f, cx, cy: v.h - foot - f * y1, E });
+  return (v.cams[key] = { yaw, f, cx, cy: Hh - foot - f * y1, E, tall: f * (y1 - y0) });
 }
+/* How tall the picture has to be, at this width, for the taller of the poses to stand in it whole with nothing over.
+   The board page makes it that tall and gives the list the rest. */
+function picNeed(v, w){
+  const [head, foot] = picRoom();
+  return Math.max(...posesOf(v).map((q, i) => poseCam(v, i, [w, 6000]).tall)) + head + foot;
+}
+/* The camera with the head at t. At a pose it is that pose's. Between two, where it stands, which way it looks, its
+   lens and its sideways slide are theirs mixed; and then, as for a pose, whatever is on the picture must be on it
+   from top to bottom and stand on the foot line, so the lens is shortened if it has to be and the picture slid up or
+   down to suit. (Mixing the two poses' own up-and-down slides will not do: between them other parts of the wall are
+   in sight, and they are not the same height.) */
 function camAt(v, t){
   const n = posesOf(v).length - 1, i = Math.max(0, Math.min(n - 1, Math.floor(t))), k = Math.max(0, Math.min(1, t - i));
-  const a = poseCam(v, i), b = poseCam(v, Math.min(n, i + 1)), mix = (p, q) => p + (q - p) * k;
-  return { yaw: mix(a.yaw, b.yaw), f: mix(a.f, b.f), cx: mix(a.cx, b.cx), cy: mix(a.cy, b.cy), E: a.E.map((p, j) => mix(p, b.E[j])) };
+  const a = poseCam(v, i), b = poseCam(v, Math.min(n, i + 1));
+  if (k < 1e-9) return a;
+  if (k > 1 - 1e-9) return b;
+  const [head, foot] = picRoom(), key = [t.toFixed(5), Math.round(v.w), Math.round(v.h), head, foot].join();
+  if (!v.mids || v.midN > 240){ v.mids = {}; v.midN = 0; }
+  if (v.mids[key]) return v.mids[key];
+  const mix = (p, q) => p + (q - p) * k, yaw = mix(a.yaw, b.yaw), E = a.E.map((p, j) => mix(p, b.E[j]));
+  const d = [Math.sin(yaw), -Math.cos(yaw)], r = [Math.cos(yaw), Math.sin(yaw)], room = Math.max(60, v.h - head - foot);
+  const pts = v.faces.map(F => corners3(F, E).map(q => { const w = Math.max(1, q[0] * d[0] + q[2] * d[1]); return [(q[0] * r[0] + q[2] * r[1]) / w, -q[1] / w]; }));
+  let f = mix(a.f, b.f), cx = mix(a.cx, b.cx), y0 = 0, y1 = 0;
+  const span = () => { y0 = 9; y1 = -9; pts.forEach(P => clipX(P.map(u => [cx + f * u[0], u[1]]), 0, v.w).forEach(u => { y0 = Math.min(y0, u[1]); y1 = Math.max(y1, u[1]); })); };
+  for (let j = 0; j < 6; j++){ span(); const need = f * (y1 - y0); if (need <= room * 1.002) break; const sh = room / need; f *= sh; cx = v.w / 2 + (cx - v.w / 2) * sh; }
+  span();
+  v.midN++;
+  return (v.mids[key] = { yaw, f, cx, cy: v.h - foot - f * y1, E });
+}
+/* the top and the foot of whatever of the wall is in sight between two uprights of the unzoomed picture, head at t */
+function extentY(v, t, x0, x1){
+  const cam = camAt(v, t), y = cam.yaw, d = [Math.sin(y), -Math.cos(y)], r = [Math.cos(y), Math.sin(y)];
+  let a = 1e9, b = -1e9;
+  for (const F of v.faces){
+    const pts = corners3(F, cam.E).map(q => { const w = Math.max(1, q[0] * d[0] + q[2] * d[1]); return [cam.cx + cam.f * (q[0] * r[0] + q[2] * r[1]) / w, cam.cy - cam.f * q[1] / w]; });
+    for (const u of clipX(pts, x0, x1)){ if (u[1] < a) a = u[1]; if (u[1] > b) b = u[1]; }
+  }
+  return b > a ? [a, b] : [0, v.h];
+}
+/* where a place in the room is across the unzoomed picture, head at t */
+function sxAt(v, t, P){
+  const cam = camAt(v, t), y = cam.yaw, q0 = P[0] - cam.E[0], q2 = P[2] - cam.E[2];
+  return cam.cx + cam.f * (q0 * Math.cos(y) + q2 * Math.sin(y)) / Math.max(1, q0 * Math.sin(y) - q2 * Math.cos(y));
+}
+/* The picture as it is when it is left to itself, head at t.
+   On the board page it is the whole picture, unzoomed: the picture there is made just tall enough for the taller of
+   the two poses (picNeed), and nothing of what a pose is about is ever off it.
+   In focus (two taps: "double tap to zoom", as Will has it) the picture is much taller than that, and the wall is
+   brought closer to use it: zoomed about its foot at the left until it stands in the picture from head to foot, or
+   by HOME_MAX if that comes first, so that it runs off at the right, where a finger fetches it. That is Will's own
+   choice of the view: "removes a little bit of the headspace, zooms in. It doesn't show everything on the right
+   side of the wall, but of course they can scroll." Between the poses the zoom is theirs mixed, eased back wherever
+   that would put anything over the top. */
+const HOME_MAX = 1.3;
+function homeAt(v, t){
+  if (!focus) return { k: 1, x: 0, y: 0 };
+  const [head, foot] = picRoom(), room = Math.max(60, v.h - head - foot), n = posesOf(v).length - 1;
+  v.homes = v.homes || {};
+  const end = i => {
+    const key = [i, Math.round(v.w), Math.round(v.h), head, foot].join();
+    if (v.homes[key]) return v.homes[key];
+    let k = 1;
+    for (let j = 0; j < 10; j++){
+      const Y = extentY(v, i, 0, v.w / k), k2 = Math.max(1, Math.min(HOME_MAX, room / (Y[1] - Y[0])));
+      if (Math.abs(k2 - k) < 0.0005){ k = k2; break; }
+      k = k2;
+    }
+    return (v.homes[key] = k);
+  };
+  t = Math.max(0, Math.min(n, t));
+  const i = Math.max(0, Math.min(n - 1, Math.floor(t)));
+  let k = end(i) + (end(i + 1) - end(i)) * (t - i), Y = extentY(v, t, 0, v.w / k);
+  for (let j = 0; j < 3 && k * (Y[1] - Y[0]) > room * 1.002; j++){ k = Math.max(1, room / (Y[1] - Y[0])); Y = extentY(v, t, 0, v.w / k); }
+  return { k, x: 0, y: v.h - foot - k * Y[1] };
 }
 function turnPaint(){
   const v = viewNow();
   if (!wall || !v.faces) return;
-  if (CAM.of !== v.key){ CAM.of = v.key; CAM.t = Math.max(0, posesOf(v).findIndex(q => q.key === ((v.eye || {}).start || 'both'))); }
+  if (CAM.of !== v.key){ CAM.of = v.key; CAM.t = Math.max(0, posesOf(v).findIndex(q => q.key === ((v.eye || {}).start || 'over'))); }
   CAM.ver++;
+  const sight = extentY(v, CAM.t, 0, v.w); CAM.y0 = sight[0]; CAM.y1 = sight[1];
+  if (!Z.user){                                           // left to itself the picture is as homeAt has it; slid sideways only with the head at the last pose
+    const home = homeAt(v, CAM.t);
+    Z.k = home.k; Z.y = home.y;
+    if (CAM.t < posesOf(v).length - 1 - 1e-6) Z.x = 0;
+    place();
+  }
   const cam = camAt(v, CAM.t), E = cam.E, y = cam.yaw;
   const d2 = [Math.sin(y), 0, -Math.cos(y)], r = [Math.cos(y), 0, Math.sin(y)];                    // ahead and to the right, level
   const K = [[cam.f * r[0] + cam.cx * d2[0], 0, cam.f * r[2] + cam.cx * d2[2]], [cam.cy * d2[0], -cam.f, cam.cy * d2[2]], d2];
@@ -965,35 +1044,44 @@ function turnAt(v, x, y){
     const fx = (I[0][0] * X + I[0][1] * Y + I[0][2]) / k, fy = (I[1][0] * X + I[1][1] * Y + I[1][2]) / k;
     if (!inPoly(t.poly, fx, fy)) continue;
     const w = t.H[2][0] * fx + t.H[2][1] * fy + t.H[2][2];
-    if (w > NEAR && w < bw){ bw = w; best = { v: t.F.wall, x: fx, y: fy }; }
+    if (w > NEAR && w < bw){ bw = w; best = { v: t.F.wall, x: fx, y: fy, F: t.F }; }
   }
   return best;
 }
 let turnWait = 0, turnAnim = 0;
 function turnSoon(){ if (!turnWait) turnWait = requestAnimationFrame(() => { turnWait = 0; turnPaint(); paintBoard(turning); }); }
-/* look another of the ways: glide round to it */
-function turnTo(i){
+/* Turn the head to t, gliding, and let the picture go back to what it is when left to itself there (homeAt): this is
+   what the two buttons do, and what opening a route does. While it glides the picture is held (Z.user), so that it
+   goes from wherever a finger had it straight to where it is going. */
+let gliding = false;
+function turnTo(to){
   const v = viewNow();
   if (!v.faces) return;
-  const to = Math.max(0, Math.min(posesOf(v).length - 1, i)), from = CAM.t, t0 = performance.now(), ms = Math.abs(to - from) < 0.01 ? 0 : 240;
+  to = Math.max(0, Math.min(posesOf(v).length - 1, to));
+  const from = CAM.t, z0 = { k: Z.k, x: Z.x, y: Z.y }, z1 = homeAt(v, to), t0 = performance.now();
+  const ms = Math.abs(to - from) < 0.01 && Math.abs(z1.k - z0.k) < 0.01 && Math.abs(z1.x - z0.x) < 1 && Math.abs(z1.y - z0.y) < 1 ? 0 : 260;
   cancelAnimationFrame(turnAnim);
   const go = now => {
-    const k = ms ? Math.min(1, (now - t0) / ms) : 1;
-    CAM.t = from + (to - from) * (1 - Math.pow(1 - k, 3)); turning = k < 1;
-    turnPaint(); paintBoard(turning);
+    const k = ms ? Math.min(1, (now - t0) / ms) : 1, e = 1 - Math.pow(1 - k, 3);
+    CAM.t = from + (to - from) * e;
+    Z.k = z0.k + (z1.k - z0.k) * e; Z.x = z0.x + (z1.x - z0.x) * e; Z.y = z0.y + (z1.y - z0.y) * e;
+    turning = gliding = k < 1; Z.user = k < 1;
+    turnPaint(); place(); paintBoard(turning);
     if (k < 1) turnAnim = requestAnimationFrame(go); else paintTurnBar();
   };
-  turning = true; turnAnim = requestAnimationFrame(go);
+  turning = gliding = true; Z.user = true; turnAnim = requestAnimationFrame(go);
 }
-/* the three ways of looking, as a small row on the picture */
+/* the two named ways of looking, a button in each top corner of the picture; one is marked while the picture is
+   exactly as that button would leave it */
 let turnBarIs = '';
 function paintTurnBar(){
   const v = wall && viewNow(), bar = $('turnBar');
   bar.hidden = !(v && v.faces);
-  const now = bar.hidden ? '' : v.key + ' ' + Math.round(CAM.t);
+  const at = bar.hidden || Z.user || Math.abs(Z.x) > 1 ? -1 : posesOf(v).findIndex((q, i) => Math.abs(CAM.t - i) < 0.004);
+  const now = bar.hidden ? '' : v.key + ' ' + at;
   if (now === turnBarIs) return;
   turnBarIs = now;
-  bar.innerHTML = bar.hidden ? '' : posesOf(v).map((q, i) => '<button data-i="' + i + '"' + (i === Math.round(CAM.t) ? ' class="on"' : '') + '>' + esc(q.label) + '</button>').join('');
+  bar.innerHTML = bar.hidden ? '' : posesOf(v).map((q, i) => '<button data-i="' + i + '"' + (i === at ? ' class="on"' : '') + '>' + esc(q.label) + '</button>').join('');
 }
 const inPoly = (p, x, y) => {
   let inside = false;
@@ -1033,12 +1121,17 @@ function holdAt(x, y, slop){
 }
 
 /* ---------- the picture ---------- */
-const Z = { k: 1, x: 0, y: 0 };      // zoom (1 = the whole picture fits) and where its corner is
+const Z = { k: 1, x: 0, y: 0, user: false };      // zoom (1 = the whole picture fits) and where its corner is; user: a finger has zoomed it (the model: else it is as homeAt has it)
+let picH = 0;                          // how tall the board page's picture has been told to be
 let k0 = 1;                            // the scale at which the whole picture fits
 function fit(){
   if (!wall) return;                     // a turn of the phone before the wall has loaded
   const v = viewNow(), r = $('pic').getBoundingClientRect();
   if (!r.width || !r.height) return;
+  if (v.faces && !focus && page === 'board'){           // on the board page the picture is as tall as the wall needs at this width, and the list has the rest
+    const need = Math.round(picNeed(v, r.width));
+    if (need !== picH){ picH = need; document.documentElement.style.setProperty('--picH', need + 'px'); }
+  }
   if (v.faces){ v.w = r.width; v.h = r.height; }        // the model fills whatever room there is
   k0 = Math.min(r.width / v.w, r.height / v.h);
   $('stage').style.width = v.w + 'px'; $('stage').style.height = v.h + 'px';
@@ -1049,21 +1142,29 @@ function place(){
   const v = viewNow(), r = $('pic').getBoundingClientRect(), s = k0 * Z.k, sw = v.w * s, sh = v.h * s;
   Z.x = sw <= r.width ? (r.width - sw) / 2 : Math.min(0, Math.max(r.width - sw, Z.x));
   Z.y = sh <= r.height ? (r.height - sh) / 2 : Math.min(0, Math.max(r.height - sh, Z.y));
+  if (v.faces && CAM.y1 > CAM.y0){
+    // the model: it is the wall that is held to the picture, not the picture's own edges, which have floor and air
+    // beyond them. Shorter than its room, the wall stands on the foot line; taller, it may be slid until its top is
+    // at the head or its foot on the foot line, and no further.
+    const [head, foot] = picRoom(), top = head - Z.k * CAM.y0, bot = r.height - foot - Z.k * CAM.y1;
+    Z.y = bot >= top - 0.5 ? bot : Math.min(top, Math.max(bot, Z.y));
+  }
   $('stage').style.transform = 'translate(' + Z.x + 'px,' + Z.y + 'px) scale(' + s + ')';
   $('stage').style.setProperty('--z', s);
 }
 function zoomAt(px, py, k){
   k = Math.max(1, Math.min(8, k));
+  if (Math.abs(k - Z.k) > 1e-4) Z.user = true;           // it is the finger's zoom now, until a button or a route takes it back
   const s0 = k0 * Z.k, ix = (px - Z.x) / s0, iy = (py - Z.y) / s0;
   Z.k = k; Z.x = px - ix * k0 * k; Z.y = py - iy * k0 * k;
-  place();
+  place(); paintTurnBar();
 }
 function setView(key, keepZoom){
   const to = wall.views.find(v => v.key === key);
   if (!to || (wall.views.some(v => v.faces) && !!to.faces === fixing)) return;       // the model, unless the map is being fixed; then a wall's photo
   const changed = key !== view;
   view = key;
-  if (changed || !keepZoom){ Z.k = 1; Z.x = Z.y = 0; }
+  if (changed || !keepZoom){ Z.k = 1; Z.x = Z.y = 0; Z.user = false; }
   paintPic();
   fit(); paintBoard();
 }
@@ -1086,24 +1187,73 @@ function paintPic(){
   const src = v.photo || v.img;
   if ($('vimg').getAttribute('src') !== src){ $('vimg').removeAttribute('src'); $('vimg').src = src; }
 }
-$('turnBar').onclick = e => { const b = e.target.closest('button[data-i]'); if (!b) return; Z.k = 1; Z.x = Z.y = 0; place(); turnTo(+b.dataset.i); };
-$('zIn').onclick = () => { const r = $('pic').getBoundingClientRect(); zoomAt(r.width / 2, r.height / 2, Z.k * 1.6); };
-$('zOut').onclick = () => { const r = $('pic').getBoundingClientRect(); zoomAt(r.width / 2, r.height / 2, Z.k / 1.6); };
+$('turnBar').onclick = e => { const b = e.target.closest('button[data-i]'); if (b) turnTo(+b.dataset.i); };
 window.addEventListener('resize', fit);
 if (window.ResizeObserver) new ResizeObserver(() => fit()).observe($('pic'));          // the picture's room changes when a bar under it opens or closes
 
-/* Fingers on the picture. One finger that barely moves is a tap, and two taps in the same
-   place are the way into focus and out of it. One finger that moves drags the picture when it
-   is zoomed; when it is not, a quick stroke sideways steps to the next route and, in focus, a
-   stroke upwards goes back to the page. Two fingers zoom about the point between them. */
+/* Fingers on the picture. One finger that barely moves is a tap, and two taps in the same place are the way into
+   focus and out of it. One finger that moves drags the wall (see dragTo): it turns the head, and the picture stays
+   where the finger leaves it. In focus, with the picture left to itself, a quick stroke upwards goes back to the
+   page. Two fingers zoom about the point between them. */
 const fingers = new Map();
 let g = null, lastTap = null;
+/* which of the two buttons in the picture's corners is at a place on the screen, if either */
+function chipAt(x, y){
+  if ($('turnBar').hidden) return null;
+  for (const b of $('turnBar').querySelectorAll('button')){ const r = b.getBoundingClientRect(); if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return +b.dataset.i; }
+  return null;
+}
+/* the hold whose outline has this place of the picture in it */
+const holdUnder = (px, py) => { const v = viewNow(), s = k0 * Z.k; return holdAt((px - Z.x) / s / v.w, (py - Z.y) / s / v.h, 0); };
+/* A finger takes hold of the model: which place in the room is under it. On bare floor or ceiling, a place as far
+   off as the wall is, straight behind the finger. */
+function grab(v, r){
+  cancelAnimationFrame(turnAnim);
+  if (gliding){ gliding = false; Z.user = false; }
+  turnPaint();
+  const px = g.x0 - r.left, py = g.y0 - r.top, sx = (px - Z.x) / Z.k, sy = (py - Z.y) / Z.k, at = turnAt(v, sx / v.w, sy / v.h);
+  if (at) g.P = [0, 1, 2].map(j => at.F.o[j] + at.x * at.F.u[j] + at.y * at.F.v[j]);
+  else {
+    const cam = camAt(v, CAM.t), y = cam.yaw, d = [Math.sin(y), 0, -Math.cos(y)], rr = [Math.cos(y), 0, Math.sin(y)];
+    const drawn = TURN.filter(t => t.box.length >= 3), far = drawn.length ? drawn.reduce((n, t) => n + t.depth, 0) / drawn.length : 400;
+    const a = (sx - cam.cx) / cam.f, b = (cam.cy - sy) / cam.f;
+    g.P = [0, 1, 2].map(j => cam.E[j] + far * (d[j] + a * rr[j] + (j === 1 ? b : 0)));
+  }
+  g.py = py; g.zy = Z.y;
+  turning = true;
+}
+/* A finger dragging the model: the place it took hold of stays under it. Sideways two things can give, and they give
+   in a fixed order, so that the whole wall is one strip from the flat wall's far end round to the overhang's: the
+   head turns from the first pose to the last, and only with the head at the last does the picture itself slide on
+   (zoomed, there is more of it at the right). Coming back the slide is undone first, then the head turns. Up and
+   down the picture slides, if a finger has zoomed it. Nothing snaps: it stays where it is left. */
+function dragTo(v, px, py){
+  const n = posesOf(v).length - 1, P = g.P;
+  const K = t => Z.user ? Z.k : homeAt(v, t).k;
+  const at = (t, x) => x + K(t) * sxAt(v, t, P);                  // where the place is across the picture, head at t and the picture slid to x
+  let t = CAM.t, x = Z.x;
+  if (px > at(t, x) + 0.25){                                       // it has to come right: undo the slide, then turn the head back
+    x = Math.min(0, x + px - at(t, x));
+    if (px > at(t, x) + 0.25){
+      if (at(0, x) <= px) t = 0;
+      else { let a = 0, b = t; for (let i = 0; i < 22; i++){ const m = (a + b) / 2; if (at(m, x) > px) a = m; else b = m; } t = (a + b) / 2; }
+    }
+  } else if (px < at(t, x) - 0.25){                                // it has to go left: turn the head on, then slide
+    if (t < n){
+      if (at(n, x) >= px) t = n;
+      else { let a = t, b = n; for (let i = 0; i < 22; i++){ const m = (a + b) / 2; if (at(m, x) > px) a = m; else b = m; } t = (a + b) / 2; }
+    }
+    if (t >= n && px < at(t, x) - 0.25) x = Math.max(v.w * (1 - K(t)), x + px - at(t, x));
+  }
+  CAM.t = t; Z.x = x;
+  if (Z.user) Z.y = g.zy + (py - g.py);
+  place(); turnSoon();
+}
 $('pic').addEventListener('pointerdown', e => {
-  if (e.target.closest('#zoomBtns, #turnBar')) return;
   $('pic').setPointerCapture(e.pointerId);
   fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
   const r = $('pic').getBoundingClientRect();
-  if (fingers.size === 1) g = { kind: 'one', x0: e.clientX, y0: e.clientY, t0: Date.now(), zx: Z.x, zy: Z.y, moved: 0, turnT: CAM.t };
+  if (fingers.size === 1) g = { kind: 'one', x0: e.clientX, y0: e.clientY, t0: Date.now(), zx: Z.x, zy: Z.y, moved: 0 };
   else if (fingers.size === 2){
     const [a, b] = [...fingers.values()];
     g = { kind: 'two', d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, k: Z.k, mx: (a.x + b.x) / 2 - r.left, my: (a.y + b.y) / 2 - r.top };
@@ -1113,15 +1263,15 @@ $('pic').addEventListener('pointermove', e => {
   if (!fingers.has(e.pointerId) || !g) return;
   fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
   const r = $('pic').getBoundingClientRect();
-  if (viewNow().faces && g.kind === 'one' && Z.k <= 1.01){
-    // the model, not zoomed: a finger across it turns the head towards the next way of looking, and no further
+  if (viewNow().faces && g.kind === 'one'){
     const dx = e.clientX - g.x0, dy = e.clientY - g.y0, v = viewNow();
     g.moved = Math.max(g.moved, Math.hypot(dx, dy));
-    if (g.turned || (g.moved >= 9 && Math.abs(dx) > Math.abs(dy))){
-      cancelAnimationFrame(turnAnim); g.turned = turning = true;
-      CAM.t = Math.max(0, Math.min(posesOf(v).length - 1, g.turnT - dx / (v.w * 0.6)));
-      turnSoon();
+    if (!g.drag && g.moved >= 9){
+      // the finger has set off. Straight up or down, with the picture left to itself, there is nothing to slide: that
+      // is not a drag (in focus it is the way back to the page)
+      if (!Z.user && Math.abs(dy) > Math.abs(dx) * 1.2) g.drag = 'no'; else { g.drag = 'yes'; grab(v, r); }
     }
+    if (g.drag === 'yes') dragTo(v, e.clientX - r.left, e.clientY - r.top);
     return;
   }
   if (g.kind === 'two' && fingers.size >= 2){
@@ -1140,23 +1290,23 @@ function fingerUp(e){
   if (!fingers.has(e.pointerId)) return;
   fingers.delete(e.pointerId);
   const was = g;
-  if (was && was.turned && fingers.size === 0){
-    // let go: settle on the nearest way of looking, or on the next one along if the finger went far enough
-    const moved = CAM.t - was.turnT;
-    turnTo(Math.abs(moved) > 0.16 ? (moved > 0 ? Math.ceil(CAM.t - 0.001) : Math.floor(CAM.t + 0.001)) : Math.round(was.turnT));
-  }
+  if (was && was.drag === 'yes' && fingers.size === 0){ turning = false; turnPaint(); paintBoard(); paintTurnBar(); }      // let go: it stays where it is
   if (fingers.size === 0) g = null;
-  else if (fingers.size === 1){ const [a] = [...fingers.values()]; g = { kind: 'one', x0: a.x, y0: a.y, t0: 0, zx: Z.x, zy: Z.y, moved: 99, turnT: CAM.t }; }   // what is left of a pinch is not a tap
+  else if (fingers.size === 1){ const [a] = [...fingers.values()]; g = { kind: 'one', x0: a.x, y0: a.y, t0: 0, zx: Z.x, zy: Z.y, moved: 99 }; }   // what is left of a pinch is not a tap
   if (!was || was.kind !== 'one' || e.type === 'pointercancel') return;
   const dx = e.clientX - was.x0, dy = e.clientY - was.y0, dt = Date.now() - was.t0;
   if (was.moved < 9 && dt < 600){
     const r = $('pic').getBoundingClientRect(), now = Date.now();
+    // One of the two buttons in the picture's corners is under the finger. They are see-through, and a tap goes
+    // through them too: in focus a hold that shows through one is picked, as it would be anywhere; else the button is pressed.
+    const chip = chipAt(e.clientX, e.clientY);
+    if (chip !== null && !(focus && holdUnder(e.clientX - r.left, e.clientY - r.top))){ lastTap = null; return turnTo(chip); }
     // (while a route is being marked or the map fixed, two taps are just two taps: the way out is the button)
     const twice = !draft && !fixing && lastTap && now - lastTap.t < 350 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 44;
     lastTap = twice ? null : { t: now, x: e.clientX, y: e.clientY };
     if (twice) return twoTaps();
     tapAt(e.clientX - r.left, e.clientY - r.top);
-  } else if (Z.k <= 1.01 && dt < 700 && !was.turned){
+  } else if (dt < 700 && (viewNow().faces ? was.drag !== 'yes' : Z.k <= 1.01)){
     if (focus && !draft && !fixing && dy < -50 && Math.abs(dy) > Math.abs(dx)) focusOff();
     else if (!viewNow().faces && !draft && !fixing && Math.abs(dx) > 60 && Math.abs(dx) > 2 * Math.abs(dy)) step(dx < 0 ? 1 : -1);
   }
@@ -1213,14 +1363,14 @@ function hint(text){
 }
 function focusOn(){
   if (focus) return;
-  focus = true;
+  focus = true; Z.user = false;                           // the picture grows, and the wall with it (homeAt)
   paintAll(); requestAnimationFrame(fit);
-  hint(draft ? 'Tap a hold to mark it' : fixing ? 'Tap what is wrong' : viewNow().faces ? 'Swipe sideways to look left or right · Tap a hold to pick it' : 'Tap a hold to pick it · Swipe up to go back');
+  hint(draft ? 'Tap a hold to mark it' : fixing ? 'Tap what is wrong' : viewNow().faces ? 'Drag to look round · Tap a hold to pick it' : 'Tap a hold to pick it · Swipe up to go back');
 }
 function focusOff(){
   if (!focus) return;
   focus = false; picks = []; draft = null; fixing = false;
-  Z.k = 1; Z.x = Z.y = 0;
+  Z.k = 1; Z.x = Z.y = 0; Z.user = false;
   if (view !== turnView().key) setView(turnView().key);          // the map was being fixed on a wall's photo: back to the model
   paintAll(); requestAnimationFrame(fit);
 }
@@ -1349,23 +1499,32 @@ function shown(){
                sent: (a, b) => senders(b.id).length - senders(a.id).length || b.id - a.id, name: (a, b) => a.name.localeCompare(b.name) };
   return list.sort(by[FILTERS.sort]);
 }
-/* which way of looking shows all of a route: at one wall if every hold of it is on that wall, else at both */
+/* Where to turn the head for a route: to the pose that shows all of it, if every hold of it is on that side; else to
+   wherever between the poses most of it is in sight, and nearest the middle of the picture. */
 function poseFor(r, v){
-  const on = new Set();
+  const on = new Set(), P = [];
   for (const m of r.marks){
     const h = m.h && H(m.h), f = h ? h.f || faceKey(v, h.v, h.c[0], h.c[1]) : m.h ? null : faceKey(v, m.v, m.x, m.y);
-    if (f) on.add(f);
+    if (!f) continue;
+    on.add(f);
+    const F = v.faces.find(q => q.key === f), c = h ? h.c : [m.x, m.y];
+    if (F) P.push([0, 1, 2].map(j => F.o[j] + c[0] * F.u[j] + c[1] * F.v[j]));
   }
-  const ps = posesOf(v);
-  let best = Math.max(0, ps.findIndex(q => !q.fit));
-  ps.forEach((q, i) => { if (q.fit && on.size && [...on].every(f => q.fit.includes(f))) best = i; });
+  const ps = posesOf(v), whole = ps.findIndex(q => q.fit && on.size && [...on].every(f => q.fit.includes(f)));
+  if (whole >= 0 || !P.length) return whole >= 0 ? whole : CAM.t;
+  let best = CAM.t, score = -9;
+  for (let i = 0; i <= (ps.length - 1) * 20; i++){
+    const t = i / 20, k = homeAt(v, t).k, xs = P.map(p => k * sxAt(v, t, p));
+    const seen = xs.filter(x => x > 8 && x < v.w - 8).length, mid = xs.reduce((a, b) => a + b, 0) / xs.length, sc = seen - Math.abs(mid - v.w / 2) / v.w;
+    if (sc > score){ score = sc; best = t; }
+  }
   return best;
 }
 function open(id, stay){
   openId = id;
   quickShow(false);
   const r = openRoute(), tv = turnView();
-  if (r && tv.faces && !fixing && !stay){ Z.k = 1; Z.x = Z.y = 0; place(); turnTo(poseFor(r, tv)); }
+  if (r && tv.faces && !fixing && !stay) turnTo(poseFor(r, tv));
   if (!stay) showPage('board');
   paintAll();
 }
@@ -1812,7 +1971,7 @@ $('fixBtn').onclick = async () => {
   if (!needMe()) return;
   await knowMe();
   fixing = true; draft = null; picks = [];
-  { // the photo of the wall being looked at (of the flat wall, if at both)
+  { // the photo of the wall being looked at (the nearer of the two ways of looking)
     const tv = viewNow(), pose = tv.faces ? posesOf(tv)[Math.round(CAM.t)] : null, F = pose && pose.fit && tv.faces.find(F => F.key === pose.fit[0]);
     setView(F ? F.wall : (wall.views.find(v => !v.faces) || tv).key);
   }

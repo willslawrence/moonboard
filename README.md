@@ -250,38 +250,52 @@ instead of under it.
 
 **The wall is a model.** There is one picture: the wall stood up in the room. Each flat
 face (the flat wall, the kicker, the overhanging panel, the roof extension and the four
-sides of the island box that hangs from the ceiling) is a picture of its own, made to
+sides of the island box that hangs from the ceiling, and the face at the box's far end,
+which leans back) is a picture of its own, made to
 Will's measurements of the wall: the face square-on and to scale, the board in its own
 colour with the tape, the chalk and the room left out, every hold on the map cut out of a
 photo and set where it is, and see-through round its edge. `wall.json` says where each
 face stands (`faces`: the room's centimetres at a place on the face) and the browser
 draws them (CSS `matrix3d`), farthest first.
 
-**Three ways to look at it.** One stands back from the corner and looks one of three ways
-(`eye.poses`): **Flat** is the whole flat wall with a little room at its left, seen at an
-angle; **Both** is all of both walls with a little room either side; **Overhang** is the
-whole overhang with a little room at its right and some of the flat wall still in sight. A
-pose may have a place of its own to stand (`at`): the overhang is looked at from nearer
-square-on than it would be from where the other two are seen. A finger drawn sideways
-turns the head to the next of the three and no further, and a small row at the head of
-the picture says which and goes to one at a tap. The eye never looks up or down, and the
-page fits each view to the screen so that no top or bottom edge of the wall is ever cut
-off (`poseCam`: what the view is about fills the width, then the lens is shortened until
-whatever is on the picture is on it from top to bottom, standing just over the row with
-the open route). Zoom is straight in and out with two fingers, and when the picture is
-zoomed a finger moves it instead of turning the head. A route opens in the view that
-shows all of it: Flat or Overhang when it is on that side only, Both when it is on both.
+**Two ways to look at it, and anywhere between.** One stands back from the corner and
+turns one's head. Two ways of looking have a name (`eye.poses`): **Flat** is the whole flat
+wall with a little room either side, seen at an angle; **Overhang** is the whole overhang
+with a little room at its right and some of the flat wall still in sight. A pose may have
+a place of its own to stand (`at`): the overhang is looked at from nearer square-on than
+it would be from where the flat wall is seen. Between the two the head stops wherever a
+finger leaves it (`CAM.t`, 0 to 1): where one stands, which way one looks and the lens are
+the two poses' mixed (`camAt`). Nothing snaps. The two names are see-through buttons in the
+picture's top corners, and a tap on one glides to that way of looking; a tap goes through
+them to a hold that shows underneath. There was a third way, both walls at once, until
+Will found it too far off to be of use.
 
-**The wall has the screen.** The picture takes all the height over one route of the list
-(with the top of the next) and the bar of pages. The two walls make a corner, so the foot
-of the picture is floor: the open route's name and **Quick log** lie there, on the
-picture. The whole list is the Routes page. A marked hold is a plain line round it in its
-colour with a little of the colour inside; there are no dashed lines, because a dash is
-so many pixels long and so crawled round the hold as the picture was zoomed.
+**A finger drags the wall.** The place it takes hold of stays under it (`dragTo`). Sideways
+two things can give, and they give in a fixed order, so that the whole wall is one strip
+from the flat wall's far end round to the overhang's: the head turns from the first pose to
+the last, and only with the head at the last does the picture itself slide on (zoomed,
+there is more of it at the right). Coming back the slide is undone first. Two fingers zoom
+straight in and out, and then one finger slides the picture up and down as well. The eye
+never looks up or down.
+
+**Nothing is cut off, and nothing is wasted.** Unzoomed, whatever of the wall is in sight
+is on the picture from top to bottom and stands on the row with the open route's name
+(`poseCam`, and `camAt` between the poses). On the board page the picture is made exactly
+as tall as the taller pose needs at that width (`picNeed`), and the list has what is left
+of the screen. In focus the picture is much taller, so there the wall is brought closer
+(`homeAt`): zoomed about its foot at the left until it fills the picture's height, or by
+three tenths if that comes first, running off at the right. A route opens with the head
+turned to it: at a pose when it is all on that side, else wherever most of it is in sight.
+
+**The wall has the screen.** The two walls make a corner, so the foot of the picture is
+floor: the open route's name and **Quick log** lie there, on the picture. The whole list
+is the Routes page. A marked hold is a plain line round it in its colour with a little of
+the colour inside; there are no dashed lines, because a dash is so many pixels long and so
+crawled round the hold as the picture was zoomed.
 
 **Holds.** `docs/sun/wall.json` is the map. It has two walls (the straight wall with the
-island box opened out above it; the kicker, the panel and the roof extension one above the
-other), each a flat drawing, and for each the outline of every hold on it as fractions of
+island box opened out above it, the face at the box's far end laid beside it; the kicker,
+the panel and the roof extension one above the other), each a flat drawing, and for each the outline of every hold on it as fractions of
 the drawing's width and height. A face of the model says which part of its wall's drawing
 it is, so a hold is a place on its wall and nothing else: everything the store keeps (a
 ring in a route, a fix to the map) names the wall, never the model. A volume is a hold.
@@ -330,8 +344,8 @@ flash. Tries score nothing. The points are the Sun board's own.
 
 **Putting the map right.** The outlines are drawn from photos by a program, and it gets
 some wrong, so anyone at the wall can fix it (Settings, "Fix the map of holds"). That
-opens a photograph of one wall in focus, with a switch between the two walls and three
-brushes: tap a hold that has no outline, an outline that is only tape, or an outline of
+opens a photograph of the wall being looked at in focus, with a switch to the other wall
+and three brushes: tap a hold that has no outline, an outline that is only tape, or an outline of
 the wrong shape. It is a photograph and not the model because a hold the map lacks is not
 in the model at all; each wall has one (`photo` in `wall.json`), of the size and shape of
 its drawing, so the map fits it. A fix is kept by the store and reaches every phone at
@@ -347,7 +361,7 @@ the hold is, and a name that has gone is pointed (`alias`) at the hold now in it
 **How the map is made.** Not in this repository: the photos and the scripts are in Will's
 notes (`sun-board-2026-10-09/pipeline`, with a runbook). In short: `plan.py` holds the
 wall's measurements, where each face's corners are on the photos, where each face stands
-in the room and the three ways of looking; `faces.py` squares each face up to its measured
+in the room and the two ways of looking; `faces.py` squares each face up to its measured
 size and sets them together into the two walls; `detect.py`, `sam_points.py` (a
 segmentation model, MobileSAM) and `pick.py` find the holds on those pictures; `match.py`
 gives each hold the name it had on the map before; `draw.py` makes the drawings and cuts
