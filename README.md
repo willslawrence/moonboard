@@ -133,6 +133,23 @@ For logging without leaving the board. A tap on **Quick log** dims the screen an
 out two round buttons: red logs a try at once, green is a send. The finger can also go
 down on the button, slide on to one, and let go. A short line says what was logged.
 
+### A timed session
+
+Some come for attempts and the rest between them, not for sends. On the log page, under
+the open route's card, **Timed session** sets how many goes make a set (one to eight) and
+how long the rest is (half a minute to half an hour), and **Start the session** goes to
+the board. There, at the top of the panel beside the wall, is a circle for each go. A tap
+pops the next one (a tap on a popped one puts it back). When the last is popped the rest
+counts down in the same box, beside the wall and never over it, so the next route can be
+looked for meanwhile. When it is up the screen flashes, the phone buzzes and sounds two
+notes where it can, and the circles are empty again for the next set. A tap on the time
+skips a rest, and **End** puts the box away. A tick-box makes each popped circle log a
+try on the route that is up; it is off unless ticked. The session is the phone's own,
+kept in its storage (`mb-rest`), so it runs through a reload, and the screen is kept
+awake while one is on where the phone allows. The Sun board has the same session, under
+the same name, so one carries from wall to wall: there the circles lie on the picture,
+down its left edge under the corner button, with nothing behind them.
+
 ### How a send is asked
 
 A send needs one more answer: which go it was. Four green bubbles swing out in an arc

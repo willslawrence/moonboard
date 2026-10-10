@@ -800,6 +800,32 @@
   #wallCol{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:5px;
            overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
   #wallCol::-webkit-scrollbar{display:none}
+  /* ---- a timed session: so many goes, then a rest (see rsPaint) ---- */
+  #rsBox[hidden],#rsFlash[hidden]{display:none}
+  #rsTime{display:block;width:100%;height:auto;padding:0;border:0;background:transparent;font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--dim);text-align:center}
+  #rsTime:disabled{opacity:1}
+  #rsBox.rest #rsTime{font:800 24px/1 ui-monospace,Menlo,monospace;letter-spacing:-.03em;color:var(--ink)}
+  #rsDots{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+  #rsDots button{flex:none;width:30px;height:30px;min-width:0;padding:0;border-radius:50%;border:2px solid var(--dim);background:transparent}
+  #rsDots button.on{background:#22c55e;border-color:#22c55e}
+  #rsBox.rest #rsDots button{opacity:.4}
+  #rsEndBtn{width:auto;height:auto;padding:1px 8px;border:0;background:transparent;font-size:10.5px;font-weight:600;color:var(--dimmer)}
+  #rsFlash{position:fixed;inset:0;z-index:200;pointer-events:none;background:#fff;opacity:0}
+  #rsFlash.go{animation:rsFlash 1.4s ease-out}
+  @keyframes rsFlash{0%{opacity:.9}18%{opacity:0}36%{opacity:.9}54%{opacity:0}72%{opacity:.8}100%{opacity:0}}
+  #rsDet{margin:14px 0 4px;border:1px solid var(--edge);border-radius:10px;background:var(--panel)}
+  #rsDet summary{display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:13px;font-weight:700;list-style:none;cursor:pointer}
+  #rsDet summary::-webkit-details-marker{display:none}
+  #rsDet summary span{flex:1 1 auto;min-width:0;font-weight:500;color:var(--dim);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #rsSet{padding:2px 12px 12px}
+  .rsRow{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:14px}
+  .rsRow span{flex:1 1 auto}
+  .rsRow button{flex:none;width:44px;height:38px;padding:0;font-size:17px;font-weight:700}
+  .rsRow b{flex:none;min-width:58px;text-align:center;font:700 17px ui-monospace,Menlo,monospace}
+  .rsChk{display:flex;align-items:center;gap:8px;margin:2px 0 10px;font-size:13px;color:var(--dim)}
+  .rsChk input{width:18px;height:18px;flex:none;margin:0}
+  #rsGo{width:100%}
+  #rsBox{flex:none;display:flex;flex-direction:column;align-items:center;gap:6px;padding:7px 4px 4px;border:1px solid var(--edge);border-radius:10px;background:var(--panel)}
   /* ---- quick log: a button at the foot of the panel, and the two it opens ----
      The two are round, red for a try and green for a send, and stand just over the
      button. Each is a fingertip across, which on a narrow panel takes the green one a
@@ -1036,6 +1062,7 @@
            its bar is tapped: what has been up tonight. While a beta is being entered
            its tools stand here instead. -->
       <div id="wallCol">
+        <div id="rsBox" hidden><button id="rsTime" disabled></button><div id="rsDots"></div><button id="rsEndBtn">End</button></div>
         <button id="nextBtn" class="mini" disabled hidden>Next up</button>
         <button id="histBar" hidden></button>
         <div id="wallHist" hidden></div>
@@ -1194,6 +1221,16 @@
     </div>
     <button id="lpUndo" class="ghost mini" hidden></button>
   </div>
+  <details id="rsDet">
+    <summary>Timed session <span id="rsSum"></span></summary>
+    <div id="rsSet">
+      <div class="rsRow"><span>Goes in a set</span><button data-k="reps" data-d="-1" aria-label="One fewer">&#8722;</button><b id="rsReps">3</b><button data-k="reps" data-d="1" aria-label="One more">+</button></div>
+      <div class="rsRow"><span>Rest between sets</span><button data-k="rest" data-d="-30" aria-label="Half a minute less">&#8722;</button><b id="rsRest">5:00</b><button data-k="rest" data-d="30" aria-label="Half a minute more">+</button></div>
+      <label class="rsChk"><input type="checkbox" id="rsLog"> Each go logs a try on the route that is up</label>
+      <button id="rsGo" class="solid">Start the session</button>
+      <div class="hint">On the board, tap a circle after each go. After the last one the rest counts down beside the wall, and the screen flashes when it is time to climb again. Tap the time to skip a rest.</div>
+    </div>
+  </details>
 
   <div class="lbl" id="lpRouteLbl">Your history on this route</div>
   <div id="lpHistSum"></div>
@@ -1312,6 +1349,7 @@
 <div id="kb" hidden></div>
 
 <!-- three pages: routes, the board, the log -->
+<div id="rsFlash" hidden></div>
 <div id="quickScrim" hidden></div>
 <div id="quickToast" hidden></div>
 <!-- How a send went, asked in bubbles and not on a sheet: four of them swing out in an
@@ -1441,7 +1479,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-10 02:01';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-10 21:48';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -6797,6 +6835,95 @@ function quickSay(txt, cls){              // what was logged, said for a moment
   clearTimeout(quickBack);
   quickBack = setTimeout(() => { t.hidden = true; }, 1800);
 }
+/* ---------- a timed session: so many goes, then a rest ----------
+   Will, 2026-10-10: "A lot of people come and they aren't focused on sends, but they're focused on attempts and then
+   time between attempts." A session is set up on the log page: how many goes make a set, and how long the rest is.
+   While one is on, the board has a small box with a circle for each go. A tap pops the next circle; when the last is
+   popped the rest counts down in the box (not over the wall: one may be looking for the next route meanwhile), and
+   when it is up the screen flashes and the circles are empty again for the next set. It is the phone's own, kept in
+   its storage under one name for both walls, so it carries on from one wall to the other and through a reload. */
+const RS = { on: false, reps: 3, rest: 300, log: false, done: 0, set: 1, until: 0 };
+try{ const k = JSON.parse(localStorage.getItem('mb-rest') || 'null'); if (k && typeof k === 'object') for (const f of Object.keys(RS)) if (typeof k[f] === typeof RS[f]) RS[f] = k[f]; }catch(e){}
+RS.reps = Math.max(1, Math.min(8, Math.round(RS.reps) || 3)); RS.rest = Math.max(30, Math.min(1800, Math.round(RS.rest) || 300));
+const rsKeep = () => { try{ localStorage.setItem('mb-rest', JSON.stringify(RS)); }catch(e){} };
+const rsClock = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+let rsTick = 0, rsAudio = null, rsBeep = null, rsLock = null;
+/* the screen stays on through a session, where a phone allows it, so that the flash at the end of a rest is seen */
+async function rsAwake(){
+  try{
+    if (RS.on && !rsLock && navigator.wakeLock && document.visibilityState === 'visible'){ rsLock = await navigator.wakeLock.request('screen'); rsLock.addEventListener('release', () => { rsLock = null; }); }
+    else if (!RS.on && rsLock){ const w = rsLock; rsLock = null; await w.release(); }
+  }catch(e){}
+}
+function rsPaint(){
+  const box = $('rsBox'), resting = RS.on && RS.until > 0;
+  box.hidden = !RS.on;
+  box.classList.toggle('rest', resting);
+  clearInterval(rsTick); rsTick = 0;
+  // the setting-up, on the log page
+  $('rsReps').textContent = RS.reps; $('rsRest').textContent = rsClock(RS.rest); $('rsLog').checked = RS.log;
+  $('rsSum').textContent = (RS.on ? 'on \u00b7 ' : '') + RS.reps + (RS.reps === 1 ? ' go' : ' goes') + ', then ' + rsClock(RS.rest) + ' rest';
+  $('rsGo').textContent = RS.on ? 'End the session' : 'Start the session';
+  $('rsGo').classList.toggle('solid', !RS.on);
+  rsAwake();
+  if (!RS.on) return;
+  $('rsDots').innerHTML = Array.from({ length: RS.reps }, (_, i) => '<button' + (i < RS.done ? ' class="on"' : '') + ' aria-label="Go ' + (i + 1) + (i < RS.done ? ', done' : '') + '"></button>').join('');
+  const show = () => {
+    if (!RS.until){ $('rsTime').textContent = 'Set ' + RS.set; $('rsTime').disabled = true; return; }
+    const left = (RS.until - Date.now()) / 1000;
+    if (left <= 0) return rsOver(true);
+    $('rsTime').textContent = rsClock(left); $('rsTime').disabled = false;
+  };
+  show();
+  if (RS.on && RS.until > 0) rsTick = setInterval(show, 250);
+}
+/* a go is done: the next circle is popped, and with the last one the rest starts */
+function rsPop(){
+  if (!RS.on || RS.until) return;
+  RS.done = Math.min(RS.reps, RS.done + 1);
+  if (RS.log && current && meNow()) doTry();
+  if (RS.done >= RS.reps){ RS.until = Date.now() + RS.rest * 1000; rsSound(RS.rest); }
+  rsKeep(); rsPaint();
+}
+/* a circle popped by mistake is put back (a try it logged stays in the logbook, where it can be taken out) */
+function rsUnpop(){ if (RS.on && !RS.until && RS.done > 0){ RS.done--; rsKeep(); rsPaint(); } }
+/* the rest is over, or was skipped: the circles are empty again, with a flash if it ran its time */
+function rsOver(flash){
+  RS.until = 0; RS.done = 0; RS.set++; rsKeep();
+  if (rsBeep && !flash){ try{ rsBeep.forEach(o => o.stop()); }catch(e){} }
+  rsBeep = null;
+  rsPaint();
+  if (flash){
+    const f = $('rsFlash'); f.hidden = false; f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
+    setTimeout(() => { f.hidden = true; }, 1500);
+    try{ if (navigator.vibrate) navigator.vibrate([220, 120, 220]); }catch(e){}
+  }
+}
+/* two short notes when the rest is up, set going on the tap that started it (a page may not make a sound unasked) */
+function rsSound(inSecs){
+  try{
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    rsAudio = rsAudio || new AC(); if (rsAudio.state === 'suspended') rsAudio.resume();
+    rsBeep = [0, 0.28].map(d => { const o = rsAudio.createOscillator(), g = rsAudio.createGain(), t = rsAudio.currentTime + inSecs + d;
+      o.frequency.value = 880; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+      o.connect(g); g.connect(rsAudio.destination); o.start(t); o.stop(t + 0.22); return o; });
+  }catch(e){}
+}
+function rsStart(){ RS.on = true; RS.done = 0; RS.set = 1; RS.until = 0; rsKeep(); rsPaint(); }
+function rsEnd(){ RS.on = false; RS.done = 0; RS.set = 1; RS.until = 0; if (rsBeep){ try{ rsBeep.forEach(o => o.stop()); }catch(e){} rsBeep = null; } rsKeep(); rsPaint(); }
+$('rsDots').onclick = e => { const b = e.target.closest('button'); if (!b) return; b.classList.contains('on') ? rsUnpop() : rsPop(); };
+$('rsTime').onclick = () => { if (RS.until) rsOver(false); };
+$('rsEndBtn').onclick = () => rsEnd();
+$('rsSet').onclick = e => {
+  const b = e.target.closest('button[data-k]'); if (!b) return;
+  if (b.dataset.k === 'reps') RS.reps = Math.max(1, Math.min(8, RS.reps + +b.dataset.d)); else RS.rest = Math.max(30, Math.min(1800, RS.rest + +b.dataset.d));
+  RS.done = Math.min(RS.done, RS.reps); rsKeep(); rsPaint();
+};
+$('rsLog').onchange = () => { RS.log = $('rsLog').checked; rsKeep(); };
+$('rsGo').onclick = () => { if (RS.on) return rsEnd(); rsStart(); $('rsDet').open = false; showPage('board'); };
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') rsPaint(); });
+rsPaint();
+
 function quickPick(which){
   if (which === 'try'){ quickShow(false); if (!needName('try')) doTry(); return; }
   if (needName('done')) return quickShow(false);
