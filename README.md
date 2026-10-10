@@ -296,13 +296,26 @@ for it to be found the way the MoonBoard's custom route is.
 face (the flat wall, the kicker, the overhanging panel, the roof extension and the four
 sides of the island box) is a picture of its own, see-through round its edge, and
 `wall.json` says where each stands (`faces`: the room's centimetres at a place on the face).
-The eye is at a climber's distance and looks at the corner where the walls meet: a finger
-carries it round, from square-on to the flat wall to square-on to the overhang, and tips
-the head. Zoom is the picture's own, as everywhere else, and when it is zoomed a finger
-moves the picture instead of turning the wall. Holds are picked and routes shown on it as
-on any picture, and a route opened while it is showing stays on it. It keeps nothing of
-its own: a hold is still a place on its wall. The map is not fixed on it (that needs the
-photo). The faces are drawn by the browser (CSS `matrix3d`), farthest first.
+One stands in one place, back from the corner, and looks one of three ways (`eye.poses`):
+**Flat** is the whole flat wall with a little room at its left, seen at an angle; **Both**
+is all of both walls with a little room either side; **Overhang** is the whole overhang
+with a little room at its right and some of the flat wall still in sight. A finger drawn
+sideways turns the head to the next of them and no further, and a small row on the
+picture says which and goes to one at a tap. The eye never looks up or down, and the page
+fits each view to the screen so that no top or bottom edge of the wall is ever cut off
+(`poseCam`: what the view is about fills the width, then the lens is shortened until
+whatever is on the picture is on it from top to bottom). Zoom is the picture's own, as
+everywhere else: straight in and out, and when it is zoomed a finger moves the picture
+instead of turning the head. Holds are picked and routes shown on it as on any picture,
+and a route opened while it is showing stays on it. It keeps nothing of its own: a hold is
+still a place on its wall. The map is not fixed on it (that needs the photo). The faces
+are drawn by the browser (CSS `matrix3d`), farthest first.
+
+**The board page gives the wall the screen.** The picture takes all the height left over
+the search row, one route of the list with the top of the next, and the bar of pages. The
+whole list is the Routes page. A marked hold is a plain line round it in its colour with a
+little of the colour inside; there are no dashed lines, because a dash is so many pixels
+long and so crawled round the hold as the picture was zoomed.
 
 **A climb by number.** Some routes are hands in order, each hold with its number, any feet.
 In the marking bar the **1 2 3** brush gives the next tap the lowest number the route does
