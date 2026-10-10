@@ -241,41 +241,55 @@ which is what a Home Screen icon opens, sends a phone that was last on the Sun b
 straight there. A phone on another MoonBoard is not offered the Sun board.
 
 **The same app.** The page is laid out as the MoonBoard page is, on purpose: Routes, Board,
-Log and the cog along the foot; on the board a row over the picture, the picture, a row with
-the open route (which is also the way to the search) and **Quick log**, then a short list;
-two taps on the picture for focus. Where a style rule has a twin on the MoonBoard page it is
-written the same way.
+Log and the cog along the foot; on the board the picture, a row with the open route (which
+is also the way to the search) and **Quick log**, then a short list; two taps on the
+picture for focus. Where a style rule has a twin on the MoonBoard page it is written the
+same way. Two things are not as there, both to give the wall the screen (see below): no
+row over the picture, and the row with the open route lies on the foot of the picture
+instead of under it.
 
-**The wall.** Three pictures, chosen in the row over the picture where the MoonBoard has its
-lights: the room, the straight wall with the island box that hangs from the ceiling over it,
-and the overhang with the roof extension above it and the kicker below. The room is a
-photo, and a tap on a wall there goes to that wall. The other two are drawings, made to
-Will's measurements of the wall: each flat face square-on and all at one scale, the faces
-set edge to edge as if the wall were unfolded, and the island box opened out above the
-place it hangs. The boards are drawn in their own colours with the tape, the chalk and the
-room left out, and every hold on the map is cut out of a photo and set where it is, so the
-holds are the real ones. Two fingers zoom a picture and one drags it.
+**The wall is a model.** There is one picture: the wall stood up in the room. Each flat
+face (the flat wall, the kicker, the overhanging panel, the roof extension and the four
+sides of the island box that hangs from the ceiling) is a picture of its own, made to
+Will's measurements of the wall: the face square-on and to scale, the board in its own
+colour with the tape, the chalk and the room left out, every hold on the map cut out of a
+photo and set where it is, and see-through round its edge. `wall.json` says where each
+face stands (`faces`: the room's centimetres at a place on the face) and the browser
+draws them (CSS `matrix3d`), farthest first.
 
-**Both walls at once.** A fourth picture, **All**, is the two drawn walls side by side,
-opened flat like a book: the flat wall's right-hand end is the kicker's left-hand end and
-the floors are level. Above the kicker the overhang leans out over the flat wall, so there
-the two drift apart on the page and a dark wedge shows between them. It is for seeing a
-route whole, and a route that is on both walls opens on it. In `wall.json` it is a view
-with `parts`: each says which wall it shows and where that wall's picture lies on this one.
-A hold still belongs to one wall and keeps that wall's own coordinates, and everything the
-store keeps (a ring in a route, a fix to the map) names the wall, never this picture.
+**Three ways to look at it.** One stands back from the corner and looks one of three ways
+(`eye.poses`): **Flat** is the whole flat wall with a little room at its left, seen at an
+angle; **Both** is all of both walls with a little room either side; **Overhang** is the
+whole overhang with a little room at its right and some of the flat wall still in sight. A
+pose may have a place of its own to stand (`at`): the overhang is looked at from nearer
+square-on than it would be from where the other two are seen. A finger drawn sideways
+turns the head to the next of the three and no further, and a small row at the head of
+the picture says which and goes to one at a tap. The eye never looks up or down, and the
+page fits each view to the screen so that no top or bottom edge of the wall is ever cut
+off (`poseCam`: what the view is about fills the width, then the lens is shortened until
+whatever is on the picture is on it from top to bottom, standing just over the row with
+the open route). Zoom is straight in and out with two fingers, and when the picture is
+zoomed a finger moves it instead of turning the head. A route opens in the view that
+shows all of it: Flat or Overhang when it is on that side only, Both when it is on both.
 
-**Drawing and photo.** Each drawing is made from a photograph of the same size (`photo` in
-`wall.json`, beside `img`), and the map fits both. The drawing is only as right as the map:
-a hold the map lacks is not in it at all. So while the map is being fixed the page shows
-the photograph, and "Show the photo of the wall, not the drawing" in Settings shows it
-always, on that phone.
+**The wall has the screen.** The picture takes all the height over one route of the list
+(with the top of the next) and the bar of pages. The two walls make a corner, so the foot
+of the picture is floor: the open route's name and **Quick log** lie there, on the
+picture. The whole list is the Routes page. A marked hold is a plain line round it in its
+colour with a little of the colour inside; there are no dashed lines, because a dash is
+so many pixels long and so crawled round the hold as the picture was zoomed.
 
-**Holds.** `docs/sun/wall.json` is the map: for each picture, the outline of every hold on
-it, as fractions of the picture's width and height. A volume is a hold. Each side of a
-wooden volume is a hold of its own, because it is one. A hold bolted to a volume is a
-hold. A tap picks the smallest outline under the finger, so a hold on a volume before the
-volume, and if the finger is on none, the nearest within a finger's width.
+**Holds.** `docs/sun/wall.json` is the map. It has two walls (the straight wall with the
+island box opened out above it; the kicker, the panel and the roof extension one above the
+other), each a flat drawing, and for each the outline of every hold on it as fractions of
+the drawing's width and height. A face of the model says which part of its wall's drawing
+it is, so a hold is a place on its wall and nothing else: everything the store keeps (a
+ring in a route, a fix to the map) names the wall, never the model. A volume is a hold.
+Each side of a wooden volume is a hold of its own, because it is one. A hold bolted to a
+volume is a hold. A tap picks the smallest outline under the finger, so a hold on a volume
+before the volume, and if the finger is on none, the nearest within a finger's width. A
+tap on the model is first taken back to the face it fell on, and a hold behind another
+face cannot be tapped.
 
 **Focus, and making a route.** As on the MoonBoard, one tap on the picture does nothing and
 two taps make it the whole screen, with every hold outlined; two more taps, a stroke
@@ -285,37 +299,12 @@ route** and **Search routes**. There is no lighting a wall with no lights, so wh
 with picked holds here is to keep them. *Save as a route* asks first, then goes on to
 marking: the brush says what a tap marks (start, hold, foot only, finish), a tap on a
 marked hold with the same brush lets it go, and with another brush changes what it is for.
-A route can run across pictures. A spot with no outline can still be marked: the tap
+A route can run across both walls. A spot with no outline can still be marked: the tap
 leaves a ring there. A route needs a start and a finish, a name, a V grade, and a rule for
 feet (any feet, feet follow hands, marked feet only); it can carry the tape it has on the
 wall and a note. Once saved everyone has it. *Search routes* lists the routes that use
 every picked hold. Making a route is deliberately not on the front of the page: Will asked
 for it to be found the way the MoonBoard's custom route is.
-
-**The wall as a model.** A fifth picture, **3D**, is the wall stood up in the room. Each flat
-face (the flat wall, the kicker, the overhanging panel, the roof extension and the four
-sides of the island box) is a picture of its own, see-through round its edge, and
-`wall.json` says where each stands (`faces`: the room's centimetres at a place on the face).
-One stands in one place, back from the corner, and looks one of three ways (`eye.poses`):
-**Flat** is the whole flat wall with a little room at its left, seen at an angle; **Both**
-is all of both walls with a little room either side; **Overhang** is the whole overhang
-with a little room at its right and some of the flat wall still in sight. A finger drawn
-sideways turns the head to the next of them and no further, and a small row on the
-picture says which and goes to one at a tap. The eye never looks up or down, and the page
-fits each view to the screen so that no top or bottom edge of the wall is ever cut off
-(`poseCam`: what the view is about fills the width, then the lens is shortened until
-whatever is on the picture is on it from top to bottom). Zoom is the picture's own, as
-everywhere else: straight in and out, and when it is zoomed a finger moves the picture
-instead of turning the head. Holds are picked and routes shown on it as on any picture,
-and a route opened while it is showing stays on it. It keeps nothing of its own: a hold is
-still a place on its wall. The map is not fixed on it (that needs the photo). The faces
-are drawn by the browser (CSS `matrix3d`), farthest first.
-
-**The board page gives the wall the screen.** The picture takes all the height left over
-the search row, one route of the list with the top of the next, and the bar of pages. The
-whole list is the Routes page. A marked hold is a plain line round it in its colour with a
-little of the colour inside; there are no dashed lines, because a dash is so many pixels
-long and so crawled round the hold as the picture was zoomed.
 
 **A climb by number.** Some routes are hands in order, each hold with its number, any feet.
 In the marking bar the **1 2 3** brush gives the next tap the lowest number the route does
@@ -330,20 +319,26 @@ numbers.
 **Changing a route.** Only its setter is offered **Change it** and **Take it down**, on
 the log page. A route taken down leaves the list and keeps what was logged on it.
 
-**Logbook and points.** A try, or a send with how many goes it took, as on the MoonBoard:
-from **Quick log** on the board or from the log page, and a send asks which go it was with
-the likely answer ringed.
+**Logbook and points.** A try, or a send with how many goes it took, from **Quick log** on
+the board or from the log page. Quick log is the MoonBoard's (see *Quick log* above), with
+the same words: a press swings out **Try** and **Send**, a tap on one or a slide on to it
+and a let-go logs it, a send asks which go it was in four bubbles with the likely answer
+ringed, a route sent before is a session send, and a short line over the button says what
+was logged or that it was not saved.
 A route scores once, the first time it is sent: its V number plus one, and one more for a
 flash. Tries score nothing. The points are the Sun board's own.
 
 **Putting the map right.** The outlines are drawn from photos by a program, and it gets
-some wrong, so anyone at the wall can fix it (Settings, "Fix the map of holds", which
-opens the picture in focus with three brushes): tap a
-hold that has no outline, an outline that is only tape, or an outline of the wrong shape.
-A fix is kept by the store and reaches every phone at once: a dropped outline can no
-longer be picked, and a missed hold is a ring that can, under the name `x<number>`. When
-the map is next made the fixes are worked into it, each ring gets a proper outline and a
-proper name, `wall.json` says which (`alias`), and the fixes are marked done.
+some wrong, so anyone at the wall can fix it (Settings, "Fix the map of holds"). That
+opens a photograph of one wall in focus, with a switch between the two walls and three
+brushes: tap a hold that has no outline, an outline that is only tape, or an outline of
+the wrong shape. It is a photograph and not the model because a hold the map lacks is not
+in the model at all; each wall has one (`photo` in `wall.json`), of the size and shape of
+its drawing, so the map fits it. A fix is kept by the store and reaches every phone at
+once: a dropped outline can no longer be picked, and a missed hold is a ring that can,
+under the name `x<number>`. When the map is next made the fixes are worked into it, each
+ring gets a proper outline and a proper name, `wall.json` says which (`alias`), and the
+fixes are marked done.
 
 **A hold's name never changes** once it is published, because a route is a list of names.
 The program that makes the map keeps every hold's name from the map before it, by where
@@ -351,12 +346,13 @@ the hold is, and a name that has gone is pointed (`alias`) at the hold now in it
 
 **How the map is made.** Not in this repository: the photos and the scripts are in Will's
 notes (`sun-board-2026-10-09/pipeline`, with a runbook). In short: `plan.py` holds the
-wall's measurements and where each face's corners are on the photos; `faces.py` squares
-each face up to its measured size and sets them together; `detect.py`, `sam_points.py`
-(a segmentation model, MobileSAM) and `pick.py` find the holds on those pictures;
-`match.py` gives each hold the name it had on the map before; `draw.py` makes the
-drawings and `build.py` writes the pictures and `wall.json`. The pictures' names carry the
-map's revision, so a phone never shows an old picture under a new map.
+wall's measurements, where each face's corners are on the photos, where each face stands
+in the room and the three ways of looking; `faces.py` squares each face up to its measured
+size and sets them together into the two walls; `detect.py`, `sam_points.py` (a
+segmentation model, MobileSAM) and `pick.py` find the holds on those pictures; `match.py`
+gives each hold the name it had on the map before; `draw.py` makes the drawings and cuts
+the faces out of them, and `build.py` writes the pictures and `wall.json`. The pictures'
+names carry the map's revision, so a phone never shows an old picture under a new map.
 
 **Where it is kept.** `store/store.js` is the whole of it and says at its head what it
 keeps and how to ask. It runs as a Pages Function (`functions/api/[[path]].js`) on a D1

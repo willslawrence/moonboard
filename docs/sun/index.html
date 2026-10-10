@@ -83,24 +83,23 @@
   header #me.ask{outline:2px solid var(--blue-ink);outline-offset:1px}
 
   /* ---- the board ---- */
-  #boardWrap{padding:0 0 6px;margin:0}
-  /* The row over the picture. On the MoonBoard it lights the wall; this wall has no lights, and
-     what it needs there instead is which side of the room the picture is of. */
-  #actRow{display:flex;gap:6px;padding:6px 0}
-  #actRow button{flex:1 1 0;min-width:0;height:38px;padding:0 6px;font-size:13px;border-radius:9px}
-  #actRow button.on{background:var(--ink);border-color:var(--ink);color:var(--onink)}
-  /* a number on a button: how many of the open route's holds are on that picture */
-  #actRow button i{font-style:normal;margin-left:6px;padding:0 5px;border-radius:999px;background:var(--hold);color:#fff;font-size:11px;font-weight:700}
+  #boardWrap{padding:0;margin:0}
   #pic{position:relative;overflow:hidden;border-radius:6px;background:var(--soft);touch-action:none;
        min-height:100px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-  /* On the board page the wall has the screen. Under it there is the search row, one route of the list with the top
-     of the next (the whole list is a page of its own) and the bar of pages; the picture takes all the height that is
-     left, whatever else is open (the filters, say). */
+  /* On the board page the wall has the screen: the picture runs from the header down to the list. The row with the
+     open route's name (which is also the way to the search) and Quick log lies over the foot of the picture, where
+     there is only floor. Under the picture come one route of the list with the top of the next (the whole list is a
+     page of its own) and the bar of pages. */
+  body:not(.listPage):not(.logPage):not(.setPage) #top{position:relative;border-bottom:0;margin-bottom:4px}
   body:not(.listPage):not(.logPage):not(.setPage) #top,
   body:not(.listPage):not(.logPage):not(.setPage) #boardWrap,
   body:not(.listPage):not(.logPage):not(.setPage) #boardCol{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
   body:not(.listPage):not(.logPage):not(.setPage) #pic{flex:1 1 auto;height:auto}
+  body:not(.listPage):not(.logPage):not(.setPage) #bar{position:absolute;left:6px;right:6px;bottom:6px;padding:0;background:transparent}
+  body:not(.listPage):not(.logPage):not(.setPage) #filters{display:none}
+  body:not(.listPage):not(.logPage):not(.setPage) #quickBtn{box-shadow:0 0 0 1px rgba(255,255,255,.3)}
   body:not(.listPage):not(.logPage):not(.setPage) #scroll{flex:0 0 72px;min-height:0}
+  body:not(.focus) #zoomBtns{bottom:52px}
   #stage{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
   #stage img{display:block;width:100%;height:100%;pointer-events:none;-webkit-user-drag:none}
   #stage svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
@@ -108,8 +107,7 @@
   #faces{position:absolute;left:0;top:0;width:100%;height:100%;z-index:0;overflow:hidden;background:#24262a}
   #faces[hidden]{display:none}
   #faces .face{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:none;backface-visibility:visible}
-  #actRow button.sm{flex:0 0 auto;width:auto;padding:0 12px}
-  #turnBar{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);display:flex;gap:2px;padding:2px;border-radius:10px;background:rgba(20,20,22,.6)}
+  #turnBar{position:absolute;left:50%;top:6px;transform:translateX(-50%);display:flex;gap:2px;padding:2px;border-radius:10px;background:rgba(20,20,22,.6)}
   #turnBar button{width:auto;height:26px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:#fff;font-size:11.5px;font-weight:600;white-space:nowrap}
   #turnBar button.on{background:rgba(255,255,255,.92);color:#111}
   /* line widths are in picture pixels, so they are divided by the zoom (--z) to stay the same on the screen */
@@ -144,8 +142,6 @@
   #focusCap,#focusHint,#pickBar,#draftBar,#fixBar{display:none}
   body.focus #boardCol{position:fixed;inset:0;z-index:55;background:var(--bg);display:flex;flex-direction:column;align-items:stretch;
        padding:calc(env(safe-area-inset-top) + 6px) 6px calc(env(safe-area-inset-bottom) + 8px)}
-  body.focus #actRow{flex:none;padding:0 0 6px}
-  body.focus #actRow button{height:34px}
   body.focus #pic{flex:1 1 auto;height:auto;min-height:0}
   body.focus #focusCap{display:flex;flex:none;align-items:center;justify-content:center;gap:8px;min-width:0;height:28px;margin-bottom:6px;font-size:15px}
   #focusCap b{min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -199,7 +195,34 @@
   body:not(.listPage) #qBox.now #q{display:none}
   body:not(.listPage) #qBox.now #qNow{display:flex}
   #qX{flex:none;width:26px;height:26px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--dim);font-size:13px}
-  #quickBtn{flex:none;width:58px;height:38px;padding:0;font-size:11.5px;line-height:1.05;border-radius:9px;white-space:normal}
+  /* ---- quick log: as on the MoonBoard page ----
+     A press opens two round buttons over the button, red for a try and green for a send. A finger that went down on
+     the button can slide on to one of them, so the browser must not take the slide for a scroll. The button is at
+     the screen's edge here, so the two lean to the left of it. */
+  #quick{flex:none;position:relative;z-index:6;width:58px;height:38px;touch-action:none}
+  #quickBtn{display:grid;place-items:center;width:58px;height:38px;padding:0;font-size:11.5px;line-height:1.05;
+            border-radius:9px;touch-action:none;white-space:normal}
+  #quickBtn svg{width:16px;height:16px}
+  #quickFan{position:absolute;right:-6px;bottom:100%;width:140px;height:100px;pointer-events:none}
+  #quickFan[hidden]{display:none}
+  #quickFan .arm{position:absolute;left:104px;bottom:0;width:2px;border-radius:1px;background:#e9e9ec;transform-origin:50% 100%}
+  #quickFan .arm.l{height:74px;transform:rotate(-47deg)}
+  #quickFan .arm.r{height:42px;transform:rotate(3deg)}
+  #quickFan button{position:absolute;bottom:40px;width:58px;height:58px;padding:0;border:0;border-radius:50%;
+                   pointer-events:auto;font-size:13px;font-weight:700;touch-action:none;
+                   box-shadow:0 4px 14px rgba(0,0,0,.45);animation:quickIn .2s cubic-bezier(.2,.9,.3,1.25) both}
+  #quickTry{left:2px;background:#dc2626;color:#fff;transform-origin:120% 160%}
+  #quickSend{left:80px;background:#22c55e;color:#06240e;transform-origin:-20% 160%}
+  #quickFan button:active,#quickFan button.at{filter:brightness(1.18);transform:scale(1.08)}
+  @keyframes quickIn{from{transform:scale(.3);opacity:0}to{transform:none;opacity:1}}
+  @media (prefers-reduced-motion:reduce){ #quickFan button{animation:none} }
+  /* the rest of the screen dims while the two are out, and a touch on it puts them away */
+  #quickScrim{position:fixed;inset:0;z-index:5;background:rgba(8,8,10,.55)}
+  #quickScrim[hidden]{display:none}
+  /* fixing the map is done on a wall's own photo: which wall */
+  #fixWall{display:flex;gap:6px;margin-bottom:8px}
+  #fixWall button{flex:1 1 0;min-width:0;height:34px;padding:0 6px;font-size:13px;border-radius:9px;background:var(--panel)}
+  #fixWall button.on{background:var(--ink);border-color:var(--ink);color:var(--onink)}
   #filters{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding-top:6px}
   #filters select{padding:8px 10px;font-size:16px}
   #listCap{display:none}
@@ -235,7 +258,7 @@
   body.listPage header,body.listPage #boardWrap{display:none !important}
   body.listPage #bar{padding-top:calc(env(safe-area-inset-top) + 12px)}
   body.listPage #filtBtn,body.listPage #toBoard{display:block}
-  body.listPage #quickBtn{display:none}
+  body.listPage #quick{display:none}
   body.listPage #top{border-bottom:0;margin-bottom:0}
   body.logPage #boardWrap,body.logPage #bar,body.logPage #scroll,
   body.setPage #boardWrap,body.setPage #bar,body.setPage #scroll{display:none !important}
@@ -279,16 +302,37 @@
   #pgDots button[data-go="set"] svg{width:17px;height:17px;display:block}
 
   /* ---- quick log, and which go a send was: round buttons over a dimmed screen ---- */
-  #fan{position:fixed;inset:0;z-index:60;background:rgba(8,8,10,.6);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
-       padding-bottom:calc(env(safe-area-inset-bottom) + 120px);touch-action:none}
-  #fan .cap{margin-bottom:14px;padding:4px 10px;border-radius:12px;background:#1e1e21;border:1px solid #33333a;color:#e9e9ec;font-size:12px;font-weight:600}
-  #fan .rowb{display:flex;gap:14px}
-  #fan button{width:58px;height:58px;padding:0;border:0;border-radius:50%;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.45)}
-  #fan button[data-r="try"]{background:#dc2626;color:#fff}
-  #fan button[data-r="send"],#fan button.go{background:#22c55e;color:#06240e}
-  #fan button.go{width:52px;height:52px}
-  #fan button.go.pick{box-shadow:0 0 0 3px #e9e9ec,0 4px 14px rgba(0,0,0,.45)}
-  #fan button.x{width:40px;height:40px;margin-top:16px;background:#e9e9ec;color:#0e0e0f;font-size:15px}
+  /* ---- how did the send go: four bubbles in an arc, as on the MoonBoard page ----
+     Everything here is placed by openSend, around the button that was pressed. The colours are fixed, not the
+     theme's: the layer is dark whatever the background. */
+  #sendFan{position:fixed;inset:0;z-index:8;background:rgba(8,8,10,.6);touch-action:none;animation:fanFade .16s ease-out both}
+  #sendFan[hidden]{display:none}
+  #sendFan .arm{position:absolute;width:2px;height:72px;border-radius:1px;background:#e9e9ec;animation:fanFade .2s ease-out both}
+  #sendFan button[data-r]{position:absolute;width:52px;height:52px;padding:0;border:0;border-radius:50%;
+                          background:#22c55e;color:#06240e;font-size:13px;font-weight:700;
+                          box-shadow:0 4px 14px rgba(0,0,0,.45);animation:fanPop .24s cubic-bezier(.2,.9,.3,1.25) both}
+  #sendFan button[data-r="flash"]{font-size:12px}
+  #sendFan button[data-r="2nd"]{animation-delay:.03s}
+  #sendFan button[data-r="3rd"]{animation-delay:.06s}
+  #sendFan button[data-r="4+"]{animation-delay:.09s}
+  /* the one the tries point to */
+  #sendFan button[data-r].pick{box-shadow:0 0 0 3px #e9e9ec,0 4px 14px rgba(0,0,0,.45)}
+  #sendFan button[data-r]:active{filter:brightness(1.18)}
+  #sendFan .cap{position:absolute;transform:translateX(-50%);padding:4px 10px;border-radius:12px;background:#1e1e21;
+                border:1px solid #33333a;color:#e9e9ec;font-size:11px;font-weight:600;white-space:nowrap;
+                animation:fanFade .2s ease-out .14s both}
+  #sendFan .x{position:absolute;padding:0;border:1px solid #e9e9ec;background:#e9e9ec;color:#0e0e0f;display:grid;place-items:center}
+  #sendFan .x svg{width:16px;height:16px}
+  @keyframes fanFade{from{opacity:0}to{opacity:1}}
+  @keyframes fanPop{from{opacity:0;transform:translate(var(--fx,0),var(--fy,0)) scale(.3)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){ #sendFan,#sendFan .arm,#sendFan button[data-r],#sendFan .cap{animation:none} }
+  /* what was logged, said for a moment: over the row with the name on the board, under the two buttons on the log page */
+  #quickToast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 64px);z-index:9;transform:translateX(-50%);
+              padding:8px 14px;border-radius:20px;background:var(--ink);color:var(--onink);font-size:13px;font-weight:600;
+              white-space:nowrap;max-width:88vw;overflow:hidden;text-overflow:ellipsis;pointer-events:none;
+              box-shadow:0 0 0 1px rgba(255,255,255,.25),0 4px 14px rgba(0,0,0,.45)}
+  #quickToast[hidden]{display:none}
+  #quickToast.bad{background:#ef4444;color:#fff}
 
   /* ---- the sheet: naming a route ---- */
   #scrim{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.45)}
@@ -326,7 +370,6 @@
 <section id="boardWrap">
   <div id="boardCol">
     <div id="focusCap"><span class="sp"></span><b id="fcName"></b><span class="gd" id="fcGd" hidden></span><button id="focusX" aria-label="Back to the page">&#10005;</button></div>
-    <div id="actRow"></div>
     <div id="pic">
       <div id="stage"><div id="faces" hidden></div><img id="vimg" alt=""><svg id="ov" xmlns="http://www.w3.org/2000/svg"></svg></div>
       <div id="picNote"></div>
@@ -354,6 +397,7 @@
       </div>
     </div>
     <div id="fixBar">
+      <div id="fixWall"></div>
       <div id="fixBrush">
         <button data-k="add"><i style="background:#22c55e"></i>Missed hold</button>
         <button data-k="drop"><i style="background:#ef4444"></i>Not a hold</button>
@@ -378,7 +422,15 @@
       <button id="qX" hidden aria-label="Clear the search">&#10005;</button>
     </div>
     <button id="toBoard" class="ghost">Board &#8250;</button>
-    <button id="quickBtn" class="mini solid">Quick log</button>
+    <!-- Quick log, as on the MoonBoard page: a press opens a red Try and a green Send on two arms over it. -->
+    <div id="quick">
+      <div id="quickFan" hidden>
+        <span class="arm l"></span><span class="arm r"></span>
+        <button id="quickTry" data-q="try" aria-label="Log a try">Try</button>
+        <button id="quickSend" data-q="send" aria-label="Log a send">Send</button>
+      </div>
+      <button id="quickBtn" class="mini solid" disabled aria-expanded="false" aria-label="Quick log"></button>
+    </div>
   </div>
   <div id="filters" hidden>
     <select id="fMin" aria-label="Easiest grade"></select>
@@ -459,23 +511,31 @@
 
   <div class="lbl">The map of holds</div>
   <button id="fixBtn">Fix the map of holds</button>
-  <p class="hint">The outlines were drawn from photos by a program, and it gets some wrong. Stand at the wall and tap a hold it missed, an outline that is only tape, or one that is the wrong shape. Everyone has your fixes straight away, and the outlines are then redrawn properly from them. While you fix, the picture is the photo: a hold the map has missed is not in the drawing at all.</p>
+  <p class="hint">The outlines were drawn from photos by a program, and it gets some wrong. Stand at the wall and tap a hold it missed, an outline that is only tape, or one that is the wrong shape. Everyone has your fixes straight away, and the outlines are then redrawn properly from them. While you fix, the picture is a photo of one wall at a time: a hold the map has missed is only in the photo.</p>
 
   <div class="lbl">The picture</div>
   <label class="ck"><input type="checkbox" id="dimChk"> Dim the wall behind an open route</label>
   <label class="ck"><input type="checkbox" id="allChk"> Always outline every hold</label>
-  <label class="ck" id="photoRow" hidden><input type="checkbox" id="photoChk"> Show the photo of the wall, not the drawing</label>
-  <p class="hint">Two taps on the picture and it fills the screen; there a tap picks a hold. Two fingers zoom, one drags. A hold that has no outline can still go in a route: tap it while marking the route and a ring goes where you tapped.</p>
+  <p class="hint">A finger across the picture looks at the flat wall, at both walls, or at the overhang. Two taps and the picture fills the screen; there a tap picks a hold. Two fingers zoom, and then one drags. A hold that has no outline can still go in a route: tap it while marking the route and a ring goes where you tapped.</p>
 
   <div id="ver"></div>
 </div>
 
 <nav id="pgDots" aria-label="Pages"><button data-go="list">&#8249; Routes</button><button data-go="board">Board</button><button data-go="log">Log &#8250;</button><button data-go="set" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor"><circle cx="12" cy="12" r="5.6" stroke-width="2"/><circle cx="12" cy="12" r="2" stroke-width="1.8"/><path stroke-width="3" d="M12 2.6v3.2M12 18.2v3.2M2.6 12h3.2M18.2 12h3.2M5.35 5.35l2.26 2.26M16.39 16.39l2.26 2.26M5.35 18.65l2.26-2.26M16.39 7.61l2.26-2.26"/></g></svg></button></nav>
 
-<div id="fan" hidden>
-  <div class="cap" id="fanCap"></div>
-  <div class="rowb" id="fanRow"></div>
-  <button class="x" id="fanX" aria-label="Nothing to log">&#10005;</button>
+<div id="quickScrim" hidden></div>
+<div id="quickToast" hidden></div>
+<!-- How a send went, asked in bubbles as on the MoonBoard page: four of them swing out in an arc from the button that
+     was pressed, under Log send and over Quick log. The layer itself is the dimming; the button with the cross sits
+     where the pressed one is. -->
+<div id="sendFan" hidden>
+  <span class="arm"></span><span class="arm"></span><span class="arm"></span><span class="arm"></span>
+  <button data-r="flash">Flash</button>
+  <button data-r="2nd">2nd</button>
+  <button data-r="3rd">3rd</button>
+  <button data-r="4+">4+</button>
+  <div class="cap"></div>
+  <button class="x" aria-label="Close"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
 </div>
 <div id="scrim" hidden></div>
 <div id="sheet" hidden>
@@ -521,7 +581,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-10 15:49';
+const BUILD = '2026-10-10 16:31';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -541,7 +601,7 @@ let wall = null;                 // wall.json
 let HOLD = {};                   // id -> hold, with what a tap needs worked out once
 let snap = { people: [], routes: [], stats: {}, fixes: [] };
 let me = ls.get('mb-me') || '';
-let page = 'board', view = 'room';
+let page = 'board', view = 'turn';
 let openId = null;               // the route on the picture
 let focus = false;               // the picture is the whole screen (two taps)
 let picks = [];                  // holds tapped in focus with nothing else going on: to search by, or to save as a route
@@ -550,7 +610,6 @@ let draft = null;                // a route being made or changed: { id?, marks,
 let brush = 's';
 let fixing = false, fixKind = 'add', fixSize = 'm';      // putting the map of holds right (see "fixing the map")
 let dim = ls.get('sb-dim') !== '0', showAll = ls.get('sb-all') === '1';
-let photo = ls.get('sb-photo') === '1';      // the photo of a wall in place of the drawing made from it (where a view has both)
 let myLog = [], crewLog = [], logAt = 0, mine = [];     // mine: what this phone has logged since it opened, newest last
 
 /* ---------- the store ---------- */
@@ -665,7 +724,6 @@ function index(h){
 function loadWall(w){
   wall = w; HOLD = {};
   w.holds.forEach(index);
-  $('photoRow').hidden = !w.views.some(v => v.photo);
   relive();
 }
 /* The holds as they stand: the published map, less the outlines people have said are not
@@ -690,6 +748,9 @@ function relive(){
 }
 const H = id => HOLD[id] || HOLD[(wall.alias || {})[id]] || null;
 const viewNow = () => wall.views.find(v => v.key === view) || wall.views[0];
+/* The picture is the wall as a model (the view with "faces"). A wall's own flat picture is the frame its holds are
+   kept in, and is only ever shown, as a photo, while the map of holds is being fixed. */
+const turnView = () => wall.views.find(v => v.faces) || wall.views[0];
 /* A picture may be several walls set side by side (a view with "parts"), so that a route that crosses from one
    wall to the next is seen whole. A hold still belongs to one wall and is kept in that wall's own picture's
    fractions; a part says where that wall's picture lies on this one. Everything stored (a ring in a route, a fix
@@ -724,17 +785,19 @@ function toPic(v, key, x, y){
 /* ---------- the wall as a model that turns ----------
    A picture of this kind ("faces" in wall.json) is the wall stood up in the room: each face is a flat picture and
    says where it stands (the room's centimetres at fractions x, y of its wall's picture are o + x*u + y*v). The eye
-   stays where a climber would stand back to look, and looks one of three ways (see CAM). Closer and further are
+   is where a climber would stand back to look, and looks one of three ways (see CAM). Closer and further are
    the picture's own zoom, as on every other picture, and when it is zoomed a finger moves it instead of turning. Nothing here is kept: a hold is still a place on its own wall,
    and this is one more way of looking at it. The picture's size is the screen's, so its fractions are of the screen. */
-/* One stands in one place, level, and looks one of a few ways (the poses): at the flat wall, at both walls, at the
-   overhang. CAM.t says which, counting along the poses; between two it is part-way, while a finger is turning. */
+/* One stands back from the corner, level, and looks one of a few ways (the poses): at the flat wall, at both walls,
+   at the overhang. A pose may stand a little aside from the rest (its own "at"): the overhang is looked at from a
+   step further round, so that it is seen more squarely. CAM.t says which pose, counting along them; between two it
+   is part-way, while a finger is turning. */
 const CAM = { t: 1, ver: 0, of: '' };
 const POSES = [{ key: 'flat', label: 'Flat', fit: ['flat', 'isl-front', 'isl-left', 'isl-right', 'isl-end'], side: 'l' },
                { key: 'both', label: 'Both', side: 'c' },
-               { key: 'over', label: 'Overhang', fit: ['kicker', 'panel', 'roof'], side: 'r' }];
+               { key: 'over', label: 'Overhang', fit: ['kicker', 'panel', 'roof'], side: 'r', at: [-100, 155, 340] }];
 const posesOf = v => (v.eye && v.eye.poses) || POSES;
-const eyeAt = v => (v.eye && v.eye.at) || [-52, 155, 424];
+const eyeOf = (v, i) => posesOf(v)[i].at || (v.eye && v.eye.at) || [-52, 155, 424];
 const NEAR = 14;                        // centimetres in front of the eye: nearer than this is not drawn
 let TURN = [], turning = false;
 const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
@@ -755,13 +818,8 @@ function inFront(poly, H){
   }
   return out;
 }
-const F3 = {};                           // each face's corners in the room, less the eye
-function corners3(v, F){
-  const k = v.key + ' ' + F.key;
-  if (F3[k]) return F3[k];
-  const E = eyeAt(v);
-  return (F3[k] = F.poly.map(q => [F.o[0] + q[0] * F.u[0] + q[1] * F.v[0] - E[0], F.o[1] + q[0] * F.u[1] + q[1] * F.v[1] - E[1], F.o[2] + q[0] * F.u[2] + q[1] * F.v[2] - E[2]]));
-}
+/* a face's corners in the room, less the eye */
+const corners3 = (F, E) => F.poly.map(q => [F.o[0] + q[0] * F.u[0] + q[1] * F.v[0] - E[0], F.o[1] + q[0] * F.u[1] + q[1] * F.v[1] - E[1], F.o[2] + q[0] * F.u[2] + q[1] * F.v[2] - E[2]]);
 /* a polygon cut down to the part between two uprights (x from a to b) */
 function clipX(poly, a, b){
   for (const [edge, keep] of [[a, x => x >= a], [b, x => x <= b]]){
@@ -775,47 +833,50 @@ function clipX(poly, a, b){
   }
   return poly;
 }
-/* The camera for one pose at the picture's present size: which way it looks, how long its lens is, and where the
-   middle of its picture falls. What the pose is about fills the width between the margins (at the left, at the
-   right, or in the middle). Then whatever of ANY face is on the picture must be on it from top to bottom, so the lens
-   is shortened until it is: no top or bottom edge is ever cut off. The eye stays level and the picture is slid up or
-   down instead (a shift lens), so what is upright on the wall is upright on the screen. */
+/* How much of the picture's height is spoken for: the row of ways at its head, and at its foot (on the page) the row
+   with the open route's name. */
+const picRoom = () => [40, focus ? 8 : $('bar').offsetHeight + 14];
+/* The camera for one pose at the picture's present size: where it stands, which way it looks, how long its lens is,
+   and where the middle of its picture falls. What the pose is about fills the width between the margins (at the
+   left, at the right, or in the middle). Then whatever of ANY face is on the picture must be on it from top to
+   bottom, so the lens is shortened until it is: no top or bottom edge is ever cut off. The eye stays level and the
+   picture is slid up or down instead (a shift lens), so what is upright on the wall is upright on the screen; and
+   it is slid so that the wall stands on the foot of the picture, just over the row with the name, with whatever
+   height is spare above it. */
 function poseCam(v, i){
   v.cams = v.cams || {};
-  const key = i + ' ' + Math.round(v.w) + 'x' + Math.round(v.h);
+  const [head, foot] = picRoom(), key = [i, Math.round(v.w), Math.round(v.h), head, foot].join();
   if (v.cams[key]) return v.cams[key];
-  const pose = posesOf(v)[i], m = (v.eye && v.eye.margin) || 0.035;
-  const want = v.faces.filter(F => !pose.fit || pose.fit.includes(F.key));
+  const pose = posesOf(v)[i], m = (v.eye && v.eye.margin) || 0.035, E = eyeOf(v, i);
+  const all = v.faces.map(F => ({ F, c: corners3(F, E) })), want = all.filter(o => !pose.fit || pose.fit.includes(o.F.key));
   let a0 = 9, a1 = -9;
-  want.forEach(F => corners3(v, F).forEach(q => { const a = Math.atan2(q[0], -q[2]); a0 = Math.min(a0, a); a1 = Math.max(a1, a); }));
+  want.forEach(o => o.c.forEach(q => { const a = Math.atan2(q[0], -q[2]); a0 = Math.min(a0, a); a1 = Math.max(a1, a); }));
   const yaw = (a0 + a1) / 2, d = [Math.sin(yaw), -Math.cos(yaw)], r = [Math.cos(yaw), Math.sin(yaw)];
   const flat = q => { const w = Math.max(1, q[0] * d[0] + q[2] * d[1]); return [(q[0] * r[0] + q[2] * r[1]) / w, -q[1] / w]; };     // on a picture one unit in front of the eye
   let x0 = 9, x1 = -9;
-  want.forEach(F => corners3(v, F).forEach(q => { const u = flat(q); x0 = Math.min(x0, u[0]); x1 = Math.max(x1, u[0]); }));
-  const foot = 36;                      // the row of ways lies along the foot of the picture: the wall stays clear of it
-  let f = v.w * (1 - 2 * m) / (x1 - x0), cx = 0, cy = v.h / 2;
-  for (let k = 0; k < 8; k++){
+  want.forEach(o => o.c.forEach(q => { const u = flat(q); x0 = Math.min(x0, u[0]); x1 = Math.max(x1, u[0]); }));
+  const room = Math.max(60, v.h - head - foot);
+  let f = v.w * (1 - 2 * m) / (x1 - x0), cx = 0, y0 = 0, y1 = 0;
+  const span = () => {
     cx = pose.side === 'l' ? m * v.w - f * x0 : pose.side === 'r' ? v.w * (1 - m) - f * x1 : v.w / 2 - f * (x0 + x1) / 2;
-    let y0 = 9, y1 = -9;
-    v.faces.forEach(F => clipX(corners3(v, F).map(flat).map(u => [cx + f * u[0], u[1]]), 0, v.w).forEach(u => { y0 = Math.min(y0, u[1]); y1 = Math.max(y1, u[1]); }));
-    const room = (v.h - foot) * (1 - 2 * m), need = f * (y1 - y0);
-    cy = (v.h - foot) / 2 - f * (y0 + y1) / 2;
-    if (need <= room * 1.002) break;
-    f *= room / need;
-  }
-  return (v.cams[key] = { yaw, f, cx, cy });
+    y0 = 9; y1 = -9;
+    all.forEach(o => clipX(o.c.map(flat).map(u => [cx + f * u[0], u[1]]), 0, v.w).forEach(u => { y0 = Math.min(y0, u[1]); y1 = Math.max(y1, u[1]); }));
+  };
+  for (let k = 0; k < 8; k++){ span(); const need = f * (y1 - y0); if (need <= room * 1.002) break; f *= room / need; }
+  span();
+  return (v.cams[key] = { yaw, f, cx, cy: v.h - foot - f * y1, E });
 }
 function camAt(v, t){
   const n = posesOf(v).length - 1, i = Math.max(0, Math.min(n - 1, Math.floor(t))), k = Math.max(0, Math.min(1, t - i));
-  const a = poseCam(v, i), b = poseCam(v, Math.min(n, i + 1));
-  return { yaw: a.yaw + (b.yaw - a.yaw) * k, f: a.f + (b.f - a.f) * k, cx: a.cx + (b.cx - a.cx) * k, cy: a.cy + (b.cy - a.cy) * k };
+  const a = poseCam(v, i), b = poseCam(v, Math.min(n, i + 1)), mix = (p, q) => p + (q - p) * k;
+  return { yaw: mix(a.yaw, b.yaw), f: mix(a.f, b.f), cx: mix(a.cx, b.cx), cy: mix(a.cy, b.cy), E: a.E.map((p, j) => mix(p, b.E[j])) };
 }
 function turnPaint(){
   const v = viewNow();
   if (!wall || !v.faces) return;
   if (CAM.of !== v.key){ CAM.of = v.key; CAM.t = Math.max(0, posesOf(v).findIndex(q => q.key === ((v.eye || {}).start || 'both'))); }
   CAM.ver++;
-  const E = eyeAt(v), cam = camAt(v, CAM.t), y = cam.yaw;
+  const cam = camAt(v, CAM.t), E = cam.E, y = cam.yaw;
   const d2 = [Math.sin(y), 0, -Math.cos(y)], r = [Math.cos(y), 0, Math.sin(y)];                    // ahead and to the right, level
   const K = [[cam.f * r[0] + cam.cx * d2[0], 0, cam.f * r[2] + cam.cx * d2[2]], [cam.cy * d2[0], -cam.f, cam.cy * d2[2]], d2];
   TURN = v.faces.map(F => {
@@ -998,8 +1059,8 @@ function zoomAt(px, py, k){
   place();
 }
 function setView(key, keepZoom){
-  if (!wall.views.some(v => v.key === key)) return;
-  if (fixing && wall.views.find(v => v.key === key).faces) return toast('The map is fixed on a wall\'s own picture, where the photo is.', true);
+  const to = wall.views.find(v => v.key === key);
+  if (!to || (wall.views.some(v => v.faces) && !!to.faces === fixing)) return;       // the model, unless the map is being fixed; then a wall's photo
   const changed = key !== view;
   view = key;
   if (changed || !keepZoom){ Z.k = 1; Z.x = Z.y = 0; }
@@ -1022,7 +1083,7 @@ function paintPic(){
     }
     return;
   }
-  const src = v.photo && (photo || fixing) ? v.photo : v.img;
+  const src = v.photo || v.img;
   if ($('vimg').getAttribute('src') !== src){ $('vimg').removeAttribute('src'); $('vimg').src = src; }
 }
 $('turnBar').onclick = e => { const b = e.target.closest('button[data-i]'); if (!b) return; Z.k = 1; Z.x = Z.y = 0; place(); turnTo(+b.dataset.i); };
@@ -1116,11 +1177,6 @@ function tapAt(px, py){
   const v = viewNow(), s = k0 * Z.k, x = (px - Z.x) / s / v.w, y = (py - Z.y) / s / v.h;
   undoTap = null;
   if (x < 0 || x > 1 || y < 0 || y > 1) return;
-  if (v.zones){
-    const z = v.zones.find(z => inPoly(z.p, x, y));
-    if (z) setView(z.to);
-    return;
-  }
   if (!focus) return;
   const h = holdAt(x, y, 16 / s);
   // which wall the finger is on, and where on that wall's own picture
@@ -1158,7 +1214,6 @@ function hint(text){
 function focusOn(){
   if (focus) return;
   focus = true;
-  if (viewNow().zones && !openRoute()) setView(wall.views.find(v => !v.zones).key);
   paintAll(); requestAnimationFrame(fit);
   hint(draft ? 'Tap a hold to mark it' : fixing ? 'Tap what is wrong' : viewNow().faces ? 'Swipe sideways to look left or right · Tap a hold to pick it' : 'Tap a hold to pick it · Swipe up to go back');
 }
@@ -1166,6 +1221,7 @@ function focusOff(){
   if (!focus) return;
   focus = false; picks = []; draft = null; fixing = false;
   Z.k = 1; Z.x = Z.y = 0;
+  if (view !== turnView().key) setView(turnView().key);          // the map was being fixed on a wall's photo: back to the model
   paintAll(); requestAnimationFrame(fit);
 }
 $('focusX').onclick = () => {
@@ -1189,25 +1245,8 @@ const byNumber = r => !!r && r.marks.some(m => m.r === 'n');
 function paintBoard(light){              // light: only what is drawn on the picture (while a finger is turning the model)
   if (!wall) return;
   const v = viewNow(), marks = marksNow(), r = openRoute();
-  // the row over the picture: one button a picture, with how many of the route's holds (or of the picked ones) are on it
-  const counted = draft || (r && !picks.length) ? marks.map(markView) : picks.map(id => HOLD[id] && HOLD[id].v);
-  if (!light) $('actRow').innerHTML = wall.views.map(w => {
-    const n = w.parts || w.faces ? 0 : counted.filter(k => k === w.key).length;
-    return '<button data-v="' + w.key + '" class="' + (w.key === view ? 'on' : '') + (w.parts || w.faces ? ' sm' : '') + '">' + esc(w.label) + (n ? '<i>' + n + '</i>' : '') + '</button>';
-  }).join('');
   let svg = '';
-  if (v.zones){
-    // the whole room: where the walls are, and which of them the route is on
-    const seen = {};
-    for (const z of v.zones){
-      const n = counted.filter(k => k === z.to).length;
-      const lab = (wall.views.find(w => w.key === z.to) || {}).label || z.to;
-      const cx = z.p.reduce((a, q) => a + q[0], 0) / z.p.length * v.w, cy = z.p.reduce((a, q) => a + q[1], 0) / z.p.length * v.h;
-      svg += '<path class="zone' + (n ? ' has' : '') + '" d="M' + z.p.map(q => (q[0] * v.w).toFixed(1) + ' ' + (q[1] * v.h).toFixed(1)).join('L') + 'Z"/>';
-      if (!seen[z.to]) svg += '<text class="zt" x="' + cx.toFixed(0) + '" y="' + cy.toFixed(0) + '">' + esc(lab) + (n ? ' · ' + n : '') + '</text>';
-      seen[z.to] = 1;
-    }
-  } else {
+  {
     const here = marks.filter(m => onPic(v, markView(m)) && (m.h ? G(H(m.h), v) : toPic(v, m.v, m.x, m.y)));
     const picking = focus && !draft && !fixing;
     const d = m => m.h ? pathOf(H(m.h), v) : ringOf(m, v);
@@ -1245,7 +1284,6 @@ function paintBoard(light){              // light: only what is drawn on the pic
   $('ov').innerHTML = svg;
   if (!light) paintBars();
 }
-$('actRow').onclick = e => { const b = e.target.closest('button[data-v]'); if (b) setView(b.dataset.v); };
 
 /* What is round the picture: the words over it in focus, and under it whichever bar is in use. */
 let shape = '';
@@ -1255,7 +1293,7 @@ function paintBars(){
   b.classList.toggle('picking', focus && !draft && !fixing && picks.length > 0);
   b.classList.toggle('setting', focus && !!draft);
   b.classList.toggle('fixing', focus && fixing);
-  paintPic();
+  paintPic(); paintQuick();
   // a different bar under the picture leaves it a different height: fit it again, or its foot is under the bar
   const now = [focus, focus && !!draft, focus && fixing, fixing && fixKind].join();
   if (now !== shape){ shape = now; requestAnimationFrame(fit); }
@@ -1283,6 +1321,7 @@ function paintBars(){
     [...$('fixBrush').children].forEach(x => x.classList.toggle('on', x.dataset.k === fixKind));
     [...$('fixSize').querySelectorAll('button')].forEach(x => x.classList.toggle('on', x.dataset.s === fixSize));
     $('fixSize').hidden = fixKind !== 'add';
+    $('fixWall').innerHTML = wall.views.filter(w => !w.faces).map(w => '<button data-v="' + w.key + '"' + (w.key === view ? ' class="on"' : '') + '>' + esc(w.label) + '</button>').join('');
     const n = (snap.fixes || []).length;
     $('fixSay').textContent = ({ add: 'Tap the middle of a hold that has no outline. Tap a green ring to take it back.',
       drop: 'Tap an outline that is tape, paint, or not a hold at all. Tap it again to take that back.',
@@ -1310,20 +1349,23 @@ function shown(){
                sent: (a, b) => senders(b.id).length - senders(a.id).length || b.id - a.id, name: (a, b) => a.name.localeCompare(b.name) };
   return list.sort(by[FILTERS.sort]);
 }
+/* which way of looking shows all of a route: at one wall if every hold of it is on that wall, else at both */
+function poseFor(r, v){
+  const on = new Set();
+  for (const m of r.marks){
+    const h = m.h && H(m.h), f = h ? h.f || faceKey(v, h.v, h.c[0], h.c[1]) : m.h ? null : faceKey(v, m.v, m.x, m.y);
+    if (f) on.add(f);
+  }
+  const ps = posesOf(v);
+  let best = Math.max(0, ps.findIndex(q => !q.fit));
+  ps.forEach((q, i) => { if (q.fit && on.size && [...on].every(f => q.fit.includes(f))) best = i; });
+  return best;
+}
 function open(id, stay){
   openId = id;
-  const r = openRoute();
-  if (r){
-    // go to the picture most of it is on, starting from where it starts
-    const count = {};
-    r.marks.forEach(m => { const k = markView(m); if (k) count[k] = (count[k] || 0) + 1 + (m.r === 's' ? 0.5 : 0); });
-    const keys = Object.keys(count);
-    // on more than one wall: the picture that has them side by side, if there is one
-    const whole = keys.length > 1 && wall.views.find(w => w.parts && keys.every(k => w.parts.some(p => p.v === k)));
-    const best = whole ? whole.key : keys.sort((a, b) => count[b] - count[a])[0];
-    if (viewNow().faces){ if (!stay){ Z.k = 1; Z.x = Z.y = 0; place(); } }          // the model shows every wall: stay on it
-    else if (best && !(stay && (count[view] || (viewNow().parts && keys.some(k => partOf(viewNow(), k)))))) setView(best);
-  }
+  quickShow(false);
+  const r = openRoute(), tv = turnView();
+  if (r && tv.faces && !fixing && !stay){ Z.k = 1; Z.x = Z.y = 0; place(); turnTo(poseFor(r, tv)); }
   if (!stay) showPage('board');
   paintAll();
 }
@@ -1335,42 +1377,182 @@ function step(dir){
 }
 
 /* ---------- the logbook ---------- */
-async function logGo(result){
+async function logGo(result){             // true once it is saved
   const r = openRoute();
-  if (!r) return toast('Open a route first.', true);
-  if (!needMe()) return;
+  if (!r || !me) return false;
   try{
     await knowMe();
     take(await call('/log', { person: me, route: r.id, result }));
     mine.push({ route: r.id, result });
-    toast(result === 'try' ? 'Try logged on ' + r.name : 'Sent: ' + RESULT[result] + '. ' + (firstSend(me, r.id) === result && statOf(me, r.id).s.length === 1 ? '+' + ptsOf(r.grade, result) + ' points' : 'Logged'));
     logAt = 0; paintAll(); if (page === 'log') loadLog();
-  }catch(e){ toast(e.message, true); }
+    return true;
+  }catch(e){ return false; }
 }
-/* Quick log on the board, and which go a send was: round buttons over a dimmed screen. For a
-   send the likely answer is ringed, from the tries already counted: none is a flash, one is
-   the second go, three or more is 4+. */
-function fan(kind){
+/* Tries and sends are logged the way the MoonBoard page logs them, and said in its words. A flash is the first go
+   ever; a route sent before is a session send, and the tries that count towards which go it was are this session's:
+   those since its last send, if it was last touched within four hours. Nothing is stored differently. */
+const SEND_LABELS = { flash: 'Flash', '2nd': '2nd go', '3rd': '3rd go', '4+': '4+ goes' };
+const SESSION_WORDS = { flash: 'Session flash', '2nd': 'Session 2nd', '3rd': 'Session 3rd', '4+': 'Session 4+' };
+const myTries = id => { const st = me && statOf(me, id); return (st && st.a) || 0; };
+const sentBefore = id => { const st = me && statOf(me, id); return !!(st && st.s && st.s.length); };
+const sessionTries = id => { const st = me && statOf(me, id); return st && st.a && st.d && Date.now() - Date.parse(st.d) < 4 * 3600e3 ? st.a : 0; };
+const derivedResult = id => ['flash', '2nd', '3rd', '4+'][Math.min(sentBefore(id) ? sessionTries(id) : myTries(id), 3)];
+async function doTry(){
   const r = openRoute();
   if (!r) return toast('Open a route first.', true);
-  if (!needMe()) return;
-  const st = statOf(me, r.id), tries = st ? st.a : 0;
-  const likely = tries === 0 ? 'flash' : tries === 1 ? '2nd' : tries === 2 ? '3rd' : '4+';
-  $('fanCap').textContent = kind === 'quick' ? r.name : 'Which go was it?';
-  $('fanRow').innerHTML = kind === 'quick' ? '<button data-r="try">Try</button><button data-r="send">Send</button>'
-    : ['flash', '2nd', '3rd', '4+'].map(k => '<button class="go' + (k === likely ? ' pick' : '') + '" data-r="' + k + '">' + ({ flash: 'Flash', '2nd': '2nd', '3rd': '3rd', '4+': '4+' })[k] + '</button>').join('');
-  $('fan').hidden = false;
+  const ok = await logGo('try');
+  quickSay(ok ? 'Try ' + myTries(r.id) + ' logged \u00b7 ' + r.name : 'Not saved', ok ? 'tried' : 'bad');
 }
-$('fanRow').onclick = e => {
-  const b = e.target.closest('button[data-r]'); if (!b) return;
-  if (b.dataset.r === 'send') return fan('send');
-  $('fan').hidden = true; logGo(b.dataset.r);
-};
-$('fanX').onclick = () => { $('fan').hidden = true; };
-$('fan').onclick = e => { if (e.target === $('fan')) $('fan').hidden = true; };      // on the click, not the touch: the click that follows would land on what is underneath
-$('quickBtn').onclick = () => fan('quick');
-$('try').onclick = () => logGo('try');
-$('done').onclick = () => fan('send');
+
+/* ---------- how did the send go? ----------
+   Asked in bubbles, as on the MoonBoard page. Four of them swing out in an arc from the button that was pressed
+   (Flash, 2nd, 3rd, 4+, left to right), away from the nearer edge of the screen: under Log send, which is near the
+   top of its page, and over Quick log, which is near the foot of its. The one the tries point to has a white ring.
+   For a route sent before they are session sends, and a small line says so.
+
+   The layer the bubbles sit on is the dimming, and covers everything: a tap on it, or on the cross where the button
+   was, puts them away. It closes on the click and not on the touch going down, because a layer that went on the
+   touch would let the click that follows fall on whatever is under. */
+let sendOpen = false;
+function openSend(from){
+  const fan = $('sendFan'), a = from.getBoundingClientRect(), r = openRoute();
+  if (!r || !a.width) return;
+  const again = sentBefore(r.id), pick = derivedResult(r.id);
+  const R = 26, edge = 6 + R + 84.5;                   // half a bubble, and how near the side the arc's middle may come
+  const up = a.top + a.height / 2 > innerHeight / 2;
+  const cx = Math.min(innerWidth - edge, Math.max(edge, a.left + a.width / 2)), cy = a.top + a.height / 2;
+  const at = [[-84.5, 45.5], [-33.8, 89.9], [33.8, 89.9], [84.5, 45.5]];     // each bubble's middle from the arc's, going down
+  fan.querySelectorAll('button[data-r]').forEach((b, i) => {
+    const dx = at[i][0], dy = (up ? -1 : 1) * at[i][1];
+    b.style.left = (cx + dx - R) + 'px';
+    b.style.top = (cy + dy - R) + 'px';
+    b.style.setProperty('--fx', (-dx) + 'px');         // it grows out of the button
+    b.style.setProperty('--fy', (-dy) + 'px');
+    b.classList.toggle('pick', b.dataset.r === pick);
+    b.setAttribute('aria-label', (again ? SESSION_WORDS : SEND_LABELS)[b.dataset.r]);
+  });
+  // An arm to each bubble, from the middle of the button itself: near the side of the screen the arc has had to
+  // shift over, and the arms should still leave the button.
+  const bx = a.left + a.width / 2;
+  fan.querySelectorAll('.arm').forEach((arm, i) => {
+    const vx = cx + at[i][0] - bx, vy = at[i][1];
+    const len = Math.hypot(vx, vy) - R + 2;
+    const deg = Math.atan2(-vx, vy) * 180 / Math.PI;                   // from straight down, turning towards the left
+    arm.style.height = len + 'px';
+    arm.style.left = (bx - 1) + 'px';
+    arm.style.top = (up ? cy - len : cy) + 'px';
+    arm.style.transformOrigin = up ? '50% 100%' : '50% 0';
+    arm.style.transform = 'rotate(' + (up ? -deg : deg) + 'deg)';
+  });
+  const cap = fan.querySelector('.cap');
+  cap.textContent = again ? 'Session send \u00b7 which go?' : 'Which go?';
+  cap.style.left = cx + 'px';
+  cap.style.top = (up ? cy - 156 : cy + 130) + 'px';
+  const x = fan.querySelector('.x');
+  x.style.left = a.left + 'px'; x.style.top = a.top + 'px';
+  x.style.width = a.width + 'px'; x.style.height = a.height + 'px';
+  x.style.borderRadius = getComputedStyle(from).borderRadius;
+  $('quickToast').hidden = true;                       // a line still up from the last go would sit on the bubbles
+  fan.hidden = false;
+  sendOpen = true;
+}
+function closeSend(){
+  if (!sendOpen) return;
+  sendOpen = false;
+  $('sendFan').hidden = true;
+}
+async function logSend(result){
+  const r = openRoute();
+  if (!r || !me) return closeSend();
+  const said = (sentBefore(r.id) ? SESSION_WORDS : SEND_LABELS)[result] + ' logged \u00b7 ' + r.name;
+  closeSend();
+  const ok = await logGo(result);
+  quickSay(ok ? said : 'Not saved', ok ? 'sent' : 'bad');
+}
+$('sendFan').addEventListener('click', e => {
+  const b = e.target.closest ? e.target.closest('button') : null;
+  if (b && b.dataset.r) return logSend(b.dataset.r);
+  closeSend();                                         // the cross, or the dimming itself
+});
+
+/* ---------- quick log ----------
+   As on the MoonBoard page: a button beside the open route's name, for logging without leaving the board. A press
+   opens two round buttons over it: red logs a try, green logs a send (which asks how it went, as a send does
+   everywhere). Tap one, or keep the finger down, slide on to it and let go. A tap anywhere else, another route,
+   another page or six seconds left alone puts them away. A short line says what was logged, or that it was not
+   saved. */
+let quickOpen = false, quickShut = 0, quickBack = 0, quickFace = '';
+function paintQuick(){
+  const b = $('quickBtn'), r = openRoute(), can = !!r && !r.retired;
+  b.disabled = !can;
+  if (!can && quickOpen) return quickShow(false);
+  const face = quickOpen ? 'x' : 'words';
+  if (face !== quickFace){
+    quickFace = face;
+    b.innerHTML = quickOpen
+      ? '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
+      : '<span>Quick<br>log</span>';
+  }
+  b.setAttribute('aria-expanded', quickOpen ? 'true' : 'false');
+}
+function quickShow(on){
+  const r = openRoute();
+  on = !!on && !!r && !r.retired && page === 'board' && !focus;
+  clearTimeout(quickShut);
+  if (on === quickOpen) return;
+  quickOpen = on;
+  $('quickFan').hidden = !on;
+  $('quickScrim').hidden = !on;
+  if (on){ quickShut = setTimeout(() => quickShow(false), 6000); $('quickToast').hidden = true; }
+  paintQuick();
+}
+/* Where the line goes: just over the row with the name on the board's page, just under the two big buttons on the
+   log page; anywhere else, where the stylesheet puts it. */
+function toastY(){
+  const r = page === 'log' ? $('done').getBoundingClientRect() : page === 'board' ? $('bar').getBoundingClientRect() : null;
+  if (!r || !r.height) return null;
+  return Math.max(56, Math.min(innerHeight - 110, page === 'log' ? r.bottom + 40 : r.top - 44));
+}
+function quickSay(txt, cls){              // what was logged, said for a moment
+  const t = $('quickToast'), y = toastY();
+  quickShow(false);
+  t.style.top = y === null ? '' : y + 'px';
+  t.style.bottom = y === null ? '' : 'auto';
+  t.textContent = txt;
+  t.className = cls === 'bad' ? 'bad' : '';
+  t.hidden = false;
+  clearTimeout(quickBack);
+  quickBack = setTimeout(() => { t.hidden = true; }, 1800);
+}
+function quickPick(which){
+  quickShow(false);
+  if (!needMe()) return;
+  if (which === 'try') return doTry();
+  openSend($('quickBtn'));                // the four take the place of the two
+}
+(function quickLog(){
+  const btn = $('quickBtn'), fan = $('quickFan');
+  let pressed = false;
+  const under = e => { const el = document.elementFromPoint(e.clientX, e.clientY); return el && el.closest ? el.closest('#quickFan button') : null; };
+  const lit = b => fan.querySelectorAll('button').forEach(x => x.classList.toggle('at', x === b));
+  // It opens on the press, not the release, so the same finger can slide on to red or green.
+  btn.addEventListener('pointerdown', () => { if (btn.disabled) return; pressed = true; quickShow(!quickOpen); });
+  document.addEventListener('pointermove', e => { if (pressed && quickOpen) lit(under(e)); }, { passive: true });
+  document.addEventListener('pointerup', e => {
+    if (!pressed) return;
+    pressed = false; lit(null);
+    const hit = quickOpen && under(e);
+    if (hit) quickPick(hit.dataset.q);
+  });
+  document.addEventListener('pointercancel', () => { pressed = false; lit(null); });
+  fan.querySelectorAll('button').forEach(b => { b.onclick = () => quickPick(b.dataset.q); });
+})();
+// On the click, not on the touch going down: a layer that went on the touch would let the click that follows land
+// on whatever is under it.
+$('quickScrim').addEventListener('click', () => quickShow(false));
+/* Log try and Log send, on the log page, act as whoever is picked in the header. */
+$('try').onclick = () => { if (needMe()) doTry(); };
+$('done').onclick = () => { if (!openRoute()) return toast('Open a route first.', true); if (needMe()) openSend($('done')); };
 let undoArmed = 0;
 $('lpUndo').onclick = async () => {
   if (Date.now() - undoArmed > 4000){ undoArmed = Date.now(); paintLog(); return; }
@@ -1493,7 +1675,6 @@ function startDraft(route, fromPicks){
   numAt = null;
   picks = [];
   if (!route) openId = null;
-  if (viewNow().zones) setView(wall.views.find(v => !v.zones).key);
   if (page !== 'board') showPage('board');
   if (!focus){ focus = true; requestAnimationFrame(fit); }
   paintAll();
@@ -1631,18 +1812,23 @@ $('fixBtn').onclick = async () => {
   if (!needMe()) return;
   await knowMe();
   fixing = true; draft = null; picks = [];
-  if (viewNow().zones || viewNow().faces) setView(wall.views.find(v => !v.zones).key);
+  { // the photo of the wall being looked at (of the flat wall, if at both)
+    const tv = viewNow(), pose = tv.faces ? posesOf(tv)[Math.round(CAM.t)] : null, F = pose && pose.fit && tv.faces.find(F => F.key === pose.fit[0]);
+    setView(F ? F.wall : (wall.views.find(v => !v.faces) || tv).key);
+  }
   showPage('board'); focus = true; paintAll(); requestAnimationFrame(fit);
   hint('Tap what is wrong');
 };
 $('fixBrush').onclick = e => { const b = e.target.closest('button[data-k]'); if (b){ fixKind = b.dataset.k; paintBars(); } };
 $('fixSize').onclick = e => { const b = e.target.closest('button[data-s]'); if (b){ fixSize = b.dataset.s; paintBars(); } };
+$('fixWall').onclick = e => { const b = e.target.closest('button[data-v]'); if (b) setView(b.dataset.v); };
 $('fixDone').onclick = () => { const n = (snap.fixes || []).length; focusOff(); if (n) toast(n + (n === 1 ? ' fix is' : ' fixes are') + ' in. Thank you.'); };
 
 /* ---------- pages ---------- */
 const PAGES = ['list', 'board', 'log', 'set'];
 function showPage(p){
   page = p;
+  quickShow(false); closeSend();
   document.body.classList.toggle('listPage', p === 'list');
   document.body.classList.toggle('logPage', p === 'log');
   document.body.classList.toggle('setPage', p === 'set');
@@ -1656,7 +1842,7 @@ $('pgDots').onclick = e => { const b = e.target.closest('button[data-go]'); if (
 let sw = null;
 document.addEventListener('touchstart', e => {
   const t = e.target;
-  sw = (focus || e.touches.length !== 1 || t.closest('#pic, #sheet, #fan, select, input, #grades, #actRow')) ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
+  sw = (focus || e.touches.length !== 1 || t.closest('#pic, #sheet, #quick, #sendFan, select, input, #grades')) ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
 }, { passive: true });
 document.addEventListener('touchend', e => {
   if (!sw) return;
@@ -1687,8 +1873,6 @@ $('bgSel').onchange = () => {
 $('dimChk').checked = dim; $('allChk').checked = showAll;
 $('dimChk').onchange = () => { dim = $('dimChk').checked; ls.set('sb-dim', dim ? '1' : '0'); paintBoard(); };
 $('allChk').onchange = () => { showAll = $('allChk').checked; ls.set('sb-all', showAll ? '1' : '0'); paintBoard(); };
-$('photoChk').checked = photo;
-$('photoChk').onchange = () => { photo = $('photoChk').checked; ls.set('sb-photo', photo ? '1' : '0'); paintPic(); };
 $('ver').textContent = 'build ' + BUILD;
 
 /* ---------- start ---------- */
@@ -1703,7 +1887,7 @@ paintMe();
   }
   ls.set('mb-wall', 'sun');
   $('ver').textContent = 'build ' + BUILD + ' · the map of holds is revision ' + wall.rev + ', ' + wall.holds.length + ' holds';
-  setView(wall.views[0].key);
+  setView(turnView().key);
   showPage('board'); paintAll();
   await refresh();
   await seedCrew();
