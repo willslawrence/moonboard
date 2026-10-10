@@ -256,6 +256,15 @@ place it hangs. The boards are drawn in their own colours with the tape, the cha
 room left out, and every hold on the map is cut out of a photo and set where it is, so the
 holds are the real ones. Two fingers zoom a picture and one drags it.
 
+**Both walls at once.** A fourth picture, **All**, is the two drawn walls side by side,
+opened flat like a book: the flat wall's right-hand end is the kicker's left-hand end and
+the floors are level. Above the kicker the overhang leans out over the flat wall, so there
+the two drift apart on the page and a dark wedge shows between them. It is for seeing a
+route whole, and a route that is on both walls opens on it. In `wall.json` it is a view
+with `parts`: each says which wall it shows and where that wall's picture lies on this one.
+A hold still belongs to one wall and keeps that wall's own coordinates, and everything the
+store keeps (a ring in a route, a fix to the map) names the wall, never this picture.
+
 **Drawing and photo.** Each drawing is made from a photograph of the same size (`photo` in
 `wall.json`, beside `img`), and the map fits both. The drawing is only as right as the map:
 a hold the map lacks is not in it at all. So while the map is being fixed the page shows
@@ -282,6 +291,16 @@ feet (any feet, feet follow hands, marked feet only); it can carry the tape it h
 wall and a note. Once saved everyone has it. *Search routes* lists the routes that use
 every picked hold. Making a route is deliberately not on the front of the page: Will asked
 for it to be found the way the MoonBoard's custom route is.
+
+**A climb by number.** Some routes are hands in order, each hold with its number, any feet.
+In the marking bar the **1 2 3** brush gives the next tap the lowest number the route does
+not have yet, so a new one counts 1, 2, 3 and one with numbers missing is filled gap by
+gap; the − and + beside it pick another free number, and a tap on a numbered hold takes
+its number off. The holds are ringed with their numbers on them, the lowest and highest in
+the start and finish colours, and a thin line runs from each number to the next where
+none is missing between. Such a route needs no start or finish and may have up to 250
+holds. In the store a numbered hold is a mark `{ h, r: 'n', n }`; a hold may carry two
+numbers.
 
 **Changing a route.** Only its setter is offered **Change it** and **Take it down**, on
 the log page. A route taken down leaves the list and keeps what was logged on it.

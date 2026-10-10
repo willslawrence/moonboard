@@ -120,6 +120,23 @@ check('the Sun board did not gain it', (await call('GET', '/api/w/sun')).routes.
 check('the Sun board cannot be emptied', (await call('POST', '/api/w/sun/reset', {})).status === 404 && (await call('GET', '/api/w/sun')).routes.length === 2);
 s = await call('POST', '/api/w/test-a/reset', {});
 check('a check\'s wall can', s.routes.length === 0 && s.people.length === 0 && (await call('GET', '/api/w/sun')).people.length === 3, s);
+// a climb by number, on a wall of its own
+await call('POST', '/api/w/test-n/person', { name: 'Nia' });
+const seq = [{ h: 'a1', r: 'n', n: 1 }, { h: 'a2', r: 'n', n: 2 }, { h: 'a3', r: 'n', n: 4 }, { h: 'a1', r: 'n', n: 7 }, { v: 'overhang', x: 0.5, y: 0.25, r: 'n', n: 8 }, { h: 'f1', r: 'f' }];
+s = await call('POST', '/api/w/test-n/route', { by: 'Nia', name: 'Blue numbers', grade: 3, marks: seq, feet: 'any' });
+check('a climb by number needs no start or finish, keeps its numbers and its gaps, and a hold may carry two',
+  s.id === 1 && JSON.stringify(s.routes[0].marks) === JSON.stringify(seq), s.routes && s.routes[0]);
+check('a number that is not a whole one from 1 to 999 is refused',
+  (await call('POST', '/api/w/test-n/route', { by: 'Nia', name: 'x', grade: 3, marks: [{ h: 'a1', r: 'n', n: 0 }, { h: 'a2', r: 'n', n: 2 }] })).status === 400 &&
+  (await call('POST', '/api/w/test-n/route', { by: 'Nia', name: 'x', grade: 3, marks: [{ h: 'a1', r: 'n' }, { h: 'a2', r: 'n', n: 2 }] })).status === 400);
+check('one numbered hold is not a climb by number: it still wants a start and a finish',
+  (await call('POST', '/api/w/test-n/route', { by: 'Nia', name: 'x', grade: 3, marks: [{ h: 'a1', r: 'n', n: 1 }, { h: 'a2', r: 'h' }] })).status === 400);
+s = await call('POST', '/api/w/test-n/route', { by: 'Nia', name: 'The hundred', grade: 5,
+  marks: Array.from({ length: 100 }, (_, i) => ({ h: 'h' + i, r: 'n', n: i + 1 })) });
+check('a hundred holds are not too many', s.id === 2 && s.routes[1].marks.length === 100 && s.routes[1].marks[99].n === 100, s.error);
+check('two hundred and fifty-one are',
+  (await call('POST', '/api/w/test-n/route', { by: 'Nia', name: 'x', grade: 5, marks: Array.from({ length: 251 }, (_, i) => ({ h: 'h' + i, r: 'n', n: i + 1 })) })).status === 400);
+await call('POST', '/api/w/test-n/reset', {});
 check('a body that is not JSON is refused',
   (await handle(new Request('https://x.test/api/w/sun/person', { method: 'POST', body: 'name=Will' }), db)).status === 400);
 check('other methods are refused', (await handle(new Request('https://x.test/api/w/sun', { method: 'DELETE' }), db)).status === 405);

@@ -39,11 +39,11 @@
    x<number>. When the map is next made they are worked into it properly and marked done. */
 
 export const RESULTS = ['try', 'flash', '2nd', '3rd', '4+'];
-export const ROLES = ['s', 'h', 'f', 'e'];                 // start, hold, foot only, finish
+export const ROLES = ['s', 'h', 'f', 'e', 'n'];            // start, hold, foot only, finish, and a hold with its number in a climb by number
 export const FEET = ['any', 'follow', 'marked'];           // any feet, feet follow hands, marked feet only
 export const GRADE_MIN = -1, GRADE_MAX = 17;                // VB is -1, then V0 to V17
 const WALLS = { sun: 'Sun board' };                         // the walls there are; "test-..." is any wall a check makes
-const MAX_ROUTES = 3000, MAX_PEOPLE = 300, MAX_MARKS = 80, MAX_FIXES = 2000;
+const MAX_ROUTES = 3000, MAX_PEOPLE = 300, MAX_MARKS = 250, MAX_FIXES = 2000;
 const FIX_KINDS = ['add', 'drop', 'redo'], FIX_SIZES = ['s', 'm', 'l'];
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
@@ -81,17 +81,22 @@ function tables(db){
 
 /* Which holds, and what each is for. A hold is named by its id on the wall's map of holds;
    a spot nobody has mapped is a point on one of the wall's pictures instead ({ v, x, y },
-   as fractions of the picture's width and height). */
+   as fractions of the picture's width and height).
+   A climb by number is hands in order, each hold with its number ({ r: 'n', n }). The numbers
+   are the ones on the wall, so some may be missing, and one hold may carry two. */
 function cleanMarks(v){
   if (!Array.isArray(v) || v.length < 2 || v.length > MAX_MARKS) return null;
   const out = [], seen = new Set();
   for (const m of v){
     if (!m || !ROLES.includes(m.r)) return null;
+    const num = m.r === 'n' ? { n: m.n } : {};
+    if (m.r === 'n' && !(Number.isInteger(m.n) && m.n >= 1 && m.n <= 999)) return null;
     if (typeof m.h === 'string' && /^[A-Za-z0-9_.-]{1,16}$/.test(m.h)){
-      if (seen.has(m.h)) continue;
-      seen.add(m.h); out.push({ h: m.h, r: m.r });
+      const key = m.r === 'n' ? m.h + ' ' + m.n : m.h;        // a hold once, or once for each number it carries
+      if (seen.has(key)) continue;
+      seen.add(key); out.push({ h: m.h, r: m.r, ...num });
     } else if (typeof m.v === 'string' && /^[a-z0-9-]{1,16}$/.test(m.v) && unit(m.x) && unit(m.y)){
-      out.push({ v: m.v, x: Math.round(m.x * 1e4) / 1e4, y: Math.round(m.y * 1e4) / 1e4, r: m.r });
+      out.push({ v: m.v, x: Math.round(m.x * 1e4) / 1e4, y: Math.round(m.y * 1e4) / 1e4, r: m.r, ...num });
     } else return null;
   }
   return out.length >= 2 ? out : null;
@@ -190,8 +195,10 @@ export async function handle(request, db, now = () => new Date().toISOString()){
     if (!name) return bad('the route needs a name');
     if (!Number.isInteger(grade) || grade < GRADE_MIN || grade > GRADE_MAX) return bad('the route needs a grade');
     if (!marks) return bad('pick at least two holds');
-    if (!marks.some(k => k.r === 's')) return bad('mark a hold to start on');
-    if (!marks.some(k => k.r === 'e')) return bad('mark a hold to finish on');
+    if (marks.filter(k => k.r === 'n').length < 2){          // a climb by number starts at its lowest number and ends at its highest
+      if (!marks.some(k => k.r === 's')) return bad('mark a hold to start on');
+      if (!marks.some(k => k.r === 'e')) return bad('mark a hold to finish on');
+    }
 
     if (body.id !== undefined && body.id !== null){
       const id = Number(body.id);

@@ -104,6 +104,13 @@
   .o-s{stroke:var(--start);fill:var(--start)} .o-h{stroke:var(--hold);fill:var(--hold)}
   .o-f{stroke:var(--foot);fill:var(--foot);stroke-dasharray:calc(7px / var(--z)) calc(5px / var(--z))}
   .o-e{stroke:var(--end);fill:var(--end)} .o-p{stroke:var(--pick);fill:var(--pick)}
+  /* a climb by number: each hold ringed with its number on it, and a thin line from each number to the next */
+  .o-q{fill-opacity:.14;stroke-width:calc(3.4px / var(--z));stroke-linejoin:round;stroke:var(--hold);fill:var(--hold)}
+  .o-q.first{stroke:var(--start);fill:var(--start)} .o-q.last{stroke:var(--end);fill:var(--end)}
+  .seq{fill:none;stroke:#fff;stroke-opacity:.85;stroke-width:calc(1.6px / var(--z));stroke-linecap:round}
+  .seqH{fill:none;stroke:#000;stroke-opacity:.45;stroke-width:calc(4px / var(--z));stroke-linecap:round}
+  .nn{fill:#fff;font:800 12px -apple-system,system-ui,sans-serif;font-size:calc(11.5px / var(--z));paint-order:stroke;stroke:#000;stroke-opacity:.8;
+      stroke-width:calc(3px / var(--z));stroke-linejoin:round;text-anchor:middle;dominant-baseline:central;pointer-events:none}
   /* fixing the map: an outline said not to be a hold, one said to be the wrong shape, a hold said to be missing */
   .o-x{fill:#ef4444;fill-opacity:.28;stroke:#ef4444;stroke-width:calc(3px / var(--z));stroke-dasharray:calc(5px / var(--z)) calc(4px / var(--z))}
   .o-r{fill:#f59e0b;fill-opacity:.22;stroke:#f59e0b;stroke-width:calc(3.4px / var(--z))}
@@ -145,6 +152,10 @@
   #brush button i,#fixBrush button i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
   #brush button.on,#fixBrush button.on,#fixSize button.on{background:var(--ink);border-color:var(--ink);color:var(--onink)}
   #draftSay,#fixSay{font-size:12.5px;color:var(--dim);margin:6px 0;min-height:18px;line-height:1.35}
+  #numRow{display:flex;align-items:center;gap:8px;margin:8px 0 0;font-size:13px}
+  #numRow[hidden]{display:none}
+  #numRow button{width:40px;height:34px;padding:0;border-radius:9px;font-size:18px;line-height:1}
+  #numRow b{min-width:44px;text-align:center;font-size:17px}
   #draftBar .two button,#fixBar .two button{height:44px;padding:0 8px;border-radius:11px}
   body.focus.fixing #fixBar{display:block;flex:none;margin-top:8px}
   #fixBrush,#fixSize{display:flex;gap:6px}
@@ -315,7 +326,9 @@
         <button data-r="h"><i style="background:var(--hold)"></i>Hold</button>
         <button data-r="f"><i style="background:var(--foot)"></i>Foot</button>
         <button data-r="e"><i style="background:var(--end)"></i>Finish</button>
+        <button data-r="n" aria-label="By number">1&#8201;2&#8201;3</button>
       </div>
+      <div id="numRow" hidden><span>Next number</span><button id="numDown" aria-label="The missing number before">&#8722;</button><b id="numNow">1</b><button id="numUp" aria-label="The missing number after">+</button></div>
       <p id="draftSay"></p>
       <div class="two">
         <button id="draftX" class="ghost">Cancel</button>
@@ -490,7 +503,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-10 11:58';
+const BUILD = '2026-10-10 13:55';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -659,6 +672,22 @@ function relive(){
 }
 const H = id => HOLD[id] || HOLD[(wall.alias || {})[id]] || null;
 const viewNow = () => wall.views.find(v => v.key === view) || wall.views[0];
+/* A picture may be several walls set side by side (a view with "parts"), so that a route that crosses from one
+   wall to the next is seen whole. A hold still belongs to one wall and is kept in that wall's own picture's
+   fractions; a part says where that wall's picture lies on this one. Everything stored (a ring in a route, a fix
+   to the map) names the wall, never the picture of several, which is only a way of looking. */
+const ONE = { x: 0, y: 0, w: 1, h: 1 };
+const partOf = (v, key) => v.parts ? v.parts.find(p => p.v === key) || null : v.key === key ? ONE : null;
+const GEO = {};
+function G(h, v){                       // a hold's outline as fractions of picture v, or null if it is not on it
+  if (!v.parts) return h.v === v.key ? h : null;
+  const p = partOf(v, h.v);
+  if (!p) return null;
+  const k = v.key + ' ' + h.id;
+  if (GEO[k] && GEO[k].of === h) return GEO[k];
+  return (GEO[k] = { of: h, p: h.p.map(q => [p.x + q[0] * p.w, p.y + q[1] * p.h]), c: [p.x + h.c[0] * p.w, p.y + h.c[1] * p.h],
+    box: [p.x + h.box[0] * p.w, p.y + h.box[1] * p.h, p.x + h.box[2] * p.w, p.y + h.box[3] * p.h], area: h.area * p.w * p.h });
+}
 const inPoly = (p, x, y) => {
   let inside = false;
   for (let i = 0, j = p.length - 1; i < p.length; j = i++){
@@ -682,13 +711,14 @@ function edgeDist(p, x, y, W, Hh){
    outline within a finger's width (slop, in picture pixels). */
 function holdAt(x, y, slop){
   const v = viewNow();
-  let hit = null, near = null, nearD = slop;
+  let hit = null, hitA = 0, near = null, nearD = slop;
   for (const h of LIVE){
-    if (h.v !== v.key) continue;
-    const b = h.box, sx = slop / v.w, sy = slop / v.h;
+    const g = G(h, v);
+    if (!g) continue;
+    const b = g.box, sx = slop / v.w, sy = slop / v.h;
     if (x < b[0] - sx || x > b[2] + sx || y < b[1] - sy || y > b[3] + sy) continue;
-    if (inPoly(h.p, x, y)){ if (!hit || h.area < hit.area) hit = h; }
-    else if (h.k !== 'v'){ const d = edgeDist(h.p, x, y, v.w, v.h); if (d < nearD){ nearD = d; near = h; } }
+    if (inPoly(g.p, x, y)){ if (!hit || g.area < hitA){ hit = h; hitA = g.area; } }
+    else if (h.k !== 'v'){ const d = edgeDist(g.p, x, y, v.w, v.h); if (d < nearD){ nearD = d; near = h; } }
   }
   // a volume's face is a big target; a small hold or an edge just beside the finger is the likelier aim
   if (hit && hit.k === 'v' && near && nearD < slop * 0.6) return near;
@@ -815,8 +845,16 @@ function tapAt(px, py){
   }
   if (!focus) return;
   const h = holdAt(x, y, 16 / s);
-  if (fixing) return fixTap(h, v.key, x, y);
-  if (draft) return draftTap(h, v.key, x, y);
+  // which wall the finger is on, and where on that wall's own picture
+  let wk = v.key, wx = x, wy = y;
+  if (v.parts){
+    const p = h ? partOf(v, h.v) : v.parts.find(p => x >= p.x0 && x < p.x1 && y >= p.y && y <= p.y + p.h);
+    if (!p) return hint('No hold is outlined there');
+    wk = p.v; wx = (x - p.x) / p.w; wy = (y - p.y) / p.h;
+    if (!h && (wx < 0 || wx > 1 || wy < 0 || wy > 1)) return hint('No hold is outlined there');
+  }
+  if (fixing) return fixTap(h, wk, wx, wy);
+  if (draft) return draftTap(h, wk, wx, wy);
   if (!h) return hint('No hold is outlined there');
   const i = picks.indexOf(h.id);
   if (i >= 0){ picks.splice(i, 1); undoTap = () => { picks.splice(i, 0, h.id); }; }
@@ -855,18 +893,24 @@ $('focusX').onclick = () => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && focus && $('sheet').hidden) $('focusX').onclick(); });
 
 /* ---------- drawing what is on the picture ---------- */
-const pathOf = (h, v) => 'M' + h.p.map(q => (q[0] * v.w).toFixed(1) + ' ' + (q[1] * v.h).toFixed(1)).join('L') + 'Z';
-const ringOf = (m, v) => { const r = 0.021 * v.w, cx = m.x * v.w, cy = m.y * v.h;
+const pathOf = (h, v) => { const g = G(h, v); return g ? 'M' + g.p.map(q => (q[0] * v.w).toFixed(1) + ' ' + (q[1] * v.h).toFixed(1)).join('L') + 'Z' : ''; };
+const ringOf = (m, v) => { const p = partOf(v, m.v); if (!p) return '';
+  const r = 0.021 * p.w * v.w, cx = (p.x + m.x * p.w) * v.w, cy = (p.y + m.y * p.h) * v.h;
   return 'M' + (cx - r).toFixed(1) + ' ' + cy.toFixed(1) + 'a' + r.toFixed(1) + ' ' + r.toFixed(1) + ' 0 1 0 ' + (2 * r).toFixed(1) + ' 0a' + r.toFixed(1) + ' ' + r.toFixed(1) + ' 0 1 0 ' + (-2 * r).toFixed(1) + ' 0Z'; };
 const marksNow = () => draft ? draft.marks : openRoute() ? openRoute().marks : [];
 const markView = m => m.h ? (H(m.h) ? H(m.h).v : null) : m.v;
+const markAt = (m, v) => {              // the middle of a mark, in picture v's pixels
+  if (m.h){ const h = H(m.h), g = h && G(h, v); return g ? [g.c[0] * v.w, g.c[1] * v.h] : null; }
+  const p = partOf(v, m.v); return p ? [(p.x + m.x * p.w) * v.w, (p.y + m.y * p.h) * v.h] : null;
+};
+const byNumber = r => !!r && r.marks.some(m => m.r === 'n');
 function paintBoard(){
   if (!wall) return;
   const v = viewNow(), marks = marksNow(), r = openRoute();
   // the row over the picture: one button a picture, with how many of the route's holds (or of the picked ones) are on it
   const counted = draft || (r && !picks.length) ? marks.map(markView) : picks.map(id => HOLD[id] && HOLD[id].v);
   $('actRow').innerHTML = wall.views.map(w => {
-    const n = counted.filter(k => k === w.key).length;
+    const n = w.parts ? 0 : counted.filter(k => k === w.key).length;
     return '<button data-v="' + w.key + '"' + (w.key === view ? ' class="on"' : '') + '>' + esc(w.label) + (n ? '<i>' + n + '</i>' : '') + '</button>';
   }).join('');
   let svg = '';
@@ -882,22 +926,38 @@ function paintBoard(){
       seen[z.to] = 1;
     }
   } else {
-    const here = marks.filter(m => markView(m) === v.key);
+    const here = marks.filter(m => partOf(v, markView(m)));
     const picking = focus && !draft && !fixing;
     const d = m => m.h ? pathOf(H(m.h), v) : ringOf(m, v);
     if (dim && r && !focus && here.length)
       svg += '<mask id="cut"><rect width="' + v.w + '" height="' + v.h + '" fill="#fff"/>' + here.map(m => '<path d="' + d(m) + '" fill="#000"/>').join('') + '</mask>' +
              '<rect width="' + v.w + '" height="' + v.h + '" fill="#000" fill-opacity=".45" mask="url(#cut)"/>';
     if (showAll || focus)                              // in focus the outlines show what can be tapped
-      svg += LIVE.filter(h => h.v === v.key && !(fixing && h.fix)).map(h => '<path class="o-all" d="' + pathOf(h, v) + '"/>').join('');
+      svg += LIVE.filter(h => G(h, v) && !(fixing && h.fix)).map(h => '<path class="o-all" d="' + pathOf(h, v) + '"/>').join('');
     if (fixing)
       svg += (snap.fixes || []).map(f => {
         const h = f.kind === 'add' ? HOLD['x' + f.k] : HOLD[f.h];
-        return h && h.v === v.key ? '<path class="o-' + ({ add: 'n', drop: 'x', redo: 'r' })[f.kind] + '" d="' + pathOf(h, v) + '"/>' : '';
+        return h && G(h, v) ? '<path class="o-' + ({ add: 'n', drop: 'x', redo: 'r' })[f.kind] + '" d="' + pathOf(h, v) + '"/>' : '';
       }).join('');
-    else svg += here.map(m => '<path class="o-halo" d="' + d(m) + '"/>').join('') + here.map(m => '<path class="o-' + m.r + '" d="' + d(m) + '"/>').join('');
+    else {
+      // a climb by number: a line from each number to the next (where both are on this picture and none is missing between)
+      const nums = marks.filter(m => m.r === 'n'), lo = Math.min(...nums.map(m => m.n)), hi = Math.max(...nums.map(m => m.n));
+      const first = {}; nums.forEach(m => { if (!first[m.n]) first[m.n] = m; });
+      let line = '';
+      for (const m of nums){
+        const a = markAt(m, v), b = first[m.n + 1] && markAt(first[m.n + 1], v);
+        if (a && b) line += 'M' + a[0].toFixed(1) + ' ' + a[1].toFixed(1) + 'L' + b[0].toFixed(1) + ' ' + b[1].toFixed(1);
+      }
+      if (line) svg += '<path class="seqH" d="' + line + '"/><path class="seq" d="' + line + '"/>';
+      svg += here.map(m => '<path class="o-halo" d="' + d(m) + '"/>').join('') +
+             here.map(m => '<path class="o-' + (m.r === 'n' ? 'q' + (m.n === lo ? ' first' : m.n === hi ? ' last' : '') : m.r) + '" d="' + d(m) + '"/>').join('');
+      // the numbers, one label a place: a hold that carries two shows both
+      const lab = {};
+      here.filter(m => m.r === 'n').sort((a, b) => a.n - b.n).forEach(m => { const k = m.h || m.v + ' ' + m.x + ' ' + m.y; (lab[k] = lab[k] || { m, ns: [] }).ns.push(m.n); });
+      svg += Object.values(lab).map(o => { const a = markAt(o.m, v); return a ? '<text class="nn" x="' + a[0].toFixed(1) + '" y="' + a[1].toFixed(1) + '">' + o.ns.join('·') + '</text>' : ''; }).join('');
+    }
     if (picking)
-      svg += picks.filter(id => HOLD[id] && HOLD[id].v === v.key).map(id => '<path class="o-halo" d="' + pathOf(HOLD[id], v) + '"/><path class="o-p" d="' + pathOf(HOLD[id], v) + '"/>').join('');
+      svg += picks.filter(id => HOLD[id] && G(HOLD[id], v)).map(id => '<path class="o-halo" d="' + pathOf(HOLD[id], v) + '"/><path class="o-p" d="' + pathOf(HOLD[id], v) + '"/>').join('');
   }
   $('ov').setAttribute('viewBox', '0 0 ' + v.w + ' ' + v.h);
   $('ov').innerHTML = svg;
@@ -922,12 +982,18 @@ function paintBars(){
   if (r && !draft && !fixing) paintPill($('fcGd'), r.grade);
   // the row under the picture: the open route, which is also the way to the search
   $('qBox').classList.toggle('now', !!r);
-  if (r){ $('qName').textContent = r.name; paintPill($('qGd'), r.grade); $('qBy').textContent = r.setter + ' · ' + FEET[r.feet] + (r.tape ? ' · ' + r.tape : ''); }
+  if (r){ $('qName').textContent = r.name; paintPill($('qGd'), r.grade); $('qBy').textContent = r.setter + ' · ' + (byNumber(r) ? 'by number · ' : '') + FEET[r.feet] + (r.tape ? ' · ' + r.tape : ''); }
   if (draft){
     [...$('brush').children].forEach(x => x.classList.toggle('on', x.dataset.r === brush));
     const n = k => draft.marks.filter(m => m.r === k).length;
-    $('draftSay').textContent = draft.marks.length
-      ? [n('s') + ' start', n('h') + ' hold' + (n('h') === 1 ? '' : 's'), n('f') ? n('f') + ' foot only' : '', n('e') + ' finish'].filter(Boolean).join(' · ') +
+    $('numRow').hidden = brush !== 'n';
+    if (brush === 'n'){
+      const gaps = numGaps();
+      $('numNow').textContent = numNext();
+      $('draftSay').textContent = (n('n') ? n('n') + ' numbered' + (gaps.length ? ' · missing ' + gaps.slice(0, 6).join(', ') + (gaps.length > 6 ? ' and ' + (gaps.length - 6) + ' more' : '') : '') + '. ' : '') +
+        'Tap the hold that is number ' + numNext() + '. Tap a numbered hold again to take its number off.';
+    } else $('draftSay').textContent = draft.marks.length
+      ? [n('n') ? n('n') + ' numbered' : '', n('s') + ' start', n('h') + ' hold' + (n('h') === 1 ? '' : 's'), n('f') ? n('f') + ' foot only' : '', n('e') + ' finish'].filter(Boolean).join(' · ') +
         '. Pick what a tap marks, then tap the hold.'
       : 'Pick what the next tap marks, then tap the holds. Tap a hold again to let it go.';
   }
@@ -969,8 +1035,11 @@ function open(id, stay){
     // go to the picture most of it is on, starting from where it starts
     const count = {};
     r.marks.forEach(m => { const k = markView(m); if (k) count[k] = (count[k] || 0) + 1 + (m.r === 's' ? 0.5 : 0); });
-    const best = Object.keys(count).sort((a, b) => count[b] - count[a])[0];
-    if (best && !(stay && count[view])) setView(best);
+    const keys = Object.keys(count);
+    // on more than one wall: the picture that has them side by side, if there is one
+    const whole = keys.length > 1 && wall.views.find(w => w.parts && keys.every(k => w.parts.some(p => p.v === k)));
+    const best = whole ? whole.key : keys.sort((a, b) => count[b] - count[a])[0];
+    if (best && !(stay && (count[view] || (viewNow().parts && keys.some(k => partOf(viewNow(), k)))))) setView(best);
   }
   if (!stay) showPage('board');
   paintAll();
@@ -1090,7 +1159,7 @@ function paintList(){
     const n = senders(r.id).length, st = me ? statOf(me, r.id) : null, f = me ? firstSend(me, r.id) : null;
     const mineTxt = f ? '✓ ' + RESULT[f] : st ? st.a + (st.a === 1 ? ' try' : ' tries') : '';
     return '<div class="rt' + (r.id === openId ? ' sel' : '') + (r.retired ? ' gone' : '') + '" data-id="' + r.id + '"><div class="nm"><b>' + esc(r.name) + '</b><span>' + esc(r.setter) +
-      ' · ' + FEET[r.feet] + (n ? ' · ' + n + ' sent' : '') + (r.tape ? ' · ' + esc(r.tape) : '') + '</span></div>' +
+      ' · ' + (byNumber(r) ? 'by number · ' : '') + FEET[r.feet] + (n ? ' · ' + n + ' sent' : '') + (r.tape ? ' · ' + esc(r.tape) : '') + '</span></div>' +
       '<div class="rside"><div class="gd" data-g="' + r.grade + '"></div><div class="who' + (f ? ' sent' : '') + '">' + mineTxt + '</div></div><div class="chev">›</div></div>';
   }).join('');
   box.querySelectorAll('.gd').forEach(p => paintPill(p, +p.dataset.g));
@@ -1137,7 +1206,8 @@ function startDraft(route, fromPicks){
   if (!needMe()) return;
   draft = route ? { id: route.id, marks: route.marks.map(m => ({ ...m })), name: route.name, grade: route.grade, feet: route.feet, tape: route.tape || '', note: route.note || '' }
                 : { marks: (fromPicks || []).map(h => ({ h, r: 'h' })), name: '', grade: null, feet: 'any', tape: '', note: '' };
-  brush = route ? 'h' : 's';
+  brush = route ? (byNumber(route) ? 'n' : 'h') : 's';
+  numAt = null;
   picks = [];
   if (!route) openId = null;
   if (viewNow().zones) setView(wall.views.find(v => !v.zones).key);
@@ -1148,20 +1218,48 @@ function startDraft(route, fromPicks){
 }
 /* A tap while a route is being marked. On a hold: mark it with what the brush says; the same
    again lets it go. Where nothing is outlined: a ring at the spot, and a tap on a ring lets it go. */
+/* A climb by number. The numbers are the ones on the wall, so the next tap gives the lowest number the route does
+   not have yet: 1, 2, 3 for a new one, and for one with numbers missing, each gap in turn. */
+let numAt = null;                 // a number chosen by hand for the next tap
+const numHave = () => new Set(draft.marks.filter(m => m.r === 'n').map(m => m.n));
+function numNext(){
+  if (numAt) return numAt;
+  const have = numHave(); let n = 1;
+  while (have.has(n)) n++;
+  return n;
+}
+function numGaps(){
+  const have = numHave(), top = Math.max(0, ...have), out = [];
+  for (let n = 1; n < top; n++) if (!have.has(n)) out.push(n);
+  return out;
+}
+function numStep(d){
+  const have = numHave(); let n = numNext() + d;
+  while (n >= 1 && n <= 999 && have.has(n)) n += d;
+  if (n >= 1 && n <= 999){ numAt = n; paintBars(); }
+}
+$('numUp').onclick = () => numStep(1);
+$('numDown').onclick = () => numStep(-1);
 function draftTap(h, vkey, x, y){
-  const v = viewNow();
-  if (h){
-    const i = draft.marks.findIndex(m => m.h === h.id);
-    if (i < 0) draft.marks.push({ h: h.id, r: brush });
-    else if (draft.marks[i].r === brush) draft.marks.splice(i, 1);
-    else draft.marks[i].r = brush;
+  const v = wall.views.find(w => w.key === vkey) || viewNow();          // the wall's own picture: x and y are fractions of it
+  const rr = 0.021 * v.w;
+  const here = m => h ? m.h === h.id : !m.h && m.v === vkey && Math.hypot((m.x - x) * v.w, (m.y - y) * v.h) < rr * 1.2;
+  if (brush === 'n'){
+    const had = draft.marks.filter(m => m.r === 'n' && here(m)).sort((a, b) => b.n - a.n)[0];
+    if (had) draft.marks.splice(draft.marks.indexOf(had), 1);
+    else {
+      const i = draft.marks.findIndex(m => m.r !== 'n' && here(m));
+      if (i >= 0) draft.marks.splice(i, 1);
+      draft.marks.push(h ? { h: h.id, r: 'n', n: numNext() } : { v: vkey, x: +x.toFixed(4), y: +y.toFixed(4), r: 'n', n: numNext() });
+    }
+    numAt = null;
   } else {
-    const rr = 0.021 * v.w;
-    const i = draft.marks.findIndex(m => !m.h && m.v === vkey && Math.hypot((m.x - x) * v.w, (m.y - y) * v.h) < rr * 1.2);
-    if (i >= 0){ if (draft.marks[i].r === brush) draft.marks.splice(i, 1); else draft.marks[i].r = brush; }
-    else draft.marks.push({ v: vkey, x: +x.toFixed(4), y: +y.toFixed(4), r: brush });
+    const i = draft.marks.findIndex(here);
+    if (i < 0) draft.marks.push(h ? { h: h.id, r: brush } : { v: vkey, x: +x.toFixed(4), y: +y.toFixed(4), r: brush });
+    else if (draft.marks[i].r === brush) draft.marks.splice(i, 1);
+    else { draft.marks[i].r = brush; delete draft.marks[i].n; }
   }
-  if (draft.marks.length >= 80){ draft.marks.length = 80; toast('That is as many holds as a route can have.', true); }
+  if (draft.marks.length >= 250){ draft.marks.length = 250; toast('That is as many holds as a route can have.', true); }
   // after a start, the next taps are most likely holds (a second start is one tap on Start away)
   if (brush === 's' && draft.marks.some(m => m.r === 's')) brush = 'h';
   paintBoard();
@@ -1180,14 +1278,16 @@ $('goneBtn').onclick = async () => {
 };
 function draftProblem(){
   const n = k => draft.marks.filter(m => m.r === k).length;
-  return draft.marks.length < 2 ? 'Pick at least two holds.' : !n('s') ? 'Mark a hold to start on: tap Start, then the hold.' : !n('e') ? 'Mark a hold to finish on: tap Finish, then the hold.' : '';
+  return draft.marks.length < 2 ? 'Pick at least two holds.' : n('n') >= 2 ? '' : !n('s') ? 'Mark a hold to start on: tap Start, then the hold.' : !n('e') ? 'Mark a hold to finish on: tap Finish, then the hold.' : '';
 }
 $('draftNext').onclick = () => {
   const p = draftProblem();
   if (p) return toast(p, true);
   $('shTitle').textContent = draft.id ? 'Change the route' : 'Name the route';
   const n = k => draft.marks.filter(m => m.r === k).length;
-  $('shSay').textContent = draft.marks.length + ' holds: ' + n('s') + ' start, ' + n('e') + ' finish' + (n('f') ? ', ' + n('f') + ' foot only' : '') + '.';
+  $('shSay').textContent = n('n') >= 2
+    ? n('n') + ' holds by number' + (numGaps().length ? ', ' + numGaps().length + ' numbers still missing' : '') + (n('f') ? ', ' + n('f') + ' foot only' : '') + '. It starts on the lowest and ends on the highest.'
+    : draft.marks.length + ' holds: ' + n('s') + ' start, ' + n('e') + ' finish' + (n('f') ? ', ' + n('f') + ' foot only' : '') + '.';
   $('shName').value = draft.name; $('shTape').value = draft.tape; $('shNote').value = draft.note; $('saveErr').textContent = '';
   $('shSave').textContent = draft.id ? 'Save the change' : 'Save route';
   paintSheet();
