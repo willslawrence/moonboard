@@ -97,6 +97,11 @@
   #stage{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
   #stage img{display:block;width:100%;height:100%;pointer-events:none;-webkit-user-drag:none}
   #stage svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
+  /* the wall as a model that turns: each face is its own picture, stood where the face stands in the room */
+  #faces{position:absolute;left:0;top:0;width:100%;height:100%;z-index:0;overflow:hidden;background:#24262a}
+  #faces[hidden]{display:none}
+  #faces .face{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:none;backface-visibility:visible}
+  #actRow button.sm{flex:0 0 auto;width:auto;padding:0 12px}
   /* line widths are in picture pixels, so they are divided by the zoom (--z) to stay the same on the screen */
   .o-all{fill:none;stroke:#fff;stroke-opacity:.55;stroke-width:calc(1.3px / var(--z))}
   .o-halo{fill:none;stroke:#000;stroke-opacity:.55;stroke-width:calc(7px / var(--z));stroke-linejoin:round}
@@ -311,7 +316,7 @@
     <div id="focusCap"><span class="sp"></span><b id="fcName"></b><span class="gd" id="fcGd" hidden></span><button id="focusX" aria-label="Back to the page">&#10005;</button></div>
     <div id="actRow"></div>
     <div id="pic">
-      <div id="stage"><img id="vimg" alt=""><svg id="ov" xmlns="http://www.w3.org/2000/svg"></svg></div>
+      <div id="stage"><div id="faces" hidden></div><img id="vimg" alt=""><svg id="ov" xmlns="http://www.w3.org/2000/svg"></svg></div>
       <div id="picNote"></div>
       <div id="zoomBtns"><button id="zIn" aria-label="Closer">+</button><button id="zOut" aria-label="Further">&#8722;</button></div>
     </div>
@@ -503,7 +508,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-10 14:16';
+const BUILD = '2026-10-10 14:52';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -678,8 +683,10 @@ const viewNow = () => wall.views.find(v => v.key === view) || wall.views[0];
    to the map) names the wall, never the picture of several, which is only a way of looking. */
 const ONE = { x: 0, y: 0, w: 1, h: 1 };
 const partOf = (v, key) => v.parts ? v.parts.find(p => p.v === key) || null : v.key === key ? ONE : null;
+const onPic = (v, key) => v.faces ? v.faces.some(F => F.wall === key) : !!partOf(v, key);     // is this wall on this picture at all
 const GEO = {};
 function G(h, v){                       // a hold's outline as fractions of picture v, or null if it is not on it
+  if (v.faces) return turnG(h, v);
   if (!v.parts) return h.v === v.key ? h : null;
   const p = partOf(v, h.v);
   if (!p) return null;
@@ -687,6 +694,157 @@ function G(h, v){                       // a hold's outline as fractions of pict
   if (GEO[k] && GEO[k].of === h) return GEO[k];
   return (GEO[k] = { of: h, p: h.p.map(q => [p.x + q[0] * p.w, p.y + q[1] * p.h]), c: [p.x + h.c[0] * p.w, p.y + h.c[1] * p.h],
     box: [p.x + h.box[0] * p.w, p.y + h.box[1] * p.h, p.x + h.box[2] * p.w, p.y + h.box[3] * p.h], area: h.area * p.w * p.h });
+}
+/* A place on a wall (fractions of that wall's own picture), as fractions of picture v; and how wide one unit of the
+   wall's picture is there, in v's widths. Null where the wall is not on v, or is behind the eye. */
+function toPic(v, key, x, y){
+  if (v.faces){
+    const t = turnFace(v, key, x, y), q = t && proj(t.H, x, y);
+    if (!q || hiddenAt(v, t, q[0], q[1], q[2])) return null;
+    const q2 = proj(t.H, x + 0.01, y);
+    return [q[0] / v.w, q[1] / v.h, q2 ? Math.hypot(q2[0] - q[0], q2[1] - q[1]) / 0.01 / v.w : 0];
+  }
+  const p = partOf(v, key);
+  return p ? [p.x + x * p.w, p.y + y * p.h, p.w] : null;
+}
+
+/* ---------- the wall as a model that turns ----------
+   A picture of this kind ("faces" in wall.json) is the wall stood up in the room: each face is a flat picture and
+   says where it stands (the room's centimetres at fractions x, y of its wall's picture are o + x*u + y*v). The eye
+   is at a climber's distance; a finger carries it round the corner of the room and tips the head. Closer and further
+   are the picture's own zoom, as on every other picture, and when it is zoomed a finger moves it instead of turning. Nothing here is kept: a hold is still a place on its own wall,
+   and this is one more way of looking at it. The picture's size is the screen's, so its fractions are of the screen. */
+const CAM = { yaw: 0, pitch: 0, ver: 0, of: '' };
+const NEAR = 14;                        // centimetres in front of the eye: nearer than this is not drawn
+let TURN = [], turning = false;
+const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const proj = (H, x, y) => { const w = H[2][0] * x + H[2][1] * y + H[2][2];
+  return w > NEAR ? [(H[0][0] * x + H[0][1] * y + H[0][2]) / w, (H[1][0] * x + H[1][1] * y + H[1][2]) / w, w] : null; };
+function inv3(m){
+  const [a, b, c] = m[0], [d, e, f] = m[1], [g, h, i] = m[2];
+  const A = e * i - f * h, B = -(d * i - f * g), C = d * h - e * g, det = a * A + b * B + c * C;
+  return [[A / det, (c * h - b * i) / det, (b * f - c * e) / det], [B / det, (a * i - c * g) / det, (c * d - a * f) / det], [C / det, (b * g - a * h) / det, (a * e - b * d) / det]];
+}
+/* the part of an outline (fractions of a wall's picture) that is in front of the eye */
+function inFront(poly, H){
+  const w = q => H[2][0] * q[0] + H[2][1] * q[1] + H[2][2] - NEAR, out = [];
+  for (let i = 0; i < poly.length; i++){
+    const a = poly[i], b = poly[(i + 1) % poly.length], wa = w(a), wb = w(b);
+    if (wa >= 0) out.push(a);
+    if ((wa >= 0) !== (wb >= 0)){ const t = wa / (wa - wb); out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); }
+  }
+  return out;
+}
+function turnPaint(){
+  const v = viewNow();
+  if (!wall || !v.faces) return;
+  if (CAM.of !== v.key){ CAM.of = v.key; CAM.yaw = v.eye.yaw; CAM.pitch = v.eye.pitch; }
+  CAM.ver++;
+  // The eye goes round a spot near the corner where the walls meet, at a climber's distance, always looking at it: at
+  // 0 it is square-on to the flat wall with the overhang off to the right at an angle, at 90 the other way about.
+  const y = CAM.yaw * Math.PI / 180, p = CAM.pitch * Math.PI / 180, e = v.eye;
+  const E = [e.c[0] - e.r * Math.sin(y), e.c[1], e.c[2] + e.r * Math.cos(y)];
+  const d = [Math.sin(y), 0, -Math.cos(y)], r = [Math.cos(y), 0, Math.sin(y)];                    // ahead and to the right, level
+  const d2 = [Math.cos(p) * d[0], Math.sin(p), Math.cos(p) * d[2]], u2 = [-Math.sin(p) * d[0], Math.cos(p), -Math.sin(p) * d[2]];
+  const f = v.h / 2 / Math.tan(v.eye.fov * Math.PI / 360), cx = v.w / 2, cy = v.h / 2;
+  const K = [[f * r[0] + cx * d2[0], f * r[1] + cx * d2[1], f * r[2] + cx * d2[2]], [-f * u2[0] + cy * d2[0], -f * u2[1] + cy * d2[1], -f * u2[2] + cy * d2[2]], d2];
+  TURN = v.faces.map(F => {
+    const c = [F.o[0] - E[0], F.o[1] - E[1], F.o[2] - E[2]];
+    const H = K.map(k => [dot3(k, F.u), dot3(k, F.v), dot3(k, c)]);
+    const mx = F.x + F.w / 2, my = F.y + F.h / 2, mid = [c[0] + mx * F.u[0] + my * F.v[0], c[1] + mx * F.u[1] + my * F.v[1], c[2] + mx * F.u[2] + my * F.v[2]];
+    const n = [F.u[1] * F.v[2] - F.u[2] * F.v[1], F.u[2] * F.v[0] - F.u[0] * F.v[2], F.u[0] * F.v[1] - F.u[1] * F.v[0]];
+    // u runs right and v runs down the picture, so u x v points into the wall: seen from in front when the eye is on the other side
+    const front = dot3(n, mid) > 0;
+    // its corners in the room (less the eye), and its plane: the side the normal points to is the side it is seen from
+    const P3 = F.poly.map(q => [c[0] + q[0] * F.u[0] + q[1] * F.v[0], c[1] + q[0] * F.u[1] + q[1] * F.v[1], c[2] + q[0] * F.u[2] + q[1] * F.v[2]]);
+    const nl = Math.hypot(n[0], n[1], n[2]) || 1, out = [-n[0] / nl, -n[1] / nl, -n[2] / nl];
+    return { F, H, I: inv3(H), depth: dot3(d2, mid), P3, out, at: P3[0], poly: front ? inFront(F.poly, H) : [],
+             box: front ? inFront([[F.x, F.y], [F.x + F.w, F.y], [F.x + F.w, F.y + F.h], [F.x, F.y + F.h]], H) : [] };
+  });
+  // The order to paint them in, far to near. Faces are big, so their middles do not say which is in front: a face is in
+  // front of another when all of it is on the side of the other's plane that the other is seen from.
+  const ahead = (a, b) => a.P3.every(q => (q[0] - b.at[0]) * b.out[0] + (q[1] - b.at[1]) * b.out[1] + (q[2] - b.at[2]) * b.out[2] > -1);
+  const left = TURN.filter(t => t.box.length >= 3).sort((a, b) => b.depth - a.depth), order = [];
+  while (left.length){
+    let i = left.findIndex(t => !left.some(q => q !== t && ahead(t, q) && !ahead(q, t)));        // nothing left is behind it
+    if (i < 0) i = 0;
+    order.push(left.splice(i, 1)[0]);
+  }
+  TURN.filter(t => t.box.length < 3).forEach(t => order.push(t));
+  order.forEach((t, i) => {
+    const el = $('faces').querySelector('[data-k="' + t.F.key + '"]'), W = wall.views.find(w => w.key === t.F.wall);
+    if (!el) return;
+    if (t.box.length < 3){ el.style.display = 'none'; return; }
+    // the element is laid out in its wall picture's own pixels, its corner at fractions F.x, F.y of that picture
+    const A = t.H.map(k => [k[0] / W.w, k[1] / W.h, k[0] * t.F.x + k[1] * t.F.y + k[2]]), s = 1 / Math.max(30, Math.abs(A[2][2]));
+    el.style.display = ''; el.style.zIndex = i + 1;
+    el.style.transform = 'matrix3d(' + [A[0][0], A[1][0], 0, A[2][0], A[0][1], A[1][1], 0, A[2][1], 0, 0, 1, 0, A[0][2], A[1][2], 0, A[2][2]].map(n => (n * s).toPrecision(10)).join(',') + ')';
+    el.style.clipPath = t.box.length === 4 && t.box.every((q, j) => Math.abs(q[0] - [t.F.x, t.F.x + t.F.w, t.F.x + t.F.w, t.F.x][j]) < 1e-9) ? 'none'
+      : 'polygon(' + t.box.map(q => ((q[0] - t.F.x) * W.w).toFixed(1) + 'px ' + ((q[1] - t.F.y) * W.h).toFixed(1) + 'px').join(',') + ')';
+  });
+}
+/* is a point of the screen, at this depth, behind some nearer face? */
+function hiddenAt(v, own, X, Y, w){
+  for (const t of TURN){
+    if (t === own || t.poly.length < 3) continue;
+    const I = t.I, k = I[2][0] * X + I[2][1] * Y + I[2][2], fx = (I[0][0] * X + I[0][1] * Y + I[0][2]) / k, fy = (I[1][0] * X + I[1][1] * Y + I[1][2]) / k;
+    if (!inPoly(t.poly, fx, fy)) continue;
+    if (t.H[2][0] * fx + t.H[2][1] * fy + t.H[2][2] < w - 6) return true;
+  }
+  return false;
+}
+/* which face a place on a wall is on: the one whose outline it is in, or else the nearest */
+function faceKey(v, key, x, y){
+  let best = null, bd = 1e9;
+  for (const F of v.faces){
+    if (F.wall !== key) continue;
+    if (inPoly(F.poly, x, y)) return F.key;
+    const dd = edgeDist(F.poly, x, y, 1, 1);
+    if (dd < bd){ bd = dd; best = F.key; }
+  }
+  return best;
+}
+function turnFace(v, key, x, y, fk){
+  fk = fk || faceKey(v, key, x, y);
+  const t = TURN.find(t => t.F.key === fk);
+  return t && t.poly.length >= 3 ? t : null;
+}
+function turnG(h, v){
+  const k = v.key + ' ' + h.id;
+  if (GEO[k] && GEO[k].of === h && GEO[k].ver === CAM.ver) return GEO[k].p ? GEO[k] : null;
+  const t = turnFace(v, h.v, h.c[0], h.c[1], h.f || (h.f = faceKey(v, h.v, h.c[0], h.c[1])));
+  const g = GEO[k] = { of: h, ver: CAM.ver, p: null };
+  if (!t) return null;
+  const pts = [];
+  for (const q of h.p){ const s = proj(t.H, q[0], q[1]); if (!s) return null; pts.push([s[0] / v.w, s[1] / v.h]); }
+  let x0 = 9, y0 = 9, x1 = -9, y1 = -9, a = 0;
+  pts.forEach((q, i) => { const n = pts[(i + 1) % pts.length]; x0 = Math.min(x0, q[0]); y0 = Math.min(y0, q[1]); x1 = Math.max(x1, q[0]); y1 = Math.max(y1, q[1]); a += q[0] * n[1] - n[0] * q[1]; });
+  if (x1 < 0 || y1 < 0 || x0 > 1 || y0 > 1) return null;                 // off the screen
+  const c = proj(t.H, h.c[0], h.c[1]);
+  if (c && hiddenAt(v, t, c[0], c[1], c[2])) return null;                 // behind a nearer face
+  g.p = pts; g.c = c ? [c[0] / v.w, c[1] / v.h] : [(x0 + x1) / 2, (y0 + y1) / 2]; g.box = [x0, y0, x1, y1]; g.area = Math.abs(a) / 2;
+  return g;
+}
+/* the wall, and the place on it, under a point of the screen (fractions of it): the nearest face that has it */
+function turnAt(v, x, y){
+  let best = null, bw = 1e9;
+  for (const t of TURN){
+    if (t.poly.length < 3) continue;
+    const I = t.I, X = x * v.w, Y = y * v.h, k = I[2][0] * X + I[2][1] * Y + I[2][2];
+    const fx = (I[0][0] * X + I[0][1] * Y + I[0][2]) / k, fy = (I[1][0] * X + I[1][1] * Y + I[1][2]) / k;
+    if (!inPoly(t.poly, fx, fy)) continue;
+    const w = t.H[2][0] * fx + t.H[2][1] * fy + t.H[2][2];
+    if (w > NEAR && w < bw){ bw = w; best = { v: t.F.wall, x: fx, y: fy }; }
+  }
+  return best;
+}
+let turnWait = 0;
+function turnSoon(){ if (!turnWait) turnWait = requestAnimationFrame(() => { turnWait = 0; turnPaint(); paintBoard(turning); }); }
+function turnBy(dyaw, dpitch){
+  const e = viewNow().eye;
+  CAM.yaw = Math.max(e.yaws[0], Math.min(e.yaws[1], CAM.yaw + dyaw));
+  CAM.pitch = Math.max(e.pitches[0], Math.min(e.pitches[1], CAM.pitch + dpitch));
+  turnSoon();
 }
 const inPoly = (p, x, y) => {
   let inside = false;
@@ -732,9 +890,11 @@ function fit(){
   if (!wall) return;                     // a turn of the phone before the wall has loaded
   const v = viewNow(), r = $('pic').getBoundingClientRect();
   if (!r.width || !r.height) return;
+  if (v.faces){ v.w = r.width; v.h = r.height; }        // the model fills whatever room there is
   k0 = Math.min(r.width / v.w, r.height / v.h);
   $('stage').style.width = v.w + 'px'; $('stage').style.height = v.h + 'px';
   place();
+  if (v.faces){ turnPaint(); turnSoon(); }           // the room it has may have changed: stand the faces again, and what is drawn on them
 }
 function place(){
   const v = viewNow(), r = $('pic').getBoundingClientRect(), s = k0 * Z.k, sw = v.w * s, sh = v.h * s;
@@ -751,6 +911,7 @@ function zoomAt(px, py, k){
 }
 function setView(key, keepZoom){
   if (!wall.views.some(v => v.key === key)) return;
+  if (fixing && wall.views.find(v => v.key === key).faces) return toast('The map is fixed on a wall\'s own picture, where the photo is.', true);
   const changed = key !== view;
   view = key;
   if (changed || !keepZoom){ Z.k = 1; Z.x = Z.y = 0; }
@@ -762,7 +923,17 @@ function setView(key, keepZoom){
    while the map is being fixed, because a hold the map lacks is only in the photo. */
 function paintPic(){
   if (!wall) return;
-  const v = viewNow(), src = v.photo && (photo || fixing) ? v.photo : v.img;
+  const v = viewNow();
+  $('faces').hidden = !v.faces; $('vimg').style.display = v.faces ? 'none' : '';
+  if (v.faces){
+    if ($('faces').dataset.of !== v.key){
+      $('faces').dataset.of = v.key;
+      $('faces').innerHTML = v.faces.map(F => { const W = wall.views.find(w => w.key === F.wall);
+        return '<img class="face" data-k="' + F.key + '" src="' + F.img + '" alt="" style="width:' + (F.w * W.w).toFixed(1) + 'px;height:' + (F.h * W.h).toFixed(1) + 'px">'; }).join('');
+    }
+    return;
+  }
+  const src = v.photo && (photo || fixing) ? v.photo : v.img;
   if ($('vimg').getAttribute('src') !== src){ $('vimg').removeAttribute('src'); $('vimg').src = src; }
 }
 $('zIn').onclick = () => { const r = $('pic').getBoundingClientRect(); zoomAt(r.width / 2, r.height / 2, Z.k * 1.6); };
@@ -780,7 +951,7 @@ $('pic').addEventListener('pointerdown', e => {
   $('pic').setPointerCapture(e.pointerId);
   fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
   const r = $('pic').getBoundingClientRect();
-  if (fingers.size === 1) g = { kind: 'one', x0: e.clientX, y0: e.clientY, t0: Date.now(), zx: Z.x, zy: Z.y, moved: 0 };
+  if (fingers.size === 1) g = { kind: 'one', x0: e.clientX, y0: e.clientY, t0: Date.now(), zx: Z.x, zy: Z.y, moved: 0, yaw: CAM.yaw, pitch: CAM.pitch };
   else if (fingers.size === 2){
     const [a, b] = [...fingers.values()];
     g = { kind: 'two', d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, k: Z.k, mx: (a.x + b.x) / 2 - r.left, my: (a.y + b.y) / 2 - r.top };
@@ -790,6 +961,13 @@ $('pic').addEventListener('pointermove', e => {
   if (!fingers.has(e.pointerId) || !g) return;
   fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
   const r = $('pic').getBoundingClientRect();
+  if (viewNow().faces && g.kind === 'one' && Z.k <= 1.01){
+    // the model, not zoomed: one finger turns it, and the wall follows the finger
+    const dx = e.clientX - g.x0, dy = e.clientY - g.y0, v = viewNow(), deg = v.eye.fov / v.h;
+    g.moved = Math.max(g.moved, Math.hypot(dx, dy));
+    if (g.moved >= 9){ turning = true; CAM.yaw = g.yaw; CAM.pitch = g.pitch; turnBy(-dx * deg, dy * deg); }
+    return;
+  }
   if (g.kind === 'two' && fingers.size >= 2){
     const [a, b] = [...fingers.values()];
     const mx = (a.x + b.x) / 2 - r.left, my = (a.y + b.y) / 2 - r.top;
@@ -806,8 +984,9 @@ function fingerUp(e){
   if (!fingers.has(e.pointerId)) return;
   fingers.delete(e.pointerId);
   const was = g;
+  if (turning && fingers.size === 0){ turning = false; turnSoon(); }
   if (fingers.size === 0) g = null;
-  else if (fingers.size === 1){ const [a] = [...fingers.values()]; g = { kind: 'one', x0: a.x, y0: a.y, t0: 0, zx: Z.x, zy: Z.y, moved: 99 }; }   // what is left of a pinch is not a tap
+  else if (fingers.size === 1){ const [a] = [...fingers.values()]; g = { kind: 'one', x0: a.x, y0: a.y, t0: 0, zx: Z.x, zy: Z.y, moved: 99, yaw: CAM.yaw, pitch: CAM.pitch }; }   // what is left of a pinch is not a tap
   if (!was || was.kind !== 'one' || e.type === 'pointercancel') return;
   const dx = e.clientX - was.x0, dy = e.clientY - was.y0, dt = Date.now() - was.t0;
   if (was.moved < 9 && dt < 600){
@@ -817,7 +996,7 @@ function fingerUp(e){
     lastTap = twice ? null : { t: now, x: e.clientX, y: e.clientY };
     if (twice) return twoTaps();
     tapAt(e.clientX - r.left, e.clientY - r.top);
-  } else if (Z.k <= 1.01 && dt < 700){
+  } else if (Z.k <= 1.01 && dt < 700 && !viewNow().faces){
     if (focus && !draft && !fixing && dy < -50 && Math.abs(dy) > Math.abs(dx)) focusOff();
     else if (!draft && !fixing && Math.abs(dx) > 60 && Math.abs(dx) > 2 * Math.abs(dy)) step(dx < 0 ? 1 : -1);
   }
@@ -847,7 +1026,11 @@ function tapAt(px, py){
   const h = holdAt(x, y, 16 / s);
   // which wall the finger is on, and where on that wall's own picture
   let wk = v.key, wx = x, wy = y;
-  if (v.parts){
+  if (v.faces){
+    const at = h ? { v: h.v, x: h.c[0], y: h.c[1] } : turnAt(v, x, y);
+    if (!at) return hint('No hold is outlined there');
+    wk = at.v; wx = at.x; wy = at.y;
+  } else if (v.parts){
     const p = h ? partOf(v, h.v) : v.parts.find(p => x >= p.x0 && x < p.x1 && y >= p.y && y <= p.y + p.h);
     if (!p) return hint('No hold is outlined there');
     wk = p.v; wx = (x - p.x) / p.w; wy = (y - p.y) / p.h;
@@ -878,7 +1061,7 @@ function focusOn(){
   focus = true;
   if (viewNow().zones && !openRoute()) setView(wall.views.find(v => !v.zones).key);
   paintAll(); requestAnimationFrame(fit);
-  hint(draft ? 'Tap a hold to mark it' : fixing ? 'Tap what is wrong' : 'Tap a hold to pick it · Swipe up to go back');
+  hint(draft ? 'Tap a hold to mark it' : fixing ? 'Tap what is wrong' : viewNow().faces ? 'Drag to turn · Pinch to come closer · Tap a hold to pick it' : 'Tap a hold to pick it · Swipe up to go back');
 }
 function focusOff(){
   if (!focus) return;
@@ -894,24 +1077,24 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && focus && $
 
 /* ---------- drawing what is on the picture ---------- */
 const pathOf = (h, v) => { const g = G(h, v); return g ? 'M' + g.p.map(q => (q[0] * v.w).toFixed(1) + ' ' + (q[1] * v.h).toFixed(1)).join('L') + 'Z' : ''; };
-const ringOf = (m, v) => { const p = partOf(v, m.v); if (!p) return '';
-  const r = 0.021 * p.w * v.w, cx = (p.x + m.x * p.w) * v.w, cy = (p.y + m.y * p.h) * v.h;
+const ringOf = (m, v) => { const p = toPic(v, m.v, m.x, m.y); if (!p) return '';
+  const r = 0.021 * p[2] * v.w, cx = p[0] * v.w, cy = p[1] * v.h;
   return 'M' + (cx - r).toFixed(1) + ' ' + cy.toFixed(1) + 'a' + r.toFixed(1) + ' ' + r.toFixed(1) + ' 0 1 0 ' + (2 * r).toFixed(1) + ' 0a' + r.toFixed(1) + ' ' + r.toFixed(1) + ' 0 1 0 ' + (-2 * r).toFixed(1) + ' 0Z'; };
 const marksNow = () => draft ? draft.marks : openRoute() ? openRoute().marks : [];
 const markView = m => m.h ? (H(m.h) ? H(m.h).v : null) : m.v;
 const markAt = (m, v) => {              // the middle of a mark, in picture v's pixels
   if (m.h){ const h = H(m.h), g = h && G(h, v); return g ? [g.c[0] * v.w, g.c[1] * v.h] : null; }
-  const p = partOf(v, m.v); return p ? [(p.x + m.x * p.w) * v.w, (p.y + m.y * p.h) * v.h] : null;
+  const p = toPic(v, m.v, m.x, m.y); return p ? [p[0] * v.w, p[1] * v.h] : null;
 };
 const byNumber = r => !!r && r.marks.some(m => m.r === 'n');
-function paintBoard(){
+function paintBoard(light){              // light: only what is drawn on the picture (while a finger is turning the model)
   if (!wall) return;
   const v = viewNow(), marks = marksNow(), r = openRoute();
   // the row over the picture: one button a picture, with how many of the route's holds (or of the picked ones) are on it
   const counted = draft || (r && !picks.length) ? marks.map(markView) : picks.map(id => HOLD[id] && HOLD[id].v);
-  $('actRow').innerHTML = wall.views.map(w => {
-    const n = w.parts ? 0 : counted.filter(k => k === w.key).length;
-    return '<button data-v="' + w.key + '"' + (w.key === view ? ' class="on"' : '') + '>' + esc(w.label) + (n ? '<i>' + n + '</i>' : '') + '</button>';
+  if (!light) $('actRow').innerHTML = wall.views.map(w => {
+    const n = w.parts || w.faces ? 0 : counted.filter(k => k === w.key).length;
+    return '<button data-v="' + w.key + '" class="' + (w.key === view ? 'on' : '') + (w.parts || w.faces ? ' sm' : '') + '">' + esc(w.label) + (n ? '<i>' + n + '</i>' : '') + '</button>';
   }).join('');
   let svg = '';
   if (v.zones){
@@ -926,13 +1109,13 @@ function paintBoard(){
       seen[z.to] = 1;
     }
   } else {
-    const here = marks.filter(m => partOf(v, markView(m)));
+    const here = marks.filter(m => onPic(v, markView(m)) && (m.h ? G(H(m.h), v) : toPic(v, m.v, m.x, m.y)));
     const picking = focus && !draft && !fixing;
     const d = m => m.h ? pathOf(H(m.h), v) : ringOf(m, v);
     if (dim && r && !focus && here.length)
       svg += '<mask id="cut"><rect width="' + v.w + '" height="' + v.h + '" fill="#fff"/>' + here.map(m => '<path d="' + d(m) + '" fill="#000"/>').join('') + '</mask>' +
              '<rect width="' + v.w + '" height="' + v.h + '" fill="#000" fill-opacity=".45" mask="url(#cut)"/>';
-    if (showAll || focus)                              // in focus the outlines show what can be tapped
+    if ((showAll || focus) && !turning)                // in focus the outlines show what can be tapped (not while the model is being turned: too many to redraw)
       svg += LIVE.filter(h => G(h, v) && !(fixing && h.fix)).map(h => '<path class="o-all" d="' + pathOf(h, v) + '"/>').join('');
     if (fixing)
       svg += (snap.fixes || []).map(f => {
@@ -961,7 +1144,7 @@ function paintBoard(){
   }
   $('ov').setAttribute('viewBox', '0 0 ' + v.w + ' ' + v.h);
   $('ov').innerHTML = svg;
-  paintBars();
+  if (!light) paintBars();
 }
 $('actRow').onclick = e => { const b = e.target.closest('button[data-v]'); if (b) setView(b.dataset.v); };
 
@@ -1039,7 +1222,8 @@ function open(id, stay){
     // on more than one wall: the picture that has them side by side, if there is one
     const whole = keys.length > 1 && wall.views.find(w => w.parts && keys.every(k => w.parts.some(p => p.v === k)));
     const best = whole ? whole.key : keys.sort((a, b) => count[b] - count[a])[0];
-    if (best && !(stay && (count[view] || (viewNow().parts && keys.some(k => partOf(viewNow(), k)))))) setView(best);
+    if (viewNow().faces){ if (!stay){ Z.k = 1; Z.x = Z.y = 0; place(); } }          // the model shows every wall: stay on it
+    else if (best && !(stay && (count[view] || (viewNow().parts && keys.some(k => partOf(viewNow(), k)))))) setView(best);
   }
   if (!stay) showPage('board');
   paintAll();
@@ -1348,7 +1532,7 @@ $('fixBtn').onclick = async () => {
   if (!needMe()) return;
   await knowMe();
   fixing = true; draft = null; picks = [];
-  if (viewNow().zones) setView(wall.views.find(v => !v.zones).key);
+  if (viewNow().zones || viewNow().faces) setView(wall.views.find(v => !v.zones).key);
   showPage('board'); focus = true; paintAll(); requestAnimationFrame(fit);
   hint('Tap what is wrong');
 };

@@ -292,6 +292,18 @@ wall and a note. Once saved everyone has it. *Search routes* lists the routes th
 every picked hold. Making a route is deliberately not on the front of the page: Will asked
 for it to be found the way the MoonBoard's custom route is.
 
+**The wall as a model.** A fifth picture, **3D**, is the wall stood up in the room. Each flat
+face (the flat wall, the kicker, the overhanging panel, the roof extension and the four
+sides of the island box) is a picture of its own, see-through round its edge, and
+`wall.json` says where each stands (`faces`: the room's centimetres at a place on the face).
+The eye is at a climber's distance and looks at the corner where the walls meet: a finger
+carries it round, from square-on to the flat wall to square-on to the overhang, and tips
+the head. Zoom is the picture's own, as everywhere else, and when it is zoomed a finger
+moves the picture instead of turning the wall. Holds are picked and routes shown on it as
+on any picture, and a route opened while it is showing stays on it. It keeps nothing of
+its own: a hold is still a place on its wall. The map is not fixed on it (that needs the
+photo). The faces are drawn by the browser (CSS `matrix3d`), farthest first.
+
 **A climb by number.** Some routes are hands in order, each hold with its number, any feet.
 In the marking bar the **1 2 3** brush gives the next tap the lowest number the route does
 not have yet, so a new one counts 1, 2, 3 and one with numbers missing is filled gap by
