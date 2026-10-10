@@ -201,7 +201,8 @@
   body.focus #numBarF:not([hidden]){display:flex;position:absolute;left:6px;right:6px;bottom:calc(env(safe-area-inset-bottom) + 8px);height:46px;z-index:2}
   #filtBtn{position:relative;flex:none;width:38px;height:38px;padding:0;font-size:16px;line-height:1;border-radius:9px;display:none}
   #filtBtn.on{background:var(--panel2);color:var(--ink);border-color:var(--box2)}
-  #filtBtn.dot::after{content:"";position:absolute;right:5px;top:5px;width:8px;height:8px;border-radius:50%;background:#22c55e}
+  #filtBtn.dot{color:var(--ink);border-color:var(--dimmer)}
+  #filtBtn.dot::after{content:"";position:absolute;right:5px;top:5px;width:6px;height:6px;border-radius:50%;background:#22c55e}
   #toBoard{flex:none;width:auto;height:38px;padding:0 10px;font-size:13px;white-space:nowrap;display:none}
   #qBox{flex:1;min-width:0;height:38px;display:flex;align-items:center;gap:5px;padding:0 4px 0 9px;background:var(--panel2);
         border:1px solid var(--box);border-radius:9px}
@@ -247,8 +248,25 @@
   #fixWall{display:flex;gap:6px;margin-bottom:8px}
   #fixWall button{flex:1 1 0;min-width:0;height:34px;padding:0 6px;font-size:13px;border-radius:9px;background:var(--panel)}
   #fixWall button.on{background:var(--ink);border-color:var(--ink);color:var(--onink)}
-  #filters{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding-top:6px}
-  #filters select{padding:8px 10px;font-size:16px}
+  /* ---- the filters, the MoonBoard page's: every one on a single line, under a line for the grades ---- */
+  .four{display:grid;grid-template-columns:1.15fr 1.15fr .85fr 1fr;gap:5px}
+  #filters{border-top:1px solid var(--edge);padding-top:6px;margin-top:7px}
+  #filters select{text-align:center;text-align-last:center;height:38px;padding:0 8px;font-size:16px;border-radius:9px}
+  #filters .lbl{margin-bottom:2px;margin-top:0}
+  /* grades, by sliding: a line with a dot at each end of the range. The row is as tall as a fingertip so either dot is
+     easy to catch, and it takes every touch for itself: a drag along it must not scroll anything or turn the page.
+     While a dot is held it grows a little and says its grade above itself, where the finger does not cover it. */
+  #gSlide{position:relative;height:40px;margin:0 14px 2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  #gSlide .rail{position:absolute;left:-6px;right:-6px;top:50%;height:4px;margin-top:-2px;border-radius:2px;background:var(--box2)}
+  #gSlide .fill{position:absolute;top:0;bottom:0;margin:0 6px;border-radius:2px;background:var(--ink)}
+  #gSlide .dot{position:absolute;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:var(--ink);
+               box-shadow:0 0 0 3px var(--bg),0 1px 5px rgba(0,0,0,.35);transition:transform .1s ease-out}
+  #gSlide .dot.on{transform:scale(1.18);z-index:2}
+  #gSlide .dot span{position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);display:none;padding:3px 7px;border-radius:6px;
+                    background:var(--ink);color:var(--onink);font:700 11px ui-monospace,Menlo,monospace;white-space:nowrap}
+  #gSlide .dot span.l{left:-4px;transform:none}          /* near an end of the line: keep the words on the screen */
+  #gSlide .dot span.r{left:auto;right:-4px;transform:none}
+  #gSlide .dot.on span{display:block}
   #listCap{display:none}
   body.listPage #listCap{display:flex;align-items:baseline;gap:8px;height:20px;margin-bottom:8px;font-size:11px;letter-spacing:.13em;
        text-transform:uppercase;color:var(--dim)}
@@ -283,7 +301,6 @@
   body.listPage #bar{padding-top:calc(env(safe-area-inset-top) + 12px)}
   body.listPage #filtBtn,body.listPage #toBoard{display:block}
   body.listPage #quick{display:none}
-  body.listPage #top{border-bottom:0;margin-bottom:0}
   body.logPage #boardWrap,body.logPage #bar,body.logPage #scroll,
   body.setPage #boardWrap,body.setPage #bar,body.setPage #scroll{display:none !important}
   body.logPage #top,body.setPage #top{border-bottom:0;margin-bottom:0}
@@ -558,22 +575,31 @@
     </div>
   </div>
   <div id="filters" hidden>
-    <select id="fMin" aria-label="Easiest grade"></select>
-    <select id="fMax" aria-label="Hardest grade"></select>
-    <select id="fWho" aria-label="Whose routes"></select>
-    <select id="fMine" aria-label="Which routes">
-      <option value="all">Sent or not</option>
-      <option value="todo">Not sent by me</option>
-      <option value="sent">Sent by me</option>
-      <option value="gone">Taken down</option>
-    </select>
-    <select id="fSort" aria-label="Order" style="grid-column:1 / -1">
-      <option value="new">Newest first</option>
-      <option value="sent">Most climbed first</option>
-      <option value="up">Easiest first</option>
-      <option value="down">Hardest first</option>
-      <option value="name">A&ndash;Z</option>
-    </select>
+    <!-- Grades, by sliding, as on the MoonBoard page: two dots on a line, the easiest wanted on the left and the hardest
+         on the right. It is the same choice as From and To under it, which follow as the dots move. Out of the way of
+         a screen reader: the two pickers say it already. -->
+    <div id="gSlide" aria-hidden="true">
+      <div class="rail"><div class="fill"></div></div>
+      <div class="dot" data-end="lo"><span></span></div>
+      <div class="dot" data-end="hi"><span></span></div>
+    </div>
+    <div class="four">
+      <div><div class="lbl">From</div><select id="fMin" aria-label="Easiest grade"></select></div>
+      <div><div class="lbl">To</div><select id="fMax" aria-label="Hardest grade"></select></div>
+      <div><div class="lbl">Sent</div><select id="fMine" aria-label="The routes I have sent">
+        <option value="all">Show</option>
+        <option value="todo">Hide</option>
+        <option value="sent">Only</option>
+        <option value="gone">Taken down</option>
+      </select></div>
+      <div><div class="lbl">Sort</div><select id="fSort" aria-label="Order">
+        <option value="new">Newest</option>
+        <option value="sent">Popular</option>
+        <option value="up">Easiest</option>
+        <option value="down">Hardest</option>
+        <option value="name">A&ndash;Z</option>
+      </select></div>
+    </div>
   </div>
 </div>
 </div>
@@ -743,7 +769,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-10 22:01';
+const BUILD = '2026-10-10 23:47';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -1712,14 +1738,14 @@ function paintBars(){
 }
 
 /* ---------- opening and stepping through routes ---------- */
-const FILTERS = { q: '', min: GRADE_MIN, max: GRADE_MAX, who: '', mine: 'all', sort: 'new' };
-const narrowed = () => FILTERS.min > GRADE_MIN || FILTERS.max < GRADE_MAX || !!FILTERS.who || FILTERS.mine !== 'all';
+const FILTERS = { q: '', min: GRADE_MIN, max: GRADE_MAX, mine: 'all', sort: 'new' };
+let gradeLo = GRADE_MIN, gradeHi = GRADE_MAX;            // the easiest and the hardest route on the wall: the two ends of the line of grades
+const narrowed = () => FILTERS.min > gradeLo || FILTERS.max < gradeHi || FILTERS.mine !== 'all';
 function shown(){
   const q = FILTERS.q.trim().toLowerCase();
   const list = snap.routes.filter(r => {
     if (FILTERS.mine === 'gone' ? !r.retired : r.retired) return false;
     if (r.grade < FILTERS.min || r.grade > FILTERS.max) return false;
-    if (FILTERS.who && r.setter !== FILTERS.who) return false;
     if (FILTERS.mine === 'todo' && me && firstSend(me, r.id)) return false;
     if (FILTERS.mine === 'sent' && !(me && firstSend(me, r.id))) return false;
     if (holdFilter.length && !holdFilter.every(id => r.marks.some(m => m.h && (H(m.h) || {}).id === id))) return false;
@@ -2400,27 +2426,92 @@ function paintList(){
   box.querySelectorAll('.gd').forEach(p => paintPill(p, +p.dataset.g));
 }
 $('results').onclick = e => { const row = e.target.closest('.rt'); if (row) open(+row.dataset.id); };
+/* ---------- the filters: the MoonBoard page's, with this wall's grades ----------
+   Will, 2026-10-10: "The sun board routes page filters looks differently also no slider. Match it with the moonboard
+   app." So: a line with a dot at each end of the range of grades, over one row of four. From and To are the same
+   choice as the two dots; Sent shows, hides or keeps only the routes I have sent (and is where the routes taken down
+   are found); Sort is the order. The line runs from the easiest route on the wall to the hardest, as the MoonBoard
+   page's runs over the grades its board has, so none of it is dead. An end left alone stays an end when a route is
+   added beyond it. There is no picker of setters any more: the search box finds a setter by name. */
 function fillFilters(){
-  const gs = []; for (let k = GRADE_MIN; k <= GRADE_MAX; k++) gs.push(k);
-  $('fMin').innerHTML = gs.map(k => '<option value="' + k + '">From ' + vName(k) + '</option>').join('');
-  $('fMax').innerHTML = gs.map(k => '<option value="' + k + '">To ' + vName(k) + '</option>').join('');
+  const gs = snap.routes.map(r => r.grade);
+  const lo = gs.length ? Math.min(...gs) : GRADE_MIN, hi = gs.length ? Math.max(...gs) : GRADE_MAX;
+  const open = [FILTERS.min <= gradeLo, FILTERS.max >= gradeHi];
+  gradeLo = lo; gradeHi = hi;
+  FILTERS.min = open[0] ? lo : Math.max(lo, Math.min(hi, FILTERS.min));
+  FILTERS.max = open[1] ? hi : Math.max(lo, Math.min(hi, FILTERS.max));
+  const key = lo + ':' + hi;
+  if ($('fMin').dataset.key !== key){      // only when the range has changed: filling a list that is open under a finger shuts it
+    $('fMin').dataset.key = key;
+    let opts = '';
+    for (let k = lo; k <= hi; k++) opts += '<option value="' + k + '">' + vName(k) + '</option>';
+    $('fMin').innerHTML = opts; $('fMax').innerHTML = opts;
+  }
   $('fMin').value = FILTERS.min; $('fMax').value = FILTERS.max;
+  paintGradeSlide(slideHeld);
 }
-function fillSetters(){
-  const set = [...new Set(snap.routes.map(r => r.setter))].sort((a, b) => a.localeCompare(b));
-  if ($('fWho').dataset.key === set.join('\n')) return;
-  $('fWho').dataset.key = set.join('\n');
-  $('fWho').innerHTML = '<option value="">Anyone’s routes</option>' + set.map(n => '<option>' + esc(n) + '</option>').join('');
-  if (FILTERS.who && !set.includes(FILTERS.who)) FILTERS.who = '';
-  $('fWho').value = FILTERS.who;
+/* Two dots on a line over the From and To pickers: drag the left one to the easiest grade wanted and the right one to
+   the hardest. The dots cannot pass each other. When they sit on the same grade, the way the finger first moves says
+   which one it took. A tap on the line brings the nearer dot to it. */
+let slideHeld = null;
+function paintGradeSlide(held){
+  const box = $('gSlide'), n = gradeHi - gradeLo;
+  box.hidden = n < 1;                     // one grade on the wall: nothing to slide
+  if (n < 1) return;
+  const lo = FILTERS.min, hi = FILTERS.max, at = v => (v - gradeLo) / n * 100, fill = box.querySelector('.fill');
+  fill.style.left = at(lo) + '%';
+  fill.style.width = (at(hi) - at(lo)) + '%';
+  box.querySelectorAll('.dot').forEach(d => {
+    const v = d.dataset.end === 'lo' ? lo : hi, t = d.querySelector('span');
+    d.style.left = at(v) + '%';
+    d.classList.toggle('on', held === d.dataset.end);
+    t.textContent = vName(v);
+    t.className = at(v) < 20 ? 'l' : at(v) > 80 ? 'r' : '';
+  });
 }
+(function gradeSlide(){
+  const box = $('gSlide');
+  let down = false, end = null, x0 = 0, raf = 0;
+  const frac = x => { const b = box.getBoundingClientRect(); return Math.min(1, Math.max(0, (x - b.left) / b.width)); };
+  const val = x => Math.round(gradeLo + frac(x) * (gradeHi - gradeLo));
+  const nearer = x => {
+    const b = box.getBoundingClientRect(), n = Math.max(1, gradeHi - gradeLo);
+    const px = v => b.left + (v - gradeLo) / n * b.width;
+    const dl = Math.abs(x - px(FILTERS.min)), dh = Math.abs(x - px(FILTERS.max));
+    return dl < dh ? 'lo' : dh < dl ? 'hi' : null;       // null: together, or dead between them
+  };
+  const move = x => {
+    if (end === null){                                    // which of the two? the first movement says
+      if (Math.abs(x - x0) < 4) return;
+      end = x < x0 ? 'lo' : 'hi';
+    }
+    const lo = FILTERS.min, hi = FILTERS.max;
+    const v = end === 'lo' ? Math.min(val(x), hi) : Math.max(val(x), lo);
+    const changed = v !== (end === 'lo' ? lo : hi);
+    if (changed){ if (end === 'lo') FILTERS.min = v; else FILTERS.max = v; $('fMin').value = FILTERS.min; $('fMax').value = FILTERS.max; }
+    slideHeld = end; paintGradeSlide(end);
+    if (!changed) return;
+    cancelAnimationFrame(raf);                            // the list catches up once a frame, not once a pixel
+    raf = requestAnimationFrame(() => { paintList(); paintGradeSlide(slideHeld); });
+  };
+  box.addEventListener('pointerdown', e => {
+    if (e.button) return;
+    down = true; x0 = e.clientX; end = nearer(e.clientX);
+    try{ box.setPointerCapture(e.pointerId); }catch(err){}
+    if (end) move(e.clientX);                             // a tap on the line brings the nearer dot to it
+    e.preventDefault();
+  });
+  box.addEventListener('pointermove', e => { if (down) move(e.clientX); });
+  const up = () => { if (!down) return; down = false; end = null; slideHeld = null; paintGradeSlide(null); };
+  box.addEventListener('pointerup', up);
+  box.addEventListener('pointercancel', up);
+})();
 $('q').oninput = () => { FILTERS.q = $('q').value; paintList(); };
 $('qX').onclick = () => { $('q').value = ''; FILTERS.q = ''; paintList(); };
 /* On the board the row shows the open route, and a tap on it is the way to the search. */
 $('qBox').onclick = e => { if (page !== 'list' && e.target !== $('qX')){ const had = $('qBox').classList.contains('now'); showPage('list'); if (!had) $('q').focus(); } };
-$('fMin').onchange = () => { FILTERS.min = +$('fMin').value; if (FILTERS.max < FILTERS.min){ FILTERS.max = FILTERS.min; $('fMax').value = FILTERS.max; } paintList(); };
-$('fMax').onchange = () => { FILTERS.max = +$('fMax').value; if (FILTERS.min > FILTERS.max){ FILTERS.min = FILTERS.max; $('fMin').value = FILTERS.min; } paintList(); };
-$('fWho').onchange = () => { FILTERS.who = $('fWho').value; paintList(); };
+$('fMin').onchange = () => { FILTERS.min = +$('fMin').value; if (FILTERS.max < FILTERS.min){ FILTERS.max = FILTERS.min; $('fMax').value = FILTERS.max; } paintGradeSlide(null); paintList(); };
+$('fMax').onchange = () => { FILTERS.max = +$('fMax').value; if (FILTERS.min > FILTERS.max){ FILTERS.min = FILTERS.max; $('fMin').value = FILTERS.min; } paintGradeSlide(null); paintList(); };
 $('fMine').onchange = () => { FILTERS.mine = $('fMine').value; paintList(); };
 $('fSort').onchange = () => { FILTERS.sort = $('fSort').value; paintList(); };
 $('holdX').onclick = () => { holdFilter = []; paintList(); };
@@ -2646,7 +2737,7 @@ $('pgDots').onclick = e => { const b = e.target.closest('button[data-go]'); if (
 let sw = null;
 document.addEventListener('touchstart', e => {
   const t = e.target;
-  sw = (focus || e.touches.length !== 1 || t.closest('#pic, #sheet, #quick, #sendFan, select, input, #grades')) ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
+  sw = (focus || e.touches.length !== 1 || t.closest('#pic, #sheet, #quick, #sendFan, select, input, #grades, #gSlide')) ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
 }, { passive: true });
 document.addEventListener('touchend', e => {
   if (!sw) return;
@@ -2658,7 +2749,7 @@ document.addEventListener('touchend', e => {
 }, { passive: true });
 function paintAll(){
   if (!wall) return;
-  paintMe(); fillSetters(); paintBoard(); paintList();
+  paintMe(); fillFilters(); paintBoard(); paintList();
   if (page === 'log') paintLog();
 }
 

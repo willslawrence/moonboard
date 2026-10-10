@@ -376,6 +376,14 @@ are what matter.
 **Changing a route.** Only its setter is offered **Change it** and **Take it down**, on
 the log page. A route taken down leaves the list and keeps what was logged on it.
 
+**The filters on the Routes page are the MoonBoard page's.** A line with two dots to drag
+for the easiest and hardest grade wanted, over one row of four: **From** and **To**, which
+say the same as the dots, **Sent** (show, hide, or only what you have climbed; the routes
+taken down are found here too) and **Sort** (newest, popular, easiest, hardest, A–Z). The
+line runs from the easiest route on the wall to the hardest, so none of it is dead, and
+an end left alone moves with the wall when a route is added beyond it. There is no picker
+of setters: the search box finds a setter by name.
+
 **Logbook and points.** A try, or a send with how many goes it took, from **Quick log** on
 the board or from the log page. Quick log is the MoonBoard's (see *Quick log* above), with
 the same words: a press swings out **Try** and **Send**, a tap on one or a slide on to it
