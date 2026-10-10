@@ -315,6 +315,45 @@
   .kv b{font-weight:600}
   .kv.me b{color:var(--blue-ink)}
   .none{font-size:13px;color:var(--dimmer);padding:8px 2px;line-height:1.5}
+  /* ---- your own logbook, as on the MoonBoard page: this session route by route with a dot for every go and three
+     numbers under it, then a line for each earlier session, which opens to its routes ---- */
+  #lpHero{border:1px solid var(--edge);border-radius:14px;background:var(--panel);padding:13px 14px;margin-top:12px}
+  #lpHero .kick{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+  #lpHero .nums{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:11px}
+  #lpHero .nums b{display:block;font-size:34px;line-height:36px;font-weight:700;letter-spacing:-.02em}
+  #lpHero .nums span{display:block;margin-top:3px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dimmer)}
+  #lpStrip{display:flex;flex-wrap:wrap;gap:5px;margin-top:13px}
+  #lpStrip:empty{display:none}
+  /* a go: a ring for a try, filled green for a send, gold for a flash */
+  .go{flex:none;width:10px;height:10px;border-radius:50%;box-sizing:border-box;border:1.5px solid var(--dimmer)}
+  .go.s{border-color:#22c55e;background:#22c55e}
+  .go.f{border-color:#eab308;background:#eab308}
+  /* a route in a session: its name and grade, then its goes as dots and how it went */
+  .lprow{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line)}
+  .lprow:active{background:var(--panel)}
+  .lprow .n{flex:1;min-width:0}
+  .lprow .n b{display:block;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lprow .n span{display:flex;align-items:center;gap:7px;margin-top:3px;font-size:11px;color:var(--dimmer)}
+  .lprow .n .gd{font-size:9px}
+  .lprow .n em{font-style:normal}
+  .lprow .r{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:5px;max-width:56%}
+  .lprow .dots{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px}
+  .lprow .w{font:700 10px ui-monospace,Menlo,monospace;color:var(--dim);white-space:nowrap}
+  .lprow.sent .w{color:var(--green-ink)}
+  /* an earlier session: one line, and its routes when it is tapped */
+  .lpses{border-bottom:1px solid var(--line)}
+  .lpses > .h{display:flex;align-items:center;gap:9px;padding:11px 2px}
+  .lpses > .h:active{background:var(--panel)}
+  .lpses > .h .cv{flex:none;color:var(--dimmer);font-size:13px;transition:transform .15s}
+  .lpses.open > .h .cv{transform:rotate(90deg)}
+  .lpses > .h b{flex:1;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lpses > .h .s{flex:none;font-size:12px;color:var(--dim)}
+  .lpses > .h .gd{font-size:9px}
+  .lpses > .body{padding:0 0 4px 12px}
+  .lpses > .body .lprow:last-child{border-bottom:0}
+  #logPage .more{display:block;width:100%;margin:10px 0 0}
+  #lpFoot{margin-top:16px;font-size:12px;color:var(--dimmer);line-height:1.7;text-align:center}
+  #lpFoot:empty{display:none}
 
   /* ---- the page switcher: the same bar as on the MoonBoard page ---- */
   #pgDots{flex:none;display:flex;gap:4px;margin:4px 40px calc(env(safe-area-inset-bottom) + 8px);padding:3px;
@@ -371,15 +410,17 @@
   #grades::-webkit-scrollbar{display:none}
   #grades button{flex:none;min-width:48px;padding:9px 6px;font-family:ui-monospace,Menlo,monospace}
   #saveErr{color:#ef4444;font-size:13px;min-height:18px;margin:8px 0 0}
-  /* ---- a go against the clock: the clock on the picture, big, with the one button that matters when you get back
-     to the phone; and the sheet that asks how far ---- */
-  #timer{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;width:min(84%,320px);padding:14px 16px 10px;border-radius:20px;
-       background:rgba(14,14,16,.86);color:#fff;text-align:center;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 10px 34px rgba(0,0,0,.5)}
+  /* ---- a go against the clock: only the time, at the top of the picture between its two corner buttons, with nothing
+     behind it. Whoever holds the phone is working the slider and pointing out the numbers to come, so the wall and the
+     slider stay in sight (Will, 2026-10-10: "the screen can't be blocked by the timer"). A finger goes through the
+     time to the picture; only Stop, beside it, takes a tap. Then the sheet that asks how far ---- */
+  #timer{position:absolute;left:50%;top:4px;transform:translateX(-50%);z-index:4;display:flex;align-items:center;gap:9px;
+       pointer-events:none;color:#fff;white-space:nowrap}
   #timer[hidden]{display:none}
-  #tmName{font-size:12px;font-weight:600;opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #tmClock{font:800 68px/1.05 ui-monospace,Menlo,monospace;letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin:4px 0 10px}
-  #tmStop{width:100%;height:68px;border:0;border-radius:15px;background:#dc2626;color:#fff;font-size:24px;font-weight:800}
-  #tmDrop{width:auto;margin:8px auto 0;padding:4px 10px;border:0;background:transparent;color:rgba(255,255,255,.62);font-size:12px}
+  #tmClock{font:800 40px/1 ui-monospace,Menlo,monospace;letter-spacing:-.03em;font-variant-numeric:tabular-nums;
+       text-shadow:0 0 2px #000,0 0 3px #000,0 1px 7px rgba(0,0,0,.85),0 0 18px rgba(0,0,0,.55)}
+  #tmStop{pointer-events:auto;width:auto;height:32px;padding:0 14px;border:0;border-radius:16px;background:#dc2626;color:#fff;
+       font-size:14px;font-weight:800;box-shadow:0 1px 7px rgba(0,0,0,.55)}
   #goSheet{position:fixed;left:0;right:0;bottom:0;z-index:71;max-height:92dvh;overflow-y:auto;background:var(--bg);
          border-radius:16px 16px 0 0;border-top:1px solid var(--edge);padding:14px var(--pad) calc(env(safe-area-inset-bottom) + 14px)}
   #goSheet h2{margin:0 0 4px;font-size:18px}
@@ -416,7 +457,7 @@
     <div id="pic">
       <div id="stage"><div id="faces" hidden></div><img id="vimg" alt=""><svg id="ov" xmlns="http://www.w3.org/2000/svg"></svg></div>
       <div id="picNote"></div>
-      <div id="timer" hidden><div id="tmName"></div><div id="tmClock">0:00</div><button id="tmStop">Stop</button><button id="tmDrop">Throw this go away</button></div>
+      <div id="timer" hidden><b id="tmClock">0:00</b><button id="tmStop">Stop</button></div>
       <div id="turnBar" hidden></div>
     </div>
     <div id="pickBar">
@@ -523,8 +564,20 @@
   <div id="lpHist"></div>
   <div class="sublbl" id="lpWhoLbl"></div>
   <div id="lpWho"></div>
-  <div class="lbl">This session</div>
+  <div class="lbl" id="lpSesLbl">This session</div>
   <div id="lpSession"></div>
+  <div id="lpHero" hidden>
+    <div class="kick" id="lpKick"></div>
+    <div class="nums">
+      <div><b id="lpSends">0</b><span>sends</span></div>
+      <div><b id="lpTries">0</b><span>tries</span></div>
+      <div><b id="lpHard">&ndash;</b><span>hardest</span></div>
+    </div>
+    <div id="lpStrip"></div>
+  </div>
+  <div class="lbl" id="lpEarLbl" hidden>Earlier sessions</div>
+  <div id="lpEarlier"></div>
+  <div id="lpFoot"></div>
   <div class="lbl">Points on the Sun board</div>
   <div id="lpPoints"></div>
   <p class="hint">A route scores once, the first time you send it: its V number plus one (V0 is 1, V4 is 5), and one more for a flash. Tries score nothing. These are the Sun board's own points and are not added to MoonBoard points.</p>
@@ -641,7 +694,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-10 20:55';
+const BUILD = '2026-10-10 21:34';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -671,6 +724,8 @@ let brush = 's';
 let fixing = false, fixKind = 'add', fixSize = 'm';      // putting the map of holds right (see "fixing the map")
 let dim = ls.get('sb-dim') !== '0', showAll = ls.get('sb-all') === '1';
 let myLog = [], crewLog = [], logAt = 0, mine = [];     // mine: what this phone has logged since it opened, newest last
+let lpShown = 12, lookFor = null;                       // how many earlier sessions the logbook lists; a route opened from it, for the board to look at
+const lpOpen = new Set();                               // the earlier sessions that are open, by the time of their last go: the page is painted again every minute
 
 /* ---------- the store ---------- */
 async function call(path, body){
@@ -744,9 +799,12 @@ const when = iso => {
 
 /* ---------- who ---------- */
 function setMe(name, quiet){
+  // somebody else: their own logbook, and nothing of the last climber's left to undo (Undo takes off the newest go of whoever is picked)
+  if ((name || '') !== me){ mine = []; myLog = []; logAt = 0; lpOpen.clear(); lpShown = 12; }
   me = name || '';
   ls.set('mb-me', me);                      // the MoonBoard page reads the same key
   paintMe(); paintAll();
+  if (page === 'log') loadLog();
   if (!quiet) knowMe();
 }
 function paintMe(){
@@ -1748,7 +1806,9 @@ const SEND_LABELS = { flash: 'Flash', '2nd': '2nd go', '3rd': '3rd go', '4+': '4
 /* ---------- a go against the clock ----------
    Will, 2026-10-10, of the climbs by number: "this climb sequence is really hard. You don't always finish it, but
    maybe if you finish it, you finish it faster than the previous time." So on such a route Quick log has a third
-   button, Start. It starts a clock on the picture; you climb; back at the phone you press Stop, say which number you
+   button, Start. It starts a clock at the top of the picture, small and with nothing behind it, because somebody
+   else is likely to be holding the phone, working the slider and pointing out the numbers to come ("the screen can't
+   be blocked by the timer"). You climb; back at the phone you, or they, press Stop, say which number you
    reached and put the time right if you were slow to press either button, and that is logged: how far, and how
    long ("5 minutes to hold 55"). Reaching the route's last number is a send, as any send is; stopping short of it
    is a try. Either is kept with its number and its time, and a climber's best go, the furthest and of those the
@@ -1770,11 +1830,10 @@ async function awake(on){                 // the screen stays on while the clock
   }catch(e){}
 }
 function paintTimer(){
-  const on = !!timing && !timing.t1, r = on && routeById(timing.id);
+  const on = !!timing && !timing.t1;
   $('timer').hidden = !on;
   clearInterval(ticking); ticking = 0;
   if (!on) return;
-  $('tmName').textContent = r ? r.name : '';
   const show = () => { if (timing) $('tmClock').textContent = clock((Date.now() - timing.t0) / 1000); };
   show(); ticking = setInterval(show, 250);
 }
@@ -1807,7 +1866,6 @@ function paintGo(){
   $('goErr').textContent = '';
 }
 $('tmStop').onclick = stopClock;
-$('tmDrop').onclick = () => { if (confirm('Throw this go away?')) dropClock(); };
 $('goNDown').onclick = () => { go.i = Math.max(0, go.i - 1); paintGo(); };
 $('goNUp').onclick = () => { go.i = Math.min(go.L.length - 1, go.i + 1); paintGo(); };
 $('goTop').onclick = () => { go.i = go.L.length - 1; paintGo(); };
@@ -2009,11 +2067,139 @@ $('lpUndo').onclick = async () => {
 async function loadLog(){
   if (Date.now() - logAt < 20000) return;
   logAt = Date.now();
+  const who = me;
   try{
-    const [a, b] = await Promise.all([me ? call('/log?limit=300&person=' + encodeURIComponent(me)) : { entries: [] }, call('/log?limit=40')]);
+    const [a, b] = await Promise.all([me ? call('/log?limit=1000&person=' + encodeURIComponent(me)) : { entries: [] }, call('/log?limit=40')]);
+    if (who !== me) return;                 // the name was changed while it was on its way: that one's log has been asked for since
     myLog = a.entries; crewLog = b.entries;
     if (page === 'log') paintLog();
   }catch(e){}
+}
+/* ---------- your own logbook: sessions ----------
+   The MoonBoard page's, brought across (Will, 2026-10-10: "no way to see only yours, like sessions and stuff, just like
+   the moon board. It should copy that"). A session is a run of goes with no gap of four hours in it, so an evening that
+   runs past midnight stays one session. The latest is "this session" while its last go is under eight hours old; after
+   that it is the newest of the earlier ones, each a line that opens to its routes. A go against the clock is said in
+   words beside its dots: how far, and how long. Everything comes from the one log the page already asks for. */
+const SESSION_GAP = 4 * 3600e3, SESSION_LIVE = 8 * 3600e3;
+const SESSION_SAID = { sflash: 'session flash', s2nd: 'session 2nd', s3rd: 'session 3rd', 's4+': 'session 4+' };
+const logTime = e => Date.parse(e.t) || 0;
+/* A flash is the first go ever. Which of a climber's sends of a route came first is worked out from the count the page
+   holds for everyone: any later one is a session send, as the MoonBoard page says it. */
+function tagRepeats(entries){
+  const newer = {};
+  entries.slice().sort((a, b) => logTime(b) - logTime(a)).forEach(e => {
+    e.rep = false;
+    if (e.result === 'try') return;
+    const k = e.person + '|' + e.route, st = statOf(e.person, e.route), total = st && st.s ? st.s.length : 0, c = newer[k] || 0;
+    e.rep = total - 1 - c > 0;
+    newer[k] = c + 1;
+  });
+  return entries;
+}
+function logSessions(entries){             // newest first in; sessions newest first out
+  const out = [];
+  let cur = null, last = 0;
+  entries.forEach(e => {
+    const t = logTime(e);
+    if (!cur || last - t > SESSION_GAP){ cur = { t0: t, t1: t, rows: [] }; out.push(cur); }
+    cur.rows.push(e); cur.t0 = t; last = t;
+  });
+  return out;
+}
+function sessionRoutes(s){                 // each route once, latest first, its goes in the order they happened
+  const by = new Map();
+  s.rows.slice().reverse().forEach(e => {
+    if (!by.has(e.route)) by.set(e.route, { id: e.route, goes: [], t: 0 });
+    const x = by.get(e.route);
+    x.goes.push(e); x.t = logTime(e);
+  });
+  return [...by.values()].sort((a, b) => b.t - a.t);
+}
+function sessionSum(s){
+  const sends = s.rows.filter(e => e.result !== 'try');
+  let hard = null;
+  sends.forEach(e => { const r = routeById(e.route); if (r && (!hard || r.grade > hard.grade)) hard = r; });
+  return { sends: sends.length, tries: s.rows.length - sends.length, hard };
+}
+const goDots = goes => goes.map(g => '<i class="go' + (g.result === 'try' ? '' : g.result === 'flash' && !g.rep ? ' f' : ' s') + '"></i>').join('');
+const sessionDay = s => { const d = new Date(s.t1);
+  return d.toLocaleDateString([], Object.assign({ weekday: 'short', day: 'numeric', month: 'short' }, d.getFullYear() === new Date().getFullYear() ? {} : { year: 'numeric' })); };
+function lpRow(x, timeOfDay){
+  const r = routeById(x.id), sent = x.goes.filter(g => g.result !== 'try'), tries = x.goes.length - sent.length;
+  const timed = x.goes.filter(g => g.n && g.secs).sort((a, b) => b.n - a.n || a.secs - b.secs)[0];      // the best go against the clock among them
+  const row = document.createElement('div');
+  row.className = 'lprow' + (sent.length ? ' sent' : '');
+  row.innerHTML = '<div class="n"><b></b><span><span class="gd"></span><em></em></span></div><div class="r"><div class="dots"></div><div class="w"></div></div>';
+  row.querySelector('b').textContent = r ? r.name : 'a route that is gone';
+  if (r) paintPill(row.querySelector('.gd'), r.grade); else row.querySelector('.gd').remove();
+  row.querySelector('em').textContent = timeOfDay && x.t ? new Date(x.t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
+  row.querySelector('.dots').innerHTML = goDots(x.goes);
+  const last = sent[sent.length - 1];
+  row.querySelector('.w').textContent = sent.length
+    ? (last.rep ? SESSION_SAID['s' + last.result] : RESULT[last.result]) + (sent.length > 1 ? ' \u00d7' + sent.length : '') + (timed && timed.result !== 'try' ? ' \u00b7 ' + clock(timed.secs) : '')
+    : tries + (tries === 1 ? ' try' : ' tries') + (timed ? ' \u00b7 to ' + timed.n + ' in ' + clock(timed.secs) : '');
+  if (r) row.onclick = () => {             // open it here, ready for another go; the head turns to it when the board is next shown
+    open(r.id, true); lookFor = r.id;
+    $('logPage').scrollTo ? $('logPage').scrollTo({ top: 0, behavior: 'smooth' }) : ($('logPage').scrollTop = 0);
+  };
+  return row;
+}
+function paintBook(){
+  const hero = $('lpHero'), ses = $('lpSession'), ear = $('lpEarlier'), foot = $('lpFoot');
+  ses.innerHTML = ''; ear.innerHTML = ''; foot.textContent = '';
+  hero.hidden = true; $('lpEarLbl').hidden = true; $('lpSesLbl').hidden = false;
+  if (!me){ ses.innerHTML = '<div class="none">Say who you are to keep a logbook.</div>'; return; }
+  const sorted = tagRepeats(myLog.filter(e => e.person === me)).sort((a, b) => logTime(b) - logTime(a));
+  const sessions = logSessions(sorted);
+  const live = sessions.length && Date.now() - sessions[0].t1 < SESSION_LIVE ? sessions[0] : null;
+  const earlier = live ? sessions.slice(1) : sessions;
+  if (live){
+    const sum = sessionSum(live);
+    sessionRoutes(live).forEach(x => ses.appendChild(lpRow(x, true)));
+    hero.hidden = false;
+    $('lpKick').textContent = sessionDay(live) + ' \u00b7 since ' + new Date(live.t0).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    $('lpSends').textContent = sum.sends; $('lpTries').textContent = sum.tries;
+    $('lpHard').textContent = sum.hard ? vName(sum.hard.grade) : '\u2013';
+    $('lpStrip').innerHTML = goDots(live.rows.slice().reverse());
+  } else $('lpSesLbl').hidden = true;      // no session on: no heading and no line, as on the MoonBoard page
+  // earlier sessions: a line each, their routes when tapped
+  $('lpEarLbl').hidden = !earlier.length;
+  earlier.slice(0, lpShown).forEach(s => {
+    const sum = sessionSum(s), el = document.createElement('div');
+    el.className = 'lpses';
+    el.innerHTML = '<div class="h"><span class="cv">\u203a</span><b></b><span class="s"></span><span class="gd"></span></div><div class="body" hidden></div>';
+    el.querySelector('b').textContent = sessionDay(s);
+    el.querySelector('.s').textContent = [sum.sends ? sum.sends + (sum.sends === 1 ? ' send' : ' sends') : '',
+      sum.tries ? sum.tries + (sum.tries === 1 ? ' try' : ' tries') : ''].filter(Boolean).join(' \u00b7 ');
+    if (sum.hard) paintPill(el.querySelector('.gd'), sum.hard.grade); else el.querySelector('.gd').remove();
+    const body = el.querySelector('.body');
+    const show = on => {
+      if (on && !body.children.length) sessionRoutes(s).forEach(x => body.appendChild(lpRow(x, false)));
+      body.hidden = !on; el.classList.toggle('open', on);
+      on ? lpOpen.add(s.t1) : lpOpen.delete(s.t1);
+    };
+    el.querySelector('.h').onclick = () => show(body.hidden);
+    if (lpOpen.has(s.t1)) show(true);
+    ear.appendChild(el);
+  });
+  if (earlier.length > lpShown){
+    const more = document.createElement('button');
+    more.className = 'ghost mini more';
+    more.textContent = 'Show more \u2014 ' + (earlier.length - lpShown) + ' older';
+    more.onclick = () => { lpShown += 20; paintLog(); };
+    ear.appendChild(more);
+  }
+  // everything, in a line: from the counts the page holds for everyone, so it is right however long the log is
+  let sends = 0, flashes = 0, hardest = null;
+  for (const id in snap.stats[me] || {}){
+    const st = snap.stats[me][id], r = routeById(+id);
+    if (!r || !st.s || !st.s.length) continue;
+    sends += st.s.length; if (st.s[0] === 'flash') flashes++;
+    if (!hardest || r.grade > hardest.grade) hardest = r;
+  }
+  if (sends || sorted.length) foot.textContent = [sends + (sends === 1 ? ' send' : ' sends') + ' in all', flashes + ' flashed',
+    hardest ? 'hardest ' + vName(hardest.grade) : '', scoreFor(me).total + ' points'].filter(Boolean).join(' \u00b7 ');
 }
 const kv = (left, right, cls) => '<div class="kv' + (cls ? ' ' + cls : '') + '"><span>' + left + '</span><span>' + right + '</span></div>';
 function paintLog(){
@@ -2040,12 +2226,7 @@ function paintLog(){
   const who = sent.concat(timed);
   $('lpWhoLbl').textContent = r ? (sent.length ? 'Who has climbed it' : timed.length ? 'How far people have got' : 'Nobody has climbed it yet') : '';
   $('lpWho').innerHTML = who.map(p => kv('<b>' + esc(p) + '</b>', sent.includes(p) ? RESULT[firstSend(p, r.id)] + (bestWords(p, r) && statOf(p, r.id).g[0] >= topOf(r) ? ' · ' + bestWords(p, r) : '') : bestWords(p, r), p === me ? 'me' : '')).join('');
-  // a session is everything since a gap of four hours
-  const sess = [];
-  for (const e of myLog){ if (sess.length ? Date.parse(sess[sess.length - 1].t) - Date.parse(e.t) > 4 * 3600000 : Date.now() - Date.parse(e.t) > 4 * 3600000) break; sess.push(e); }
-  $('lpSession').innerHTML = !me ? '<div class="none">Say who you are to keep a logbook.</div>'
-    : sess.length ? sess.map(e => { const x = routeById(e.route); return kv('<b>' + esc(x ? x.name : 'a route that is gone') + '</b>', goWords(e) + ' · ' + when(e.t)); }).join('')
-    : '<div class="none">Nothing logged this session.</div>';
+  paintBook();
   const rows = snap.people.map(n => ({ n, ...scoreFor(n) })).filter(x => x.total > 0).sort((a, b) => b.total - a.total);
   $('lpPoints').innerHTML = rows.length ? rows.map((x, i) => kv((i + 1) + '. <b>' + esc(x.n) + '</b>', x.total + ' points · ' + x.sends + ' sent' + (x.flashes ? ' · ' + x.flashes + ' flashed' : ''), x.n === me ? 'me' : '')).join('')
     : '<div class="none">No sends yet.</div>';
@@ -2313,7 +2494,12 @@ function showPage(p){
   document.body.classList.toggle('logPage', p === 'log');
   document.body.classList.toggle('setPage', p === 'set');
   [...$('pgDots').children].forEach(b => b.classList.toggle('on', b.dataset.go === p));
-  if (p === 'board') requestAnimationFrame(fit);
+  if (p === 'board') requestAnimationFrame(() => {
+    fit();
+    const r = lookFor !== null && lookFor === openId ? openRoute() : null, tv = turnView();
+    lookFor = null;
+    if (r && tv.faces && !fixing && !draft){ const b = bestLook(marksShown(r), tv); turnTo(b.t, b.x); }      // opened from the logbook: look at it
+  });
   if (p === 'log'){ paintLog(); loadLog(); }
   paintList();
 }

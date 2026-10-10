@@ -368,14 +368,27 @@ was logged or that it was not saved.
 A route scores once, the first time it is sent: its V number plus one, and one more for a
 flash. Tries score nothing. The points are the Sun board's own.
 
+**Your own logbook.** The log page keeps each climber's own record the way the MoonBoard
+page does. **This session** is a row a route, the latest first, with a dot for every go (a
+ring for a try, green for a send, gold for a flash) and how it went, and under the rows the
+session in three numbers: sends, tries, and the hardest sent. **Earlier sessions** are a
+line each, the day with its sends and tries, and a tap opens one to its routes. Under them
+is everything in a line: sends in all, flashes, the hardest, points. A session is a run of
+goes with no gap of four hours in it, and it is "this session" until its last go is eight
+hours old. A tap on a route opens it on the page, ready for another go, and the board
+turns to look at it. Changing the name at the top changes whose logbook it is. Below the
+logbook the page still has everyone's points and what the crew has been doing lately.
+
 **A go against the clock.** A long climb by number is seldom finished, so what is worth
 keeping is how far a go got and how long it took. On such a route Quick log has a third
-button, **Start**: it puts a clock on the picture, big, with **Stop** under it. Back at the
-phone, Stop asks which number was reached (the best so far is offered, or the top) and
+button, **Start**: it puts the time at the top of the picture, small and with nothing behind
+it, and **Stop** beside it. Somebody else is likely to be holding the phone, working the
+slider and pointing out the numbers to come, so the clock covers none of the wall and a
+finger goes through it to the picture. Stop asks which number was reached (the best so far is offered, or the top) and
 lets the time be put right by a second or ten, for a slow finger at either end. That is
 logged like any go, with two things more: the number and the seconds. Reaching the last
 number is a send, which go it was worked out from the tries before it; stopping short is
-a try. The logbook says "to hold 55 in 5:00", the list shows each climber's best go (the
+a try. The logbook says "to hold 55 in 5:00" beside that go's dots, the list shows each climber's best go (the
 furthest, and of those the quickest), and the log page lists how far everyone has got.
 The clock is kept in the phone's storage, so it runs through a locked screen or a reload,
 and the screen is kept awake where the phone allows.
