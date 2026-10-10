@@ -283,7 +283,9 @@ from the flat wall's far end round to the overhang's: the head turns from the fi
 the last, and only with the head at the last does the picture itself slide on (zoomed,
 there is more of it at the right). Coming back the slide is undone first. Two fingers zoom
 straight in and out, and then one finger slides the picture up and down as well. The eye
-never looks up or down.
+never looks up or down. Drawn together past a pose's own picture, two fingers take the
+wall further off: the camera goes back towards one that has all of both walls in sight
+(`wideCam`, `CAM.out`), and stops there. No button goes to that view.
 
 **Nothing is cut off, and nothing is wasted.** Unzoomed, whatever of the wall is in sight
 is on the picture from top to bottom and stands on the row with the open route's name
@@ -365,6 +367,18 @@ ringed, a route sent before is a session send, and a short line over the button 
 was logged or that it was not saved.
 A route scores once, the first time it is sent: its V number plus one, and one more for a
 flash. Tries score nothing. The points are the Sun board's own.
+
+**A go against the clock.** A long climb by number is seldom finished, so what is worth
+keeping is how far a go got and how long it took. On such a route Quick log has a third
+button, **Start**: it puts a clock on the picture, big, with **Stop** under it. Back at the
+phone, Stop asks which number was reached (the best so far is offered, or the top) and
+lets the time be put right by a second or ten, for a slow finger at either end. That is
+logged like any go, with two things more: the number and the seconds. Reaching the last
+number is a send, which go it was worked out from the tries before it; stopping short is
+a try. The logbook says "to hold 55 in 5:00", the list shows each climber's best go (the
+furthest, and of those the quickest), and the log page lists how far everyone has got.
+The clock is kept in the phone's storage, so it runs through a locked screen or a reload,
+and the screen is kept awake where the phone allows.
 
 **Putting the map right.** The outlines are drawn from photos by a program, and it gets
 some wrong, so anyone at the wall can fix it (Settings, "Fix the map of holds"). That

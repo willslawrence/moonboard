@@ -13,7 +13,8 @@
      POST /api/w/sun/route            { by, name, grade, marks, feet, tape, note, id?, t? }
                                       a new route, or with id the setter's change to one
      POST /api/w/sun/route/retire     { by, id, retired }                  the setter takes it down, or puts it back
-     POST /api/w/sun/log              { person, route, result, t? }        a try or a send (t: when, if it was before now)
+     POST /api/w/sun/log              { person, route, result, t?, n?, secs? }   a try or a send (t: when, if it was before now;
+                                      n and secs: a go against the clock on a climb by number, which number was reached and how long it took)
      POST /api/w/sun/log/undo         { person }                           take back that climber's last entry
      GET  /api/w/sun/log?person=&route=&limit=                             logbook rows, newest first
      POST /api/w/sun/fix              { by, kind, v, x, y, h?, size? }     the map of holds is wrong here (see below)
@@ -28,6 +29,7 @@
    the MoonBoard side uses, so the two read alike:
      a  tries since the last send        r  the last send's result, or null
      s  every send's result, in order     d  when the last row was written
+     g  the best go against the clock, [number reached, seconds]: the furthest, and of those the quickest
    and it is always worked out again from the rows, so an undo cannot leave it wrong.
 
    The map of holds (which outline on which picture is a hold) is a file that ships with the
@@ -71,11 +73,24 @@ const SCHEMA = [
      kind TEXT NOT NULL, v TEXT NOT NULL, x REAL NOT NULL, y REAL NOT NULL, h TEXT, size TEXT, done INTEGER NOT NULL DEFAULT 0)`,
   `CREATE INDEX IF NOT EXISTS fixes_wall ON fixes (wall, done, k)`,
 ];
+/* Columns added since the tables were first made. A go against the clock on a climb by number: on its row of the
+   logbook, the number reached and the seconds it took; in the tally, the best such go. A database that has them
+   already says "duplicate column", which is the answer wanted. */
+const MORE = [
+  'ALTER TABLE log ADD COLUMN n INTEGER', 'ALTER TABLE log ADD COLUMN secs INTEGER',
+  'ALTER TABLE stats ADD COLUMN gn INTEGER', 'ALTER TABLE stats ADD COLUMN gs INTEGER',
+];
 /* The tables are made the first time this copy of the code is asked for anything; asking
    again costs nothing. A failure is forgotten, so the next request tries afresh. */
 const made = new WeakMap();
 function tables(db){
-  if (!made.has(db)) made.set(db, db.batch(SCHEMA.map(q => db.prepare(q))).catch(e => { made.delete(db); throw e; }));
+  if (!made.has(db)) made.set(db, (async () => {
+    await db.batch(SCHEMA.map(q => db.prepare(q)));
+    for (const q of MORE){
+      try{ await db.prepare(q).run(); }
+      catch(e){ if (!/duplicate column/i.test(String((e && e.message) || e))) throw e; }
+    }
+  })().catch(e => { made.delete(db); throw e; }));
   return made.get(db);
 }
 
@@ -106,7 +121,7 @@ async function snapshot(db, wall){
   const [p, r, s, f] = await db.batch([
     db.prepare('SELECT name FROM people WHERE wall = ? ORDER BY t, name').bind(wall),
     db.prepare('SELECT id, name, grade, setter, marks, feet, tape, note, t, edited, retired FROM routes WHERE wall = ? ORDER BY id').bind(wall),
-    db.prepare('SELECT person, route, a, r, s, d FROM stats WHERE wall = ?').bind(wall),
+    db.prepare('SELECT person, route, a, r, s, d, gn, gs FROM stats WHERE wall = ?').bind(wall),
     db.prepare('SELECT k, who, kind, v, x, y, h, size FROM fixes WHERE wall = ? AND done = 0 ORDER BY k').bind(wall),
   ]);
   const stats = {};
@@ -114,6 +129,7 @@ async function snapshot(db, wall){
     const e = { a: row.a, r: row.r, d: row.d };
     const sends = JSON.parse(row.s);
     if (sends.length) e.s = sends;
+    if (row.gn) e.g = [row.gn, row.gs];
     (stats[row.person] = stats[row.person] || {})[row.route] = e;
   }
   return {
@@ -126,18 +142,20 @@ async function snapshot(db, wall){
 
 /* One climber's tally on one route, from that pair's rows. */
 async function recount(db, wall, person, route){
-  const rows = (await db.prepare('SELECT result, t FROM log WHERE wall = ? AND person = ? AND route = ? ORDER BY k')
+  const rows = (await db.prepare('SELECT result, t, n, secs FROM log WHERE wall = ? AND person = ? AND route = ? ORDER BY k')
     .bind(wall, person, route).all()).results;
-  let a = 0, d = null; const sends = [];
+  let a = 0, d = null, gn = null, gs = null; const sends = [];
   for (const row of rows){
     if (row.result === 'try') a++; else { sends.push(row.result); a = 0; }
     d = row.t;
+    // the best go against the clock: the furthest, and of the goes that got that far the quickest
+    if (row.n && row.secs && (gn === null || row.n > gn || (row.n === gn && row.secs < gs))){ gn = row.n; gs = row.secs; }
   }
   if (!rows.length)
     return db.prepare('DELETE FROM stats WHERE wall = ? AND person = ? AND route = ?').bind(wall, person, route).run();
-  return db.prepare(`INSERT INTO stats (wall, person, route, a, r, s, d) VALUES (?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT (wall, person, route) DO UPDATE SET a = excluded.a, r = excluded.r, s = excluded.s, d = excluded.d`)
-    .bind(wall, person, route, a, sends.length ? sends[sends.length - 1] : null, JSON.stringify(sends), d).run();
+  return db.prepare(`INSERT INTO stats (wall, person, route, a, r, s, d, gn, gs) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT (wall, person, route) DO UPDATE SET a = excluded.a, r = excluded.r, s = excluded.s, d = excluded.d, gn = excluded.gn, gs = excluded.gs`)
+    .bind(wall, person, route, a, sends.length ? sends[sends.length - 1] : null, JSON.stringify(sends), d, gn, gs).run();
 }
 
 const knows = async (db, wall, name) =>
@@ -161,9 +179,10 @@ export async function handle(request, db, now = () => new Date().toISOString()){
       const where = ['wall = ?'], args = [wall];
       if (person){ where.push('person = ?'); args.push(person); }
       if (route){ where.push('route = ?'); args.push(route); }
-      const rows = await db.prepare('SELECT k, t, person, route, result FROM log WHERE ' + where.join(' AND ') + ' ORDER BY k DESC LIMIT ?')
+      const rows = await db.prepare('SELECT k, t, person, route, result, n, secs FROM log WHERE ' + where.join(' AND ') + ' ORDER BY k DESC LIMIT ?')
         .bind(...args, limit).all();
-      return json({ entries: rows.results });
+      // (a row with no clock says nothing of one)
+      return json({ entries: rows.results.map(x => { if (!x.n){ delete x.n; delete x.secs; } return x; }) });
     }
     return bad('not found', 404);
   }
@@ -239,7 +258,12 @@ export async function handle(request, db, now = () => new Date().toISOString()){
     if (!person || !(await knows(db, wall, person))) return bad('say who you are first', 404);
     if (!RESULTS.includes(result)) return bad('a try, or how many goes the send took');
     if (!(await db.prepare('SELECT 1 AS ok FROM routes WHERE wall = ? AND id = ?').bind(wall, route).first())) return bad('no such route', 404);
-    await db.prepare('INSERT INTO log (wall, t, person, route, result) VALUES (?, ?, ?, ?, ?)').bind(wall, when(), person, route, result).run();
+    // a go against the clock says both how far and how long, or neither
+    const timed = body.n !== undefined || body.secs !== undefined;
+    const n = Number.isInteger(body.n) && body.n >= 1 && body.n <= 999 ? body.n : null;
+    const secs = Number.isInteger(body.secs) && body.secs >= 1 && body.secs <= 86400 ? body.secs : null;
+    if (timed && (n === null || secs === null)) return bad('a go against the clock says which number was reached and how many seconds it took');
+    await db.prepare('INSERT INTO log (wall, t, person, route, result, n, secs) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(wall, when(), person, route, result, n, secs).run();
     await recount(db, wall, person, route);
     return json(await snapshot(db, wall));
   }

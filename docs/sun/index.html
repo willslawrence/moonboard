@@ -232,6 +232,10 @@
                    pointer-events:auto;font-size:13px;font-weight:700;touch-action:none;
                    box-shadow:0 4px 14px rgba(0,0,0,.45);animation:quickIn .2s cubic-bezier(.2,.9,.3,1.25) both}
   #quickTry{left:2px;background:#dc2626;color:#fff;transform-origin:120% 160%}
+  /* on a climb by number there is a third, Start: a go against the clock */
+  #quickFan .arm.m{display:none;height:137px;transform:rotate(-65.4deg)}
+  #quickGo{display:none;left:-76px;background:#fff;color:#111;transform-origin:250% 160%}
+  #quickFan.clock .arm.m,#quickFan.clock #quickGo{display:block}
   #quickSend{left:80px;background:#22c55e;color:#06240e;transform-origin:-20% 160%}
   #quickFan button:active,#quickFan button.at{filter:brightness(1.18);transform:scale(1.08)}
   @keyframes quickIn{from{transform:scale(.3);opacity:0}to{transform:none;opacity:1}}
@@ -367,6 +371,25 @@
   #grades::-webkit-scrollbar{display:none}
   #grades button{flex:none;min-width:48px;padding:9px 6px;font-family:ui-monospace,Menlo,monospace}
   #saveErr{color:#ef4444;font-size:13px;min-height:18px;margin:8px 0 0}
+  /* ---- a go against the clock: the clock on the picture, big, with the one button that matters when you get back
+     to the phone; and the sheet that asks how far ---- */
+  #timer{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;width:min(84%,320px);padding:14px 16px 10px;border-radius:20px;
+       background:rgba(14,14,16,.86);color:#fff;text-align:center;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 10px 34px rgba(0,0,0,.5)}
+  #timer[hidden]{display:none}
+  #tmName{font-size:12px;font-weight:600;opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #tmClock{font:800 68px/1.05 ui-monospace,Menlo,monospace;letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin:4px 0 10px}
+  #tmStop{width:100%;height:68px;border:0;border-radius:15px;background:#dc2626;color:#fff;font-size:24px;font-weight:800}
+  #tmDrop{width:auto;margin:8px auto 0;padding:4px 10px;border:0;background:transparent;color:rgba(255,255,255,.62);font-size:12px}
+  #goSheet{position:fixed;left:0;right:0;bottom:0;z-index:71;max-height:92dvh;overflow-y:auto;background:var(--bg);
+         border-radius:16px 16px 0 0;border-top:1px solid var(--edge);padding:14px var(--pad) calc(env(safe-area-inset-bottom) + 14px)}
+  #goSheet h2{margin:0 0 4px;font-size:18px}
+  #goSheet .lbl{margin:16px 0 8px}
+  .goRow{display:flex;align-items:center;justify-content:center;gap:8px}
+  .goRow button{flex:none;width:auto;min-width:52px;height:46px;padding:0 10px;font-size:16px;font-weight:700;background:var(--panel)}
+  .goRow button.on{background:var(--ink);border-color:var(--ink);color:var(--onink)}
+  .goRow b{flex:none;min-width:96px;text-align:center;font:800 34px/1 ui-monospace,Menlo,monospace;letter-spacing:-.03em}
+  #goNRange{display:block;width:100%;margin:14px 0 0;padding:0;accent-color:var(--ink)}
+  #goErr{color:#ef4444;font-size:13px;min-height:18px;margin:8px 0 0}
 
   #toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 92px);z-index:80;transform:translateX(-50%);
          max-width:86vw;padding:8px 14px;border-radius:20px;background:var(--ink);color:var(--onink);font-size:13px;font-weight:600;
@@ -393,6 +416,7 @@
     <div id="pic">
       <div id="stage"><div id="faces" hidden></div><img id="vimg" alt=""><svg id="ov" xmlns="http://www.w3.org/2000/svg"></svg></div>
       <div id="picNote"></div>
+      <div id="timer" hidden><div id="tmName"></div><div id="tmClock">0:00</div><button id="tmStop">Stop</button><button id="tmDrop">Throw this go away</button></div>
       <div id="turnBar" hidden></div>
     </div>
     <div id="pickBar">
@@ -446,7 +470,8 @@
     <!-- Quick log, as on the MoonBoard page: a press opens a red Try and a green Send on two arms over it. -->
     <div id="quick">
       <div id="quickFan" hidden>
-        <span class="arm l"></span><span class="arm r"></span>
+        <span class="arm m"></span><span class="arm l"></span><span class="arm r"></span>
+        <button id="quickGo" data-q="go" aria-label="Start the clock">Start</button>
         <button id="quickTry" data-q="try" aria-label="Log a try">Try</button>
         <button id="quickSend" data-q="send" aria-label="Log a send">Send</button>
       </div>
@@ -537,7 +562,7 @@
   <div class="lbl">The picture</div>
   <label class="ck"><input type="checkbox" id="dimChk"> Dim the wall behind an open route</label>
   <label class="ck"><input type="checkbox" id="allChk"> Always outline every hold</label>
-  <p class="hint">A finger across the picture turns your head, from the flat wall round to the overhang, and it stays where you leave it. Flat and Overhang in the picture's corners go back to those two views. Two taps and the picture fills the screen; there a tap picks a hold. Two fingers zoom. A hold that has no outline can still go in a route: tap it while marking the route and a ring goes where you tapped.</p>
+  <p class="hint">A finger across the picture turns your head, from the flat wall round to the overhang, and it stays where you leave it. Flat and Overhang in the picture's corners go back to those two views. Two taps and the picture fills the screen; there a tap picks a hold. Two fingers zoom: apart for closer, together for further off, until the whole wall is in sight. A hold that has no outline can still go in a route: tap it while marking the route and a ring goes where you tapped.</p>
 
   <div id="ver"></div>
 </div>
@@ -580,6 +605,20 @@
     <button id="shSave" class="solid">Save route</button>
   </div>
 </div>
+<div id="goSheet" hidden>
+  <h2>How far did you get?</h2>
+  <p class="hint" id="goSay" style="margin-top:0"></p>
+  <div class="lbl">The number you reached</div>
+  <div class="goRow"><button id="goNDown" aria-label="One number fewer">&#8722;</button><b id="goN">1</b><button id="goNUp" aria-label="One number more">+</button><button id="goTop">Top</button></div>
+  <input type="range" id="goNRange" min="0" max="1" step="1" value="0" aria-label="The number you reached">
+  <div class="lbl">Time on the wall <span style="letter-spacing:0;text-transform:none">(put it right if you were slow to start or stop it)</span></div>
+  <div class="goRow" id="goTime"><button data-d="-10">&#8722;10</button><button data-d="-1">&#8722;1</button><b id="goT">0:00</b><button data-d="1">+1</button><button data-d="10">+10</button></div>
+  <p id="goErr"></p>
+  <div class="two" style="margin-top:4px">
+    <button id="goDrop" class="ghost">Throw it away</button>
+    <button id="goSave" class="solid">Save</button>
+  </div>
+</div>
 <div id="toast" hidden></div>
 
 <script>
@@ -602,7 +641,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-10 20:10';
+const BUILD = '2026-10-10 20:55';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -814,7 +853,7 @@ function toPic(v, key, x, y){
    further round, so that it is seen more squarely. CAM.t says where the head is: 0 is the first pose, 1 the second,
    and anything between is part-way, wherever a finger left it. Nothing snaps to a pose; the two buttons go to them.
    (y0 and y1 are the top and the foot of what is in sight on the unzoomed picture: the picture is held to them.) */
-const CAM = { t: 1, ver: 0, of: '', y0: 0, y1: 0 };
+const CAM = { t: 1, ver: 0, of: '', y0: 0, y1: 0, out: 0 };      // out: how far two fingers have drawn the wall off, 0 (a pose's own picture) to 1 (the whole wall: wideCam)
 const POSES = [{ key: 'flat', label: 'Flat', fit: ['flat', 'isl-front', 'isl-left', 'isl-right', 'isl-end', 'isl-top'], side: 'l' },
                { key: 'over', label: 'Overhang', fit: ['kicker', 'panel', 'roof'], side: 'r', at: [-100, 155, 340] }];
 const posesOf = v => (v.eye && v.eye.poses) || POSES;
@@ -867,8 +906,19 @@ const picRoom = () => [8, focus ? 8 : $('bar').offsetHeight + 14];
 function poseCam(v, i, size){
   v.cams = v.cams || {};
   const [head, foot] = picRoom(), W = size ? size[0] : v.w, Hh = size ? size[1] : v.h, key = [i, Math.round(W), Math.round(Hh), head, foot].join();
-  if (v.cams[key]) return v.cams[key];
-  const pose = posesOf(v)[i], m = (v.eye && v.eye.margin) || 0.035, E = eyeOf(v, i);
+  return v.cams[key] || (v.cams[key] = fitCam(v, posesOf(v)[i], eyeOf(v, i), W, Hh, head, foot));
+}
+/* The camera that takes in the whole wall, both walls with a little room either side, from the place one stands for
+   most of it. No button goes to it: it is where the picture ends up when two fingers draw the wall further off than
+   a pose has it (Will, 2026-10-10: "I like how it starts with the overhang, but if I want, I can zoom the wall a
+   little further away from the screen so I can see everything"). */
+function wideCam(v){
+  v.cams = v.cams || {};
+  const [head, foot] = picRoom(), key = ['wide', Math.round(v.w), Math.round(v.h), head, foot].join();
+  return v.cams[key] || (v.cams[key] = fitCam(v, { side: 'c' }, (v.eye && v.eye.at) || [-52, 155, 424], v.w, v.h, head, foot));
+}
+function fitCam(v, pose, E, W, Hh, head, foot){
+  const m = (v.eye && v.eye.margin) || 0.035;
   const all = v.faces.map(F => ({ F, c: corners3(F, E) })), want = all.filter(o => !pose.fit || pose.fit.includes(o.F.key));
   let a0 = 9, a1 = -9;
   want.forEach(o => o.c.forEach(q => { const a = Math.atan2(q[0], -q[2]); a0 = Math.min(a0, a); a1 = Math.max(a1, a); }));
@@ -885,7 +935,7 @@ function poseCam(v, i, size){
   };
   for (let k = 0; k < 8; k++){ span(); const need = f * (y1 - y0); if (need <= room * 1.002) break; f *= room / need; }
   span();
-  return (v.cams[key] = { yaw, f, cx, cy: Hh - foot - f * y1, E, tall: f * (y1 - y0) });
+  return { yaw, f, cx, cy: Hh - foot - f * y1, E, tall: f * (y1 - y0) };
 }
 /* How tall the picture has to be, at this width, for the taller of the poses to stand in it whole with nothing over.
    The board page makes it that tall and gives the list the rest. */
@@ -898,18 +948,23 @@ function picNeed(v, w){
    from top to bottom and stand on the foot line, so the lens is shortened if it has to be and the picture slid up or
    down to suit. (Mixing the two poses' own up-and-down slides will not do: between them other parts of the wall are
    in sight, and they are not the same height.) */
-function camAt(v, t){
+function camAt(v, t, out = CAM.out){
   const n = posesOf(v).length - 1, i = Math.max(0, Math.min(n - 1, Math.floor(t))), k = Math.max(0, Math.min(1, t - i));
-  const a = poseCam(v, i), b = poseCam(v, Math.min(n, i + 1));
-  if (k < 1e-9) return a;
-  if (k > 1 - 1e-9) return b;
-  const [head, foot] = picRoom(), key = [t.toFixed(5), Math.round(v.w), Math.round(v.h), head, foot].join();
+  const a = poseCam(v, i), b = poseCam(v, Math.min(n, i + 1)), far = out > 0.0005;
+  if (!far && k < 1e-9) return a;
+  if (!far && k > 1 - 1e-9) return b;
+  const [head, foot] = picRoom(), key = [t.toFixed(5), far ? out.toFixed(4) : 0, Math.round(v.w), Math.round(v.h), head, foot].join();
   if (!v.mids || v.midN > 240){ v.mids = {}; v.midN = 0; }
   if (v.mids[key]) return v.mids[key];
-  const mix = (p, q) => p + (q - p) * k, yaw = mix(a.yaw, b.yaw), E = a.E.map((p, j) => mix(p, b.E[j]));
+  const mix = (p, q) => p + (q - p) * k;
+  let yaw = mix(a.yaw, b.yaw), E = a.E.map((p, j) => mix(p, b.E[j])), f = mix(a.f, b.f), cx = mix(a.cx, b.cx);
+  if (far){                                                 // drawn off by two fingers: so far towards the camera that takes in the whole wall
+    const w = wideCam(v), o = Math.min(1, out), to = (p, q) => p + (q - p) * o;
+    yaw = to(yaw, w.yaw); E = E.map((p, j) => to(p, w.E[j])); f = to(f, w.f); cx = to(cx, w.cx);
+  }
   const d = [Math.sin(yaw), -Math.cos(yaw)], r = [Math.cos(yaw), Math.sin(yaw)], room = Math.max(60, v.h - head - foot);
   const pts = v.faces.map(F => corners3(F, E).map(q => { const w = Math.max(1, q[0] * d[0] + q[2] * d[1]); return [(q[0] * r[0] + q[2] * r[1]) / w, -q[1] / w]; }));
-  let f = mix(a.f, b.f), cx = mix(a.cx, b.cx), y0 = 0, y1 = 0;
+  let y0 = 0, y1 = 0;
   const span = () => { y0 = 9; y1 = -9; pts.forEach(P => clipX(P.map(u => [cx + f * u[0], u[1]]), 0, v.w).forEach(u => { y0 = Math.min(y0, u[1]); y1 = Math.max(y1, u[1]); })); };
   for (let j = 0; j < 6; j++){ span(); const need = f * (y1 - y0); if (need <= room * 1.002) break; const sh = room / need; f *= sh; cx = v.w / 2 + (cx - v.w / 2) * sh; }
   span();
@@ -1082,13 +1137,14 @@ function turnTo(to, slid){
   if (!v.faces) return;
   const n = posesOf(v).length - 1;
   to = Math.max(0, Math.min(n, to));
-  const from = CAM.t, z0 = { k: Z.k, x: Z.x, y: Z.y }, z1 = homeAt(v, to), t0 = performance.now();
+  const from = CAM.t, z0 = { k: Z.k, x: Z.x, y: Z.y }, o0 = CAM.out, t0 = performance.now();
+  CAM.out = 0; const z1 = homeAt(v, to); CAM.out = o0;
   if (slid && to >= n) z1.x = Math.min(0, Math.max(v.w * (1 - z1.k), slid));       // with the head at the last pose the picture may be slid on
-  const ms = Math.abs(to - from) < 0.01 && Math.abs(z1.k - z0.k) < 0.01 && Math.abs(z1.x - z0.x) < 1 && Math.abs(z1.y - z0.y) < 1 ? 0 : 260;
+  const ms = Math.abs(to - from) < 0.01 && Math.abs(z1.k - z0.k) < 0.01 && Math.abs(z1.x - z0.x) < 1 && Math.abs(z1.y - z0.y) < 1 && o0 < 0.001 ? 0 : 260;
   cancelAnimationFrame(turnAnim);
   const go = now => {
     const k = ms ? Math.min(1, (now - t0) / ms) : 1, e = 1 - Math.pow(1 - k, 3);
-    CAM.t = from + (to - from) * e;
+    CAM.t = from + (to - from) * e; CAM.out = o0 * (1 - e);
     Z.k = z0.k + (z1.k - z0.k) * e; Z.x = z0.x + (z1.x - z0.x) * e; Z.y = z0.y + (z1.y - z0.y) * e;
     turning = gliding = k < 1; Z.user = k < 1;
     turnPaint(); place(); paintBoard(turning);
@@ -1184,12 +1240,30 @@ function zoomAt(px, py, k){
   Z.k = k; Z.x = px - ix * k0 * k; Z.y = py - iy * k0 * k;
   place(); paintTurnBar();
 }
+/* Two fingers, or the wheel: closer or further. Closer than a pose's own picture is the picture enlarged (zoomAt).
+   Further off than that there is no more of the picture to show, so the camera itself goes back towards the one that
+   takes in the whole wall (CAM.out), and stops there. One scale runs through both: 1 is a pose's own picture, more is
+   closer, and FAR is all of the wall in sight. */
+const FAR = 0.62;
+const zoomNow = () => CAM.out > 0 ? 1 - CAM.out * (1 - FAR) : Z.k;
+function zoomTo(px, py, z){
+  const v = viewNow();
+  if (!v.faces) return zoomAt(px, py, z);
+  z = Math.max(FAR, Math.min(8, z));
+  if (z >= 1){
+    if (CAM.out){ CAM.out = 0; turnPaint(); paintBoard(turning); }
+    return zoomAt(px, py, z);
+  }
+  if (Z.k !== 1) zoomAt(px, py, 1);
+  const o = (1 - z) / (1 - FAR);
+  if (Math.abs(o - CAM.out) > 1e-4){ CAM.out = o; Z.user = true; Z.x = 0; turnPaint(); place(); paintBoard(turning); paintTurnBar(); }
+}
 function setView(key, keepZoom){
   const to = wall.views.find(v => v.key === key);
   if (!to || (wall.views.some(v => v.faces) && !!to.faces === fixing)) return;       // the model, unless the map is being fixed; then a wall's photo
   const changed = key !== view;
   view = key;
-  if (changed || !keepZoom){ Z.k = 1; Z.x = Z.y = 0; Z.user = false; }
+  if (changed || !keepZoom){ Z.k = 1; Z.x = Z.y = 0; Z.user = false; CAM.out = 0; }
   paintPic();
   fit(); paintBoard();
 }
@@ -1253,6 +1327,7 @@ function grab(v, r){
    (zoomed, there is more of it at the right). Coming back the slide is undone first, then the head turns. Up and
    down the picture slides, if a finger has zoomed it. Nothing snaps: it stays where it is left. */
 function dragTo(v, px, py){
+  if (CAM.out > 0.97) return;                                      // drawn right off, all of the wall is in sight: there is nowhere to turn to
   const n = posesOf(v).length - 1, P = g.P;
   const K = t => Z.user ? Z.k : homeAt(v, t).k;
   const at = (t, x) => x + K(t) * sxAt(v, t, P);                  // where the place is across the picture, head at t and the picture slid to x
@@ -1275,6 +1350,7 @@ function dragTo(v, px, py){
   place(); turnSoon();
 }
 $('pic').addEventListener('pointerdown', e => {
+  if (e.target.closest('#timer')) return;                 // the clock's own buttons
   $('pic').setPointerCapture(e.pointerId);
   fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
   const r = $('pic').getBoundingClientRect();
@@ -1288,7 +1364,7 @@ $('pic').addEventListener('pointerdown', e => {
   }
   else if (fingers.size === 2){
     const [a, b] = [...fingers.values()];
-    g = { kind: 'two', d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, k: Z.k, mx: (a.x + b.x) / 2 - r.left, my: (a.y + b.y) / 2 - r.top };
+    g = { kind: 'two', d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, k: Z.k, z: zoomNow(), mx: (a.x + b.x) / 2 - r.left, my: (a.y + b.y) / 2 - r.top };
   }
 });
 $('pic').addEventListener('pointermove', e => {
@@ -1309,8 +1385,8 @@ $('pic').addEventListener('pointermove', e => {
   if (g.kind === 'two' && fingers.size >= 2){
     const [a, b] = [...fingers.values()];
     const mx = (a.x + b.x) / 2 - r.left, my = (a.y + b.y) / 2 - r.top;
-    zoomAt(g.mx, g.my, g.k * Math.hypot(a.x - b.x, a.y - b.y) / g.d0);
-    Z.x += mx - g.mx; Z.y += my - g.my; g.mx = mx; g.my = my; g.k = Z.k; g.d0 = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+    zoomTo(g.mx, g.my, g.z * Math.hypot(a.x - b.x, a.y - b.y) / g.d0);
+    Z.x += mx - g.mx; Z.y += my - g.my; g.mx = mx; g.my = my; g.k = Z.k; g.z = zoomNow(); g.d0 = Math.hypot(a.x - b.x, a.y - b.y) || 1;
     place();
   } else if (g.kind === 'one'){
     const dx = e.clientX - g.x0, dy = e.clientY - g.y0;
@@ -1349,7 +1425,7 @@ $('pic').addEventListener('pointercancel', fingerUp);
 $('pic').addEventListener('wheel', e => {
   e.preventDefault();
   const r = $('pic').getBoundingClientRect();
-  zoomAt(e.clientX - r.left, e.clientY - r.top, Z.k * (e.deltaY < 0 ? 1.15 : 1 / 1.15));
+  zoomTo(e.clientX - r.left, e.clientY - r.top, zoomNow() * (e.deltaY < 0 ? 1.15 : 1 / 1.15));
 }, { passive: false });
 
 /* One tap. Out of focus it never opens or changes anything, as on the MoonBoard, except on the
@@ -1411,14 +1487,14 @@ function hint(text){
 }
 function focusOn(){
   if (focus) return;
-  focus = true; Z.user = false;                           // the picture grows, and the wall with it (homeAt)
+  focus = true; Z.user = false; CAM.out = 0;              // the picture grows, and the wall with it (homeAt)
   paintAll(); requestAnimationFrame(fit);
   hint(draft ? 'Tap a hold to mark it' : fixing ? 'Tap what is wrong' : viewNow().faces ? 'Drag to look round · Tap a hold to pick it' : 'Tap a hold to pick it · Swipe up to go back');
 }
 function focusOff(){
   if (!focus) return;
   focus = false; picks = []; draft = null; fixing = false;
-  Z.k = 1; Z.x = Z.y = 0; Z.user = false;
+  Z.k = 1; Z.x = Z.y = 0; Z.user = false; CAM.out = 0;
   if (view !== turnView().key) setView(turnView().key);          // the map was being fixed on a wall's photo: back to the model
   paintAll(); requestAnimationFrame(fit);
 }
@@ -1558,9 +1634,10 @@ function bestLook(marks, v){
     const F = f && v.faces.find(q => q.key === f), c = h ? h.c : [m.x, m.y];
     if (F) P.push([0, 1, 2].map(j => F.o[j] + c[0] * F.u[j] + c[1] * F.v[j]));
   }
-  const n = posesOf(v).length - 1;
+  const n = posesOf(v).length - 1, wasOut = CAM.out;
   let best = { t: CAM.t, x: 0, score: -9 };
   if (!P.length) return best;
+  CAM.out = 0;                          // (as the picture will be once it has glided there: not drawn off)
   const tryAt = (t, slide) => {
     const home = homeAt(v, t), k = home.k, x = slide * v.w * (1 - k);
     let seen = 0, sum = 0;
@@ -1571,6 +1648,7 @@ function bestLook(marks, v){
   for (let i = 0; i <= n; i++) tryAt(i, 0);
   for (let i = 0; i <= n * 20; i++) tryAt(i / 20, 0);
   if (homeAt(v, n).k > 1.01) for (const sl of [0.25, 0.5, 0.75, 1]) tryAt(n, sl);
+  CAM.out = wasOut;
   return best;
 }
 const poseFor = (r, v) => bestLook(r.marks, v).t;
@@ -1666,6 +1744,98 @@ async function logGo(result){             // true once it is saved
    ever; a route sent before is a session send, and the tries that count towards which go it was are this session's:
    those since its last send, if it was last touched within four hours. Nothing is stored differently. */
 const SEND_LABELS = { flash: 'Flash', '2nd': '2nd go', '3rd': '3rd go', '4+': '4+ goes' };
+
+/* ---------- a go against the clock ----------
+   Will, 2026-10-10, of the climbs by number: "this climb sequence is really hard. You don't always finish it, but
+   maybe if you finish it, you finish it faster than the previous time." So on such a route Quick log has a third
+   button, Start. It starts a clock on the picture; you climb; back at the phone you press Stop, say which number you
+   reached and put the time right if you were slow to press either button, and that is logged: how far, and how
+   long ("5 minutes to hold 55"). Reaching the route's last number is a send, as any send is; stopping short of it
+   is a try. Either is kept with its number and its time, and a climber's best go, the furthest and of those the
+   quickest, is what the list shows for the route. The clock is kept in the phone's storage, so it runs on through a
+   locked screen or a reload. */
+const clock = s => { s = Math.max(0, Math.round(s)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), z = String(s % 60).padStart(2, '0'); return h ? h + ':' + String(m).padStart(2, '0') + ':' + z : m + ':' + z; };
+/* a go, in words: "to hold 55 in 5:00", "2nd go · 12:40", "try" */
+const goWords = e => e.n && e.secs ? (e.result === 'try' ? 'to hold ' + e.n + ' in ' + clock(e.secs) : RESULT[e.result] + ' · ' + clock(e.secs)) : RESULT[e.result];
+const topOf = r => Math.max(0, ...r.marks.filter(m => m.r === 'n').map(m => m.n));
+/* a climber's best go on a climb by number, in few words, for a row: "to 55 · 5:00", or for the top just the time */
+const bestWords = (p, r) => { const st = statOf(p, r.id), g = st && st.g; return !g ? '' : g[0] >= topOf(r) ? clock(g[1]) : 'to ' + g[0] + ' · ' + clock(g[1]); };
+let timing = null, ticking = 0, wakeLock = null, go = null;      // timing: { id, t0, t1? }: the clock on a route (t1: stopped, and waiting to be logged)
+try{ const t = JSON.parse(localStorage.getItem('sun-clock') || 'null'); if (t && t.id && t.t0) timing = t; }catch(e){}
+const keepClock = () => { try{ timing ? localStorage.setItem('sun-clock', JSON.stringify(timing)) : localStorage.removeItem('sun-clock'); }catch(e){} };
+async function awake(on){                 // the screen stays on while the clock runs, where a phone allows it
+  try{
+    if (on && !wakeLock && navigator.wakeLock){ wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); }
+    else if (!on && wakeLock){ const w = wakeLock; wakeLock = null; await w.release(); }
+  }catch(e){}
+}
+function paintTimer(){
+  const on = !!timing && !timing.t1, r = on && routeById(timing.id);
+  $('timer').hidden = !on;
+  clearInterval(ticking); ticking = 0;
+  if (!on) return;
+  $('tmName').textContent = r ? r.name : '';
+  const show = () => { if (timing) $('tmClock').textContent = clock((Date.now() - timing.t0) / 1000); };
+  show(); ticking = setInterval(show, 250);
+}
+function startClock(){
+  const r = openRoute();
+  if (!r || !byNumber(r) || r.retired) return;
+  timing = { id: r.id, t0: Date.now() }; keepClock(); awake(true); paintTimer();
+}
+function stopClock(){
+  if (!timing || timing.t1) return;
+  timing.t1 = Date.now(); keepClock(); awake(false); paintTimer(); openGo();
+}
+function dropClock(){ timing = null; go = null; keepClock(); awake(false); paintTimer(); $('scrim').hidden = $('goSheet').hidden = true; }
+function openGo(){
+  const r = timing && routeById(timing.id);
+  if (!r || !byNumber(r)) return dropClock();
+  const L = numList(r), st = me ? statOf(me, r.id) : null, best = st && st.g ? L.indexOf(st.g[0]) : -1;
+  go = { id: r.id, L, i: best >= 0 ? best : L.length - 1, secs: Math.max(1, Math.min(86400, Math.round((timing.t1 - timing.t0) / 1000))) };
+  $('goNRange').max = L.length - 1;
+  paintGo();
+  $('scrim').hidden = $('goSheet').hidden = false;
+}
+function paintGo(){
+  const r = routeById(go.id), top = go.L[go.L.length - 1], n = go.L[go.i];
+  $('goSay').textContent = r.name + ' · numbers ' + go.L[0] + ' to ' + top + (n >= top ? ' · the top: this go is a send' : '');
+  $('goN').textContent = n; $('goNRange').value = go.i;
+  $('goNDown').disabled = go.i <= 0; $('goNUp').disabled = go.i >= go.L.length - 1;
+  $('goTop').classList.toggle('on', go.i >= go.L.length - 1);
+  $('goT').textContent = clock(go.secs);
+  $('goErr').textContent = '';
+}
+$('tmStop').onclick = stopClock;
+$('tmDrop').onclick = () => { if (confirm('Throw this go away?')) dropClock(); };
+$('goNDown').onclick = () => { go.i = Math.max(0, go.i - 1); paintGo(); };
+$('goNUp').onclick = () => { go.i = Math.min(go.L.length - 1, go.i + 1); paintGo(); };
+$('goTop').onclick = () => { go.i = go.L.length - 1; paintGo(); };
+$('goNRange').oninput = e => { go.i = Math.max(0, Math.min(go.L.length - 1, +e.target.value)); paintGo(); };
+$('goTime').onclick = e => { const b = e.target.closest('button[data-d]'); if (b){ go.secs = Math.max(1, Math.min(86400, go.secs + +b.dataset.d)); paintGo(); } };
+$('goDrop').onclick = () => { if (confirm('Throw this go away?')) dropClock(); };
+$('goSave').onclick = async () => {
+  if (!go || !needMe()) return;
+  const r = routeById(go.id), n = go.L[go.i], top = go.L[go.L.length - 1], secs = go.secs;
+  const st = statOf(me, r.id), was = st && st.g, again = sentBefore(r.id), result = n >= top ? derivedResult(r.id) : 'try';
+  $('goSave').disabled = true;
+  try{
+    await knowMe();
+    take(await call('/log', { person: me, route: r.id, result, n, secs }));
+    mine.push({ route: r.id, result, n, secs });
+    const better = !!was && (n > was[0] || (n === was[0] && secs < was[1]));
+    dropClock();
+    logAt = 0; paintAll(); if (page === 'log') loadLog();
+    quickSay((n >= top ? (again ? SESSION_WORDS : SEND_LABELS)[result] + ' in ' + clock(secs) : 'To hold ' + n + ' in ' + clock(secs)) + (better ? ' · your best yet' : '') + ' · ' + r.name, n >= top ? 'sent' : 'tried');
+  }catch(e){ $('goErr').textContent = 'Not saved. ' + (e && e.message ? e.message : 'Try again.'); }
+  $('goSave').disabled = false;
+};
+/* the page has just opened, or come back: a clock that was running still is, and one that was stopped still asks how far */
+function clockBack(){
+  if (!timing) return;
+  if (!routeById(timing.id)) return dropClock();
+  if (timing.t1){ if ($('goSheet').hidden) openGo(); } else { paintTimer(); awake(true); }
+}
 const SESSION_WORDS = { flash: 'Session flash', '2nd': 'Session 2nd', '3rd': 'Session 3rd', '4+': 'Session 4+' };
 const myTries = id => { const st = me && statOf(me, id); return (st && st.a) || 0; };
 const sentBefore = id => { const st = me && statOf(me, id); return !!(st && st.s && st.s.length); };
@@ -1759,6 +1929,7 @@ let quickOpen = false, quickShut = 0, quickBack = 0, quickFace = '';
 function paintQuick(){
   const b = $('quickBtn'), r = openRoute(), can = !!r && !r.retired;
   b.disabled = !can;
+  $('quickFan').classList.toggle('clock', can && byNumber(r));       // a climb by number can be timed
   if (!can && quickOpen) return quickShow(false);
   const face = quickOpen ? 'x' : 'words';
   if (face !== quickFace){
@@ -1801,6 +1972,7 @@ function quickSay(txt, cls){              // what was logged, said for a moment
 function quickPick(which){
   quickShow(false);
   if (!needMe()) return;
+  if (which === 'go') return startClock();
   if (which === 'try') return doTry();
   openSend($('quickBtn'));                // the four take the place of the two
 }
@@ -1856,25 +2028,29 @@ function paintLog(){
   const last = mine[mine.length - 1], lr = last && routeById(last.route);
   $('lpUndo').hidden = !last;
   if (last){ const armed = Date.now() - undoArmed <= 4000; $('lpUndo').classList.toggle('armed', armed);
-    $('lpUndo').textContent = armed ? 'Tap again to take it back' : 'Undo: ' + RESULT[last.result] + ' on ' + (lr ? lr.name : 'a route'); }
+    $('lpUndo').textContent = armed ? 'Tap again to take it back' : 'Undo: ' + goWords(last) + ' on ' + (lr ? lr.name : 'a route'); }
   $('lpRouteLbl').hidden = !r;
   const here = r ? myLog.filter(e => e.route === r.id) : [];
   $('lpHist').innerHTML = !r ? '' : !me ? '<div class="none">Say who you are to keep a logbook.</div>'
-    : here.length ? here.map(e => kv('<b>' + RESULT[e.result] + '</b>', when(e.t))).join('') : '<div class="none">You have not been on it yet.</div>';
-  const who = r ? senders(r.id) : [];
-  $('lpWhoLbl').textContent = r ? (who.length ? 'Who has climbed it' : 'Nobody has climbed it yet') : '';
-  $('lpWho').innerHTML = who.map(p => kv('<b>' + esc(p) + '</b>', RESULT[firstSend(p, r.id)], p === me ? 'me' : '')).join('');
+    : here.length ? (r && bestWords(me, r) ? kv('<b>Your best</b>', (statOf(me, r.id).g[0] >= topOf(r) ? 'the top in ' : '') + bestWords(me, r).replace(/^to /, 'to hold ').replace(' · ', ' in '), 'me') : '') +
+        here.map(e => kv('<b>' + goWords(e) + '</b>', when(e.t))).join('') : '<div class="none">You have not been on it yet.</div>';
+  // who has climbed it; on a climb by number, also how far each has got against the clock, the furthest first
+  const sent = r ? senders(r.id) : [], timed = r && byNumber(r) ? snap.people.filter(p => (statOf(p, r.id) || {}).g && !sent.includes(p)) : [];
+  timed.sort((a, b) => { const x = statOf(a, r.id).g, y = statOf(b, r.id).g; return y[0] - x[0] || x[1] - y[1]; });
+  const who = sent.concat(timed);
+  $('lpWhoLbl').textContent = r ? (sent.length ? 'Who has climbed it' : timed.length ? 'How far people have got' : 'Nobody has climbed it yet') : '';
+  $('lpWho').innerHTML = who.map(p => kv('<b>' + esc(p) + '</b>', sent.includes(p) ? RESULT[firstSend(p, r.id)] + (bestWords(p, r) && statOf(p, r.id).g[0] >= topOf(r) ? ' · ' + bestWords(p, r) : '') : bestWords(p, r), p === me ? 'me' : '')).join('');
   // a session is everything since a gap of four hours
   const sess = [];
   for (const e of myLog){ if (sess.length ? Date.parse(sess[sess.length - 1].t) - Date.parse(e.t) > 4 * 3600000 : Date.now() - Date.parse(e.t) > 4 * 3600000) break; sess.push(e); }
   $('lpSession').innerHTML = !me ? '<div class="none">Say who you are to keep a logbook.</div>'
-    : sess.length ? sess.map(e => { const x = routeById(e.route); return kv('<b>' + esc(x ? x.name : 'a route that is gone') + '</b>', RESULT[e.result] + ' · ' + when(e.t)); }).join('')
+    : sess.length ? sess.map(e => { const x = routeById(e.route); return kv('<b>' + esc(x ? x.name : 'a route that is gone') + '</b>', goWords(e) + ' · ' + when(e.t)); }).join('')
     : '<div class="none">Nothing logged this session.</div>';
   const rows = snap.people.map(n => ({ n, ...scoreFor(n) })).filter(x => x.total > 0).sort((a, b) => b.total - a.total);
   $('lpPoints').innerHTML = rows.length ? rows.map((x, i) => kv((i + 1) + '. <b>' + esc(x.n) + '</b>', x.total + ' points · ' + x.sends + ' sent' + (x.flashes ? ' · ' + x.flashes + ' flashed' : ''), x.n === me ? 'me' : '')).join('')
     : '<div class="none">No sends yet.</div>';
   $('lpCrew').innerHTML = crewLog.length ? crewLog.slice(0, 25).map(e => { const x = routeById(e.route);
-      return kv('<b>' + esc(e.person) + '</b> · ' + esc(x ? x.name : 'a route that is gone'), RESULT[e.result] + ' · ' + when(e.t), e.person === me ? 'me' : ''); }).join('')
+      return kv('<b>' + esc(e.person) + '</b> · ' + esc(x ? x.name : 'a route that is gone'), goWords(e) + ' · ' + when(e.t), e.person === me ? 'me' : ''); }).join('')
     : '<div class="none">Nothing yet.</div>';
 }
 
@@ -1896,7 +2072,8 @@ function paintList(){
   }
   box.innerHTML = list.map(r => {
     const n = senders(r.id).length, st = me ? statOf(me, r.id) : null, f = me ? firstSend(me, r.id) : null;
-    const mineTxt = f ? '✓ ' + RESULT[f] : st ? st.a + (st.a === 1 ? ' try' : ' tries') : '';
+    const bw = me && byNumber(r) ? bestWords(me, r) : '';              // a climb by number: my best go against the clock
+    const mineTxt = f ? '✓ ' + RESULT[f] + (bw && st.g[0] >= topOf(r) ? ' · ' + bw : '') : bw ? bw : st ? st.a + (st.a === 1 ? ' try' : ' tries') : '';
     return '<div class="rt' + (r.id === openId ? ' sel' : '') + (r.retired ? ' gone' : '') + '" data-id="' + r.id + '"><div class="nm"><b>' + esc(r.name) + '</b><span>' + esc(r.setter) +
       ' · ' + (byNumber(r) ? 'by number · ' : '') + FEET[r.feet] + (n ? ' · ' + n + ' sent' : '') + (r.tape ? ' · ' + esc(r.tape) : '') + '</span></div>' +
       '<div class="rside"><div class="gd" data-g="' + r.grade + '"></div><div class="who' + (f ? ' sent' : '') + '">' + mineTxt + '</div></div><div class="chev">›</div></div>';
@@ -2193,10 +2370,11 @@ paintMe();
   setView(turnView().key);
   showPage('board'); paintAll();
   await refresh();
+  clockBack();
   await seedCrew();
   await knowMe();
 })();
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && wall) refresh(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && wall){ refresh(); if (timing && !timing.t1) awake(true); } });
 /* Ask again every minute while the page is being looked at; three times as often while the map is
    being fixed, when two people at the wall may be at it together. */
 let tick = 0;

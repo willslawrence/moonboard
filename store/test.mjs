@@ -146,6 +146,54 @@ await call('POST', '/api/w/test-n/log', { person: 'Nia', route: old1.id, result:
 s = await call('GET', '/api/w/test-n/log?person=Nia');
 check('and so may a go', s.entries[0].t === '2026-01-05T10:00:00.000Z' && s.entries[0].result === '4+', s.entries && s.entries[0]);
 await call('POST', '/api/w/test-n/reset', {});
+
+// a go against the clock on a climb by number: how far, and how long
+await call('POST', '/api/w/test-t/person', { name: 'Nia' }); await call('POST', '/api/w/test-t/person', { name: 'Omar' });
+s = await call('POST', '/api/w/test-t/route', { by: 'Nia', name: 'Circuit', grade: 5, marks: Array.from({ length: 20 }, (_, i) => ({ h: 'h' + i, r: 'n', n: i + 1 })) });
+const circ = s.id;
+s = await call('POST', '/api/w/test-t/log', { person: 'Nia', route: circ, result: 'try', n: 12, secs: 95 });
+check('a go against the clock is kept with the number reached and the seconds it took', s.status === 200 && s.stats.Nia[circ].a === 1 && JSON.stringify(s.stats.Nia[circ].g) === '[12,95]', s.stats || s);
+s = await call('POST', '/api/w/test-t/log', { person: 'Nia', route: circ, result: 'try', n: 9, secs: 40 });
+check('a shorter go does not become the best', JSON.stringify(s.stats.Nia[circ].g) === '[12,95]' && s.stats.Nia[circ].a === 2, s.stats.Nia[circ]);
+s = await call('POST', '/api/w/test-t/log', { person: 'Nia', route: circ, result: 'try', n: 12, secs: 80 });
+check('as far again but quicker does', JSON.stringify(s.stats.Nia[circ].g) === '[12,80]', s.stats.Nia[circ]);
+s = await call('POST', '/api/w/test-t/log', { person: 'Nia', route: circ, result: '4+', n: 20, secs: 300 });
+check('further is better however long it took, and reaching the top can be a send', JSON.stringify(s.stats.Nia[circ].g) === '[20,300]' && s.stats.Nia[circ].r === '4+' && s.stats.Nia[circ].a === 0, s.stats.Nia[circ]);
+s = await call('POST', '/api/w/test-t/log', { person: 'Omar', route: circ, result: 'try' });
+check('a go with no clock says nothing of one', s.stats.Omar[circ].a === 1 && s.stats.Omar[circ].g === undefined, s.stats.Omar[circ]);
+check('how far without how long is refused, and so is the other way round', (await call('POST', '/api/w/test-t/log', { person: 'Nia', route: circ, result: 'try', n: 5 })).status === 400 &&
+  (await call('POST', '/api/w/test-t/log', { person: 'Nia', route: circ, result: 'try', secs: 50 })).status === 400);
+check('nonsense for either is refused', (await call('POST', '/api/w/test-t/log', { person: 'Nia', route: circ, result: 'try', n: 0, secs: 50 })).status === 400 &&
+  (await call('POST', '/api/w/test-t/log', { person: 'Nia', route: circ, result: 'try', n: 5, secs: 1.5 })).status === 400 &&
+  (await call('POST', '/api/w/test-t/log', { person: 'Nia', route: circ, result: 'try', n: 5, secs: 90000 })).status === 400);
+s = await call('GET', '/api/w/test-t/log?person=Nia');
+check('the logbook rows carry them', s.entries.length === 4 && s.entries[0].n === 20 && s.entries[0].secs === 300 && s.entries[0].result === '4+' && s.entries[3].n === 12 && s.entries[3].secs === 95, s.entries);
+s = await call('GET', '/api/w/test-t/log?person=Omar');
+check('and a row with no clock has neither', s.entries.length === 1 && !('n' in s.entries[0]) && !('secs' in s.entries[0]), s.entries);
+s = await call('POST', '/api/w/test-t/log/undo', { person: 'Nia' });
+check('taking the last go back takes its best with it', JSON.stringify(s.stats.Nia[circ].g) === '[12,80]' && s.stats.Nia[circ].r === null && s.stats.Nia[circ].a === 3, s.stats.Nia[circ]);
+await call('POST', '/api/w/test-t/reset', {});
+{ // a database made before there was a clock has no such columns: they are added, and what it held is kept
+  const { standInD1 } = await import('./stand-in-d1.mjs');
+  const oldDb = standInD1();
+  for (const q of [
+    `CREATE TABLE people (wall TEXT NOT NULL, name TEXT NOT NULL, t TEXT NOT NULL, PRIMARY KEY (wall, name))`,
+    `CREATE TABLE routes (wall TEXT NOT NULL, id INTEGER NOT NULL, name TEXT NOT NULL, grade INTEGER NOT NULL, setter TEXT NOT NULL, marks TEXT NOT NULL, feet TEXT NOT NULL, tape TEXT NOT NULL DEFAULT '', note TEXT NOT NULL DEFAULT '', t TEXT NOT NULL, edited TEXT, retired INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (wall, id))`,
+    `CREATE TABLE log (k INTEGER PRIMARY KEY AUTOINCREMENT, wall TEXT NOT NULL, t TEXT NOT NULL, person TEXT NOT NULL, route INTEGER NOT NULL, result TEXT NOT NULL)`,
+    `CREATE TABLE stats (wall TEXT NOT NULL, person TEXT NOT NULL, route INTEGER NOT NULL, a INTEGER NOT NULL, r TEXT, s TEXT NOT NULL, d TEXT, PRIMARY KEY (wall, person, route))`,
+    `INSERT INTO people VALUES ('sun', 'Will', '2026-10-01T00:00:00.000Z')`,
+    `INSERT INTO routes (wall, id, name, grade, setter, marks, feet, t) VALUES ('sun', 1, 'Old', 3, 'Will', '[{"h":"a","r":"n","n":1},{"h":"b","r":"n","n":2}]', 'any', '2026-10-01T00:00:00.000Z')`,
+    `INSERT INTO log (wall, t, person, route, result) VALUES ('sun', '2026-10-02T00:00:00.000Z', 'Will', 1, 'try')`,
+    `INSERT INTO stats VALUES ('sun', 'Will', 1, 1, NULL, '[]', '2026-10-02T00:00:00.000Z')`,
+  ]) await oldDb.prepare(q).run();
+  const ask = async (method, path, body) => { const r = await handle(new Request('https://x.test' + path, body ? { method, body: JSON.stringify(body) } : { method }), oldDb); return { status: r.status, ...(await r.json()) }; };
+  let o = await ask('GET', '/api/w/sun');
+  check('a database made before there was a clock still opens, with what it held', o.status === 200 && o.routes.length === 1 && o.stats.Will[1].a === 1 && o.stats.Will[1].g === undefined, o);
+  o = await ask('POST', '/api/w/sun/log', { person: 'Will', route: 1, result: 'try', n: 2, secs: 30 });
+  check('and takes a go against the clock', o.status === 200 && o.stats.Will[1].a === 2 && JSON.stringify(o.stats.Will[1].g) === '[2,30]', o.stats || o);
+  o = await ask('GET', '/api/w/sun');
+  check('and opens again after that', o.status === 200 && JSON.stringify(o.stats.Will[1].g) === '[2,30]');
+}
 check('a body that is not JSON is refused',
   (await handle(new Request('https://x.test/api/w/sun/person', { method: 'POST', body: 'name=Will' }), db)).status === 400);
 check('other methods are refused', (await handle(new Request('https://x.test/api/w/sun', { method: 'DELETE' }), db)).status === 405);
