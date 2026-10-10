@@ -337,6 +337,13 @@ none is missing between. Such a route needs no start or finish and may have up t
 holds. In the store a numbered hold is a mark `{ h, r: 'n', n }`; a hold may carry two
 numbers.
 
+**A match.** Where both hands go on the one hold it carries two numbers in a row. A finger
+held on a hold while numbering makes it one (`draftMatch`): a hold with no number takes two
+at once, the number the bar is asking for and the next free one; a hold that has a number
+takes one more, the number after its highest if no hold has that, else the number before
+its lowest, or whatever number was picked by hand in the bar. A tap still takes one number
+off at a time. The hold is drawn once with both numbers on it.
+
 **Nine numbers at a time.** A hundred numbers on the wall at once cannot be read, so a
 climb by number with more than nine of them shows nine, counted along the numbers it has
 (stickers fall off, so there are gaps), and a slider moves on three at a time: three new

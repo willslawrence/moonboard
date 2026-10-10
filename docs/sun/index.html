@@ -602,7 +602,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-10 18:24';
+const BUILD = '2026-10-10 20:10';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -1278,7 +1278,14 @@ $('pic').addEventListener('pointerdown', e => {
   $('pic').setPointerCapture(e.pointerId);
   fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
   const r = $('pic').getBoundingClientRect();
-  if (fingers.size === 1) g = { kind: 'one', x0: e.clientX, y0: e.clientY, t0: Date.now(), zx: Z.x, zy: Z.y, moved: 0 };
+  if (fingers.size === 1){
+    g = { kind: 'one', x0: e.clientX, y0: e.clientY, t0: Date.now(), zx: Z.x, zy: Z.y, moved: 0 };
+    if (focus && draft && brush === 'n'){
+      // numbering a climb: a finger that stays where it went down is a match (see draftMatch), not a tap
+      const mine = g, px = e.clientX - r.left, py = e.clientY - r.top;
+      g.press = setTimeout(() => { if (g === mine && fingers.size === 1 && mine.moved < 9 && !mine.drag && pressAt(px, py)){ mine.held = true; lastTap = null; } }, 480);
+    }
+  }
   else if (fingers.size === 2){
     const [a, b] = [...fingers.values()];
     g = { kind: 'two', d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, k: Z.k, mx: (a.x + b.x) / 2 - r.left, my: (a.y + b.y) / 2 - r.top };
@@ -1315,10 +1322,11 @@ function fingerUp(e){
   if (!fingers.has(e.pointerId)) return;
   fingers.delete(e.pointerId);
   const was = g;
+  if (was && was.press) clearTimeout(was.press);
   if (was && was.drag === 'yes' && fingers.size === 0){ turning = false; turnPaint(); paintBoard(); paintTurnBar(); }      // let go: it stays where it is
   if (fingers.size === 0) g = null;
   else if (fingers.size === 1){ const [a] = [...fingers.values()]; g = { kind: 'one', x0: a.x, y0: a.y, t0: 0, zx: Z.x, zy: Z.y, moved: 99 }; }   // what is left of a pinch is not a tap
-  if (!was || was.kind !== 'one' || e.type === 'pointercancel') return;
+  if (!was || was.kind !== 'one' || e.type === 'pointercancel' || was.held) return;       // (held: the finger stayed put and that has been seen to)
   const dx = e.clientX - was.x0, dy = e.clientY - was.y0, dt = Date.now() - was.t0;
   if (was.moved < 9 && dt < 600){
     const r = $('pic').getBoundingClientRect(), now = Date.now();
@@ -1348,6 +1356,21 @@ $('pic').addEventListener('wheel', e => {
    picture of the room, where it goes to the wall under the finger. In focus it is for the holds:
    it picks one, or marks one for the route being saved, or marks a fix to the map. */
 let undoTap = null;                 // takes back what the last tap did, for when it turns out to be the first of two
+/* A finger held on the picture while a climb is being numbered: the place under it is a match. */
+function pressAt(px, py){
+  if (!focus || !draft || brush !== 'n') return false;
+  const v = viewNow(), s = k0 * Z.k, x = (px - Z.x) / s / v.w, y = (py - Z.y) / s / v.h;
+  if (x < 0 || x > 1 || y < 0 || y > 1) return false;
+  const h = holdAt(x, y, 16 / s);
+  let wk = v.key, wx = x, wy = y;
+  if (v.faces){
+    const at = h ? { v: h.v, x: h.c[0], y: h.c[1] } : turnAt(v, x, y);
+    if (!at) return false;
+    wk = at.v; wx = at.x; wy = at.y;
+  }
+  draftMatch(h, wk, wx, wy);
+  return true;
+}
 function tapAt(px, py){
   const v = viewNow(), s = k0 * Z.k, x = (px - Z.x) / s / v.w, y = (py - Z.y) / s / v.h;
   undoTap = null;
@@ -1486,7 +1509,7 @@ function paintBars(){
       const gaps = numGaps();
       $('numNow').textContent = numNext();
       $('draftSay').textContent = (n('n') ? n('n') + ' numbered' + (gaps.length ? ' · missing ' + gaps.slice(0, 6).join(', ') + (gaps.length > 6 ? ' and ' + (gaps.length - 6) + ' more' : '') : '') + '. ' : '') +
-        'Tap the hold that is number ' + numNext() + '. Tap a numbered hold again to take its number off.';
+        'Tap the hold that is number ' + numNext() + '. Hold a finger on a hold for a match: it takes two numbers. A tap on a numbered hold takes a number off.';
     } else $('draftSay').textContent = draft.marks.length
       ? [n('n') ? n('n') + ' numbered' : '', n('s') + ' start', n('h') + ' hold' + (n('h') === 1 ? '' : 's'), n('f') ? n('f') + ' foot only' : '', n('e') + ' finish'].filter(Boolean).join(' · ') +
         '. Pick what a tap marks, then tap the hold.'
@@ -1943,6 +1966,8 @@ function numNext(){
   while (have.has(n)) n++;
   return n;
 }
+/* how many places carry the numbers: fewer than the numbers when some hold is a match and carries two */
+const numPlaces = () => new Set(draft.marks.filter(m => m.r === 'n').map(m => m.h || m.v + ' ' + m.x + ' ' + m.y)).size;
 function numGaps(){
   const have = numHave(), top = Math.max(0, ...have), out = [];
   for (let n = 1; n < top; n++) if (!have.has(n)) out.push(n);
@@ -1979,6 +2004,33 @@ function draftTap(h, vkey, x, y){
   if (brush === 's' && draft.marks.some(m => m.r === 's')) brush = 'h';
   paintBoard();
 }
+/* A match: both hands go on the one hold, so it carries two numbers in a row (Will, 2026-10-10: "you match on that
+   hold... we need a way to choose them as a match, like a press and a hold"). A finger held on a hold while numbering:
+     - a hold with no number takes two at once, the number the bar is asking for and the next free one after it;
+     - a hold that has a number takes one more: the number the bar was set to by hand, if it was; else the number after
+       its highest, if no hold has that; else the number before its lowest, if no hold has that; else the bar's.
+   A tap on it still takes one number off at a time, the highest first. */
+function draftMatch(h, vkey, x, y){
+  const v = wall.views.find(w => w.key === vkey) || viewNow(), rr = 0.021 * v.w;
+  const here = m => h ? m.h === h.id : !m.h && m.v === vkey && Math.hypot((m.x - x) * v.w, (m.y - y) * v.h) < rr * 1.2;
+  const mine = draft.marks.filter(m => m.r === 'n' && here(m)), at = mine[0], have = numHave();
+  const mark = n => h ? { h: h.id, r: 'n', n } : at ? { v: at.v, x: at.x, y: at.y, r: 'n', n } : { v: vkey, x: +x.toFixed(4), y: +y.toFixed(4), r: 'n', n };
+  if (draft.marks.length >= 250 - (mine.length ? 0 : 1)) return toast('That is as many holds as a route can have.', true);
+  const i = draft.marks.findIndex(m => m.r !== 'n' && here(m));
+  if (i >= 0) draft.marks.splice(i, 1);
+  if (mine.length){
+    const hi = Math.max(...mine.map(m => m.n)), lo = Math.min(...mine.map(m => m.n));
+    draft.marks.push(mark(numAt ? numNext() : !have.has(hi + 1) && hi < 999 ? hi + 1 : lo > 1 && !have.has(lo - 1) ? lo - 1 : numNext()));
+  } else {
+    const first = numNext(); draft.marks.push(mark(first));
+    let second = first + 1; const now = numHave(); while (now.has(second)) second++;
+    draft.marks.push(mark(second));
+  }
+  numAt = null;
+  const ns = draft.marks.filter(m => m.r === 'n' && here(m)).map(m => m.n).sort((a, b) => a - b);
+  hint('A match: ' + ns.slice(0, -1).join(', ') + ' and ' + ns[ns.length - 1]);
+  paintBoard();
+}
 $('brush').onclick = e => { const b = e.target.closest('button[data-r]'); if (b){ brush = b.dataset.r; paintBars(); } };
 $('draftX').onclick = () => {
   if (draft.marks.length > 2 && !confirm(draft.id ? 'Leave the route as it was?' : 'Throw this route away?')) return;
@@ -2001,7 +2053,7 @@ $('draftNext').onclick = () => {
   $('shTitle').textContent = draft.id ? 'Change the route' : 'Name the route';
   const n = k => draft.marks.filter(m => m.r === k).length;
   $('shSay').textContent = n('n') >= 2
-    ? n('n') + ' holds by number' + (numGaps().length ? ', ' + numGaps().length + ' numbers still missing' : '') + (n('f') ? ', ' + n('f') + ' foot only' : '') + '. It starts on the lowest and ends on the highest.'
+    ? (numPlaces() < n('n') ? n('n') + ' numbers on ' + numPlaces() + ' holds' : n('n') + ' holds by number') + (numGaps().length ? ', ' + numGaps().length + (numGaps().length === 1 ? ' number' : ' numbers') + ' still missing' : '') + (n('f') ? ', ' + n('f') + ' foot only' : '') + '. It starts on the lowest and ends on the highest.'
     : draft.marks.length + ' holds: ' + n('s') + ' start, ' + n('e') + ' finish' + (n('f') ? ', ' + n('f') + ' foot only' : '') + '.';
   $('shName').value = draft.name; $('shTape').value = draft.tape; $('shNote').value = draft.note; $('saveErr').textContent = '';
   $('shSave').textContent = draft.id ? 'Save the change' : 'Save route';
