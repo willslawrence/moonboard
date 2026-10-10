@@ -256,7 +256,14 @@ Will's measurements of the wall: the face square-on and to scale, the board in i
 colour with the tape, the chalk and the room left out, every hold on the map cut out of a
 photo and set where it is, and see-through round its edge. `wall.json` says where each
 face stands (`faces`: the room's centimetres at a place on the face) and the browser
-draws them (CSS `matrix3d`), farthest first.
+draws them (CSS `matrix3d`), farthest first. The boards have plywood's grain drawn on
+them (the map-making's `wood.py`), fainter where they are painted.
+
+**Holds that are out of sight.** From where one stands the island box's right-hand side
+and its near end face away, and there are holds on both. Those two faces are folded out
+into the plane of the box's front face and only their holds are drawn, so the holds show
+beside the box, off its edge, and can be tapped like any other. In `wall.json` such a
+face is like any other; its outline is just what its holds cover.
 
 **Two ways to look at it, and anywhere between.** One stands back from the corner and
 turns one's head. Two ways of looking have a name (`eye.poses`): **Flat** is the whole flat
@@ -329,6 +336,16 @@ the start and finish colours, and a thin line runs from each number to the next 
 none is missing between. Such a route needs no start or finish and may have up to 250
 holds. In the store a numbered hold is a mark `{ h, r: 'n', n }`; a hold may carry two
 numbers.
+
+**Nine numbers at a time.** A hundred numbers on the wall at once cannot be read, so a
+climb by number with more than nine of them shows nine, counted along the numbers it has
+(stickers fall off, so there are gaps), and a slider moves on three at a time: three new
+ones, three gone. The slider lies over the row with the route's name on the board page and
+under the picture in focus, with an arrow at each end and the first and last number in
+sight beside it. When the nine it moves to are not all on the screen the head turns to
+where they are (`bestLook`, which is also how a route is looked at when it is opened).
+While such a route is being marked or changed every number shows, because then the gaps
+are what matter.
 
 **Changing a route.** Only its setter is offered **Change it** and **Take it down**, on
 the log page. A route taken down leaves the list and keeps what was logged on it.

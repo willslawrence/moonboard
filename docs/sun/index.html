@@ -182,6 +182,23 @@
   /* ---- the row under the picture: the open route and the way to the search, then Quick log ---- */
   #bar{background:var(--bg);padding:5px 0 7px}
   #barTxt{display:flex;align-items:center;gap:6px;min-width:0}
+  /* A climb by number shows nine of its numbers at a time, and this is the slider that says which nine: over the row
+     with the route's name on the board page, and under the picture in focus (where the two buttons for picked holds go). */
+  .numBar{display:flex;align-items:center;gap:6px;height:36px;padding:0 5px;border-radius:10px;background:rgba(20,20,22,.62);color:#fff;
+       -webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
+  .numBar[hidden]{display:none}
+  .numBar button{flex:none;width:36px;height:28px;padding:0;border:0;border-radius:8px;background:rgba(255,255,255,.16);color:#fff;font-size:19px;line-height:1}
+  .numBar button:disabled{opacity:.3}
+  .numBar b{flex:none;min-width:58px;text-align:center;font:700 13px ui-monospace,Menlo,monospace;letter-spacing:-.02em}
+  .numBar input[type=range]{flex:1 1 auto;min-width:0;width:auto;height:28px;margin:0;padding:0;border:0;background:transparent;-webkit-appearance:none;appearance:none;touch-action:none}
+  .numBar input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:rgba(255,255,255,.38)}
+  .numBar input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:26px;height:26px;margin-top:-11px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 4px rgba(0,0,0,.45)}
+  .numBar input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:rgba(255,255,255,.38)}
+  .numBar input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 4px rgba(0,0,0,.45)}
+  #numBar{margin-bottom:6px}
+  body.listPage #numBar,body.logPage #numBar,body.setPage #numBar{display:none}
+  #numBarF{display:none}
+  body.focus #numBarF:not([hidden]){display:flex;position:absolute;left:6px;right:6px;bottom:calc(env(safe-area-inset-bottom) + 8px);height:46px;z-index:2}
   #filtBtn{position:relative;flex:none;width:38px;height:38px;padding:0;font-size:16px;line-height:1;border-radius:9px;display:none}
   #filtBtn.on{background:var(--panel2);color:var(--ink);border-color:var(--box2)}
   #filtBtn.dot::after{content:"";position:absolute;right:5px;top:5px;width:8px;height:8px;border-radius:50%;background:#22c55e}
@@ -409,12 +426,14 @@
       <p id="fixSay"></p>
       <div class="two"><button id="fixDone" class="solid">Done</button></div>
     </div>
+    <div id="numBarF" class="numBar" hidden><button class="nb-prev" aria-label="The three before">&#8249;</button><input type="range" class="nb-range" min="0" max="1" step="1" value="0" aria-label="Which numbers are shown"><button class="nb-next" aria-label="The next three">&#8250;</button><b class="nb-say"></b></div>
     <div id="focusHint"></div>
   </div>
 </section>
 
 <div id="bar">
   <div id="listCap"><b>Routes</b><span id="listN"></span></div>
+  <div id="numBar" class="numBar" hidden><button class="nb-prev" aria-label="The three before">&#8249;</button><input type="range" class="nb-range" min="0" max="1" step="1" value="0" aria-label="Which numbers are shown"><button class="nb-next" aria-label="The next three">&#8250;</button><b class="nb-say"></b></div>
   <div id="barTxt">
     <button id="filtBtn" class="ghost" aria-label="Filters">&#9776;</button>
     <div id="qBox">
@@ -583,7 +602,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-10 17:39';
+const BUILD = '2026-10-10 18:24';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -907,10 +926,14 @@ function extentY(v, t, x0, x1){
   }
   return b > a ? [a, b] : [0, v.h];
 }
-/* where a place in the room is across the unzoomed picture, head at t */
+/* where a place in the room is on the unzoomed picture, head at t: across it, and both ways */
 function sxAt(v, t, P){
   const cam = camAt(v, t), y = cam.yaw, q0 = P[0] - cam.E[0], q2 = P[2] - cam.E[2];
   return cam.cx + cam.f * (q0 * Math.cos(y) + q2 * Math.sin(y)) / Math.max(1, q0 * Math.sin(y) - q2 * Math.cos(y));
+}
+function scrAt(v, t, P){
+  const cam = camAt(v, t), y = cam.yaw, q0 = P[0] - cam.E[0], q2 = P[2] - cam.E[2], w = Math.max(1, q0 * Math.sin(y) - q2 * Math.cos(y));
+  return [cam.cx + cam.f * (q0 * Math.cos(y) + q2 * Math.sin(y)) / w, cam.cy - cam.f * (P[1] - cam.E[1]) / w];
 }
 /* The picture as it is when it is left to itself, head at t.
    On the board page it is the whole picture, unzoomed: the picture there is made just tall enough for the taller of
@@ -1050,15 +1073,17 @@ function turnAt(v, x, y){
 }
 let turnWait = 0, turnAnim = 0;
 function turnSoon(){ if (!turnWait) turnWait = requestAnimationFrame(() => { turnWait = 0; turnPaint(); paintBoard(turning); }); }
-/* Turn the head to t, gliding, and let the picture go back to what it is when left to itself there (homeAt): this is
-   what the two buttons do, and what opening a route does. While it glides the picture is held (Z.user), so that it
+/* Turn the head to t, gliding, and let the picture go back to what it is when left to itself there (homeAt), or slid
+   on by `slid` if the head is going to the last pose: this is what the two buttons do, and what opening a route does. While it glides the picture is held (Z.user), so that it
    goes from wherever a finger had it straight to where it is going. */
 let gliding = false;
-function turnTo(to){
+function turnTo(to, slid){
   const v = viewNow();
   if (!v.faces) return;
-  to = Math.max(0, Math.min(posesOf(v).length - 1, to));
+  const n = posesOf(v).length - 1;
+  to = Math.max(0, Math.min(n, to));
   const from = CAM.t, z0 = { k: Z.k, x: Z.x, y: Z.y }, z1 = homeAt(v, to), t0 = performance.now();
+  if (slid && to >= n) z1.x = Math.min(0, Math.max(v.w * (1 - z1.k), slid));       // with the head at the last pose the picture may be slid on
   const ms = Math.abs(to - from) < 0.01 && Math.abs(z1.k - z0.k) < 0.01 && Math.abs(z1.x - z0.x) < 1 && Math.abs(z1.y - z0.y) < 1 ? 0 : 260;
   cancelAnimationFrame(turnAnim);
   const go = now => {
@@ -1394,7 +1419,7 @@ const markAt = (m, v) => {              // the middle of a mark, in picture v's 
 const byNumber = r => !!r && r.marks.some(m => m.r === 'n');
 function paintBoard(light){              // light: only what is drawn on the picture (while a finger is turning the model)
   if (!wall) return;
-  const v = viewNow(), marks = marksNow(), r = openRoute();
+  const v = viewNow(), r = openRoute(), all = marksNow(), marks = !draft && r ? marksShown(r) : all;       // (a long climb by number: nine of its numbers)
   let svg = '';
   {
     const here = marks.filter(m => onPic(v, markView(m)) && (m.h ? G(H(m.h), v) : toPic(v, m.v, m.x, m.y)));
@@ -1412,7 +1437,7 @@ function paintBoard(light){              // light: only what is drawn on the pic
       }).join('');
     else {
       // a climb by number: a line from each number to the next (where both are on this picture and none is missing between)
-      const nums = marks.filter(m => m.r === 'n'), lo = Math.min(...nums.map(m => m.n)), hi = Math.max(...nums.map(m => m.n));
+      const nums = marks.filter(m => m.r === 'n'), every = all.filter(m => m.r === 'n'), lo = Math.min(...every.map(m => m.n)), hi = Math.max(...every.map(m => m.n));       // the route's own first and last keep their colours
       const first = {}; nums.forEach(m => { if (!first[m.n]) first[m.n] = m; });
       let line = '';
       for (const m of nums){
@@ -1445,7 +1470,7 @@ function paintBars(){
   b.classList.toggle('fixing', focus && fixing);
   paintPic(); paintQuick();
   // a different bar under the picture leaves it a different height: fit it again, or its foot is under the bar
-  const now = [focus, focus && !!draft, focus && fixing, fixing && fixKind].join();
+  const now = [focus, focus && !!draft, focus && fixing, fixing && fixKind, paintNum()].join();
   if (now !== shape){ shape = now; requestAnimationFrame(fit); }
   $('fcName').textContent = fixing ? 'Fixing the map of holds' : draft ? (draft.id ? 'Changing “' + draft.name + '”' : 'A new route') : r ? r.name : 'Sun board';
   $('fcGd').hidden = !(r && !draft && !fixing);
@@ -1499,33 +1524,100 @@ function shown(){
                sent: (a, b) => senders(b.id).length - senders(a.id).length || b.id - a.id, name: (a, b) => a.name.localeCompare(b.name) };
   return list.sort(by[FILTERS.sort]);
 }
-/* Where to turn the head for a route: to the pose that shows all of it, if every hold of it is on that side; else to
-   wherever between the poses most of it is in sight, and nearest the middle of the picture. */
-function poseFor(r, v){
-  const on = new Set(), P = [];
-  for (const m of r.marks){
+/* Where to look to see some marks: where the head is, and, with the head at the last pose, how far the picture is
+   slid on (the wall is one strip: see dragTo). It is wherever most of them are in sight, and of those where they
+   are nearest the middle of the picture; a pose itself wins a near thing, so that a route which is all on one wall
+   is seen as that wall's button shows it. */
+function bestLook(marks, v){
+  const P = [];
+  for (const m of marks){
     const h = m.h && H(m.h), f = h ? h.f || faceKey(v, h.v, h.c[0], h.c[1]) : m.h ? null : faceKey(v, m.v, m.x, m.y);
-    if (!f) continue;
-    on.add(f);
-    const F = v.faces.find(q => q.key === f), c = h ? h.c : [m.x, m.y];
+    const F = f && v.faces.find(q => q.key === f), c = h ? h.c : [m.x, m.y];
     if (F) P.push([0, 1, 2].map(j => F.o[j] + c[0] * F.u[j] + c[1] * F.v[j]));
   }
-  const ps = posesOf(v), whole = ps.findIndex(q => q.fit && on.size && [...on].every(f => q.fit.includes(f)));
-  if (whole >= 0 || !P.length) return whole >= 0 ? whole : CAM.t;
-  let best = CAM.t, score = -9;
-  for (let i = 0; i <= (ps.length - 1) * 20; i++){
-    const t = i / 20, k = homeAt(v, t).k, xs = P.map(p => k * sxAt(v, t, p));
-    const seen = xs.filter(x => x > 8 && x < v.w - 8).length, mid = xs.reduce((a, b) => a + b, 0) / xs.length, sc = seen - Math.abs(mid - v.w / 2) / v.w;
-    if (sc > score){ score = sc; best = t; }
-  }
+  const n = posesOf(v).length - 1;
+  let best = { t: CAM.t, x: 0, score: -9 };
+  if (!P.length) return best;
+  const tryAt = (t, slide) => {
+    const home = homeAt(v, t), k = home.k, x = slide * v.w * (1 - k);
+    let seen = 0, sum = 0;
+    for (const p of P){ const q = scrAt(v, t, p), X = x + k * q[0], Y = home.y + k * q[1]; if (X > 14 && X < v.w - 14 && Y > 6 && Y < v.h - 6) seen++; sum += X; }
+    const score = seen - Math.abs(sum / P.length - v.w / 2) / v.w - (Number.isInteger(t) && !slide ? 0 : 0.2);
+    if (score > best.score + 1e-9) best = { t, x, score };
+  };
+  for (let i = 0; i <= n; i++) tryAt(i, 0);
+  for (let i = 0; i <= n * 20; i++) tryAt(i / 20, 0);
+  if (homeAt(v, n).k > 1.01) for (const sl of [0.25, 0.5, 0.75, 1]) tryAt(n, sl);
   return best;
 }
+const poseFor = (r, v) => bestLook(r.marks, v).t;
+
+/* ---------- a climb by number, nine at a time ----------
+   Will, 2026-10-10, of the hundred-number climb: "it's a little too hectic and busy. What I want to do is show like
+   seven holds at a time, and there'll be a slider on the bottom of the screen... you could do show nine holds total
+   at a time. And then as the slider progresses, it shows three new ones and drops three old ones. And this would be
+   the case for all of the climb by number routes." So a climb by number with more than nine numbers shows nine of
+   them, counted along the numbers it has (some have fallen off the wall), and the slider moves on three at a time.
+   While such a route is being marked or changed every number shows, because then the gaps are what matter. */
+const NUM_SHOW = 9, NUM_STEP = 3;
+let winAt = 0, winFor = null, winTurn = 0;       // which step the slider is on; for which route; a turn of the head waiting
+const numList = r => r ? [...new Set(r.marks.filter(m => m.r === 'n').map(m => m.n))].sort((a, b) => a - b) : [];
+const numSteps = r => { const n = numList(r).length; return n > NUM_SHOW ? Math.ceil((n - NUM_SHOW) / NUM_STEP) : 0; };
+/* the numbers in sight now, or null when the route shows all it has */
+function numWindow(r){
+  const steps = draft || fixing ? 0 : numSteps(r);
+  if (!steps) return null;
+  if (winFor !== r.id){ winFor = r.id; winAt = 0; }
+  winAt = Math.max(0, Math.min(steps, winAt));
+  return new Set(numList(r).slice(winAt * NUM_STEP, winAt * NUM_STEP + NUM_SHOW));
+}
+/* the marks of a route that are to be drawn: all of them, or for a long climb by number the nine in sight (and anything on it that has no number) */
+function marksShown(r){ const w = numWindow(r); return w ? r.marks.filter(m => m.r !== 'n' || w.has(m.n)) : r.marks; }
+function numGo(to){
+  const r = openRoute(), steps = numSteps(r);
+  if (!r || !steps) return;
+  winFor = r.id; winAt = Math.max(0, Math.min(steps, to));
+  paintBoard();
+  // if the nine are not all on the screen, look to where they are (in a moment: the slider may still be moving)
+  clearTimeout(winTurn);
+  winTurn = setTimeout(() => {
+    const v = viewNow(), now = openRoute();
+    if (!now || now.id !== r.id || !v.faces || draft || fixing) return;
+    const ms = marksShown(now).filter(m => m.r === 'n'), s = k0 * Z.k;
+    const out = ms.some(m => { const a = markAt(m, v); return !a || Z.x + a[0] * s < 14 || Z.x + a[0] * s > v.w - 14 || Z.y + a[1] * s < 6 || Z.y + a[1] * s > v.h - 6; });
+    if (out){ const b = bestLook(ms, v); turnTo(b.t, b.x); }
+  }, 160);
+}
+function paintNum(){
+  const r = openRoute(), w = r && numWindow(r), steps = w ? numSteps(r) : 0, list = w ? [...w] : [];
+  for (const [id, show] of [['numBar', !!w], ['numBarF', !!w && !(focus && picks.length)]]){
+    const el = $(id);
+    el.hidden = !show;
+    if (!show) continue;
+    const rg = el.querySelector('.nb-range');
+    rg.max = steps; if (+rg.value !== winAt) rg.value = winAt;
+    el.querySelector('.nb-prev').disabled = winAt <= 0; el.querySelector('.nb-next').disabled = winAt >= steps;
+    el.querySelector('.nb-say').textContent = list[0] + '\u2013' + list[list.length - 1];
+  }
+  return !!w;
+}
+for (const id of ['numBar', 'numBarF']){
+  const el = $(id);
+  el.querySelector('.nb-range').oninput = e => numGo(+e.target.value);
+  el.querySelector('.nb-prev').onclick = () => numGo(winAt - 1);
+  el.querySelector('.nb-next').onclick = () => numGo(winAt + 1);
+}
+
 function open(id, stay){
   openId = id;
   quickShow(false);
   const r = openRoute(), tv = turnView();
-  if (r && tv.faces && !fixing && !stay) turnTo(poseFor(r, tv));
   if (!stay) showPage('board');
+  if (r && tv.faces && !fixing && !stay){
+    if (winFor !== id){ winFor = id; winAt = 0; }
+    fit();                              // the picture may only now be back on the screen: its size first, then where to look
+    const b = bestLook(marksShown(r), tv); turnTo(b.t, b.x);
+  }
   paintAll();
 }
 function step(dir){
