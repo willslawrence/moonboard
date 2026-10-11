@@ -332,8 +332,12 @@ tap on the model is first taken back to the face it fell on, and a hold behind a
 face cannot be tapped.
 
 **Focus, and making a route.** As on the MoonBoard, one tap on the picture does nothing and
-two taps make it the whole screen, with every hold outlined; two more taps, a stroke
-upwards or the cross go back. In focus a tap on a hold picks it, and with a hold picked two
+two taps make it the whole screen, with every hold outlined; a stroke up or down, or the
+cross, goes back. Two more taps do not: this wall's holds are close together, and two of
+them tapped quickly used to shut the picture and lose every hold picked. The holds picked
+are kept when the picture shuts, out of sight, and are there when it opens again; they go
+when they are saved as a route, let go with the small cross, or when another route is
+opened. In focus a tap on a hold picks it, and with a hold picked two
 buttons come up where the MoonBoard has *Light up taps* and *Search routes*: **Save as a
 route** and **Search routes**. There is no lighting a wall with no lights, so what is done
 with picked holds here is to keep them. *Save as a route* asks first, then goes on to
