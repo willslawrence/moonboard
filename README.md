@@ -63,8 +63,10 @@ The page you climb from, top to bottom:
 
 - At Will's, a moon and a sun side by side in the header, the one you are on filled: the
   two walls (see *The Sun board*). The Sun board's page has the same thing in the same place.
-- **Light up Route** puts the open problem on the wall. **Show 2nd route** adds it beside
-  what is already up (see *Two routes at once*).
+- **Light up Route**, a low bar across the page, puts the open problem on the wall, and
+  says in small letters that a swipe up does the same. **Show 2nd route**, which adds the
+  open problem beside what is already up (see *Two routes at once*), stands beside it only
+  on a phone that has asked for it in Settings.
 - The picture of the wall with the open problem ringed: green start, blue, red finish.
   Flick it left or right to step through the list. A long stroke up it lights the problem
   (see *A long stroke upwards*).
@@ -86,10 +88,10 @@ and stops the beta climber. Two taps are for focus.
 
 A finger going up the picture lights the open problem, the way a long swipe marks a
 message read in the mail app: it has to go far, so that it cannot happen by a slip. The
-picture goes up with the finger, and in the room that opens under it a bulb shows, grey, in
-a ring that fills as the finger goes on, with **Keep going to light it up**. Far enough is
+picture goes up with the finger, and in the room that opens under it, which is dark, a bulb
+shows, grey, in a ring that fills as the finger goes on, with **Keep going to light it up**. Far enough is
 two fifths of the picture's height (never less than 150 pixels or more than 230). There
-the ring is full, the bulb is lit, the box goes dark and the words are **Let go to light it
+the ring is full, the bulb is lit, the room goes light and the words are **Let go to light it
 up**: letting go lights the problem exactly as *Light up Route* does, and a line says *On
 the wall*, or that the board is not reached. Letting go anywhere short of that puts the
 picture back and does nothing, and so does coming back down first. A stroke that starts
@@ -241,7 +243,8 @@ old entries read correctly and points do not move.
 
 ### Two routes at once
 
-Two people on different problems, without relighting between goes. Open the second
+Two people on different problems, without relighting between goes. The button for it is
+put away until a phone asks for it in Settings. With it there, open the second
 problem and tap **Show 2nd route**. It asks one question, and on yes the problem goes up
 beside whatever is on the wall, which stays the main one.
 
@@ -310,6 +313,9 @@ the search row until the cog moved down there.
   unticked; on the 2024 set it starts on plywood and the box is ticked. Once a phone has
   ticked or unticked the box, that is what it gets on every set. Masters 2019 keeps its
   own picture.
+- **Show the "Show 2nd route" button**, for this phone only, off unless a phone turns it
+  on (`mb-pair`). Until 2026-10-11 the button was always there; Will did not expect it to
+  be used much. Two routes that somebody else puts up are shown as two either way.
 - **Light the wall as soon as I pick a problem**, off unless a phone turns it on.
 - **Show the grade on row 1**. Row 1 carries no holds on any 2016 benchmark, so it reads
   out the grade from A1 onward, one light per V-grade: five green up to V5, two blue for

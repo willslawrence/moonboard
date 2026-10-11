@@ -158,12 +158,15 @@
   #noWall[hidden]{display:none}
   #top{flex:0 0 auto;background:var(--bg);border-bottom:1px solid var(--edge);
        margin-bottom:6px;overflow:hidden}
+  /* A quarter taller since 2026-10-11 (Will: "the header can increase [height] by 25%"): 51px with the two walls
+     in it, where it was 41. The name picker and Connect are as tall as a fingertip for it; the two walls are the
+     size they are on the Sun board's page. The row of the bulb under it gave up more than this took. */
   header{display:flex;align-items:center;gap:8px;
-         padding:calc(env(safe-area-inset-top) + 4px) 0 4px;
+         padding:calc(env(safe-area-inset-top) + 6px) 0 6px;
          border-bottom:1px solid var(--edge)}
   h1{flex:1;min-width:0;font-size:11px;margin:0;font-weight:700;letter-spacing:.13em;
      text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  header #me{flex:none;width:96px;padding:2px 8px;font-size:16px;
+  header #me{flex:none;width:96px;height:38px;padding:2px 8px;font-size:16px;
              text-overflow:ellipsis;border-radius:8px}
   header #me.ask{outline:2px solid var(--blue-ink);outline-offset:1px}
   #wallTxt{cursor:pointer;white-space:normal;line-height:1.2;max-height:2.4em;text-overflow:clip}   /* two short words: on two lines where one will not do */
@@ -175,7 +178,7 @@
   #dot.dead{background:#ef4444}
   #dot.busy{background:var(--dim);animation:pulse 1s infinite}
   @keyframes pulse{50%{opacity:.25}}
-  #connect{flex:none;width:auto;padding:4px 9px;font-size:12px;letter-spacing:.02em}
+  #connect{flex:none;width:auto;height:38px;padding:0 9px;font-size:12.5px;letter-spacing:.02em}
   /* a narrow phone: the name picker and the two walls give a little, so that what the wall is doing is said whole */
   @media (max-width:380px){ header{gap:6px} header #me{width:82px} #walls button{width:30px} }
   /* which wall: the two at Will's, side by side, the one you are on filled. It is the same thing in the same
@@ -322,23 +325,26 @@
      board's page as well: a finger going up it has to reach the page as a stroke, and left to the browser it is
      taken for a scroll and never ends. */
   #board.pullBack{transition:transform .2s ease-out,clip-path .2s ease-out,-webkit-clip-path .2s ease-out}
-  #pull{display:none;position:fixed;z-index:2;overflow:hidden;border-radius:0 0 6px 6px;background:var(--panel);pointer-events:none}
+  /* Dark while the finger has further to go, and light once it has gone far enough: the light comes on. (It was the
+     other way about for the first hour; Will, having tried it: "it should have a dark background (keep going) and
+     then a white or light coloured one once it's high enough".) */
+  #pull{display:none;position:fixed;z-index:2;overflow:hidden;border-radius:0 0 6px 6px;background:var(--ink);pointer-events:none}
   #pull.show{display:block}
   #pull.pullBack{transition:top .2s ease-out,height .2s ease-out}
-  #pull .in{position:absolute;left:0;right:0;top:0;height:100%;min-height:88px;display:flex;flex-direction:column;
+  #pull .in{position:absolute;left:0;right:0;top:0;height:100%;min-height:80px;display:flex;flex-direction:column;
             align-items:center;justify-content:center;gap:6px}
   #pull .ring{position:relative;width:54px;height:54px}
   #pull svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
   #pull circle{fill:none;stroke-width:4}
-  #pull .trk{stroke:var(--box2);opacity:.45}
-  #pull .arc{stroke:var(--ink);stroke-linecap:round;stroke-dasharray:163.4;stroke-dashoffset:163.4}
-  #pull .ring span{position:absolute;inset:0;display:grid;place-items:center;font-size:24px;line-height:1;filter:grayscale(1);opacity:.55}
-  #pull b{font-size:12.5px;line-height:15px;font-weight:700;color:var(--dim);white-space:nowrap}
-  #pull.armed{background:var(--ink)}
+  #pull .trk{stroke:var(--onink);opacity:.22}
+  #pull .arc{stroke:var(--onink);stroke-linecap:round;stroke-dasharray:163.4;stroke-dashoffset:163.4}
+  #pull .ring span{position:absolute;inset:0;display:grid;place-items:center;font-size:24px;line-height:1;filter:grayscale(1);opacity:.6}
+  #pull b{font-size:12.5px;line-height:15px;font-weight:700;color:var(--onink);opacity:.85;white-space:nowrap}
+  #pull.armed{background:#fff}
   #pull.armed .trk{opacity:0}
-  #pull.armed .arc{stroke:#facc15}
+  #pull.armed .arc{stroke:#f5b400}
   #pull.armed .ring span{filter:none;opacity:1;transform:scale(1.12)}
-  #pull.armed b{color:var(--onink)}
+  #pull.armed b{color:#16191d;opacity:1}
   @media (prefers-reduced-motion:reduce){ #board.pullBack,#pull.pullBack{transition:none} }
   body.focus #pairCap,body.focus #betaCap{font-size:13px}
   /* said once, on the way in, for whoever got here by accident */
@@ -586,11 +592,15 @@
   /* The row over the board: the line on the left, the bulb in the middle, the second
      bulb on the right. As thin as the search box, so it reads as one more row. */
   #actRow{display:flex;gap:6px;padding-top:6px}
-  #actRow button{flex:1 1 0;min-width:0;height:38px;padding:0 6px;font-size:13px;border-radius:9px}
+  /* Two fifths lower than it was (38px) since 2026-10-11: a long stroke up the picture lights the route now, and
+     the button says so in small letters (Will: "the current light up button can reduce in size by 40% and add text
+     (swipe up) small on that button"). */
+  #actRow button{flex:1 1 0;min-width:0;height:23px;padding:0 6px;font-size:12px;line-height:1;border-radius:7px}
+  #actRow #send small{margin-left:7px;font-size:10px;font-weight:500;letter-spacing:.02em;opacity:.72}
   #actRow button[hidden]{display:none}
-  #actRow #send{flex:7 1 0;font-size:14px}                /* Will, on the canvas: 70% of the row, and the second bulb the rest */
+  #actRow #send{flex:7 1 0;font-size:12.5px}              /* Will, on the canvas: 70% of the row, and the second bulb the rest (all of it, where that is put away) */
   /* the second bulb: orange, the colour the picture draws a second problem in */
-  #actRow #pairBtn{flex:3 1 0;padding:0 4px;font-size:12px;border-color:#8a4b17;color:var(--second)}
+  #actRow #pairBtn{flex:3 1 0;padding:0 4px;font-size:11px;border-color:#8a4b17;color:var(--second)}
   #actRow #pairBtn.on{background:#fb923c;border-color:#fb923c;color:#0e0e0f}
   body.betaEdit #actRow{visibility:hidden}     /* nothing to light while placing hands and feet */
   /* The wall's story on the left takes what the board leaves; the board keeps its
@@ -1143,12 +1153,12 @@
   <button id="connect">Connect</button>
 </header>
 
-<!-- One thin row over the board: the line, the bulb, the second bulb. Everything
+<!-- One thin row over the board: the bulb, and the second bulb on a phone that has asked for it in Settings. Everything
      else that used to stand in a column beside the board has moved - logging to the
      page on the right, the games to Settings, the rest out of the way. -->
 <div id="actRow">
-  <button id="send" class="mini solid" disabled aria-label="Light up Route">&#128161; Light up Route</button>
-  <button id="pairBtn" class="mini" disabled aria-label="Show the open route as the second route">Show 2nd route</button>
+  <button id="send" class="mini solid" disabled aria-label="Light up Route">&#128161; Light up Route <small>or swipe up</small></button>
+  <button id="pairBtn" class="mini" disabled hidden aria-label="Show the open route as the second route">Show 2nd route</button>
 </div>
 
 <section id="boardWrap">
@@ -1396,6 +1406,12 @@
     is drawn for the 2016 and 2024 hold sets: on the 2016 set a phone starts on Moon's
     yellow board, on the 2024 set it starts on plywood. Masters 2019 keeps its own picture.</div>
 
+  <label class="ck"><input type="checkbox" id="pairChk">
+    Show the &ldquo;Show 2nd route&rdquo; button</label>
+  <div class="hint">For this phone only, and off to begin with. The button stands beside Light up Route
+    and puts the open route up next to the one already on the wall, in a second colour. Two
+    routes that somebody else puts up are shown as two either way.</div>
+
   <label class="ck"><input type="checkbox" id="auto">
     Light the wall as soon as I pick a problem</label>
   <label class="ck"><input type="checkbox" id="gbar" checked>
@@ -1612,7 +1628,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-11 22:26';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-11 22:47';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -6004,10 +6020,10 @@ $('focusLight').onclick = lightHere;
    up."
 
    So it works as the mail app's long swipe does. A finger going up the picture takes the
-   picture with it, and in the room that opens under the picture a bulb shows, grey, in a
-   ring that fills as the finger goes on. When the finger has gone far enough (PULL_NEED of
+   picture with it, and in the room that opens under the picture, which is dark, a bulb
+   shows, grey, in a ring that fills as the finger goes on. When the finger has gone far enough (PULL_NEED of
    the picture's height, and never less than PULL_MIN or more than PULL_MAX) the ring is
-   full, the bulb is lit and the words change: letting go there lights the route. Letting
+   full, the bulb is lit, the room goes light and the words change: letting go there lights the route. Letting
    go anywhere short of that puts the picture back and does nothing, and so does coming
    back down first. It is the same on the board's page and in focus, which is why focus
    shuts on a stroke downwards now, not upwards. */
@@ -6714,6 +6730,19 @@ $('histBar').onclick = e => {
   if (histOpen) $('wallHist').scrollTop = $('wallHist').scrollHeight;
 };
 $('pairBtn').onclick = openPair;
+/* The second bulb is put away unless this phone has asked for it in Settings (Will, 2026-10-11: "Instead of by
+   default showing the show second route button, let's hide that by default and there can be a toggle in settings to
+   reveal it. Mostly I don't think that's a feature we'll use"). Kept by the phone as "mb-pair". Two routes that
+   another phone puts up are still shown as two, button or no button. */
+let pairWant = false;
+try{ pairWant = localStorage.getItem('mb-pair') === '1'; }catch(e){}
+function paintPairWant(){ $('pairBtn').hidden = !pairWant; $('pairChk').checked = pairWant; }
+$('pairChk').onchange = () => {
+  pairWant = $('pairChk').checked;
+  try{ localStorage.setItem('mb-pair', pairWant ? '1' : ''); }catch(e){}
+  paintPairWant();
+};
+paintPairWant();
 $('pairGo').onclick = lightSecond;
 $('pairClose').onclick = () => showPanel(null);
 document.addEventListener('keydown', e => {
