@@ -128,6 +128,16 @@ Logging, and what you have climbed. Top to bottom:
 - Earlier sessions are not listed here: the **Logbook** has every one of them, a day to a
   line (they were on this page too until 2026-10-11, which said the same thing twice).
 
+### Somebody new
+
+The app is better from the Home Screen, where it fills the whole screen. Somebody who opens
+it in a browser tab and has not picked a climber's name gets one line over the top row of
+either page: **First time here? Add it to your Home Screen**. A tap opens how to do it on an
+iPhone and on an Android phone. Its cross, a stroke across it, or having read how puts it
+away for good on that phone (one note, `mb-a2hs`, shared by both walls' pages); left alone
+it slides off after twelve seconds and comes again at the next visit. It never shows when
+the app is opened from the Home Screen, nor once a name is picked.
+
 ### Quick log
 
 For logging without leaving the board. A tap on **Quick log** dims the screen and swings

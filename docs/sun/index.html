@@ -548,6 +548,24 @@
          box-shadow:0 6px 20px rgba(0,0,0,.3);text-align:center;pointer-events:none}     /* a notice is never in the way of the button under it */
   #toast.bad{background:#ef4444;color:#fff}
   #ver{font-size:11px;color:var(--dimmer);margin:18px 0 6px}
+  /* ---- somebody new: better from the Home Screen (see a2hs at the foot of the script) ---- */
+  #a2hs{position:fixed;left:8px;right:8px;top:calc(env(safe-area-inset-top) + 6px);z-index:64;transform:translateY(-18px);opacity:0;display:flex;align-items:center;gap:2px;
+        padding:0 4px 0 14px;height:44px;border-radius:22px;border:1px solid var(--edge);background:var(--ink);color:var(--onink);
+        box-shadow:0 6px 22px rgba(0,0,0,.35);font-size:14px;font-weight:600;white-space:nowrap;transition:transform .28s ease-out,opacity .28s ease-out;touch-action:none;
+        user-select:none;-webkit-user-select:none}
+  #a2hs.in{transform:none;opacity:1}
+  #a2hs[hidden],#a2hsHow[hidden]{display:none}
+  #a2hs span{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  #a2hs u{text-underline-offset:2px}
+  #a2hs button{flex:none;width:34px;height:34px;padding:0;border:0;border-radius:17px;background:transparent;color:inherit;font-size:15px;opacity:.75}
+  #a2hsHow{position:fixed;inset:0;z-index:95;display:flex;align-items:flex-end;background:rgba(0,0,0,.5)}
+  #a2hsHow .card{flex:1 1 auto;max-height:92dvh;overflow-y:auto;background:var(--bg);color:var(--ink);border-radius:16px 16px 0 0;border-top:1px solid var(--edge);
+        padding:16px 16px calc(env(safe-area-inset-bottom) + 16px)}
+  #a2hsHow h2{margin:0 0 4px;font-size:18px}
+  #a2hsHow h3{margin:16px 0 4px;font-size:14px}
+  #a2hsHow p{margin:0;font-size:13.5px;line-height:1.5;color:var(--dim)}
+  #a2hsHow ol{margin:0;padding-left:20px;font-size:14px;line-height:1.6}
+  #a2hsHow button{margin-top:16px}
 </style>
 </head>
 <body>
@@ -842,6 +860,19 @@
 <div id="rsFlash" hidden></div>
 <div id="toast" hidden></div>
 
+<!-- Somebody new to the app: it is better from the Home Screen, and this says so once (see a2hs in the script). -->
+<div id="a2hs" hidden role="button" aria-label="First time here? How to add this app to your Home Screen"><span>First time here? <u>Add it to your Home Screen</u></span><button id="a2hsX" aria-label="Not now">&#10005;</button></div>
+<div id="a2hsHow" hidden role="dialog" aria-label="Add to your Home Screen">
+  <div class="card">
+    <h2>Add it to your Home Screen</h2>
+    <p>Opened from its own icon the app fills the whole screen, with no browser bars round it.</p>
+    <h3>iPhone or iPad</h3>
+    <ol><li>Open this page in Safari.</li><li>Tap the Share button, the square with an arrow pointing up.</li><li>Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</li></ol>
+    <h3>Android</h3>
+    <ol><li>Open this page in Chrome.</li><li>Tap the three dots at the top right.</li><li>Tap <b>Add to Home screen</b> (on some phones <b>Install app</b>), then <b>Add</b>.</li></ol>
+    <button id="a2hsOk" class="solid">Got it</button>
+  </div>
+</div>
 <script>
 /* The Sun board: the wall at Will's that has no lights. Routes are made by picking holds on
    pictures of the wall, named, graded, and shared with everyone who climbs there.
@@ -862,7 +893,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-11 17:46';
+const BUILD = '2026-10-11 18:06';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -3035,7 +3066,7 @@ $('pgDots').onclick = e => { const b = e.target.closest('button[data-go]'); if (
 let sw = null;
 document.addEventListener('touchstart', e => {
   const t = e.target;
-  sw = (focus || e.touches.length !== 1 || t.closest('#pic, #sheet, #goSheet, #rsSheet, #bookSheet, #entrySheet, #quick, #sendFan, select, input, #grades, #gSlide')) ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
+  sw = (focus || e.touches.length !== 1 || t.closest('#pic, #sheet, #goSheet, #rsSheet, #bookSheet, #entrySheet, #a2hs, #a2hsHow, #quick, #sendFan, select, input, #grades, #gSlide')) ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
 }, { passive: true });
 document.addEventListener('touchend', e => {
   if (!sw) return;
@@ -3092,6 +3123,29 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
    being fixed, when two people at the wall may be at it together. */
 let tick = 0;
 setInterval(() => { tick++; if (document.visibilityState === 'visible' && wall && !draft && (fixing || tick % 3 === 0)) refresh(); }, 20000);
+/* ---------- somebody new: better from the Home Screen ----------
+   Will, 2026-10-11: "a person that has not opened the page before gets like a small pop-up on the top of the screen...
+   save to your home screen? Because the full screen experience is much better... anyone that hasn't clicked that
+   they're a certain climber gets that little pop-up, nothing crazy big, and they can swipe it away... and if they tap
+   to open that pop-up, it gives instructions for the Apple and the Android way to save."
+   It shows when the page is in a browser tab, nobody is picked as the climber on this phone, and it has not been put
+   away; one note on the phone (mb-a2hs) is shared by both walls' pages. */
+(function a2hs(){
+  const el = document.getElementById('a2hs'), how = document.getElementById('a2hsHow');
+  const get = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
+  const home = () => navigator.standalone === true || ['standalone', 'fullscreen', 'minimal-ui'].some(m => window.matchMedia && matchMedia('(display-mode: ' + m + ')').matches);
+  const wanted = () => !home() && !get('mb-me') && !get('mb-a2hs');
+  let gone = 0;
+  const away = keep => { clearTimeout(gone); el.classList.remove('in'); setTimeout(() => { el.hidden = true; }, 300); if (keep){ try{ localStorage.setItem('mb-a2hs', '1'); }catch(e){} } };
+  // it lies over the top row of the page, so it does not stay: twelve seconds, and it comes again at the next visit
+  window.a2hsShow = () => { if (!wanted()) return false; el.hidden = false; requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('in'))); clearTimeout(gone); gone = setTimeout(() => away(false), 12000); return true; };
+  let x0 = null, y0 = 0, moved = false;
+  el.addEventListener('pointerdown', e => { x0 = e.clientX; y0 = e.clientY; moved = false; });
+  el.addEventListener('pointermove', e => { if (x0 !== null && (Math.abs(e.clientX - x0) > 28 || y0 - e.clientY > 18)){ moved = true; x0 = null; away(true); } });       // a stroke across it, or up
+  el.addEventListener('click', e => { if (moved) return; if (e.target.closest('#a2hsX')) return away(true); clearTimeout(gone); how.hidden = false; });
+  how.addEventListener('click', e => { if (e.target === how || e.target.closest('#a2hsOk')){ how.hidden = true; away(true); } });
+  setTimeout(window.a2hsShow, 1200);
+})();
 </script>
 </body>
 </html>
