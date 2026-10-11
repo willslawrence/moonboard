@@ -148,7 +148,7 @@
   #noWall[hidden]{display:none}
   #top{flex:0 0 auto;background:var(--bg);border-bottom:1px solid var(--edge);
        margin-bottom:6px;overflow:hidden}
-  header{display:flex;align-items:center;gap:10px;
+  header{display:flex;align-items:center;gap:8px;
          padding:calc(env(safe-area-inset-top) + 4px) 0 4px;
          border-bottom:1px solid var(--edge)}
   h1{flex:1;min-width:0;font-size:11px;margin:0;font-weight:700;letter-spacing:.13em;
@@ -156,7 +156,7 @@
   header #me{flex:none;width:96px;padding:2px 8px;font-size:16px;
              text-overflow:ellipsis;border-radius:8px}
   header #me.ask{outline:2px solid var(--blue-ink);outline-offset:1px}
-  #wallTxt{cursor:pointer}
+  #wallTxt{cursor:pointer;white-space:normal;line-height:1.2;max-height:2.4em;text-overflow:clip}   /* two short words: on two lines where one will not do */
   #wallTxt.off{color:var(--dim)}
   #wallTxt.bad{color:#ef4444}
   #dot{width:7px;height:7px;border-radius:50%;background:var(--dimmer);flex:none}
@@ -165,10 +165,16 @@
   #dot.dead{background:#ef4444}
   #dot.busy{background:var(--dim);animation:pulse 1s infinite}
   @keyframes pulse{50%{opacity:.25}}
-  #connect{flex:none;width:auto;padding:4px 11px;font-size:12px;letter-spacing:.02em}
-  /* across to the other wall at Will's (see "which wall"); not shown on anyone else's wall */
-  #sunBtn{flex:none;width:30px;height:26px;padding:0;font-size:14px;line-height:1;border-radius:8px}
-  #sunBtn[hidden]{display:none}
+  #connect{flex:none;width:auto;padding:4px 9px;font-size:12px;letter-spacing:.02em}
+  /* a narrow phone: the name picker and the two walls give a little, so that what the wall is doing is said whole */
+  @media (max-width:380px){ header{gap:6px} header #me{width:82px} #walls button{width:30px} }
+  /* which wall: the two at Will's, side by side, the one you are on filled. It is the same thing in the same
+     place as on the Sun board's page (Will, 2026-10-11: "The sun moon toggle you show on the sun board. Add to
+     the moonboard the same way"). Not shown on anyone else's wall (see "which wall"). */
+  #walls{flex:none;display:flex;padding:2px;border-radius:9px;background:var(--panel);border:1px solid var(--edge)}
+  #walls[hidden]{display:none}
+  #walls button{width:34px;height:26px;padding:0;border:0;border-radius:7px;background:transparent;font-size:14px;line-height:1}
+  #walls button.on{background:var(--ink);opacity:1}
 
   button{width:100%;padding:13px 12px;border-radius:8px;border:1px solid var(--edge);
          background:var(--panel2);color:var(--ink);font:600 14px inherit;font-family:inherit}
@@ -237,7 +243,7 @@
          search row and two rows of the list have had theirs.
      On most phones that is a quarter to a third more picture than before. */
   #boardWrap{padding:6px 0;margin:0}
-  #board{position:relative;margin:0;border-radius:6px;overflow:hidden;touch-action:pan-y;
+  #board{position:relative;margin:0;border-radius:6px;overflow:hidden;touch-action:none;
          width:min(calc(105vw - 113px),calc(100vw - 92px),40.3vh,calc((100vh - 302px) * .65))}
   #board{width:min(calc(105vw - 113px),calc(100vw - 92px),40.3vh,calc((100dvh - 302px) * .65))}
   /* The red line that says the board is not reached takes room as well, up to two lines
@@ -258,33 +264,72 @@
   body.compact #board{width:min(calc(100vw - 108px),16.56vh)}
   @media (prefers-reduced-motion:reduce){ body.stepping #board{transition:none} }
   /* ---- focus: the picture and nothing else ----
-     Two taps on the picture and it fills the screen: no buttons, only the route's name
-     over it. Two more taps put the page back, and so do Back and a swipe upwards. A
-     swipe across the picture still steps through the routes. (A single tap that filled
-     the screen was retired when the log page came; Will asked for this, as a double tap,
-     on 2026-10-08, and for the swipe up the day after.) */
+     Two taps on the picture and it fills the screen: only the route's name over it, and
+     beside the name a small bulb that lights the route. Two more taps put the page back,
+     and so do Back and a swipe downwards. A swipe across the picture still steps through
+     the routes, and a long one upwards lights the route (see "the long stroke upwards").
+     (A single tap that filled the screen was retired when the log page came; Will asked
+     for this, as a double tap, on 2026-10-08, and for a swipe up to shut it the day
+     after. On 2026-10-11 he gave the swipe up to lighting the route, so the way out
+     became a swipe down.) */
   #focusCap,#focusHint{display:none}
   #board{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
   body.focus #boardCol{position:fixed;inset:0;z-index:55;background:var(--bg);display:flex;flex-direction:column;
                        align-items:center;justify-content:center;
                        padding:calc(env(safe-area-inset-top) + 8px) 6px calc(env(safe-area-inset-bottom) + 8px)}
-  /* Nothing scrolls here, and a finger going up the screen has to reach the page as a
-     swipe (it closes this). Left to the browser it is taken for a scroll and never ends. */
+  /* Nothing scrolls here, and a finger going up or down the screen has to reach the page
+     as a swipe (down shuts this, a long one up lights the route). Left to the browser it
+     is taken for a scroll and never ends. */
   body.focus #boardCol,body.focus #board{touch-action:none}
   /* as wide as the screen, or as tall as it once the name's line, the row of buttons for
      picked holds (56px, kept whether they show or not, so the picture does not move
      under the finger at the first tap) and, with two routes up, the second one's line
      have had their room: 108px and 148px with the padding */
-  body.focus #board{flex:none;transition:none;width:min(100%,calc((100vh - 108px) * .65))}
-  body.focus #board{width:min(100%,calc((100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 108px) * .65))}
-  body.focus.pair #board{width:min(100%,calc((100vh - 148px) * .65))}
-  body.focus.pair #board{width:min(100%,calc((100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 148px) * .65))}
+  body.focus #board,body.focus #focusCap{flex:none;transition:none;width:min(100%,calc((100vh - 108px) * .65))}
+  body.focus #board,body.focus #focusCap{width:min(100%,calc((100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 108px) * .65))}
+  body.focus.pair #board,body.focus.pair #focusCap{width:min(100%,calc((100vh - 148px) * .65))}
+  body.focus.pair #board,body.focus.pair #focusCap{width:min(100%,calc((100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 148px) * .65))}
   body.focus .mark{border-width:4px}
   body.focus .mark.g,body.focus .mark.also{border-width:3px}
   body.focus #focusCap{display:flex;flex:none;align-items:center;justify-content:center;gap:8px;min-width:0;max-width:100%;
                        height:28px;margin-bottom:8px;font-size:15px}
   #focusCap b{min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #focusCap .gd[hidden]{display:none}
+  /* The open route lit from here: a small bulb at the left end of the name's line, which is as wide as the picture
+     (Will, 2026-10-11: "Add a small light it up button on the board focus mode"). It does what Light up Route
+     does. Pale, its bulb out, until this route is the one on the wall; then dark, with the bulb lit. The gap at the
+     line's other end is as wide as the button, so the name stays in the middle. */
+  #focusLight{position:relative;flex:none;width:38px;height:28px;margin-right:auto;padding:0;border-radius:8px;font-size:15px;line-height:1}
+  #focusLight[hidden]{display:block;visibility:hidden}
+  #focusLight::after{content:'';position:absolute;inset:-9px -6px}          /* a fingertip's room round it */
+  #focusLight span{filter:grayscale(.85);opacity:.8}
+  #focusLight.on{background:var(--ink);border-color:var(--ink)}
+  #focusLight.on span{filter:none;opacity:1}
+  #focusCap .sp{flex:none;width:38px;margin-left:auto}
+  /* ---- the long stroke upwards that lights the route (see the script) ----
+     The picture goes up with the finger and is cut off at the edge it started from, and in the room that opens
+     under it this box shows: a bulb in a ring that fills. The picture takes every touch for itself now, on the
+     board's page as well: a finger going up it has to reach the page as a stroke, and left to the browser it is
+     taken for a scroll and never ends. */
+  #board.pullBack{transition:transform .2s ease-out,clip-path .2s ease-out,-webkit-clip-path .2s ease-out}
+  #pull{display:none;position:fixed;z-index:2;overflow:hidden;border-radius:0 0 6px 6px;background:var(--panel);pointer-events:none}
+  #pull.show{display:block}
+  #pull.pullBack{transition:top .2s ease-out,height .2s ease-out}
+  #pull .in{position:absolute;left:0;right:0;top:0;height:100%;min-height:88px;display:flex;flex-direction:column;
+            align-items:center;justify-content:center;gap:6px}
+  #pull .ring{position:relative;width:54px;height:54px}
+  #pull svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+  #pull circle{fill:none;stroke-width:4}
+  #pull .trk{stroke:var(--box2);opacity:.45}
+  #pull .arc{stroke:var(--ink);stroke-linecap:round;stroke-dasharray:163.4;stroke-dashoffset:163.4}
+  #pull .ring span{position:absolute;inset:0;display:grid;place-items:center;font-size:24px;line-height:1;filter:grayscale(1);opacity:.55}
+  #pull b{font-size:12.5px;line-height:15px;font-weight:700;color:var(--dim);white-space:nowrap}
+  #pull.armed{background:var(--ink)}
+  #pull.armed .trk{opacity:0}
+  #pull.armed .arc{stroke:#facc15}
+  #pull.armed .ring span{filter:none;opacity:1;transform:scale(1.12)}
+  #pull.armed b{color:var(--onink)}
+  @media (prefers-reduced-motion:reduce){ #board.pullBack,#pull.pullBack{transition:none} }
   body.focus #pairCap,body.focus #betaCap{font-size:13px}
   /* said once, on the way in, for whoever got here by accident */
   body.focus #focusHint{display:block;position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 74px);
@@ -449,10 +494,20 @@
   #logPage .lbl{margin:18px 0 7px}
   #logPage .lbl[hidden]{display:none}
   /* the session, in three numbers and a dot for every go */
-  #lpHero{border:1px solid var(--edge);border-radius:14px;background:var(--panel);padding:13px 14px 13px}
+  /* This session's card, the first thing on the page since 2026-10-11 (Will: "Move this card above the route card
+     on the log page and when you click it it expanded the list of climbs you did this session"). The numbers and
+     the dots are one big button; under them, once it is open, the session's climbs, a row each. */
+  #lpHero{border:1px solid var(--edge);border-radius:14px;background:var(--panel);margin-bottom:12px;overflow:hidden}
   #lpHero[hidden]{display:none}
-  #lpSession + #lpHero{margin-top:12px}
-  #lpHero .kick{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+  #lpHeroTop{padding:13px 14px;cursor:pointer;-webkit-user-select:none;user-select:none}
+  #lpHero .kick{display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+  #lpHero .kick span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #lpHero .kick em{flex:none;font-style:normal;color:var(--dimmer)}
+  #lpHero .kick svg{flex:none;width:12px;height:12px;transition:transform .15s ease-out}
+  #lpHero.open .kick svg{transform:rotate(180deg)}
+  #lpSession{padding:1px 12px;border-top:1px solid var(--edge)}
+  #lpSession[hidden]{display:none}
+  #lpSession .lprow:last-child{border-bottom:0}
   #lpHero .nums{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:11px}
   #lpHero .nums b{display:block;font-size:34px;line-height:36px;font-weight:700;letter-spacing:-.02em}
   #lpHero .nums span{display:block;margin-top:3px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
@@ -566,39 +621,49 @@
   button.on{background:var(--ink);border-color:var(--ink);color:var(--onink)}
 
   /* search, tick-list picker and the filter toggle share one row */
-  /* every filter on one line - nothing tucked underneath when the panel opens */
-  .four{display:grid;grid-template-columns:1.15fr 1.15fr .85fr 1fr;gap:5px}
   #filtBtn{width:44px;padding:9px 0;font-size:17px;line-height:1;border-radius:8px}
   #filtBtn.on{background:var(--panel2);color:var(--ink);border-color:var(--box2)}
   #filtBtn.active{color:var(--ink);border-color:var(--dimmer)}
   #filtBtn.active::after{content:'';position:absolute;top:5px;right:5px;
                          width:6px;height:6px;border-radius:50%;background:#22c55e}
   #filtBtn{position:relative}
-  /* same 32px as the search box above, so the panel reads as part of it */
   #filters{border-top:1px solid var(--edge);padding-top:6px;margin-top:7px}
-  #filters select{text-align:center;text-align-last:center;height:38px;padding:0 8px;font-size:16px;border-radius:9px}
   #filters .lbl{margin-bottom:2px;margin-top:0}
+  /* ---- the filters, on one line ----
+     The grades by sliding, then Sent and Sort. Will, 2026-10-11: "remove the grade picker by text. The slider is
+     good. Also put the other filter picker inline with the slider. But make those buttons smaller to give the
+     slider as much room as possible." So From and To are no longer shown (they still hold the choice, out of
+     sight), each dot says its grade over itself all the time, and the two pickers are as narrow as their longest
+     word. What is seen of a picker is a small box with the choice in it. The picker itself lies over the box,
+     unseen, with writing of the size a phone does not zoom in on. */
+  #fRow{display:flex;align-items:flex-end;gap:6px}
+  .fPick{flex:none;min-width:0}
+  #fSent{margin-left:auto}                 /* (they keep to the right when a board has one grade and no line) */
+  .fPick .lbl{padding-left:2px}
+  .fPick .chip{position:relative;display:grid;place-items:center;height:32px;border:1px solid var(--edge);border-radius:8px;
+               background:var(--panel2);color:var(--ink);font-size:12.5px;white-space:nowrap}
+  .fPick .chip b{font-weight:600}
+  .fPick .chip select{position:absolute;left:0;top:0;width:100%;height:100%;padding:0;border:0;opacity:0}
+  #fSent .chip{width:46px}
+  #fSort .chip{width:62px}
   /* ---- grades, by sliding ----
-     A line with a dot at each end of the range. The row is as tall as a fingertip so
-     either dot is easy to catch, and it takes every touch for itself: a drag along it
-     must not scroll anything or turn the page. While a dot is held it grows a little
-     and says its grade above itself, where the finger does not cover it. */
-  #gSlide{position:relative;height:40px;margin:0 14px 2px;touch-action:none;
+     A line with a dot at each end of the range, and over each dot its grade. The row is as tall as a fingertip
+     so either dot is easy to catch, and it takes every touch for itself: a drag along it must not scroll
+     anything or turn the page. While a dot is held it grows a little and its grade stands in a box. */
+  #gSlide{position:relative;flex:1 1 0;min-width:0;height:46px;margin:0 13px;touch-action:none;
           -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
   #gSlide[hidden]{display:none}
-  #gSlide .rail{position:absolute;left:-6px;right:-6px;top:50%;height:4px;margin-top:-2px;border-radius:2px;
+  #gSlide .rail{position:absolute;left:-6px;right:-6px;top:30px;height:4px;margin-top:-2px;border-radius:2px;
                 background:var(--box2)}
   #gSlide .fill{position:absolute;top:0;bottom:0;margin:0 6px;border-radius:2px;background:var(--ink)}
-  #gSlide .dot{position:absolute;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;
+  #gSlide .dot{position:absolute;top:30px;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;
                background:var(--ink);box-shadow:0 0 0 3px var(--bg),0 1px 5px rgba(0,0,0,.35);
                transition:transform .1s ease-out}
   #gSlide .dot.on{transform:scale(1.18);z-index:2}
-  #gSlide .dot span{position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);display:none;
-                    padding:3px 7px;border-radius:6px;background:var(--ink);color:var(--onink);
-                    font:700 11px ui-monospace,Menlo,monospace;white-space:nowrap}
-  #gSlide .dot span.l{left:-4px;transform:none}          /* near an end of the line: keep the words on the screen */
-  #gSlide .dot span.r{left:auto;right:-4px;transform:none}
-  #gSlide .dot.on span{display:block}
+  #gSlide .cap{position:absolute;left:0;top:0;height:13px;padding:0 3px;border-radius:4px;color:var(--dim);
+               font:700 10.5px/13px ui-monospace,Menlo,monospace;white-space:nowrap;pointer-events:none}
+  #gSlide .cap.on{background:var(--ink);color:var(--onink)}
+  #gSlide .cap[hidden]{display:none}
 
   #filters button.mini{padding:8px 10px;white-space:nowrap}
 
@@ -1053,9 +1118,12 @@
 <div id="noWall" hidden>Not reaching the board — tap Connect</div>
 
 <header>
+  <div id="walls" role="group" aria-label="Which wall">
+    <button class="on" aria-label="MoonBoard" title="MoonBoard" disabled>&#127769;</button>
+    <button id="sunBtn" title="Sun board" aria-label="Go to the Sun board">&#9728;&#65039;</button>
+  </div>
   <span id="dot"></span>
   <h1 id="wallTxt" title="Wall status — tap for Settings">Will's Wall</h1>
-  <button id="sunBtn" title="Sun board" aria-label="Go to the Sun board">&#9728;&#65039;</button>
   <select id="me" aria-label="Climbing as"></select>
   <button id="connect">Connect</button>
 </header>
@@ -1112,7 +1180,7 @@
       </div>
     </div></div>
     <div id="boardCol">
-      <div id="focusCap"><b></b><span class="gd" hidden></span></div>
+      <div id="focusCap"><button id="focusLight" aria-label="Light up Route" title="Light up Route" aria-pressed="false" hidden><span>&#128161;</span></button><b></b><span class="gd" hidden></span><span class="sp"></span></div>
       <div id="board">
         <img src="board-2016.png" alt="MoonBoard 2016 wall" width="450" height="692">
         <script>
@@ -1134,6 +1202,8 @@
         <button id="pickClear" class="mini ghost" aria-label="Let all the picked holds go" title="Let them all go">&#10005;</button>
       </div>
       <div id="focusHint"></div>
+      <!-- the room that opens under the picture as a finger takes it upwards: a bulb, in a ring that fills -->
+      <div id="pull" aria-hidden="true"><div class="in"><div class="ring"><svg viewBox="0 0 60 60"><circle class="trk" cx="30" cy="30" r="26"/><circle class="arc" cx="30" cy="30" r="26"/></svg><span>&#128161;</span></div><b></b></div></div>
     </div>
   </div>
 </section>
@@ -1175,29 +1245,33 @@
     <div hidden>
       <div class="lbl">List</div>
       <select id="who" style="margin-bottom:8px"></select>
+      <!-- From and To, the two ends of the grades. They are no longer shown (Will, 2026-10-11: "remove the grade
+           picker by text. The slider is good"), but they still hold the choice: the line below sets them, the
+           list is filtered from them and they are what is remembered, all as before. -->
+      <select id="gmin"></select>
+      <select id="gmax"></select>
     </div>
-    <!-- Grades, by sliding: two dots on a line, the easiest wanted on the left and the
-         hardest on the right. It is the same choice as From and To under it, which follow
-         as the dots move. Out of the way of a screen reader: the two pickers say it already. -->
-    <div id="gSlide" aria-hidden="true">
-      <div class="rail"><div class="fill"></div></div>
-      <div class="dot" data-end="lo"><span></span></div>
-      <div class="dot" data-end="hi"><span></span></div>
-    </div>
-    <div class="four">
-      <div><div class="lbl">From</div><select id="gmin"></select></div>
-      <div><div class="lbl">To</div><select id="gmax"></select></div>
-      <div><div class="lbl">Sent</div><select id="hideDone">
+    <!-- One line. The grades by sliding: two dots on a line, the easiest wanted on the left and the hardest on
+         the right, each with its grade over it (and an arrow key moves the one that has the focus). Then Sent
+         and Sort, small, so that the line has the room. -->
+    <div id="fRow">
+      <div id="gSlide" role="group" aria-label="Grades">
+        <div class="rail"><div class="fill"></div></div>
+        <span class="cap" data-end="lo"></span><span class="cap" data-end="hi"></span>
+        <div class="dot" data-end="lo" role="slider" tabindex="0" aria-label="Easiest grade"></div>
+        <div class="dot" data-end="hi" role="slider" tabindex="0" aria-label="Hardest grade"></div>
+      </div>
+      <div class="fPick" id="fSent"><div class="lbl">Sent</div><div class="chip"><b id="hideSay">Show</b><select id="hideDone" aria-label="Routes you have sent">
         <option value="">Show</option>
         <option value="1">Hide</option>
-      </select></div>
-      <div><div class="lbl">Sort</div><select id="sort">
+      </select></div></div>
+      <div class="fPick" id="fSort"><div class="lbl">Sort</div><div class="chip"><b id="sortSay">Popular</b><select id="sort" aria-label="Sort the routes">
         <option value="repeats">Popular</option>
         <option value="stars">Best</option>
         <option value="gradeUp">Easiest</option>
         <option value="gradeDown">Hardest</option>
         <option value="name">A–Z</option>
-      </select></div>
+      </select></div></div>
     </div>
   </div>
 </div>
@@ -1216,15 +1290,29 @@
 </div><!-- /#scroll -->
 
 <!-- The page to the right of the board: logging, and what you have climbed. It has
-     taken over from the board that filled the screen when tapped. Top to bottom: the
-     open route with its two buttons; your history on it; the community - who has
-     climbed it, and what the crew are on tonight; this session's routes, and under them
-     its sends, tries and hardest with a dot for every go. Earlier sessions are in the
-     Logbook, which the button in the card opens (Will, 2026-10-11: "a little bit redundant").
-     (Will moved the route's history and the community up under the card, and the
-     session's numbers down under its list, the night it was built.) -->
+     taken over from the board that filled the screen when tapped. Top to bottom: this
+     session's card (sends, tries and hardest, a dot for every go; a tap opens the
+     session's climbs under them); the open route with its two buttons; your history on
+     it; the community - who has climbed it, and what the crew are on tonight. Earlier
+     sessions are in the Logbook, which the button in the route's card opens (Will,
+     2026-10-11: "a little bit redundant").
+     (The session's card was at the foot, under a list of its routes that was always
+     open, until Will moved it: "Move this card above the route card on the log page and
+     when you click it it expanded the list of climbs you did this session".) -->
 <div id="logPage">
   <div id="lpCap"><button id="lpBack" class="ghost" aria-label="Back to the board">&#8249; Board</button><b>Log</b><span></span></div>
+  <div id="lpHero" hidden>
+    <div id="lpHeroTop" role="button" tabindex="0" aria-expanded="false" aria-controls="lpSession">
+      <div class="kick"><span id="lpKick"></span><em id="lpSesN"></em><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4.2l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="nums">
+        <div><b id="lpSends">0</b><span>sends</span></div>
+        <div><b id="lpTries">0</b><span>tries</span></div>
+        <div><b id="lpHard">&ndash;</b><span>hardest</span></div>
+      </div>
+      <div id="lpStrip"></div>
+    </div>
+    <div id="lpSession" hidden></div>
+  </div>
   <div id="lpNow">
     <div class="top"><b></b><span class="gd"></span></div>
     <div class="sub"></div>
@@ -1249,17 +1337,9 @@
   <div class="sublbl" id="lpFeedLbl" hidden>The crew this session</div>
   <div id="lpFeed"></div>
 
-  <div class="lbl" id="lpSesLbl">This session</div>
-  <div id="lpSession"></div>
-  <div id="lpHero" hidden>
-    <div class="kick"></div>
-    <div class="nums">
-      <div><b id="lpSends">0</b><span>sends</span></div>
-      <div><b id="lpTries">0</b><span>tries</span></div>
-      <div><b id="lpHard">&ndash;</b><span>hardest</span></div>
-    </div>
-    <div id="lpStrip"></div>
-  </div>
+  <!-- only when there is no session's card to show and a reason to give: no name picked, or the logbook out of reach -->
+  <div class="lbl" id="lpSesLbl" hidden>This session</div>
+  <div id="lpSesNote"></div>
 
   <div id="lpFoot"></div>
 </div>
@@ -1517,7 +1597,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-11 18:06';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-11 21:44';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3676,6 +3756,7 @@ function showMore(){ limit += PAGE; renderResults(); }
 
 function renderResults(){
   paintGradeSlide();                     // whatever changed From or To, the two dots follow
+  paintChips();                          // ...and the two small boxes say what Sent and Sort are set to
   const hits = filtered();
   lastHits = hits;
   const key = [searchQ, $('gmin').value, $('gmax').value, whoNow(),
@@ -4273,6 +4354,7 @@ function paintNow(){
   // problem on the picture, and the second bulb, follow both.
   syncSecond();
   paintPair();
+  paintFocusLight();
   const b = $('nowBtn');
   if (!b) return;
   // Only when this phone can know: it holds the Bluetooth, or someone else does.
@@ -5740,9 +5822,11 @@ let stepping = 0;                    // the timer that takes "stepping" off agai
 function paintFocusCap(){
   const cap = $('focusCap');
   if (!cap) return;
-  cap.firstChild.textContent = current ? current.name : '';
-  cap.lastChild.hidden = !current;
-  if (current) paintPill(cap.lastChild, current.grade);
+  const gd = cap.querySelector('.gd');
+  cap.querySelector('b').textContent = current ? current.name : '';
+  gd.hidden = !current;
+  if (current) paintPill(gd, current.grade);
+  paintFocusLight();
 }
 function focusBoard(on, fromBack){
   on = !!on && page === 'board' && !betaDraft && !panelOpen;
@@ -5751,7 +5835,7 @@ function focusBoard(on, fromBack){
   if (on){
     setCompact(false);                                 // it comes back at full size
     $('focusHint').className = '';
-    $('focusHint').textContent = 'Tap a hold to pick it \u00b7 Swipe up to go back';
+    $('focusHint').textContent = 'Tap a hold to pick it \u00b7 Swipe down to go back';
   }
   clearTimeout(stepping); document.body.classList.remove('stepping');
   document.body.classList.toggle('focus', on);
@@ -5846,53 +5930,178 @@ $('pickFind').onclick = () => {
   $('scroll').scrollTop = 0;
 };
 $('pickClear').onclick = () => { picks = {}; paintPicks(); };
+
+/* ---------- lighting the open route from the picture ----------
+   Two ways, both Will's of 2026-10-11, and both do what Light up Route does. In focus,
+   where there were no buttons at all, a small bulb at the left of the name's line ("Add
+   a small light it up button on the board focus mode"). And on the picture itself, in
+   focus or out of it, a long stroke upwards (below). What happened is said for a moment:
+   in the pill in focus, in the line over the search row otherwise. */
+function paintFocusLight(){
+  const b = $('focusLight');
+  if (!b) return;
+  const up = !!wallPlace();                // this route is up there, on its own or as one of two
+  b.hidden = !current;
+  b.classList.toggle('on', up);
+  b.setAttribute('aria-pressed', up ? 'true' : 'false');
+}
+async function lightHere(){
+  if (!current) return;
+  const say = (txt, bad) => focusOn ? focusSay(txt, bad) : quickSay(txt, bad ? 'bad' : '');
+  if (!canSend()) return say('Not reaching the board', true);
+  const payload = buildPayload();
+  log('lit from the picture: "' + current.name + '"');
+  await write(payload, false, routeMeta());
+  // this phone hears at once whether it went up: it wrote it, or the relay said who did
+  const up = !!wallNow && wallNow.payload === payload;
+  say(up ? 'On the wall' : 'Not reaching the board', !up);
+}
+$('focusLight').onclick = lightHere;
+
+/* ---------- the long stroke upwards that lights the route ----------
+   Will, 2026-10-11: "Can we add a swipe up feature to the board... Like an email that I
+   want to mark read, I have to swipe far on. You start swiping up and it shows that you
+   have to keep going to the top and then light up the route. It's shown with a light bulb
+   appearing below the board as you swipe. Just don't want to accidentally swipe and light
+   up."
+
+   So it works as the mail app's long swipe does. A finger going up the picture takes the
+   picture with it, and in the room that opens under the picture a bulb shows, grey, in a
+   ring that fills as the finger goes on. When the finger has gone far enough (PULL_NEED of
+   the picture's height, and never less than PULL_MIN or more than PULL_MAX) the ring is
+   full, the bulb is lit and the words change: letting go there lights the route. Letting
+   go anywhere short of that puts the picture back and does nothing, and so does coming
+   back down first. It is the same on the board's page and in focus, which is why focus
+   shuts on a stroke downwards now, not upwards. */
+const PULL_SLOP = 14, PULL_NEED = 0.4, PULL_MIN = 150, PULL_MAX = 230, PULL_RING = 163.4;
+let pull = null;                       // while a stroke is on: where the picture stood, how far is enough, how far it has been
+let pullSeen = false;                  // this touch was such a stroke: nothing else is to take it for its own (focusSwipe)
+let pullBack = 0;
+function pullBegin(e){
+  if (!current || betaDraft || panelOpen || page !== 'board') return false;
+  const el = $('board'), box = $('pull');
+  clearTimeout(pullBack);                // (a stroke begun while the picture is still on its way back from the last one)
+  el.classList.remove('pullBack');
+  el.style.transform = ''; el.style.webkitClipPath = ''; el.style.clipPath = '';
+  const r = el.getBoundingClientRect();
+  if (!r.height) return false;
+  pull = { top: r.top, h: r.height, need: Math.round(Math.min(PULL_MAX, Math.max(PULL_MIN, r.height * PULL_NEED))),
+           armed: false, far: 0, t: Date.now() };
+  pullSeen = true;
+  try{ if (e && e.pointerId !== undefined) el.setPointerCapture(e.pointerId); }catch(err){}
+  box.className = 'show';
+  box.style.left = r.left + 'px'; box.style.width = r.width + 'px';
+  quickShow(false);
+  return true;
+}
+function pullTo(d){                    // d: how far up the finger is from where the stroke began
+  if (!pull) return;
+  d = Math.max(0, d);
+  const need = pull.need, was = pull.armed;
+  pull.far = Math.max(pull.far, d);
+  pull.armed = d >= need || (was && d >= need - 22);     // once it is enough, a finger that wavers a little does not undo it
+  // past the place where it is enough the picture goes on only a little, as a thing does that has reached its stop
+  const shift = Math.min(pull.h - 40, d <= need ? d : need + Math.min(36, (d - need) * 0.3));
+  const el = $('board'), box = $('pull'), cut = 'inset(' + shift.toFixed(1) + 'px 0 0 0 round 6px)';
+  el.style.transform = 'translateY(' + (-shift).toFixed(1) + 'px)';
+  el.style.webkitClipPath = cut; el.style.clipPath = cut;
+  box.style.top = (pull.top + pull.h - shift).toFixed(1) + 'px';
+  box.style.height = shift.toFixed(1) + 'px';
+  box.classList.toggle('armed', pull.armed);
+  box.querySelector('.arc').style.strokeDashoffset = (PULL_RING * (1 - Math.min(1, d / need))).toFixed(1);
+  box.querySelector('b').textContent = pull.armed ? 'Let go to light it up' : 'Keep going to light it up';
+  if (pull.armed && !was){ try{ if (navigator.vibrate) navigator.vibrate(12); }catch(err){} }
+}
+function pullEnd(lifted){              // lifted: the finger came off the screen (not: the touch was taken away)
+  if (!pull) return;
+  const was = pull;
+  pull = null;
+  const el = $('board'), box = $('pull'), shut = 'inset(0px 0 0 0 round 6px)';
+  el.classList.add('pullBack'); box.classList.add('pullBack');
+  el.style.transform = 'translateY(0px)';
+  el.style.webkitClipPath = shut; el.style.clipPath = shut;
+  box.style.top = (was.top + was.h) + 'px'; box.style.height = '0px';
+  clearTimeout(pullBack);
+  pullBack = setTimeout(() => {
+    el.classList.remove('pullBack');
+    el.style.transform = ''; el.style.webkitClipPath = ''; el.style.clipPath = '';
+    box.className = '';
+  }, 230);
+  if (lifted && was.armed) return lightHere();
+  // a quick flick upwards used to shut focus: say what does now
+  if (focusOn && was.far < was.need * 0.6 && Date.now() - was.t < 450) focusSay('Swipe down to go back');
+}
 $('holdX').onclick = () => { holdFilter = []; paintHoldChip(); renderResults(); };
 
 (function boardSwipe(){
   const el = $('board');
-  let x0 = null, y0 = null;
+  let x0 = null, y0 = null, mode = null;       // mode: what this touch has turned out to be, once it has moved
 
-  const start = (x, y) => { x0 = x; y0 = y; };
+  const start = (x, y) => { x0 = x; y0 = y; mode = null; };
+  // The finger on its way. Only the long stroke upwards follows it (above). Which it is, is settled once, when the
+  // finger has first gone a little way: clearly more up than across and it is that stroke, whatever it does next;
+  // anything else and it is left for the end of the touch to read, as it always was.
+  const move = (x, y, e) => {
+    if (x0 === null) return;
+    if (mode === null){
+      const dx = x - x0, dy = y - y0;
+      if (Math.hypot(dx, dy) < PULL_SLOP) return;
+      mode = (-dy > Math.abs(dx) * 1.5 && pullBegin(e)) ? 'pull' : 'no';
+    }
+    if (mode === 'pull') pullTo(y0 - y - PULL_SLOP);
+  };
   const end = (x, y) => {
     if (x0 === null) return;
     const dx = x - x0, dy = y - y0;
     x0 = null;
+    if (mode === 'pull') return pullEnd(true);
     // A touch that went nowhere is a tap (boardTap). Anything between a tap and a
     // flick was a wobble, and does nothing.
     if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return boardTap(x, y);
     if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
     stepProblem(dx < 0 ? 1 : -1);               // flick left for the next one
   };
+  const drop = () => { x0 = null; if (mode === 'pull') pullEnd(false); };
 
   if (window.PointerEvent){
     el.addEventListener('pointerdown', e => start(e.clientX, e.clientY));
+    el.addEventListener('pointermove', e => {
+      if (e.pointerType === 'mouse' && !(e.buttons & 1)) return x0 === null ? undefined : drop();     // a mouse let go somewhere else
+      move(e.clientX, e.clientY, e);
+    });
     el.addEventListener('pointerup',   e => end(e.clientX, e.clientY));
-    el.addEventListener('pointercancel', () => { x0 = null; });
+    el.addEventListener('pointercancel', drop);
   } else {
     el.addEventListener('touchstart', e => {
       if (e.touches.length === 1) start(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    el.addEventListener('touchmove', e => {
+      if (e.touches.length === 1) move(e.touches[0].clientX, e.touches[0].clientY, null);
     }, { passive: true });
     el.addEventListener('touchend', e => {
       const t = e.changedTouches[0];
       end(t.clientX, t.clientY);
     }, { passive: true });
+    el.addEventListener('touchcancel', drop, { passive: true });
   }
 })();
 
-/* In focus a swipe upwards closes it as well (Will, 2026-10-09: "a swipe up closes the
-   board as well"). It counts from anywhere on the screen, the room under the picture
-   included, because that is where a thumb sets off from. A swipe up is neither a tap
-   nor a step sideways, so the picture's own handler above lets it go by. */
+/* In focus a swipe downwards closes it as well. (It was a swipe upwards from 2026-10-09,
+   when Will asked for it, until 2026-10-11, when he gave the swipe up to lighting the
+   route: "to close focus mode it needs to change to a swipe down".) It counts from
+   anywhere on the screen, the room round the picture included. A swipe down is neither a
+   tap nor a step sideways, so the picture's own handler above lets it go by; and a touch
+   that was a stroke upwards is not read here at all, wherever it ended. */
 (function focusSwipe(){
   const el = $('boardCol');
   let x0 = null, y0 = null;
 
-  const start = (x, y) => { x0 = x; y0 = y; };
+  const start = (x, y) => { x0 = x; y0 = y; pullSeen = false; };
   const end = (x, y) => {
     if (x0 === null) return;
     const dx = x - x0, dy = y - y0;
     x0 = null;
-    if (!focusOn || dy > -50 || Math.abs(dx) >= -dy) return;     // not in focus, not far enough, or more across than up
+    if (!focusOn || pullSeen || dy < 50 || Math.abs(dx) >= dy) return;     // not in focus, a stroke upwards, not far enough, or more across than down
     focusBoard(false);
   };
 
@@ -6719,24 +6928,38 @@ async function crewFeed(me, mine){
   });
 }
 
+/* This session's climbs, under the card's numbers: shut until the card is tapped, and then as it was left for as
+   long as the page is open (a go logged meanwhile builds the list again, open or shut as it was). */
+let sesOpen = false;
+function paintSesOpen(){
+  $('lpHero').classList.toggle('open', sesOpen);
+  $('lpSession').hidden = !sesOpen;
+  $('lpHeroTop').setAttribute('aria-expanded', sesOpen ? 'true' : 'false');
+}
+$('lpHeroTop').onclick = () => { sesOpen = !sesOpen; paintSesOpen(); };
+$('lpHeroTop').onkeydown = e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('lpHeroTop').onclick(); } };
+
 async function paintLogPage(){
   paintLogNow();
   routeHist();
   const me = meNow(), mine = ++lpFor;
   crewFeed(me, mine);
-  const hero = $('lpHero'), ses = $('lpSession'), foot = $('lpFoot');
+  const hero = $('lpHero'), ses = $('lpSession'), foot = $('lpFoot'), note = $('lpSesNote');
+  // No session to show. Why not is said at the foot of the page, under a heading, when there is something to say
+  // (no name picked, or the logbook out of reach); with nothing logged yet there is neither (Will struck that out).
   const blank = why => {
     lpLast = null; paintUndo();
-    $('lpSesLbl').hidden = false;
-    hero.hidden = true;                      // no session, no numbers: the line under the label says why
+    hero.hidden = true;
     hero.className = 'idle';
-    hero.querySelector('.kick').textContent = 'No session yet';
+    $('lpKick').textContent = 'No session yet'; $('lpSesN').textContent = '';
     $('lpSends').textContent = '0'; $('lpTries').textContent = '0'; $('lpHard').textContent = '\u2013';
     $('lpStrip').innerHTML = '';
-    ses.innerHTML = ''; foot.innerHTML = '';
+    ses.innerHTML = ''; foot.innerHTML = ''; note.innerHTML = '';
+    $('lpSesLbl').hidden = !why;
+    if (!why) return;
     const d = document.createElement('div');
     d.className = 'none'; d.textContent = why;
-    ses.appendChild(d);
+    note.appendChild(d);
   };
   if (!me) return blank('Pick your name at the top, and what you climb shows here.');
   let entries;
@@ -6750,24 +6973,22 @@ async function paintLogPage(){
   lpArmed = 0;
   paintUndo();
 
-  // this session
+  // this session: its card is the first thing on the page, and its climbs are under the numbers once it is tapped
   if (live){
-    const sum = sessionSum(live);
-    $('lpSesLbl').hidden = false;
+    const sum = sessionSum(live), climbs = sessionRoutes(live);
+    $('lpSesLbl').hidden = true; note.innerHTML = '';
     hero.hidden = false;
     hero.className = '';
-    hero.querySelector('.kick').textContent = sessionDay(live) + ' \u00b7 since ' +
+    $('lpKick').textContent = sessionDay(live) + ' \u00b7 since ' +
       new Date(live.t0).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    $('lpSesN').textContent = climbs.length + (climbs.length === 1 ? ' climb' : ' climbs');
     $('lpSends').textContent = sum.sends; $('lpTries').textContent = sum.tries;
     $('lpHard').textContent = sum.hard ? GRADES[sum.hard.grade] : '\u2013';
     $('lpStrip').innerHTML = goDots(live.rows.slice().reverse().map(shown));
     ses.innerHTML = '';
-    sessionRoutes(live).forEach(x => ses.appendChild(lpRow(x, true)));
-  } else {
-    blank('');                             // no session yet: no heading and no line (Will struck it out)
-    ses.innerHTML = '';
-    $('lpSesLbl').hidden = true;
-  }
+    climbs.forEach(x => ses.appendChild(lpRow(x, true)));
+    paintSesOpen();
+  } else blank('');                        // no session yet: no card, no heading and no line
 
   // (earlier sessions are not listed here: the logbook has every one of them)
   // everything, in a line, and the way to the whole logbook
@@ -7142,6 +7363,12 @@ window.addEventListener('popstate', () => {
     if (!kb.hidden && !kb.contains(e.target) && !$('qBox').contains(e.target)) close();
   }, true);
 })();
+// What is seen of Sent and Sort: a small box each, with the choice in it. The picker lies over its box, unseen.
+function paintChips(){
+  const said = id => { const o = $(id).selectedOptions[0]; return o ? o.textContent : ''; };
+  $('hideSay').textContent = said('hideDone');
+  $('sortSay').textContent = said('sort');
+}
 function saveView(){
   try{
     localStorage.setItem('mb-gmin', $('gmin').value);
@@ -7161,12 +7388,13 @@ $('who').onchange = () => {
   renderResults(); paintBar();
 };
 /* ---------- grades, by sliding ----------
-   Two dots on a line over the From and To pickers: drag the left one to the easiest
-   grade wanted and the right one to the hardest. It is the same choice as the two
-   pickers, so it is kept in them: a dot that moves sets its picker, and the list is
-   filtered from the pickers as it always was. The dots cannot pass each other. When
-   they sit on the same grade, the way the finger first moves says which one it took.
-   A tap on the line brings the nearer dot to it. */
+   Two dots on a line: drag the left one to the easiest grade wanted and the right one
+   to the hardest. From and To were two pickers under this line until 2026-10-11; they
+   are out of sight now, but the choice is still kept in them: a dot that moves sets its
+   picker, and the list is filtered from the pickers as it always was. The dots cannot
+   pass each other. When they sit on the same grade, the way the finger first moves says
+   which one it took. A tap on the line brings the nearer dot to it. Each dot says its
+   grade over itself, and with the keys an arrow moves the dot that has the focus. */
 function paintGradeSlide(held){
   const box = $('gSlide');
   if (!box) return;
@@ -7175,16 +7403,36 @@ function paintGradeSlide(held){
   if (n < 1) return;
   const lo = +$('gmin').value, hi = +$('gmax').value;
   const at = v => (v - gradeLo) / n * 100;
+  const say = v => GRADES[v] + ' \u00b7 V' + VGRADE[v];
   const fill = box.querySelector('.fill');
   fill.style.left = at(lo) + '%';
   fill.style.width = (at(hi) - at(lo)) + '%';
   box.querySelectorAll('.dot').forEach(d => {
-    const v = d.dataset.end === 'lo' ? lo : hi, s = d.querySelector('span');
+    const v = d.dataset.end === 'lo' ? lo : hi;
     d.style.left = at(v) + '%';
     d.classList.toggle('on', held === d.dataset.end);
-    s.textContent = GRADES[v] + ' \u00b7 V' + VGRADE[v];
-    s.className = at(v) < 20 ? 'l' : at(v) > 80 ? 'r' : '';
+    d.setAttribute('aria-valuemin', gradeLo); d.setAttribute('aria-valuemax', gradeHi);
+    d.setAttribute('aria-valuenow', v); d.setAttribute('aria-valuetext', say(v));
   });
+  // Each grade over its dot. Where the two would lie on each other they move apart just far enough, and neither
+  // goes past the ends of the line; on one grade there is one of them (the held dot's, while one is held).
+  const cl = box.querySelector('.cap[data-end="lo"]'), ch = box.querySelector('.cap[data-end="hi"]');
+  cl.textContent = say(lo); ch.textContent = say(hi);
+  cl.classList.toggle('on', held === 'lo'); ch.classList.toggle('on', held === 'hi');
+  cl.hidden = hi === lo && held === 'hi'; ch.hidden = hi === lo && held !== 'hi';
+  const W = box.clientWidth;
+  if (!W) return;                         // the filters are shut: the words are placed when they open (showFilters)
+  const M = 13, wl = cl.hidden ? 0 : cl.offsetWidth, wh = ch.hidden ? 0 : ch.offsetWidth;
+  const fit = (x, w) => Math.min(W + M - w, Math.max(-M, x));
+  let a = fit(at(lo) / 100 * W - wl / 2, wl), b = fit(at(hi) / 100 * W - wh / 2, wh);
+  const over = wl && wh ? a + wl + 5 - b : 0;
+  if (over > 0){
+    a -= over / 2; b += over / 2;
+    if (a < -M){ b += -M - a; a = -M; }
+    if (b + wh > W + M){ a -= b + wh - (W + M); b = W + M - wh; }
+  }
+  cl.style.transform = 'translateX(' + a.toFixed(1) + 'px)';
+  ch.style.transform = 'translateX(' + b.toFixed(1) + 'px)';
 }
 (function gradeSlide(){
   const box = $('gSlide');
@@ -7222,6 +7470,19 @@ function paintGradeSlide(held){
   const up = () => { if (!down) return; down = false; end = null; paintGradeSlide(null); };
   box.addEventListener('pointerup', up);
   box.addEventListener('pointercancel', up);
+  // by the keys as well, now that the two pickers which said the same are out of sight
+  box.addEventListener('keydown', e => {
+    const d = e.target.closest ? e.target.closest('.dot') : null;
+    const step = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1 }[e.key];
+    if (!d || !step) return;
+    e.preventDefault();
+    const lo = +$('gmin').value, hi = +$('gmax').value, low = d.dataset.end === 'lo';
+    const v = low ? Math.min(Math.max(lo + step, gradeLo), hi) : Math.max(Math.min(hi + step, gradeHi), lo);
+    if (v === (low ? lo : hi)) return;
+    $(low ? 'gmin' : 'gmax').value = v;
+    saveView(); renderResults(); markFilters();
+  });
+  window.addEventListener('resize', () => paintGradeSlide());      // the words over the dots are placed in pixels
 })();
 
 /* The panel is collapsed most of the time, so the button carries a mark when
@@ -7236,6 +7497,7 @@ function showFilters(on){
   $('filters').hidden = !on;
   $('filtBtn').className = on ? 'ghost on' : 'ghost';
   markFilters();
+  if (on) paintGradeSlide();              // the grades' words can only be placed over their dots once the line has a width
 }
 $('filtBtn').onclick = () => showFilters($('filters').hidden);
 
@@ -7356,7 +7618,7 @@ function paintLoc(){
   const home = $('room').value.trim() === DEFAULT_ROOM;
   $('loc').value = home ? 'home' : 'other';
   $('room').hidden = home;
-  $('wallPick').hidden = $('sunBtn').hidden = !home;      // the Sun board is at Will's
+  $('wallPick').hidden = $('walls').hidden = !home;      // the Sun board is at Will's
 }
 /* Across to the Sun board. That page, once it is up, leaves the note that brings this phone
    back to it the next time the app is opened (see "which wall" in the first lines of the page). */

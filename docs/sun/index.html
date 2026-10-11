@@ -151,8 +151,19 @@
   body.focus #pic{flex:1 1 auto;height:auto;min-height:0}
   body.focus #focusCap{display:flex;flex:none;align-items:center;justify-content:center;gap:8px;min-width:0;height:28px;margin-bottom:6px;font-size:15px}
   #focusCap b{min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #focusCap button{flex:none;width:30px;height:26px;margin-left:auto;padding:0;border:0;background:transparent;color:var(--dim);font-size:15px}
-  #focusCap span.sp{flex:none;width:30px;margin-right:auto}
+  #focusCap #focusX{flex:none;width:38px;height:26px;margin-left:auto;padding:0 7px 0 0;border:0;background:transparent;color:var(--dim);font-size:15px;text-align:right}
+  /* The open route lit, in focus: a small bulb at the left end of the name's line, where the MoonBoard's page has the
+     bulb that lights the route on the wall (Will, 2026-10-11: "Add a small light it up button on the board focus
+     mode both walls"). This wall has no lights, so here the route is lit on the picture: the wall goes dim behind it,
+     as it is on the board's page, and the outlines of all the other holds are put away. Another tap brings them
+     back, for picking holds. Dark, with its bulb lit, while it is on; the phone remembers which. It is as wide as
+     the cross's box at the other end, so the name stays in the middle. */
+  #focusCap #focusLit{position:relative;flex:none;width:38px;height:28px;margin-right:auto;padding:0;border-radius:8px;font-size:15px;line-height:1}
+  #focusCap #focusLit.away{visibility:hidden}                              /* out of sight, its room kept: the name stays in the middle */
+  #focusLit::after{content:'';position:absolute;inset:-9px -6px}          /* a fingertip's room round it */
+  #focusLit span{filter:grayscale(.85);opacity:.8}
+  #focusCap #focusLit.on{background:var(--ink);border-color:var(--ink)}
+  #focusLit.on span{filter:none;opacity:1}
   body.focus #focusHint{display:block;position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 74px);transform:translateX(-50%);
        padding:7px 14px;border-radius:999px;background:var(--ink);color:var(--onink);font-size:12px;font-weight:600;white-space:nowrap;
        pointer-events:none;opacity:0;z-index:3}
@@ -383,10 +394,21 @@
   .kv.tap:active{background:var(--panel)}
   .kv.me b{color:var(--blue-ink)}
   .none{font-size:13px;color:var(--dimmer);padding:8px 2px;line-height:1.5}
-  /* ---- this session on the log page, as on the MoonBoard page: route by route with a dot for every go, and three
-     numbers under it. Every session there has been is in the logbook, a line each (see .lpses) ---- */
-  #lpHero{border:1px solid var(--edge);border-radius:14px;background:var(--panel);padding:13px 14px;margin-top:12px}
-  #lpHero .kick{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+  /* ---- this session on the log page, as on the MoonBoard page: its card is the first thing on the page, three
+     numbers and a dot for every go, and a tap on it opens the session's climbs under them, a row each (Will,
+     2026-10-11: "Move this card above the route card on the log page and when you click it it expanded the list of
+     climbs you did this session"). Every session there has been is in the logbook, a line each (see .lpses) ---- */
+  #lpHero{border:1px solid var(--edge);border-radius:14px;background:var(--panel);margin-bottom:12px;overflow:hidden}
+  #lpHero[hidden]{display:none}
+  #lpHeroTop{padding:13px 14px;cursor:pointer;-webkit-user-select:none;user-select:none}
+  #lpHero .kick{display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+  #lpHero .kick span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #lpHero .kick em{flex:none;font-style:normal;color:var(--dimmer)}
+  #lpHero .kick svg{flex:none;width:12px;height:12px;transition:transform .15s ease-out}
+  #lpHero.open .kick svg{transform:rotate(180deg)}
+  #lpSession{padding:1px 12px;border-top:1px solid var(--edge)}
+  #lpSession[hidden]{display:none}
+  #lpSession .lprow:last-child{border-bottom:0}
   #lpHero .nums{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:11px}
   #lpHero .nums b{display:block;font-size:34px;line-height:36px;font-weight:700;letter-spacing:-.02em}
   #lpHero .nums span{display:block;margin-top:3px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dimmer)}
@@ -588,7 +610,7 @@
 
 <section id="boardWrap">
   <div id="boardCol">
-    <div id="focusCap"><span class="sp"></span><b id="fcName"></b><span class="gd" id="fcGd" hidden></span><button id="focusX" aria-label="Back to the page">&#10005;</button></div>
+    <div id="focusCap"><button id="focusLit" class="away" aria-label="Light up the route" title="Light up the route" aria-pressed="false"><span>&#128161;</span></button><b id="fcName"></b><span class="gd" id="fcGd" hidden></span><button id="focusX" aria-label="Back to the page">&#10005;</button></div>
     <div id="pic">
       <div id="stage"><div id="faces" hidden></div><img id="vimg" alt=""><svg id="ov" xmlns="http://www.w3.org/2000/svg"></svg></div>
       <div id="picNote"></div>
@@ -699,6 +721,20 @@
 </div>
 
 <div id="logPage">
+  <!-- This session, first on the page: three numbers and a dot for every go. A tap opens the session's climbs under
+       them, and another shuts them. Not there until there is a session. -->
+  <div id="lpHero" hidden>
+    <div id="lpHeroTop" role="button" tabindex="0" aria-expanded="false" aria-controls="lpSession">
+      <div class="kick"><span id="lpKick"></span><em id="lpSesN"></em><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4.2l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="nums">
+        <div><b id="lpSends">0</b><span>sends</span></div>
+        <div><b id="lpTries">0</b><span>tries</span></div>
+        <div><b id="lpHard">&ndash;</b><span>hardest</span></div>
+      </div>
+      <div id="lpStrip"></div>
+    </div>
+    <div id="lpSession" hidden></div>
+  </div>
   <div id="lpNow">
     <div class="top"><b id="lpName"></b><span class="gd" id="lpGd" hidden></span></div>
     <div class="sub" id="lpSub"></div>
@@ -720,17 +756,9 @@
   <!-- what the crew has been on lately, on any route: a tap on a line goes to the board with that route up -->
   <div class="lbl" id="lpCrewLbl">Lately on the Sun board</div>
   <div id="lpCrew"></div>
-  <div class="lbl" id="lpSesLbl">This session</div>
-  <div id="lpSession"></div>
-  <div id="lpHero" hidden>
-    <div class="kick" id="lpKick"></div>
-    <div class="nums">
-      <div><b id="lpSends">0</b><span>sends</span></div>
-      <div><b id="lpTries">0</b><span>tries</span></div>
-      <div><b id="lpHard">&ndash;</b><span>hardest</span></div>
-    </div>
-    <div id="lpStrip"></div>
-  </div>
+  <!-- only when there is no session's card to show and a reason to give: nobody has said who they are -->
+  <div class="lbl" id="lpSesLbl" hidden>This session</div>
+  <div id="lpSesNote"></div>
   <div id="lpFoot"></div>
 </div>
 
@@ -899,7 +927,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-11 18:35';
+const BUILD = '2026-10-11 21:44';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -935,6 +963,7 @@ let draft = null;                // a route being made or changed: { id?, marks,
 let brush = 's';
 let fixing = false, fixKind = 'add', fixSize = 'm';      // putting the map of holds right (see "fixing the map")
 let dim = ls.get('sb-dim') !== '0', showAll = ls.get('sb-all') === '1';
+let lit = ls.get('sb-lit') === '1';            // in focus: the open route lit on the picture (the small bulb by its name)
 let myLog = [], crewLog = [], logAt = 0, mine = [];     // mine: what this phone has logged since it opened, newest last
 let lookFor = null;                                     // a route opened from the log page's list, for the board to look at
 
@@ -1832,6 +1861,11 @@ function focusOff(){
   if (view !== turnView().key) setView(turnView().key);          // the map was being fixed on a wall's photo: back to the model
   paintAll(); requestAnimationFrame(fit);
 }
+$('focusLit').onclick = () => {
+  lit = !lit; ls.set('sb-lit', lit ? '1' : '0');
+  paintBoard();
+  hint(lit ? 'The route, lit up' : 'Every hold outlined again');
+};
 $('focusX').onclick = () => {
   if (draft && draft.marks.length > 2 && !confirm(draft.id ? 'Leave the route as it was?' : 'Throw this route away?')) return;
   focusOff();
@@ -1858,11 +1892,12 @@ function paintBoard(light){              // light: only what is drawn on the pic
   {
     const here = marks.filter(m => onPic(v, markView(m)) && (m.h ? G(H(m.h), v) : toPic(v, m.v, m.x, m.y)));
     const picking = focus && !draft && !fixing;
+    const glow = picking && lit && !!r;                // the open route lit, in focus: the wall dim behind it and no other outlines
     const d = m => m.h ? pathOf(H(m.h), v) : ringOf(m, v);
-    if (dim && r && !focus && here.length)
+    if (r && here.length && (focus ? glow : dim))
       svg += '<mask id="cut"><rect width="' + v.w + '" height="' + v.h + '" fill="#fff"/>' + here.map(m => '<path d="' + d(m) + '" fill="#000"/>').join('') + '</mask>' +
              '<rect width="' + v.w + '" height="' + v.h + '" fill="#000" fill-opacity=".45" mask="url(#cut)"/>';
-    if ((showAll || focus) && !turning)                // in focus the outlines show what can be tapped (not while the model is being turned: too many to redraw)
+    if ((showAll || focus) && !turning && !glow)       // in focus the outlines show what can be tapped (not while the model is being turned: too many to redraw; and not while the route is lit)
       svg += LIVE.filter(h => G(h, v) && !(fixing && h.fix)).map(h => '<path class="o-all" d="' + pathOf(h, v) + '"/>').join('');
     if (fixing)
       svg += (snap.fixes || []).map(f => {
@@ -1909,6 +1944,10 @@ function paintBars(){
   $('fcName').textContent = fixing ? 'Fixing the map of holds' : draft ? (draft.id ? 'Changing “' + draft.name + '”' : 'A new route') : r ? r.name : 'Sun board';
   $('fcGd').hidden = !(r && !draft && !fixing);
   if (r && !draft && !fixing) paintPill($('fcGd'), r.grade);
+  const canLight = !!r && !draft && !fixing;           // the bulb: there with a route open, and not while one is being made or the map fixed
+  $('focusLit').classList.toggle('away', !canLight);
+  $('focusLit').classList.toggle('on', canLight && lit);
+  $('focusLit').setAttribute('aria-pressed', canLight && lit ? 'true' : 'false');
   // the row under the picture: the open route, which is also the way to the search
   $('qBox').classList.toggle('now', !!r);
   if (r){ $('qName').textContent = r.name; paintPill($('qGd'), r.grade); $('qBy').textContent = r.setter + ' · ' + (byNumber(r) ? 'by number · ' : '') + FEET[r.feet] + rulesSay(r, true) + (r.tape ? ' · ' + r.tape : ''); }
@@ -2589,23 +2628,35 @@ function lpRow(x, timeOfDay){
   };
   return row;
 }
+/* This session's climbs, under the card's numbers: shut until the card is tapped, and then as it was left for as long
+   as the page is open (a go logged meanwhile builds the list again, open or shut as it was). */
+let sesOpen = false;
+function paintSesOpen(){
+  $('lpHero').classList.toggle('open', sesOpen);
+  $('lpSession').hidden = !sesOpen;
+  $('lpHeroTop').setAttribute('aria-expanded', sesOpen ? 'true' : 'false');
+}
+$('lpHeroTop').onclick = () => { sesOpen = !sesOpen; paintSesOpen(); };
+$('lpHeroTop').onkeydown = e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('lpHeroTop').onclick(); } };
 function paintBook(){
-  const hero = $('lpHero'), ses = $('lpSession'), foot = $('lpFoot');
-  ses.innerHTML = ''; foot.textContent = '';
-  hero.hidden = true; $('lpSesLbl').hidden = false;
-  if (!me){ ses.innerHTML = '<div class="none">Say who you are to keep a logbook.</div>'; return; }
+  const hero = $('lpHero'), ses = $('lpSession'), foot = $('lpFoot'), note = $('lpSesNote');
+  ses.innerHTML = ''; foot.textContent = ''; note.innerHTML = '';
+  hero.hidden = true; $('lpSesLbl').hidden = !!me;         // the heading stands only over a reason why there is no card
+  if (!me){ note.innerHTML = '<div class="none">Say who you are to keep a logbook.</div>'; return; }
   const sorted = tagRepeats(myLog.filter(e => e.person === me)).sort((a, b) => logTime(b) - logTime(a));
   const sessions = logSessions(sorted);
   const live = sessions.length && Date.now() - sessions[0].t1 < SESSION_LIVE ? sessions[0] : null;
   if (live){
-    const sum = sessionSum(live);
-    sessionRoutes(live).forEach(x => ses.appendChild(lpRow(x, true)));
+    const sum = sessionSum(live), climbs = sessionRoutes(live);
+    climbs.forEach(x => ses.appendChild(lpRow(x, true)));
     hero.hidden = false;
+    $('lpSesN').textContent = climbs.length + (climbs.length === 1 ? ' climb' : ' climbs');
     $('lpKick').textContent = sessionDay(live) + ' \u00b7 since ' + new Date(live.t0).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     $('lpSends').textContent = sum.sends; $('lpTries').textContent = sum.tries;
     $('lpHard').textContent = sum.hard ? vName(sum.hard.grade) : '\u2013';
     $('lpStrip').innerHTML = goDots(live.rows.slice().reverse());
-  } else $('lpSesLbl').hidden = true;      // no session on: no heading and no line, as on the MoonBoard page
+    paintSesOpen();
+  }                                        // no session on: no card, no heading and no line, as on the MoonBoard page
   // everything, in a line: from the counts the page holds for everyone, so it is right however long the log is
   let sends = 0, flashes = 0, hardest = null;
   for (const id in snap.stats[me] || {}){

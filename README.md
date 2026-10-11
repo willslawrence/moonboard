@@ -61,10 +61,13 @@ closing whatever is open on top of it.
 
 The page you climb from, top to bottom:
 
+- At Will's, a moon and a sun side by side in the header, the one you are on filled: the
+  two walls (see *The Sun board*). The Sun board's page has the same thing in the same place.
 - **Light up Route** puts the open problem on the wall. **Show 2nd route** adds it beside
   what is already up (see *Two routes at once*).
 - The picture of the wall with the open problem ringed: green start, blue, red finish.
-  Flick it left or right to step through the list.
+  Flick it left or right to step through the list. A long stroke up it lights the problem
+  (see *A long stroke upwards*).
 - Left of the picture, the wall's panel: **Next up**, **History**, the line, and what is
   on the wall (see *Two phones, one wall*).
 - A row with the open problem's name and grade, which is also the way to the search,
@@ -79,11 +82,31 @@ off the wall is not something a stray tap should do with other people climbing. 
 the picture never opens anything either. It only undoes: it puts a shrunken picture back
 and stops the beta climber. Two taps are for focus.
 
+### A long stroke upwards
+
+A finger going up the picture lights the open problem, the way a long swipe marks a
+message read in the mail app: it has to go far, so that it cannot happen by a slip. The
+picture goes up with the finger, and in the room that opens under it a bulb shows, grey, in
+a ring that fills as the finger goes on, with **Keep going to light it up**. Far enough is
+two fifths of the picture's height (never less than 150 pixels or more than 230). There
+the ring is full, the bulb is lit, the box goes dark and the words are **Let go to light it
+up**: letting go lights the problem exactly as *Light up Route* does, and a line says *On
+the wall*, or that the board is not reached. Letting go anywhere short of that puts the
+picture back and does nothing, and so does coming back down first. A stroke that starts
+out sideways is a flick to the next route, as before, however it goes on. It is the same in
+focus.
+
 ### Focus, and picking holds
 
 Two taps on the picture and it fills the screen, with the open problem's name and grade
-over it and nothing to press. Two more taps put the page back, and so do Back and a swipe
-upwards from anywhere on the screen. A flick across still steps through the list.
+over it. Two more taps put the page back, and so do Back and a swipe downwards from
+anywhere on the screen. (It was a swipe upwards until 2026-10-11, when the stroke upwards
+was given to lighting the problem.) A flick across still steps through the list.
+
+At the left end of the name's line is a small bulb: it lights the open problem, as *Light
+up Route* does, without leaving focus. It is pale with its bulb out until this problem is
+the one on the wall, then dark with the bulb lit. A long stroke up the picture does the
+same (see *A long stroke upwards*).
 
 In focus a tap on a hold rings it in violet, and another tap lets it go. With a hold
 picked, two buttons come up under the picture, and a small cross that lets every hold go:
@@ -100,12 +123,14 @@ quickly are two picks. Thirty holds can be picked at most.
 ### Routes
 
 Nothing but the list. The search box has a small keyboard of its own on a phone, so the
-phone's keyboard does not cover half the routes. Under it are the filters: a line with
-two dots to drag for the easiest and hardest grade wanted, the **From** and **To** pickers
-that say the same thing, **Sent** to show or hide what you have climbed, and **Sort**
-(popular, best, easiest, hardest, A–Z). The filter button carries a green dot whenever
-something is filtering, so a short list never looks like a bug. Pick a route and you are
-back at the board with it open.
+phone's keyboard does not cover half the routes. Under it are the filters, on one line: a
+line with two dots to drag for the easiest and hardest grade wanted, each dot with its
+grade over it, then **Sent** to show or hide what you have climbed and **Sort** (popular,
+best, easiest, hardest, A–Z), both small so that the line has the room. (There were
+**From** and **To** pickers under the line until 2026-10-11. They are still in the page,
+out of sight, and still hold the choice.) With a keyboard, an arrow key moves the dot that
+has the focus. The filter button carries a green dot whenever something is filtering, so a
+short list never looks like a bug. Pick a route and you are back at the board with it open.
 
 The list can also be narrowed to the routes that use certain holds, picked on the picture
 (see *Focus, and picking holds*). While it is, a note over the list says which holds.
@@ -114,6 +139,12 @@ The list can also be narrowed to the routes that use certain holds, picked on th
 
 Logging, and what you have climbed. Top to bottom:
 
+- **This session**, once there is one: your sends, tries and hardest grade, with a dot for
+  every go in the order they happened. A ring is a try, a green dot a send, a gold dot a
+  flash. A tap on the card opens the session's climbs under the numbers, a row each, and
+  another shuts them; a tap on a row opens that route. A session is a run of goes with no
+  gap of four hours, so an evening that runs past midnight is still one session. (The card
+  was at the foot of the page, under a list that was always open, until 2026-10-11.)
 - **The open problem**, with **Log try** and **Log send**, then **Beta** and the
   **Logbook**. A small line offers to undo your last go (see *Logbook*).
 - **Your history on this route**: one row for each session you were on it, a dot for
@@ -121,10 +152,6 @@ Logging, and what you have climbed. Top to bottom:
 - **Community**: who has climbed the open problem and how each of them first got up it,
   then what the rest of the crew have logged in the last eight hours. Tap one of their
   routes to open it.
-- **This session**: the routes you have been on, and under them your sends, tries and
-  hardest grade, with a dot for every go in the order they happened. A ring is a try, a
-  green dot a send, a gold dot a flash. A session is a run of goes with no gap of four
-  hours, so an evening that runs past midnight is still one session.
 - Earlier sessions are not listed here: the **Logbook** has every one of them, a day to a
   line (they were on this page too until 2026-10-11, which said the same thing twice).
 
@@ -270,9 +297,10 @@ not a mode of the MoonBoard page: nothing is shared but the look, the names of t
 the Home Screen icon. Nothing from the MoonBoard shows there and nothing from there shows
 on the MoonBoard.
 
-**Getting there.** On the MoonBoard page, when "Where you're climbing" is Will's Wall, a
-sun in the header and a row in Settings ("Which wall") go across; a moon on the Sun board
-comes back. The phone remembers which wall it was on (`mb-wall`), and the MoonBoard page,
+**Getting there.** Each page has a moon and a sun side by side at the left of its header,
+the wall you are on filled, and a tap on the other goes across; a row in Settings ("Which
+wall") does the same. On the MoonBoard page they are there when "Where you're climbing" is
+Will's Wall. The phone remembers which wall it was on (`mb-wall`), and the MoonBoard page,
 which is what a Home Screen icon opens, sends a phone that was last on the Sun board
 straight there. A phone on another MoonBoard is not offered the Sun board.
 
@@ -356,7 +384,11 @@ cross, goes back. Two more taps do not: this wall's holds are close together, an
 them tapped quickly used to shut the picture and lose every hold picked. The holds picked
 are kept when the picture shuts, out of sight, and are there when it opens again; they go
 when they are saved as a route, let go with the small cross, or when another route is
-opened. In focus a tap on a hold picks it, and with a hold picked two
+opened. With a route open there is a small bulb at the left end of the name's line, where
+the MoonBoard's page has the bulb that lights the wall. This wall has no lights, so it
+lights the route on the picture: the wall goes dim behind the route, as it is on the
+board's page, and the outlines of all the other holds are put away. Another tap brings
+them back, and the phone remembers which it was (`sb-lit`). In focus a tap on a hold picks it, and with a hold picked two
 buttons come up where the MoonBoard has *Light up taps* and *Search routes*: **Save as a
 route** and **Search routes**. There is no lighting a wall with no lights, so what is done
 with picked holds here is to keep them. *Save as a route* asks first, then goes on to
@@ -428,10 +460,11 @@ A route scores once, the first time it is sent: its V number plus one, and one m
 flash. Tries score nothing. The points are the Sun board's own.
 
 **Your own logbook.** The log page keeps each climber's own record the way the MoonBoard
-page does. **This session** is a row a route, the latest first, with a dot for every go (a
-ring for a try, green for a send, gold for a flash) and how it went, and under the rows the
-session in three numbers: sends, tries, and the hardest sent. Under them is everything in
-a line: sends in all, flashes, the hardest, points. A session is a run of goes with no gap
+page does. **This session** is a card at the top of the page: the session in three numbers
+(sends, tries, and the hardest sent) and a dot for every go (a ring for a try, green for a
+send, gold for a flash). A tap on it opens the session's climbs under the numbers, a row a
+route with the latest first and how it went, and another tap shuts them. At the foot of the
+page is everything in a line: sends in all, flashes, the hardest, points. A session is a run of goes with no gap
 of four hours in it, and it is "this session" until its last go is eight hours old. A tap
 on a route opens it on the page, ready for another go, and the board turns to look at it.
 Changing the name at the top changes whose logbook it is. The page is otherwise the open
