@@ -508,18 +508,6 @@
   .lprow.hist .n span{display:block;margin-top:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .lprow.hist .r{flex-direction:row;align-items:center;gap:9px;max-width:62%}
   #logPage .none{font-size:13px;color:var(--dimmer);padding:6px 2px;line-height:1.5}
-  /* an earlier session: one line, and its routes when it is tapped */
-  .lpses{border-bottom:1px solid var(--line)}
-  .lpses > .h{display:flex;align-items:center;gap:9px;padding:11px 2px}
-  .lpses > .h:active{background:var(--panel)}
-  .lpses > .h .cv{flex:none;color:var(--dimmer);font-size:13px;transition:transform .15s}
-  .lpses.open > .h .cv{transform:rotate(90deg)}
-  .lpses > .h b{flex:1;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .lpses > .h .s{flex:none;font-size:12px;color:var(--dim)}
-  .lpses > .h .gd{font-size:9px}
-  .lpses > .body{padding:0 0 4px 12px}
-  .lpses > .body[hidden]{display:none}
-  .lpses > .body .lprow:last-child{border-bottom:0}
   #logPage .more{margin:10px 0 0}
   #lpFoot{margin-top:20px;font-size:12px;color:var(--dimmer);line-height:1.7;text-align:center}
   #lpFoot u{color:var(--dim);text-underline-offset:2px}
@@ -631,11 +619,11 @@
   #gamePanel[hidden]{display:none}
   #snakePanel{gap:8px !important}
   #snakePanel #snPad{margin-top:auto}      /* pushed to the bottom of the sheet */
-  #logPanel,#snakePanel,#entryPanel,#pairPanel,#igPanel{position:fixed;inset:0;z-index:60;background:var(--bg);
+  #logPanel,#snakePanel,#entryPanel,#pairPanel,#igPanel,#rsPanel{position:fixed;inset:0;z-index:60;background:var(--bg);
              display:flex;flex-direction:column;gap:12px;overflow-y:auto;
              padding:calc(env(safe-area-inset-top) + 16px) 16px
                      calc(env(safe-area-inset-bottom) + 16px)}
-  #logPanel[hidden],#snakePanel[hidden],#entryPanel[hidden],#pairPanel[hidden],#igPanel[hidden]{display:none}
+  #logPanel[hidden],#snakePanel[hidden],#entryPanel[hidden],#pairPanel[hidden],#igPanel[hidden],#rsPanel[hidden]{display:none}
   /* ---- videos of the open route: a sheet ----
      A row a video, found on Instagram: a small picture where there is one, how the
      caption begins, who posted it and when. A tap opens that video in Instagram. */
@@ -707,7 +695,9 @@
   #logRows .dayRows .e{padding-left:18px}
   #logRows .dayRows .e .d{width:58px}
   #logRows .e{user-select:none;-webkit-user-select:none}
-  #logRows .e.held{background:var(--panel)}
+  #logRows .e:active{background:var(--panel)}
+  #snakeBtn[hidden]{display:none}        /* put away: through the relay the wall is too slow for it (Will, 2026-10-11) */
+  #logRows .e .mo{flex:none;width:24px;text-align:center;color:var(--dim);font-size:19px;line-height:1}      /* three dots: a tap opens the entry */
   #logRows .e .lk{flex:none;font-size:10px;color:var(--dimmer)}
   #enFor{font-size:15px;font-weight:600}
   #enFor span{display:block;font-size:12px;color:var(--dimmer);font-weight:400;margin-top:2px}
@@ -816,11 +806,14 @@
   #rsFlash.rs-on{animation:rsFlash 2s ease-out}
   @keyframes rsFlash{0%{opacity:0}4%{opacity:.97}22%{opacity:.97}100%{opacity:0}}
   #rsTry{display:block;width:auto;height:auto;margin:9px auto 0;padding:3px 10px;border:0;background:transparent;font-size:12.5px;font-weight:600;color:var(--dim);text-decoration:underline;text-underline-offset:2px}
-  #rsDet{margin:14px 0 4px;border:1px solid var(--edge);border-radius:10px;background:var(--panel)}
-  #rsDet summary{display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:13px;font-weight:700;list-style:none;cursor:pointer}
-  #rsDet summary::-webkit-details-marker{display:none}
-  #rsDet summary span{flex:1 1 auto;min-width:0;font-weight:500;color:var(--dim);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #rsSet{padding:2px 12px 12px}
+  /* Its setting-up is a sheet that the button beside Quick log opens (Will, 2026-10-11: "move that to the board screen.
+     Put it next to Quick Log as a button, and you show like a timer icon"). The button is green while a session is on. */
+  #barTxt #rsBtn{flex:none;display:grid;place-items:center;width:40px;height:38px;padding:0;border-radius:9px}
+  #rsBtn svg{width:21px;height:21px}
+  #rsBtn.on{background:#22c55e;border-color:#22c55e;color:#06240e}
+  body.listPage #barTxt #rsBtn,body.betaEdit #barTxt #rsBtn{display:none}
+  #rsSum{margin:0;font-size:13px;color:var(--dim)}
+  #rsSet{padding:0}
   .rsRow{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:14px}
   .rsRow span{flex:1 1 auto}
   .rsRow button{flex:none;width:44px;height:38px;padding:0;font-size:17px;font-weight:700}
@@ -1143,6 +1136,8 @@
       <button id="qX" hidden aria-label="Clear search">&#10005;</button>
     </div>
     <button id="toBoard" class="ghost" aria-label="Back to the board">Board &#8250;</button>
+    <!-- The timed session (so many goes, then a rest): its button, which opens the setting-up. -->
+    <button id="rsBtn" aria-label="Timed session" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13.6" r="7.4"/><path d="M12 13.6V9.4M9.6 2.9h4.8M12 2.9v3.3M18.2 7.4l1.5-1.5"/></g></svg></button>
     <!-- Quick log: a press opens a red Try and a green Send on two arms over it. -->
     <div id="quick">
       <div id="quickFan" hidden>
@@ -1206,7 +1201,8 @@
      taken over from the board that filled the screen when tapped. Top to bottom: the
      open route with its two buttons; your history on it; the community - who has
      climbed it, and what the crew are on tonight; this session's routes, and under them
-     its sends, tries and hardest with a dot for every go; earlier sessions, folded away.
+     its sends, tries and hardest with a dot for every go. Earlier sessions are in the
+     Logbook, which the button in the card opens (Will, 2026-10-11: "a little bit redundant").
      (Will moved the route's history and the community up under the card, and the
      session's numbers down under its list, the night it was built.) -->
 <div id="logPage">
@@ -1224,17 +1220,6 @@
     </div>
     <button id="lpUndo" class="ghost mini" hidden></button>
   </div>
-  <details id="rsDet">
-    <summary>Timed session <span id="rsSum"></span></summary>
-    <div id="rsSet">
-      <div class="rsRow"><span>Goes in a set</span><button data-k="reps" data-d="-1" aria-label="One fewer">&#8722;</button><b id="rsReps">3</b><button data-k="reps" data-d="1" aria-label="One more">+</button></div>
-      <div class="rsRow"><span>Rest between sets</span><button data-k="rest" data-d="-30" aria-label="Half a minute less">&#8722;</button><b id="rsRest">5:00</b><button data-k="rest" data-d="30" aria-label="Half a minute more">+</button></div>
-      <label class="rsChk"><input type="checkbox" id="rsLog"> Each go logs a try on the route that is up</label>
-      <button id="rsGo" class="solid">Start the session</button>
-      <button id="rsTry" type="button">Try the ping</button>
-      <div class="hint">On the board, tap a circle after each go. After the last one the rest counts down beside the wall. When it is up the phone pings and the screen flashes white. Tap the time to skip a rest.</div>
-    </div>
-  </details>
 
   <div class="lbl" id="lpRouteLbl">Your history on this route</div>
   <div id="lpHistSum"></div>
@@ -1258,8 +1243,6 @@
     <div id="lpStrip"></div>
   </div>
 
-  <div class="lbl" id="lpEarLbl">Earlier sessions</div>
-  <div id="lpEarlier"></div>
   <div id="lpFoot"></div>
 </div>
 
@@ -1268,9 +1251,22 @@
     <b>Settings</b>
   </div>
 
+  <!-- Which wall, first: it is the thing most often come here for (Will, 2026-10-11: "put that option change right at
+       the top"). -->
+  <div id="wallPick">
+    <div class="lbl">Which wall</div>
+    <div class="two">
+      <button class="solid" disabled>&#127769; MoonBoard</button>
+      <button id="toSun">&#9728;&#65039; Sun board</button>
+    </div>
+    <div class="hint">Both are at Will's. The Sun board has no lights: its routes are made by
+      picking holds on a picture of it, and it has a list of routes, a logbook and points of
+      its own. The sun at the top of the page goes there too.</div>
+  </div>
+
   <div class="lbl">Games on the wall</div>
   <div class="two" id="gameBtns">
-    <button id="snakeBtn" class="ghost"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="#22c55e"><rect x="2.5" y="14.5" width="4.6" height="4.6" rx="1"/><rect x="7.4" y="14.5" width="4.6" height="4.6" rx="1"/><rect x="7.4" y="9.6" width="4.6" height="4.6" rx="1"/><rect x="12.3" y="9.6" width="4.6" height="4.6" rx="1"/><rect x="12.3" y="4.7" width="4.6" height="4.6" rx="1"/></g><rect x="17.2" y="4.7" width="4.6" height="4.6" rx="1" fill="#2563eb"/></svg> Snake</button>
+    <button id="snakeBtn" class="ghost" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="#22c55e"><rect x="2.5" y="14.5" width="4.6" height="4.6" rx="1"/><rect x="7.4" y="14.5" width="4.6" height="4.6" rx="1"/><rect x="7.4" y="9.6" width="4.6" height="4.6" rx="1"/><rect x="12.3" y="9.6" width="4.6" height="4.6" rx="1"/><rect x="12.3" y="4.7" width="4.6" height="4.6" rx="1"/></g><rect x="17.2" y="4.7" width="4.6" height="4.6" rx="1" fill="#2563eb"/></svg> Snake</button>
     <button id="gameBtn" class="ghost"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="4.5" cy="4.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="4.5" cy="9.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="4.5" cy="14.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="4.5" cy="19.5" r="2.1" fill="#22c55e"/><circle cx="9.5" cy="4.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="9.5" cy="9.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="9.5" cy="14.5" r="2.1" fill="#22c55e"/><circle cx="9.5" cy="19.5" r="2.1" fill="#2563eb"/><circle cx="14.5" cy="4.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="14.5" cy="9.5" r="2.1" fill="#22c55e"/><circle cx="14.5" cy="14.5" r="2.1" fill="#2563eb"/><circle cx="14.5" cy="19.5" r="2.1" fill="#2563eb"/><circle cx="19.5" cy="4.5" r="2.1" fill="#22c55e"/><circle cx="19.5" cy="9.5" r="2.1" fill="#2563eb"/><circle cx="19.5" cy="14.5" r="2.1" fill="#22c55e"/><circle cx="19.5" cy="19.5" r="2.1" fill="#2563eb"/></svg> Connect four</button>
   </div>
 
@@ -1334,16 +1330,6 @@
   </div>
   <div class="hint" id="relayState">relay off</div>
 
-  <div id="wallPick">
-    <div class="lbl">Which wall</div>
-    <div class="two">
-      <button class="solid" disabled>&#127769; MoonBoard</button>
-      <button id="toSun">&#9728;&#65039; Sun board</button>
-    </div>
-    <div class="hint">Both are at Will's. The Sun board has no lights: its routes are made by
-      picking holds on a picture of it, and it has a list of routes, a logbook and points of
-      its own. The sun at the top of the page goes there too.</div>
-  </div>
 
   <div class="lbl">Log</div>
   <div id="log">idle.</div>
@@ -1404,7 +1390,7 @@
   <select id="logWho"></select>
   <div class="two">
     <button id="logLock" class="ghost mini">Lock my entries</button>
-    <div class="hint" style="margin:0;align-self:center">Hold a row to delete it</div>
+    <div class="hint" style="margin:0;align-self:center">Tap a row to delete it</div>
   </div>
   <div id="logSum"></div>
   <div id="logRows"></div>
@@ -1412,6 +1398,23 @@
   <div class="lbl" style="margin-top:18px">Points</div>
   <div id="ptsRank"></div>
   <div class="hint" id="ptsNote"></div>
+</div>
+
+<!-- The timed session's setting-up: opened by the timer button on the board. -->
+<div id="rsPanel" hidden>
+  <div id="gameHead">
+    <b>Timed session</b>
+    <button id="rsShut" class="ghost mini">Close</button>
+  </div>
+  <p id="rsSum"></p>
+  <div id="rsSet">
+    <div class="rsRow"><span>Goes in a set</span><button data-k="reps" data-d="-1" aria-label="One fewer">&#8722;</button><b id="rsReps">3</b><button data-k="reps" data-d="1" aria-label="One more">+</button></div>
+    <div class="rsRow"><span>Rest between sets</span><button data-k="rest" data-d="-30" aria-label="Half a minute less">&#8722;</button><b id="rsRest">5:00</b><button data-k="rest" data-d="30" aria-label="Half a minute more">+</button></div>
+    <label class="rsChk"><input type="checkbox" id="rsLog"> Each go logs a try on the route that is up</label>
+    <button id="rsGo" class="solid">Start the session</button>
+    <button id="rsTry" type="button">Try the ping</button>
+    <div class="hint">On the board, tap a circle after each go. After the last one the rest counts down beside the wall. When it is up the phone pings and the screen flashes white. Tap the time to skip a rest.</div>
+  </div>
 </div>
 
 <div id="snakePanel" hidden>
@@ -1483,7 +1486,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-11 12:59';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-11 17:46';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -4642,25 +4645,12 @@ function ptsRank(){
   }
 }
 
-/* Hold a row for half a second to act on it. A tap does nothing, which is the
-   point - nothing in the logbook should be one stray finger away from deleting. */
+/* A tap on a row opens it, and deleting is a button there: two taps, so nothing in the
+   logbook is one stray finger away from going. (It was a finger held for half a second,
+   with a line saying so. Will, 2026-10-11: "I was trying to delete one of my logs and I
+   still can't figure out how to do that. So it needs to be easier to figure out." Every
+   row has three dots at its end now, and the line says tap.) */
 let heldEntry = null;
-
-function holdToEdit(row, e, p){
-  let timer = null;
-  const start = () => {
-    timer = setTimeout(() => {
-      timer = null;
-      row.classList.add('held');
-      setTimeout(() => row.classList.remove('held'), 250);
-      openEntry(e, p);
-    }, 500);
-  };
-  const cancel = () => { if (timer){ clearTimeout(timer); timer = null; } };
-  row.addEventListener('pointerdown', start);
-  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev =>
-    row.addEventListener(ev, cancel));
-}
 
 function openEntry(e, p){
   heldEntry = e;
@@ -4962,8 +4952,11 @@ async function loadLog(){
       const lk = document.createElement('div');
       lk.className = 'lk';
       lk.textContent = e.lock ? '\ud83d\udd12' : '';
-      row.append(d, n, rs, lk);
-      holdToEdit(row, e, p);
+      const mo = document.createElement('div');
+      mo.className = 'mo'; mo.textContent = '\u22ef'; mo.setAttribute('aria-hidden', 'true');
+      row.append(d, n, rs, lk, mo);
+      row.setAttribute('role', 'button');
+      row.onclick = () => openEntry(e, p);
       body.appendChild(row);
     });
 
@@ -6535,7 +6528,7 @@ document.body.addEventListener('animationend', e => {
 
 (function pageSwipe(){
   let x0 = null, y0 = null;
-  const off = '#board, #kb, select, #quick, #gSlide, #sendFan, #setPanel input, #log, #logPanel, #pairPanel, #snakePanel, #entryPanel, #gamePanel';
+  const off = '#board, #kb, select, #quick, #gSlide, #sendFan, #setPanel input, #log, #logPanel, #pairPanel, #snakePanel, #entryPanel, #gamePanel, #rsPanel';
   document.addEventListener('pointerdown', e => {
     x0 = null;
     if (betaDraft || panelOpen || focusOn) return;
@@ -6562,12 +6555,13 @@ document.body.addEventListener('animationend', e => {
    A session is a run of goes with no gap of four hours in it - the same four hours
    the wall's own "tonight" uses - so an evening that runs past midnight stays one
    session. The latest one is "this session" while its last go is under eight hours
-   old; after that it is just the newest of the earlier ones.
+   old, and it is the only one listed here; every session there has been is in the
+   Logbook, a day to a line.
 
    Everything comes from the same log the Logbook reads, through myLog, so opening
    the page inside a minute of the last look asks nothing. */
 const SESSION_GAP = 4 * 3600e3, SESSION_LIVE = 8 * 3600e3;
-let lpFor = 0, lpShown = 12;
+let lpFor = 0;
 const logTime = e => Date.parse(e.t) || 0;
 
 function logSessions(entries){             // newest first in; sessions newest first out
@@ -6699,7 +6693,7 @@ async function paintLogPage(){
   routeHist();
   const me = meNow(), mine = ++lpFor;
   crewFeed(me, mine);
-  const hero = $('lpHero'), ses = $('lpSession'), ear = $('lpEarlier'), foot = $('lpFoot');
+  const hero = $('lpHero'), ses = $('lpSession'), foot = $('lpFoot');
   const blank = why => {
     lpLast = null; paintUndo();
     $('lpSesLbl').hidden = false;
@@ -6708,8 +6702,7 @@ async function paintLogPage(){
     hero.querySelector('.kick').textContent = 'No session yet';
     $('lpSends').textContent = '0'; $('lpTries').textContent = '0'; $('lpHard').textContent = '\u2013';
     $('lpStrip').innerHTML = '';
-    ses.innerHTML = ''; ear.innerHTML = ''; foot.innerHTML = '';
-    $('lpEarLbl').hidden = true;
+    ses.innerHTML = ''; foot.innerHTML = '';
     const d = document.createElement('div');
     d.className = 'none'; d.textContent = why;
     ses.appendChild(d);
@@ -6722,7 +6715,6 @@ async function paintLogPage(){
   const sorted = tagRepeats(entries).slice().sort((a, b) => logTime(b) - logTime(a));
   const sessions = logSessions(sorted);
   const live = sessions.length && Date.now() - sessions[0].t1 < SESSION_LIVE ? sessions[0] : null;
-  const earlier = live ? sessions.slice(1) : sessions;
   lpLast = live && !sorted[0].lock ? sorted[0] : null;
   lpArmed = 0;
   paintUndo();
@@ -6746,34 +6738,7 @@ async function paintLogPage(){
     $('lpSesLbl').hidden = true;
   }
 
-  // earlier sessions: a line each, their routes when tapped
-  ear.innerHTML = '';
-  $('lpEarLbl').hidden = !earlier.length;
-  earlier.slice(0, lpShown).forEach(s => {
-    const sum = sessionSum(s);
-    const el = document.createElement('div');
-    el.className = 'lpses';
-    el.innerHTML = '<div class="h"><span class="cv">\u203a</span><b></b><span class="s"></span><span class="gd"></span></div><div class="body" hidden></div>';
-    el.querySelector('b').textContent = sessionDay(s);
-    el.querySelector('.s').textContent = [sum.sends ? sum.sends + (sum.sends === 1 ? ' send' : ' sends') : '',
-      sum.tries ? sum.tries + (sum.tries === 1 ? ' try' : ' tries') : ''].filter(Boolean).join(' \u00b7 ');
-    if (sum.hard) paintPill(el.querySelector('.gd'), sum.hard.grade); else el.querySelector('.gd').remove();
-    const body = el.querySelector('.body');
-    el.querySelector('.h').onclick = () => {
-      if (!body.children.length) sessionRoutes(s).forEach(x => body.appendChild(lpRow(x, false)));
-      body.hidden = !body.hidden;
-      el.classList.toggle('open', !body.hidden);
-    };
-    ear.appendChild(el);
-  });
-  if (earlier.length > lpShown){
-    const more = document.createElement('button');
-    more.className = 'ghost mini more';
-    more.textContent = 'Show more \u2014 ' + (earlier.length - lpShown) + ' older';
-    more.onclick = () => { lpShown += 20; paintLogPage(); };
-    ear.appendChild(more);
-  }
-
+  // (earlier sessions are not listed here: the logbook has every one of them)
   // everything, in a line, and the way to the whole logbook
   const all = sorted.filter(e => e.result !== 'try');
   let hardest = null;
@@ -6864,7 +6829,8 @@ function rsPaint(){
   box.hidden = !RS.on;
   box.classList.toggle('rest', resting);
   clearInterval(rsTick); rsTick = 0;
-  // the setting-up, on the log page
+  // the setting-up, in the sheet the timer button opens; the button is green while a session is on
+  $('rsBtn').classList.toggle('on', RS.on); $('rsBtn').setAttribute('aria-label', RS.on ? 'Timed session, on' : 'Timed session');
   $('rsReps').textContent = RS.reps; $('rsRest').textContent = rsClock(RS.rest); $('rsLog').checked = RS.log;
   $('rsSum').textContent = (RS.on ? 'on \u00b7 ' : '') + RS.reps + (RS.reps === 1 ? ' go' : ' goes') + ', then ' + rsClock(RS.rest) + ' rest';
   $('rsGo').textContent = RS.on ? 'End the session' : 'Start the session';
@@ -6961,7 +6927,9 @@ $('rsSet').onclick = e => {
   RS.done = Math.min(RS.done, RS.reps); rsKeep(); rsPaint();
 };
 $('rsLog').onchange = () => { RS.log = $('rsLog').checked; rsKeep(); };
-$('rsGo').onclick = () => { if (RS.on) return rsEnd(); rsArm(); rsStart(); $('rsDet').open = false; showPage('board'); };
+$('rsGo').onclick = () => { showPanel(null); if (RS.on) return rsEnd(); rsArm(); rsStart(); showPage('board'); };
+$('rsBtn').onclick = () => { quickShow(false); rsPaint(); showPanel('rs'); };
+$('rsShut').onclick = () => showPanel(null);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') rsPaint(); });
 rsPaint();
 
@@ -7241,7 +7209,7 @@ function showFilters(on){
 $('filtBtn').onclick = () => showFilters($('filters').hidden);
 
 const PANELS = { game: 'gamePanel', log: 'logPanel', ig: 'igPanel',
-                 snake: 'snakePanel', entry: 'entryPanel', pair: 'pairPanel' };
+                 snake: 'snakePanel', entry: 'entryPanel', pair: 'pairPanel', rs: 'rsPanel' };
 
 function showPanel(which, fromBack){  // a key of PANELS, or null for none
   $('gamePanel').hidden = which !== 'game';
@@ -7250,6 +7218,7 @@ function showPanel(which, fromBack){  // a key of PANELS, or null for none
   $('pairPanel').hidden = which !== 'pair';
   $('snakePanel').hidden = which !== 'snake';
   $('entryPanel').hidden = which !== 'entry';
+  $('rsPanel').hidden = which !== 'rs';
   if (which !== 'snake' && which !== 'entry' && sn) snStop();          // don't leave it running unseen, or a finished one on the wall
   if (PANELS[which]) $(PANELS[which]).scrollTop = 0;   // open at the top, always
   // One step in the history for "a sheet is open", however many are swapped through.

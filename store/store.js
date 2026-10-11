@@ -17,6 +17,7 @@
      POST /api/w/sun/log              { person, route, result, t?, n?, secs? }   a try or a send (t: when, if it was before now;
                                       n and secs: a go against the clock on a climb by number, which number was reached and how long it took)
      POST /api/w/sun/log/undo         { person }                           take back that climber's last entry
+     POST /api/w/sun/log/delete       { person, k }                        take that one entry (k, as the rows give it) out of that climber's logbook
      GET  /api/w/sun/log?person=&route=&limit=                             logbook rows, newest first
      POST /api/w/sun/fix              { by, kind, v, x, y, h?, size? }     the map of holds is wrong here (see below)
      POST /api/w/sun/fix/undo         { k }                                take that back
@@ -293,6 +294,20 @@ export async function handle(request, db, now = () => new Date().toISOString()){
     await db.prepare('DELETE FROM log WHERE k = ?').bind(last.k).run();
     await recount(db, wall, person, last.route);
     return json({ ...(await snapshot(db, wall)), undone: last.route });
+  }
+
+  /* One entry out of a climber's logbook, whichever it is. The page lists the logbook with every go in it, and a go
+     logged by mistake last week is taken out there (Will, 2026-10-11: "I was trying to delete one of my logs and I
+     still can't figure out how to do that"). The entry is named by its number and by whose it is, and the two must
+     agree, so a number from another climber or another wall takes nothing. The tally is counted again from the rest. */
+  if (path === '/log/delete'){
+    const person = clean(body.person, 40), k = Number(body.k);
+    if (!person || !Number.isInteger(k)) return bad('say whose entry, and which');
+    const row = await db.prepare('SELECT k, route FROM log WHERE wall = ? AND person = ? AND k = ?').bind(wall, person, k).first();
+    if (!row) return bad('no such entry', 404);
+    await db.prepare('DELETE FROM log WHERE k = ?').bind(row.k).run();
+    await recount(db, wall, person, row.route);
+    return json({ ...(await snapshot(db, wall)), deleted: row.route });
   }
 
   if (path === '/fix'){

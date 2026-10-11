@@ -125,7 +125,8 @@ Logging, and what you have climbed. Top to bottom:
   hardest grade, with a dot for every go in the order they happened. A ring is a try, a
   green dot a send, a gold dot a flash. A session is a run of goes with no gap of four
   hours, so an evening that runs past midnight is still one session.
-- **Earlier sessions**, a line each, which open to show their routes.
+- Earlier sessions are not listed here: the **Logbook** has every one of them, a day to a
+  line (they were on this page too until 2026-10-11, which said the same thing twice).
 
 ### Quick log
 
@@ -135,10 +136,12 @@ down on the button, slide on to one, and let go. A short line says what was logg
 
 ### A timed session
 
-Some come for attempts and the rest between them, not for sends. On the log page, under
-the open route's card, **Timed session** sets how many goes make a set (one to eight) and
-how long the rest is (half a minute to half an hour), and **Start the session** goes to
-the board. There, at the top of the panel beside the wall, is a circle for each go. A tap
+Some come for attempts and the rest between them, not for sends. On the board, beside
+**Quick log**, is a button with a timer on it. It opens a sheet that sets how many goes
+make a set (one to eight) and how long the rest is (half a minute to half an hour), and
+**Start the session** shuts the sheet. (The setting-up was on the log page until
+2026-10-11.) The button is green while a session is on, and opens the same sheet to end
+it. At the top of the panel beside the wall is a circle for each go. A tap
 pops the next one (a tap on a popped one puts it back). When the last is popped the rest
 counts down in the same box, beside the wall and never over it, so the next route can be
 looked for meanwhile. When it is up the phone pings, the whole screen goes white and fades
@@ -417,13 +420,29 @@ flash. Tries score nothing. The points are the Sun board's own.
 **Your own logbook.** The log page keeps each climber's own record the way the MoonBoard
 page does. **This session** is a row a route, the latest first, with a dot for every go (a
 ring for a try, green for a send, gold for a flash) and how it went, and under the rows the
-session in three numbers: sends, tries, and the hardest sent. **Earlier sessions** are a
-line each, the day with its sends and tries, and a tap opens one to its routes. Under them
-is everything in a line: sends in all, flashes, the hardest, points. A session is a run of
-goes with no gap of four hours in it, and it is "this session" until its last go is eight
-hours old. A tap on a route opens it on the page, ready for another go, and the board
-turns to look at it. Changing the name at the top changes whose logbook it is. Below the
-logbook the page still has everyone's points and what the crew has been doing lately.
+session in three numbers: sends, tries, and the hardest sent. Under them is everything in
+a line: sends in all, flashes, the hardest, points. A session is a run of goes with no gap
+of four hours in it, and it is "this session" until its last go is eight hours old. A tap
+on a route opens it on the page, ready for another go, and the board turns to look at it.
+Changing the name at the top changes whose logbook it is. The page is otherwise the open
+route's: its card, your history on it, who has climbed it, and **Lately on the Sun board**,
+a few of the crew's latest goes, where a tap on a line goes to the board with that route up.
+
+**The Logbook** is a sheet of its own, opened by the button in the route's card or the line
+at the foot of the log page. It has every go of one climber, a session to a line with the
+newest open, then everyone's points. A tap on an entry of your own opens it, and **Delete
+this entry** takes it out (`POST /log/delete`, which counts the tally again from the rest).
+Somebody else's logbook can be read and not changed, which is a courtesy: there are no
+accounts.
+
+**Round the board.** The timed session's button is beside Quick log, as on the MoonBoard
+page. Either side of the open route's name is an arrow, to the route before and the route
+after in the list as it is filtered and sorted, since a stroke across the model turns the
+head. The open route's row is kept at the top of what shows of the list under the picture,
+so the next route is the row under it. The picture is a twentieth shorter than the wall
+needs, which the list gets. On the Routes page the line for the grades is always there,
+and the four pickers fold away under it. A new climber is added from the last line of the
+name picker, as on the MoonBoard page.
 
 **A go against the clock.** A long climb by number is seldom finished, so what is worth
 keeping is how far a go got and how long it took. On such a route Quick log has a third
@@ -596,8 +615,9 @@ asked*). Both are on the log page, and **Quick log** does the same from the boar
 The log page's own undo is careful. The relay's undo takes off a climber's newest entry,
 whenever that was, so the page only offers it for a go from the current session, names the
 go, and wants a second tap. Anything older is changed in the **Logbook**, where it can be
-seen: any climber's entries, a block for each day, with the newest open. Hold a row there to
-lock it or delete it. A locked entry cannot be deleted or undone, and **Lock my entries**
+seen: any climber's entries, a block for each day, with the newest open. Tap a row there to
+lock it or delete it (every row ends in three dots; until 2026-10-11 it took a held finger,
+which nobody found). A locked entry cannot be deleted or undone, and **Lock my entries**
 locks all of yours at once.
 
 Rows live in the relay Worker as an append-only `log:` prefix, with a per-person `stats:`

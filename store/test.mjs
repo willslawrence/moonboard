@@ -217,6 +217,30 @@ console.log('further rules: the flat wall off limits');
   check('and opens again after that', o.status === 200 && JSON.stringify(o.stats.Will[1].g) === '[2,30]');
   check('its old route has no further rules, and can be given one', !('rules' in o.routes[0]) && JSON.stringify((await ask('POST', '/api/w/sun/route/rules', { by: 'Will', id: 1, rules: ['flatoff'] })).routes[0].rules) === '["flatoff"]');
 }
+console.log('taking one entry out of a logbook');
+{
+  await call('POST', '/api/w/test-d/person', { name: 'Ana' }); await call('POST', '/api/w/test-d/person', { name: 'Bo' }); await call('POST', '/api/w/test-e/person', { name: 'Ana' });
+  const rt = (await call('POST', '/api/w/test-d/route', { by: 'Ana', name: 'Del', grade: 2, marks })).id;
+  const other = (await call('POST', '/api/w/test-e/route', { by: 'Ana', name: 'Elsewhere', grade: 2, marks })).id;
+  for (const r of ['try', 'try', '3rd']) await call('POST', '/api/w/test-d/log', { person: 'Ana', route: rt, result: r });
+  await call('POST', '/api/w/test-d/log', { person: 'Bo', route: rt, result: 'flash' });
+  await call('POST', '/api/w/test-e/log', { person: 'Ana', route: other, result: 'try' });
+  const rows = (await call('GET', '/api/w/test-d/log?person=Ana')).entries;                 // newest first: her send, then her two tries
+  check('the rows of a logbook say their numbers', rows.length === 3 && rows.every(x => Number.isInteger(x.k)) && rows.map(x => x.result).join() === '3rd,try,try', rows);
+  let d = await call('POST', '/api/w/test-d/log/delete', { person: 'Ana', k: rows[2].k });       // her first try, the oldest of the three
+  check('an entry that is not the last is taken out, and the tally counted again', d.status === 200 && d.deleted === rt && d.stats.Ana[rt].a === 0 && d.stats.Ana[rt].s.join() === '3rd', d.stats || d);
+  check('the others are still there', (await call('GET', '/api/w/test-d/log?person=Ana')).entries.map(x => x.k).join() === rows[0].k + ',' + rows[1].k);
+  const his = (await call('GET', '/api/w/test-d/log?person=Bo')).entries[0].k, far = (await call('GET', '/api/w/test-e/log?person=Ana')).entries[0].k;
+  check('somebody else\'s entry is not taken under her name', (await call('POST', '/api/w/test-d/log/delete', { person: 'Ana', k: his })).status === 404 && (await call('GET', '/api/w/test-d/log?person=Bo')).entries.length === 1);
+  check('nor her own entry on another wall', (await call('POST', '/api/w/test-d/log/delete', { person: 'Ana', k: far })).status === 404 && (await call('GET', '/api/w/test-e/log?person=Ana')).entries.length === 1);
+  check('an entry that is not there, or not named, is refused', (await call('POST', '/api/w/test-d/log/delete', { person: 'Ana', k: 999999 })).status === 404 &&
+    (await call('POST', '/api/w/test-d/log/delete', { person: 'Ana' })).status === 400 && (await call('POST', '/api/w/test-d/log/delete', { k: rows[0].k })).status === 400);
+  d = await call('POST', '/api/w/test-d/log/delete', { person: 'Ana', k: rows[0].k });           // her send
+  check('with the send taken out the route is no longer sent', d.status === 200 && d.stats.Ana[rt].a === 1 && !d.stats.Ana[rt].s && d.stats.Ana[rt].r === null, d.stats || d);
+  d = await call('POST', '/api/w/test-d/log/delete', { person: 'Ana', k: rows[1].k });
+  check('with her last entry gone she has no tally on it, and his stands', d.status === 200 && !(d.stats.Ana || {})[rt] && d.stats.Bo[rt].s.join() === 'flash', d.stats || d);
+  check('taking the same entry twice finds nothing the second time', (await call('POST', '/api/w/test-d/log/delete', { person: 'Ana', k: rows[1].k })).status === 404);
+}
 check('a body that is not JSON is refused',
   (await handle(new Request('https://x.test/api/w/sun/person', { method: 'POST', body: 'name=Will' }), db)).status === 400);
 check('other methods are refused', (await handle(new Request('https://x.test/api/w/sun', { method: 'DELETE' }), db)).status === 405);
