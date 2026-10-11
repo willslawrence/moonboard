@@ -18,7 +18,9 @@
   // The app left this address on 2026-10-09 (see "moved" in ../index.html). The Sun board was never here; send anyone who lands on it across.
   if (location.hostname === 'willslawrence.github.io') location.replace('https://wills-wall.pages.dev/sun/');
   // the background this phone chose on either wall (light foggy grey until it chooses), on before the first paint
-  try{ var mbBg = localStorage.getItem('mb-bg2'); if (mbBg === null) mbBg = 'fog'; if (mbBg) document.documentElement.setAttribute('data-bg', mbBg); }catch(e){}
+  // There are two since 2026-10-11, the grey and the taupe: Black was taken away, and a phone that had chosen it is on the grey.
+  var mbBg = 'fog'; try{ if (localStorage.getItem('mb-bg2') === 'taupe') mbBg = 'taupe'; }catch(e){}
+  document.documentElement.setAttribute('data-bg', mbBg);
 </script>
 <style>
   /* This page is laid out like the MoonBoard page (../index.html) on purpose: the same four
@@ -781,7 +783,6 @@
   <select id="bgSel">
     <option value="fog">Light foggy grey</option>
     <option value="taupe">Light taupe</option>
-    <option value="">Black</option>
   </select>
   <p class="hint">For this phone only, and for both walls.</p>
 
@@ -927,7 +928,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-11 21:44';
+const BUILD = '2026-10-11 22:26';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -3187,7 +3188,7 @@ function paintAll(){
 $('toMoon').onclick = $('setMoon').onclick = () => { ls.set('mb-wall', 'moon'); location.href = '../'; };
 
 /* ---------- settings ---------- */
-$('bgSel').value = ls.get('mb-bg2') === null ? 'fog' : ls.get('mb-bg2');
+$('bgSel').value = ls.get('mb-bg2') === 'taupe' ? 'taupe' : 'fog';         // (Black was a third until 2026-10-11)
 $('bgSel').onchange = () => {
   const v = $('bgSel').value; ls.set('mb-bg2', v);
   if (v) document.documentElement.setAttribute('data-bg', v); else document.documentElement.removeAttribute('data-bg');

@@ -301,11 +301,15 @@ The fourth page, behind the cog at the end of the row of pages. It was a sheet o
 the search row until the cog moved down there.
 
 - **Games on the wall**: Snake and Connect four. They open over the page.
-- **Background**, for this phone only: light foggy grey, which every phone starts on,
-  light taupe, or black. (Every phone was put back on the grey once, on 2026-10-08.)
-- **Show the board on plywood**, for this phone only, off unless a phone turns it on.
-  Unticked, the picture is Moon's yellow board. Plywood is drawn for the 2016 hold set so
-  far; the other sets keep their own picture.
+- **Background**, for this phone only: light foggy grey, which every phone starts on, or
+  light taupe. (Every phone was put back on the grey once, on 2026-10-08. Black, which is
+  how the app first looked, could be chosen until 2026-10-11; a phone that had chosen it
+  is on the grey.) It is the same choice on the Sun board's page.
+- **Show the board on plywood**, for this phone only. Plywood is drawn for the 2016 and
+  2024 hold sets. On the 2016 set a phone starts on Moon's yellow board and the box is
+  unticked; on the 2024 set it starts on plywood and the box is ticked. Once a phone has
+  ticked or unticked the box, that is what it gets on every set. Masters 2019 keeps its
+  own picture.
 - **Light the wall as soon as I pick a problem**, off unless a phone turns it on.
 - **Show the grade on row 1**. Row 1 carries no holds on any 2016 benchmark, so it reads
   out the grade from A1 onward, one light per V-grade: five green up to V5, two blue for
@@ -776,6 +780,16 @@ in the same frame as the photo, 650x1000, so the rings land where they did. The 
 pictures are still Moon Climbing's. A line under the picture in the page puts back the
 picture a phone last showed (`mb-pic`) before anything is painted, so a phone on plywood, or
 on another hold set, does not open on the yellow 2016 board for a moment.
+
+`docs/board-2024-ply.jpg` is the 2024 set on the same ground, and it is what a phone on that
+set starts on (`plyFirst` in `BOARDS`; `mb-ply` is `1` for plywood, empty for the set's own
+picture, and not there at all until a phone has said). Nothing was fetched to make it: the
+holds are lifted off the flat yellow of `board-2024.png` itself. Each hold's own colour is
+taken from inside it and carried out to its edge, and how much of an edge pixel is hold is
+how far it lies from the yellow towards that colour, so no yellow rim is left; the small
+gaps closed in by one hold are drawn as dark bolt holes, and a hole a finger goes through
+shows the board. It is in the same frame as the drawn picture, so the rings land where they
+did. The script and its working files are in the vault, with the 2016 ones.
 
 ## Benchmark data
 

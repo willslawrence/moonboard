@@ -79,7 +79,9 @@
 <script>
   // the background this phone chose (light foggy grey until it chooses), on before the first paint.
   // 'mb-bg2': Will asked for everyone to be put on the grey once, so choices kept under 'mb-bg' are not read. (see "backgrounds" in the styles)
-  try{ var mbBg = localStorage.getItem('mb-bg2'); if (mbBg === null) mbBg = 'fog'; if (mbBg) document.documentElement.setAttribute('data-bg', mbBg); }catch(e){}
+  // There are two since 2026-10-11, the grey and the taupe: Black was taken away, and a phone that had chosen it is on the grey.
+  var mbBg = 'fog'; try{ if (localStorage.getItem('mb-bg2') === 'taupe') mbBg = 'taupe'; }catch(e){}
+  document.documentElement.setAttribute('data-bg', mbBg);
 </script>
 <style>
   :root{
@@ -101,8 +103,10 @@
     --green-ink:#22c55e;
   }
   /* ---- backgrounds ----
-     Black is how the app looked at first; since 2026-10-08 a phone that has not chosen
-     starts on the foggy grey. The other two are: a
+     Black is how the app looked at first, and its colours are still the ones written
+     first, above; but since 2026-10-11 it cannot be chosen (Will: "I want to remove the
+     black background option"), and a phone that had chosen it is on the foggy grey. Since
+     2026-10-08 a phone that has not chosen starts on the foggy grey. The other two are: a
      light taupe and a light foggy grey, with the lettering turned dark. (The first
      pair, a shade off black with white lettering, Will found too dark.) One choice a
      phone, kept in Settings; the first lines of the page put it on before anything
@@ -1383,15 +1387,14 @@
   <select id="bgSel">
     <option value="fog">Light foggy grey</option>
     <option value="taupe">Light taupe</option>
-    <option value="">Black</option>
   </select>
   <div class="hint">For this phone only. Light foggy grey is what everyone starts on.</div>
 
   <label class="ck"><input type="checkbox" id="plyChk">
     Show the board on plywood</label>
-  <div class="hint">For this phone only. Unticked, the picture is Moon's yellow board, which
-    is what everyone starts on. Plywood is drawn for the 2016 hold set so far; the other
-    sets keep their own picture.</div>
+  <div class="hint">For this phone only. Unticked, the picture is Moon's own board. Plywood
+    is drawn for the 2016 and 2024 hold sets: on the 2016 set a phone starts on Moon's
+    yellow board, on the 2024 set it starts on plywood. Masters 2019 keeps its own picture.</div>
 
   <label class="ck"><input type="checkbox" id="auto">
     Light the wall as soon as I pick a problem</label>
@@ -1609,7 +1612,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-11 22:08';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-11 22:26';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3344,8 +3347,8 @@ const BOARDS = [
   { key: '2016-40', label: 'MoonBoard 2016 · 40°',     img: 'board-2016.png', geo: 'photo', ply: 'board-2016-ply.jpg' },
   { key: '2019-40', label: 'Masters 2019 · 40°',       img: 'board-2019.png', geo: 'art' },
   { key: '2019-25', label: 'Masters 2019 · 25°',       img: 'board-2019.png', geo: 'art' },
-  { key: '2024-40', label: 'MoonBoard 2024 · 40°',     img: 'board-2024.png', geo: 'art' },
-  { key: '2024-25', label: 'MoonBoard 2024 · 25°',     img: 'board-2024.png', geo: 'art' },
+  { key: '2024-40', label: 'MoonBoard 2024 · 40°',     img: 'board-2024.png', geo: 'art', ply: 'board-2024-ply.jpg', plyFirst: true },
+  { key: '2024-25', label: 'MoonBoard 2024 · 25°',     img: 'board-2024.png', geo: 'art', ply: 'board-2024-ply.jpg', plyFirst: true },
 ];
 const DEFAULT_BOARD = '2016-40';
 const toProblem = (r, board) => ({
@@ -3360,12 +3363,16 @@ BOARDS.forEach(b => {
 });
 RETIRED.forEach(r => { byId[r[0]] = toProblem(r, '2016-40'); });
 let boardKey = DEFAULT_BOARD;
-/* Which picture of the board. Moon's own is what everyone starts on; a phone can ask in
-   Settings for the same holds on plywood instead (Will, 2026-10-09). The plywood picture
-   is in the same frame as Moon's, so the rings land where they did. A set without one
-   keeps its own picture. */
-let plyOn = false;
-try{ plyOn = localStorage.getItem('mb-ply') === '1'; }catch(e){}
+/* Which picture of the board. A phone can ask in Settings for the holds on plywood
+   (Will, 2026-10-09). The plywood picture is in the same frame as the set's own, so the
+   rings land where they did. A set without one keeps its own picture. On the 2016 set
+   Moon's yellow board is what a phone starts on; on the 2024 set plywood is (plyFirst;
+   Will, 2026-10-11: "Make plywood default on the 2024"). A phone that has ticked or
+   unticked the box has said which it wants, and that holds on every set: '1' plywood,
+   '' the set's own, and nothing kept at all means it has never said. */
+let plyPick = null;
+try{ plyPick = localStorage.getItem('mb-ply'); }catch(e){}
+const plyNow = () => { const b = boardNow(); return !!b.ply && (plyPick === '1' || (plyPick === null && !!b.plyFirst)); };
 let PROBLEMS = BY_BOARD[boardKey];     // what's on the wall right now
 const boardNow = () => BOARDS.find(b => b.key === boardKey) || BOARDS[0];
 let current = null;
@@ -3414,7 +3421,8 @@ function personColor(name){
 }
 
 function paintBoardPic(){
-  const im = $('board').querySelector('img'), src = (plyOn && boardNow().ply) || boardNow().img;
+  const im = $('board').querySelector('img'), src = plyNow() ? boardNow().ply : boardNow().img;
+  if ($('plyChk')) $('plyChk').checked = plyNow();          // the box says what is showing, whichever set this is
   if (im.getAttribute('src') !== src) im.src = src;
   im.alt = boardNow().label + ' wall';
   try{ localStorage.setItem('mb-pic', src); }catch(e){}    // for the line under the picture that puts it back on the next visit
@@ -7852,11 +7860,10 @@ paintLoc();
 BOARDS.forEach(b => $('boardSel').appendChild(new Option(b.label + ' — ' + BY_BOARD[b.key].length + ' benchmarks', b.key)));
 $('boardSel').value = boardKey;
 try{ const b = localStorage.getItem('mb-board'); if (b) setBoard(b); }catch(e){}
-$('plyChk').checked = plyOn;
 paintBoardPic();
 $('plyChk').onchange = () => {
-  plyOn = $('plyChk').checked;
-  try{ localStorage.setItem('mb-ply', plyOn ? '1' : ''); }catch(e){}
+  plyPick = $('plyChk').checked ? '1' : '';
+  try{ localStorage.setItem('mb-ply', plyPick); }catch(e){}
   paintBoardPic();
 };
 $('boardSel').onchange = () => {
@@ -7897,7 +7904,7 @@ try{
   // What the wall shows on connect is WW for everyone now; a choice saved before
   // that setting was hidden is left alone and ignored.
   $('auto').checked = localStorage.getItem('mb-auto') === '1';
-  const bgKept = localStorage.getItem('mb-bg2'), bg = bgKept === null ? 'fog' : bgKept;   // nothing chosen yet: the foggy grey
+  const bgKept = localStorage.getItem('mb-bg2'), bg = bgKept === 'taupe' ? 'taupe' : 'fog';   // nothing chosen yet, or Black (which was a third until 2026-10-11): the foggy grey
   if ($('bgSel').querySelector('option[value="' + bg + '"]')){ $('bgSel').value = bg; setBg(bg); }
   const m = localStorage.getItem('mb-me') || w;
   if (m){ $('me').appendChild(new Option(m, m)); $('me').value = m; lastMe = m; }
