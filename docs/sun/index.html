@@ -203,6 +203,12 @@
   .numBar input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:rgba(255,255,255,.38)}
   .numBar input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 4px rgba(0,0,0,.45)}
   #numBar{margin-bottom:6px}
+  /* On the board page it lies under the picture, over the list, so that the picture is the same size for a climb by
+     number as for any other route (Will, 2026-10-11: "The climb by number route versus the other routes have bigger
+     image views... It should be consistent"). It lay on the picture's foot, and the picture grew to make it room.
+     The list gives up the room instead (body.nums), as it did before by the picture growing. In focus it is as it was. */
+  body:not(.listPage):not(.logPage):not(.setPage):not(.focus) #numBar{position:absolute;left:0;right:0;top:calc(100% + 10px);margin:0;background:rgba(20,20,22,.9)}
+  body.nums:not(.listPage):not(.logPage):not(.setPage):not(.focus) #top{margin-bottom:48px}
   body.listPage #numBar,body.logPage #numBar,body.setPage #numBar{display:none}
   #numBarF{display:none}
   body.focus #numBarF:not([hidden]){display:flex;position:absolute;left:6px;right:6px;bottom:calc(env(safe-area-inset-bottom) + 8px);height:46px;z-index:2}
@@ -893,7 +899,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-11 18:06';
+const BUILD = '2026-10-11 18:35';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -1337,14 +1343,53 @@ function turnPaint(){
     const el = $('faces').querySelector('[data-k="' + t.F.key + '"]'), W = wall.views.find(w => w.key === t.F.wall);
     if (!el) return;
     if (t.box.length < 3){ el.style.display = 'none'; return; }
-    // the element is laid out in its wall picture's own pixels, its corner at fractions F.x, F.y of that picture
-    const A = t.H.map(k => [k[0] / W.w, k[1] / W.h, k[0] * t.F.x + k[1] * t.F.y + k[2]]), s = 1 / Math.max(30, Math.abs(A[2][2]));
+    // A takes a place on the face, in the pixels of its wall's own picture from the face's corner (at fractions F.x,
+    // F.y of that picture), to the screen. The element is laid out smaller than that, by faceQ: see faceLay.
+    const A = t.H.map(k => [k[0] / W.w, k[1] / W.h, k[0] * t.F.x + k[1] * t.F.y + k[2]]);
     el.style.display = ''; el.style.zIndex = i + 1;
-    el.style.transform = 'matrix3d(' + [A[0][0], A[1][0], 0, A[2][0], A[0][1], A[1][1], 0, A[2][1], 0, 0, 1, 0, A[0][2], A[1][2], 0, A[2][2]].map(n => (n * s).toPrecision(10)).join(',') + ')';
-    el.style.clipPath = t.box.length === 4 && t.box.every((q, j) => Math.abs(q[0] - [t.F.x, t.F.x + t.F.w, t.F.x + t.F.w, t.F.x][j]) < 1e-9) ? 'none'
-      : 'polygon(' + t.box.map(q => ((q[0] - t.F.x) * W.w).toFixed(1) + 'px ' + ((q[1] - t.F.y) * W.h).toFixed(1) + 'px').join(',') + ')';
+    t.el = el; t.A = A; t.nw = t.F.w * W.w; t.nh = t.F.h * W.h;
+    // how big one of the face's own pixels is on the screen, at its middle, before the picture's own zoom
+    const at = (x, y) => { const d = A[2][0] * x + A[2][1] * y + A[2][2]; return [(A[0][0] * x + A[0][1] * y + A[0][2]) / d, (A[1][0] * x + A[1][1] * y + A[1][2]) / d]; };
+    const m = at(t.nw / 2, t.nh / 2), mx = at(t.nw / 2 + 1, t.nh / 2), my = at(t.nw / 2, t.nh / 2 + 1);
+    t.ls = Math.max(Math.hypot(mx[0] - m[0], mx[1] - m[1]), Math.hypot(my[0] - m[0], my[1] - m[1]));
+    t.clip = t.box.length === 4 && t.box.every((q, j) => Math.abs(q[0] - [t.F.x, t.F.x + t.F.w, t.F.x + t.F.w, t.F.x][j]) < 1e-9) ? null
+      : t.box.map(q => [(q[0] - t.F.x) * W.w, (q[1] - t.F.y) * W.h]);
+    faceLay(t, faceQ(t));
   });
   paintTint();
+}
+/* How big a face is laid out. Its picture is as fine as the wall is ever looked at (a hold brought close), which for the
+   flat wall is 2464 by 1956 pixels. Laid out at that size and made small by its transform, a face still costs the
+   browser its whole laid-out size times the screen's own pixels to paint: nine faces came to 62 megapixels, some 250
+   MB, on a phone with 2.6 pixels to the CSS pixel, for a wall seen a few hundred pixels across. An Android phone ran
+   out and left pieces of the flat wall and the kicker unpainted, and stuttered from page to page (Will's photo of
+   2026-10-11: "Android app issue... pretty glitchy when he navigates"). So a face is laid out about as big as it is
+   seen, with a little to spare, and its transform makes up the difference: the same picture on the screen, a
+   twentieth of the paint. Brought closer it is laid out bigger, in steps, so that it stays sharp; it is not laid out
+   afresh for every small move of two fingers, and not made smaller again until it is well under the step below. */
+const FACE_Q = [0.125, 0.18, 0.25, 0.35, 0.5, 0.7, 1], FACE_ROOM = 1.3, faceQs = {};
+function faceQ(t){
+  const want = t.ls * k0 * Z.k * FACE_ROOM, cur = faceQs[t.F.key];              // of the face's own pixels, the part the screen can show
+  if (cur && want <= cur && want > cur * 0.55) return cur;
+  return FACE_Q.find(q => q >= want) || 1;
+}
+function faceLay(t, q){
+  const A = t.A, s = 1 / Math.max(30, Math.abs(A[2][2])), el = t.el;
+  faceQs[t.F.key] = q;
+  el.style.width = (t.nw * q).toFixed(1) + 'px'; el.style.height = (t.nh * q).toFixed(1) + 'px';
+  // the element's pixel is 1/q of the picture's: the two columns that take x and y are divided by q, and the place is as it was
+  el.style.transform = 'matrix3d(' + [A[0][0] / q, A[1][0] / q, 0, A[2][0] / q, A[0][1] / q, A[1][1] / q, 0, A[2][1] / q, 0, 0, 1, 0, A[0][2], A[1][2], 0, A[2][2]].map(n => (n * s).toPrecision(10)).join(',') + ')';
+  el.style.clipPath = t.clip ? 'polygon(' + t.clip.map(c => (c[0] * q).toFixed(1) + 'px ' + (c[1] * q).toFixed(1) + 'px').join(',') + ')' : 'none';
+}
+/* after the picture's own zoom has changed (place): any face that is now too coarse or far too fine is laid out again */
+function faceFit(){
+  let any = false;
+  for (const t of TURN){
+    if (!t.el || t.el.style.display === 'none') continue;
+    const q = faceQ(t);
+    if (q !== faceQs[t.F.key]){ faceLay(t, q); any = true; }
+  }
+  if (any) paintTint();
 }
 /* The flat wall off limits: red over it. Will, 2026-10-11: "when a route is made and I click the flat wall off
    limits... the flat wall changes color a little bit. Maybe it gets like a red transparent filter over it. So it's
@@ -1520,6 +1565,7 @@ function place(){
   }
   $('stage').style.transform = 'translate(' + Z.x + 'px,' + Z.y + 'px) scale(' + s + ')';
   $('stage').style.setProperty('--z', s);
+  if (v.faces) faceFit();
 }
 function zoomAt(px, py, k){
   k = Math.max(1, Math.min(8, k));
@@ -1567,7 +1613,7 @@ function paintPic(){
     if ($('faces').dataset.of !== v.key){
       $('faces').dataset.of = v.key;
       $('faces').innerHTML = v.faces.map(F => { const W = wall.views.find(w => w.key === F.wall);
-        return '<img class="face" data-k="' + F.key + '" src="' + F.img + '" alt="" style="width:' + (F.w * W.w).toFixed(1) + 'px;height:' + (F.h * W.h).toFixed(1) + 'px">'; }).join('');
+        return '<img class="face" data-k="' + F.key + '" src="' + F.img + '" alt="" style="width:' + (F.w * W.w * FACE_Q[0]).toFixed(1) + 'px;height:' + (F.h * W.h * FACE_Q[0]).toFixed(1) + 'px">'; }).join('');
     }
     return;
   }
@@ -1987,6 +2033,7 @@ function numGo(to){
 }
 function paintNum(){
   const r = openRoute(), long = longClimb(r), w = long ? numWindow(r) : null, steps = long ? numSteps(r) : 0, list = w ? [...w] : long ? numList(r) : [];
+  document.body.classList.toggle('nums', !!long);            // the list makes room for the slider under the picture
   for (const [id, show] of [['numBar', long], ['numBarF', long && !(focus && picks.length)]]){
     const el = $(id);
     el.hidden = !show;
