@@ -189,7 +189,11 @@
   .numBar[hidden]{display:none}
   .numBar button{flex:none;width:36px;height:28px;padding:0;border:0;border-radius:8px;background:rgba(255,255,255,.16);color:#fff;font-size:19px;line-height:1}
   .numBar button:disabled{opacity:.3}
-  .numBar b{flex:none;min-width:58px;text-align:center;font:700 13px ui-monospace,Menlo,monospace;letter-spacing:-.02em}
+  .numBar b{flex:none;min-width:46px;text-align:center;font:700 13px ui-monospace,Menlo,monospace;letter-spacing:-.02em}
+  /* at the far end of the slider: the whole route at once (see showFull) */
+  .numBar label{flex:none;display:flex;align-items:center;gap:5px;margin:0 1px 0 0;font-size:10px;font-weight:600;line-height:1.12;letter-spacing:.01em;color:#fff;white-space:nowrap}
+  .numBar label input{flex:none;width:19px;height:19px;margin:0;padding:0;accent-color:#fff}
+  .numBar input[type=range]:disabled{opacity:.3}
   .numBar input[type=range]{flex:1 1 auto;min-width:0;width:auto;height:28px;margin:0;padding:0;border:0;background:transparent;-webkit-appearance:none;appearance:none;touch-action:none}
   .numBar input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:rgba(255,255,255,.38)}
   .numBar input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:26px;height:26px;margin-top:-11px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 4px rgba(0,0,0,.45)}
@@ -546,14 +550,14 @@
       <p id="fixSay"></p>
       <div class="two"><button id="fixDone" class="solid">Done</button></div>
     </div>
-    <div id="numBarF" class="numBar" hidden><button class="nb-prev" aria-label="The three before">&#8249;</button><input type="range" class="nb-range" min="0" max="1" step="1" value="0" aria-label="Which numbers are shown"><button class="nb-next" aria-label="The next three">&#8250;</button><b class="nb-say"></b></div>
+    <div id="numBarF" class="numBar" hidden><button class="nb-prev" aria-label="The three before">&#8249;</button><input type="range" class="nb-range" min="0" max="1" step="1" value="0" aria-label="Which numbers are shown"><button class="nb-next" aria-label="The next three">&#8250;</button><b class="nb-say"></b><label><input type="checkbox" class="nb-full"><span>Reveal<br>full route</span></label></div>
     <div id="focusHint"></div>
   </div>
 </section>
 
 <div id="bar">
   <div id="listCap"><b>Routes</b><span id="listN"></span></div>
-  <div id="numBar" class="numBar" hidden><button class="nb-prev" aria-label="The three before">&#8249;</button><input type="range" class="nb-range" min="0" max="1" step="1" value="0" aria-label="Which numbers are shown"><button class="nb-next" aria-label="The next three">&#8250;</button><b class="nb-say"></b></div>
+  <div id="numBar" class="numBar" hidden><button class="nb-prev" aria-label="The three before">&#8249;</button><input type="range" class="nb-range" min="0" max="1" step="1" value="0" aria-label="Which numbers are shown"><button class="nb-next" aria-label="The next three">&#8250;</button><b class="nb-say"></b><label><input type="checkbox" class="nb-full"><span>Reveal<br>full route</span></label></div>
   <div id="barTxt">
     <button id="filtBtn" class="ghost" aria-label="Filters">&#9776;</button>
     <div id="qBox">
@@ -722,6 +726,11 @@
   <div class="opts" id="feet">
     <button data-f="any">Any feet</button><button data-f="follow">Feet follow hands</button><button data-f="marked">Marked feet only</button>
   </div>
+  <!-- a further rule, with any of the three: on or off -->
+  <div class="opts" id="rules" style="margin-top:6px">
+    <button data-k="flatoff" aria-pressed="false">Flat wall off limits</button>
+  </div>
+  <p class="hint" style="margin-top:6px">Flat wall off limits: no feet on the bare flat wall (no smearing). It goes with any of the three.</p>
   <div class="lbl">Tape on the wall <span style="letter-spacing:0;text-transform:none">(if it has any)</span></div>
   <input type="text" id="shTape" maxlength="40" placeholder="blue 62" autocomplete="off">
   <div class="lbl">Note <span style="letter-spacing:0;text-transform:none">(if it needs one)</span></div>
@@ -769,13 +778,20 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-11 08:19';
+const BUILD = '2026-10-11 12:07';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const FEET = { any: 'any feet', follow: 'feet follow hands', marked: 'marked feet only' };
+/* Further rules, any of them beside the rule for feet. flatoff: the flat wall is off limits to feet, which is to say no
+   smearing on it, a foot against bare wall where there is no hold. Will, 2026-10-11: "All of Abdullah's routes that he
+   made, you're not allowed to put your feet on the flat wall. That's called smearing... I'd want to be able to click a
+   rule like feet follow hands and left wall off limits or flat wall off limits, something like that." */
+const RULES = { flatoff: 'flat wall off limits' }, RULES_SHORT = { flatoff: 'flat wall off' };
+const rulesOf = r => (r && r.rules || []).filter(k => RULES[k]);
+const rulesSay = (r, short) => rulesOf(r).map(k => ' · ' + (short ? RULES_SHORT : RULES)[k]).join('');
 const RESULT = { 'try': 'try', flash: 'flash', '2nd': '2nd go', '3rd': '3rd go', '4+': '4+ goes' };
 const GRADE_MIN = -1, GRADE_MAX = 14;                       // VB, then V0 up; the store takes up to V17
 const PICK_MAX = 40;
@@ -1676,7 +1692,7 @@ function paintBoard(light){              // light: only what is drawn on the pic
         const a = markAt(m, v), b = first[m.n + 1] && markAt(first[m.n + 1], v);
         if (a && b) line += 'M' + a[0].toFixed(1) + ' ' + a[1].toFixed(1) + 'L' + b[0].toFixed(1) + ' ' + b[1].toFixed(1);
       }
-      if (line) svg += '<path class="seqH" d="' + line + '"/><path class="seq" d="' + line + '"/>';
+      if (line && !(showFull && longClimb(r))) svg += '<path class="seqH" d="' + line + '"/><path class="seq" d="' + line + '"/>';      // (the whole of a long climb at once: no lines, they would be a tangle)
       svg += here.map(m => '<path class="o-halo" d="' + d(m) + '"/>').join('') +
              here.map(m => '<path class="o-' + (m.r === 'n' ? 'q' + (m.n === lo ? ' first' : m.n === hi ? ' last' : '') : m.r) + '" d="' + d(m) + '"/>').join('');
       // the numbers, one label a place: a hold that carries two shows both
@@ -1709,7 +1725,7 @@ function paintBars(){
   if (r && !draft && !fixing) paintPill($('fcGd'), r.grade);
   // the row under the picture: the open route, which is also the way to the search
   $('qBox').classList.toggle('now', !!r);
-  if (r){ $('qName').textContent = r.name; paintPill($('qGd'), r.grade); $('qBy').textContent = r.setter + ' · ' + (byNumber(r) ? 'by number · ' : '') + FEET[r.feet] + (r.tape ? ' · ' + r.tape : ''); }
+  if (r){ $('qName').textContent = r.name; paintPill($('qGd'), r.grade); $('qBy').textContent = r.setter + ' · ' + (byNumber(r) ? 'by number · ' : '') + FEET[r.feet] + rulesSay(r, true) + (r.tape ? ' · ' + r.tape : ''); }
   if (draft){
     [...$('brush').children].forEach(x => x.classList.toggle('on', x.dataset.r === brush));
     const n = k => draft.marks.filter(m => m.r === k).length;
@@ -1795,11 +1811,18 @@ const poseFor = (r, v) => bestLook(r.marks, v).t;
    While such a route is being marked or changed every number shows, because then the gaps are what matter. */
 const NUM_SHOW = 9, NUM_STEP = 3;
 let winAt = 0, winFor = null, winTurn = 0;       // which step the slider is on; for which route; a turn of the head waiting
+/* The whole route at once: a tick-box at the far end of the slider (Will, 2026-10-11: "a checkbox on the far right side
+   of that slider that says reveal full route... and when you reveal the full route the lines connecting the holds go
+   away"). With it ticked every number shows and no lines are drawn between them; the slider has nothing to do and
+   says so by going faint. It is the phone's own choice and stays as it was left. */
+let showFull = ls.get('sb-full') === '1';
+/* a climb by number long enough to have the slider (not while it is being marked or the map fixed: then everything shows) */
+const longClimb = r => !!r && !draft && !fixing && numSteps(r) > 0;
 const numList = r => r ? [...new Set(r.marks.filter(m => m.r === 'n').map(m => m.n))].sort((a, b) => a - b) : [];
 const numSteps = r => { const n = numList(r).length; return n > NUM_SHOW ? Math.ceil((n - NUM_SHOW) / NUM_STEP) : 0; };
 /* the numbers in sight now, or null when the route shows all it has */
 function numWindow(r){
-  const steps = draft || fixing ? 0 : numSteps(r);
+  const steps = longClimb(r) && !showFull ? numSteps(r) : 0;
   if (!steps) return null;
   if (winFor !== r.id){ winFor = r.id; winAt = 0; }
   winAt = Math.max(0, Math.min(steps, winAt));
@@ -1809,7 +1832,7 @@ function numWindow(r){
 function marksShown(r){ const w = numWindow(r); return w ? r.marks.filter(m => m.r !== 'n' || w.has(m.n)) : r.marks; }
 function numGo(to){
   const r = openRoute(), steps = numSteps(r);
-  if (!r || !steps) return;
+  if (!r || !steps || showFull) return;
   winFor = r.id; winAt = Math.max(0, Math.min(steps, to));
   paintBoard();
   // if the nine are not all on the screen, look to where they are (in a moment: the slider may still be moving)
@@ -1823,23 +1846,30 @@ function numGo(to){
   }, 160);
 }
 function paintNum(){
-  const r = openRoute(), w = r && numWindow(r), steps = w ? numSteps(r) : 0, list = w ? [...w] : [];
-  for (const [id, show] of [['numBar', !!w], ['numBarF', !!w && !(focus && picks.length)]]){
+  const r = openRoute(), long = longClimb(r), w = long ? numWindow(r) : null, steps = long ? numSteps(r) : 0, list = w ? [...w] : long ? numList(r) : [];
+  for (const [id, show] of [['numBar', long], ['numBarF', long && !(focus && picks.length)]]){
     const el = $(id);
     el.hidden = !show;
     if (!show) continue;
     const rg = el.querySelector('.nb-range');
     rg.max = steps; if (+rg.value !== winAt) rg.value = winAt;
-    el.querySelector('.nb-prev').disabled = winAt <= 0; el.querySelector('.nb-next').disabled = winAt >= steps;
+    rg.disabled = showFull;
+    el.querySelector('.nb-prev').disabled = showFull || winAt <= 0; el.querySelector('.nb-next').disabled = showFull || winAt >= steps;
     el.querySelector('.nb-say').textContent = list[0] + '\u2013' + list[list.length - 1];
+    el.querySelector('.nb-full').checked = showFull;
   }
-  return !!w;
+  return long;
 }
 for (const id of ['numBar', 'numBarF']){
   const el = $(id);
   el.querySelector('.nb-range').oninput = e => numGo(+e.target.value);
   el.querySelector('.nb-prev').onclick = () => numGo(winAt - 1);
   el.querySelector('.nb-next').onclick = () => numGo(winAt + 1);
+  el.querySelector('.nb-full').onchange = e => {
+    showFull = e.target.checked; ls.set('sb-full', showFull ? '1' : '0');
+    paintBoard();
+    if (!showFull) numGo(winAt);          // back to the nine: look to where they are, if they are off the screen
+  };
 }
 
 function open(id, stay){
@@ -2371,7 +2401,7 @@ function paintLog(){
   const r = openRoute();
   $('lpName').textContent = r ? r.name : 'No route is open';
   $('lpGd').hidden = !r; if (r) paintPill($('lpGd'), r.grade);
-  $('lpSub').textContent = r ? 'by ' + r.setter + ' · ' + FEET[r.feet] + (r.tape ? ' · tape: ' + r.tape : '') + (r.note ? ' · ' + r.note : '') + (r.retired ? ' · taken down' : '')
+  $('lpSub').textContent = r ? 'by ' + r.setter + ' · ' + FEET[r.feet] + rulesSay(r) + (r.tape ? ' · tape: ' + r.tape : '') + (r.note ? ' · ' + r.note : '') + (r.retired ? ' · taken down' : '')
                              : 'Pick one on the Routes page, or make one: two taps on the picture, tap its holds, and save them.';
   $('lpBtns').hidden = !r || r.retired;
   $('lpMore').hidden = !r || r.setter !== me;
@@ -2421,7 +2451,7 @@ function paintList(){
     const bw = me && byNumber(r) ? bestWords(me, r) : '';              // a climb by number: my best go against the clock
     const mineTxt = f ? '✓ ' + RESULT[f] + (bw && st.g[0] >= topOf(r) ? ' · ' + bw : '') : bw ? bw : st ? st.a + (st.a === 1 ? ' try' : ' tries') : '';
     return '<div class="rt' + (r.id === openId ? ' sel' : '') + (r.retired ? ' gone' : '') + '" data-id="' + r.id + '"><div class="nm"><b>' + esc(r.name) + '</b><span>' + esc(r.setter) +
-      ' · ' + (byNumber(r) ? 'by number · ' : '') + FEET[r.feet] + (n ? ' · ' + n + ' sent' : '') + (r.tape ? ' · ' + esc(r.tape) : '') + '</span></div>' +
+      ' · ' + (byNumber(r) ? 'by number · ' : '') + FEET[r.feet] + rulesSay(r, true) + (n ? ' · ' + n + ' sent' : '') + (r.tape ? ' · ' + esc(r.tape) : '') + '</span></div>' +
       '<div class="rside"><div class="gd" data-g="' + r.grade + '"></div><div class="who' + (f ? ' sent' : '') + '">' + mineTxt + '</div></div><div class="chev">›</div></div>';
   }).join('');
   box.querySelectorAll('.gd').forEach(p => paintPill(p, +p.dataset.g));
@@ -2531,8 +2561,8 @@ $('pickGo').onclick = () => {
 /* ---------- making a route ---------- */
 function startDraft(route, fromPicks){
   if (!needMe()) return;
-  draft = route ? { id: route.id, marks: route.marks.map(m => ({ ...m })), name: route.name, grade: route.grade, feet: route.feet, tape: route.tape || '', note: route.note || '' }
-                : { marks: (fromPicks || []).map(h => ({ h, r: 'h' })), name: '', grade: null, feet: 'any', tape: '', note: '' };
+  draft = route ? { id: route.id, marks: route.marks.map(m => ({ ...m })), name: route.name, grade: route.grade, feet: route.feet, rules: rulesOf(route), tape: route.tape || '', note: route.note || '' }
+                : { marks: (fromPicks || []).map(h => ({ h, r: 'h' })), name: '', grade: null, feet: 'any', rules: [], tape: '', note: '' };
   brush = route ? (byNumber(route) ? 'n' : 'h') : 's';
   numAt = null;
   picks = [];
@@ -2651,6 +2681,7 @@ $('draftNext').onclick = () => {
 function paintSheet(){
   [...$('grades').children].forEach(b => b.classList.toggle('on', draft.grade !== null && +b.dataset.g === draft.grade));
   [...$('feet').children].forEach(b => b.classList.toggle('on', b.dataset.f === draft.feet));
+  [...$('rules').children].forEach(b => { const on = draft.rules.includes(b.dataset.k); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
   const on = $('grades').querySelector('.on'); if (on) on.scrollIntoView({ block: 'nearest', inline: 'center' });
 }
 function fillGrades(){
@@ -2659,6 +2690,7 @@ function fillGrades(){
 }
 $('grades').onclick = e => { const b = e.target.closest('button[data-g]'); if (b){ draft.grade = +b.dataset.g; paintSheet(); } };
 $('feet').onclick = e => { const b = e.target.closest('button[data-f]'); if (b){ draft.feet = b.dataset.f; paintSheet(); } };
+$('rules').onclick = e => { const b = e.target.closest('button[data-k]'); if (b){ const k = b.dataset.k; draft.rules = draft.rules.includes(k) ? draft.rules.filter(x => x !== k) : draft.rules.concat(k); paintSheet(); } };
 const shutSheet = () => { $('scrim').hidden = $('sheet').hidden = true; };
 $('shBack').onclick = $('scrim').onclick = () => { draft.name = $('shName').value; draft.tape = $('shTape').value; draft.note = $('shNote').value; shutSheet(); };
 $('shSave').onclick = async () => {
@@ -2670,7 +2702,7 @@ $('shSave').onclick = async () => {
   $('shSave').disabled = true;
   try{
     await knowMe();
-    const d = await call('/route', { by: me, id: draft.id, name: draft.name, grade: draft.grade, marks: draft.marks, feet: draft.feet, tape: draft.tape, note: draft.note });
+    const d = await call('/route', { by: me, id: draft.id, name: draft.name, grade: draft.grade, marks: draft.marks, feet: draft.feet, rules: draft.rules, tape: draft.tape, note: draft.note });
     const was = draft.id; shutSheet(); focusOff(); take(d);
     open(d.id, true); showPage('board'); toast(was ? 'Changed' : 'Saved. Everyone can see it now.');
   }catch(e){ $('saveErr').textContent = e.message; }

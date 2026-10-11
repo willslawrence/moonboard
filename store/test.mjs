@@ -173,6 +173,28 @@ check('and a row with no clock has neither', s.entries.length === 1 && !('n' in 
 s = await call('POST', '/api/w/test-t/log/undo', { person: 'Nia' });
 check('taking the last go back takes its best with it', JSON.stringify(s.stats.Nia[circ].g) === '[12,80]' && s.stats.Nia[circ].r === null && s.stats.Nia[circ].a === 3, s.stats.Nia[circ]);
 await call('POST', '/api/w/test-t/reset', {});
+console.log('further rules: the flat wall off limits');
+{
+  await call('POST', '/api/w/test-r/person', { name: 'Abdu' }); await call('POST', '/api/w/test-r/person', { name: 'Nia' });
+  let t = await call('POST', '/api/w/test-r/route', { by: 'Abdu', name: 'Plain', grade: 4, marks, feet: 'marked' });
+  check('a route with no further rules says nothing of them', t.status === 200 && !('rules' in t.routes[0]), t.routes && t.routes[0]);
+  t = await call('POST', '/api/w/test-r/route', { by: 'Abdu', name: 'No smearing', grade: 5, marks, feet: 'follow', rules: ['flatoff', 'nonsense'] });
+  const made = t.routes.find(r => r.name === 'No smearing');
+  check('a route can say the flat wall is off limits, beside its rule for feet, and a rule nobody knows is dropped', t.status === 200 && JSON.stringify(made.rules) === '["flatoff"]' && made.feet === 'follow', made);
+  t = await call('POST', '/api/w/test-r/route', { by: 'Abdu', id: made.id, name: 'No smearing', grade: 6, marks, feet: 'follow' });
+  check('a change that does not mention the rules leaves them alone (a phone on an older page)', t.status === 200 && t.routes[1].grade === 6 && JSON.stringify(t.routes[1].rules) === '["flatoff"]', t.routes && t.routes[1]);
+  t = await call('POST', '/api/w/test-r/route', { by: 'Abdu', id: made.id, name: 'No smearing', grade: 6, marks, feet: 'follow', rules: [] });
+  check('a change that says none takes them off', t.status === 200 && !('rules' in t.routes[1]), t.routes && t.routes[1]);
+  const before = JSON.stringify({ ...t.routes[0], edited: 0 });
+  t = await call('POST', '/api/w/test-r/route/rules', { by: 'Abdu', id: 1, rules: ['flatoff'] });
+  const after = { ...t.routes[0], edited: 0 }; const had = after.rules; delete after.rules;
+  check('the setter can set the rules alone, and nothing else of the route changes: not its holds, name, grade or feet', t.status === 200 && JSON.stringify(had) === '["flatoff"]' && JSON.stringify(after) === before, [before, after]);
+  check('it is his to set and nobody else\'s', (await call('POST', '/api/w/test-r/route/rules', { by: 'Nia', id: 1, rules: [] })).status === 403 && JSON.stringify((await call('GET', '/api/w/test-r')).routes[0].rules) === '["flatoff"]');
+  check('a route that is not there, or rules that are not a list, are refused', (await call('POST', '/api/w/test-r/route/rules', { by: 'Abdu', id: 99, rules: ['flatoff'] })).status === 404 && (await call('POST', '/api/w/test-r/route/rules', { by: 'Abdu', id: 1, rules: 'flatoff' })).status === 400);
+  t = await call('POST', '/api/w/test-r/route/rules', { by: 'Abdu', id: 1, rules: [] });
+  check('and an empty list takes them off again', t.status === 200 && !('rules' in t.routes[0]));
+  await call('POST', '/api/w/test-r/reset', {});
+}
 { // a database made before there was a clock has no such columns: they are added, and what it held is kept
   const { standInD1 } = await import('./stand-in-d1.mjs');
   const oldDb = standInD1();
@@ -193,6 +215,7 @@ await call('POST', '/api/w/test-t/reset', {});
   check('and takes a go against the clock', o.status === 200 && o.stats.Will[1].a === 2 && JSON.stringify(o.stats.Will[1].g) === '[2,30]', o.stats || o);
   o = await ask('GET', '/api/w/sun');
   check('and opens again after that', o.status === 200 && JSON.stringify(o.stats.Will[1].g) === '[2,30]');
+  check('its old route has no further rules, and can be given one', !('rules' in o.routes[0]) && JSON.stringify((await ask('POST', '/api/w/sun/route/rules', { by: 'Will', id: 1, rules: ['flatoff'] })).routes[0].rules) === '["flatoff"]');
 }
 check('a body that is not JSON is refused',
   (await handle(new Request('https://x.test/api/w/sun/person', { method: 'POST', body: 'name=Will' }), db)).status === 400);

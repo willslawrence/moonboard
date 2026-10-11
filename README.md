@@ -346,7 +346,10 @@ marked hold with the same brush lets it go, and with another brush changes what 
 A route can run across both walls. A spot with no outline can still be marked: the tap
 leaves a ring there. A route needs a start and a finish, a name, a V grade, and a rule for
 feet (any feet, feet follow hands, marked feet only); it can carry the tape it has on the
-wall and a note. Once saved everyone has it. *Search routes* lists the routes that use
+wall and a note. Beside the rule for feet it can have a further one, **Flat wall off
+limits**: no feet on the bare flat wall, which climbers call smearing. It is a button of
+its own under the three, on or off, and goes with any of them. Every route Abdullah set
+has it. Once saved everyone has it. *Search routes* lists the routes that use
 every picked hold. Making a route is deliberately not on the front of the page: Will asked
 for it to be found the way the MoonBoard's custom route is.
 
@@ -376,6 +379,10 @@ sight beside it. When the nine it moves to are not all on the screen the head tu
 where they are (`bestLook`, which is also how a route is looked at when it is opened).
 While such a route is being marked or changed every number shows, because then the gaps
 are what matter.
+At the far end of the slider is a tick-box, **Reveal full route**. Ticked, every number
+shows at once and the lines that join them are not drawn, since a hundred of them are a
+tangle; the slider goes faint, having nothing to do. It is the phone's own choice and
+stays as it was left. A short climb by number, which has no slider, keeps its lines.
 
 **Changing a route.** Only its setter is offered **Change it** and **Take it down**, on
 the log page. A route taken down leaves the list and keeps what was logged on it.

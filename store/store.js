@@ -10,8 +10,9 @@
 
      GET  /api/w/sun                  the wall as it stands: people, routes, everyone's tally
      POST /api/w/sun/person           { name }                             add a climber
-     POST /api/w/sun/route            { by, name, grade, marks, feet, tape, note, id?, t? }
+     POST /api/w/sun/route            { by, name, grade, marks, feet, rules?, tape, note, id?, t? }
                                       a new route, or with id the setter's change to one
+     POST /api/w/sun/route/rules      { by, id, rules }                    the setter says which further rules it has; nothing else of it changes
      POST /api/w/sun/route/retire     { by, id, retired }                  the setter takes it down, or puts it back
      POST /api/w/sun/log              { person, route, result, t?, n?, secs? }   a try or a send (t: when, if it was before now;
                                       n and secs: a go against the clock on a climb by number, which number was reached and how long it took)
@@ -43,6 +44,11 @@
 export const RESULTS = ['try', 'flash', '2nd', '3rd', '4+'];
 export const ROLES = ['s', 'h', 'f', 'e', 'n'];            // start, hold, foot only, finish, and a hold with its number in a climb by number
 export const FEET = ['any', 'follow', 'marked'];           // any feet, feet follow hands, marked feet only
+/* Further rules a route may have, any of them beside its rule for feet. flatoff: the flat wall is off limits to
+   feet, which is to say no smearing on it, a foot against bare wall where there is no hold (Will, 2026-10-11, of
+   every route Abdullah has set). A route says them as a list; a route with none says nothing. */
+export const RULES = ['flatoff'];
+const rulesOf = v => RULES.filter(k => v.includes(k)).join(' ');
 export const GRADE_MIN = -1, GRADE_MAX = 17;                // VB is -1, then V0 to V17
 const WALLS = { sun: 'Sun board' };                         // the walls there are; "test-..." is any wall a check makes
 const MAX_ROUTES = 3000, MAX_PEOPLE = 300, MAX_MARKS = 250, MAX_FIXES = 2000;
@@ -74,11 +80,12 @@ const SCHEMA = [
   `CREATE INDEX IF NOT EXISTS fixes_wall ON fixes (wall, done, k)`,
 ];
 /* Columns added since the tables were first made. A go against the clock on a climb by number: on its row of the
-   logbook, the number reached and the seconds it took; in the tally, the best such go. A database that has them
-   already says "duplicate column", which is the answer wanted. */
+   logbook, the number reached and the seconds it took; in the tally, the best such go. A route's further rules, as
+   words with a space between. A database that has them already says "duplicate column", which is the answer wanted. */
 const MORE = [
   'ALTER TABLE log ADD COLUMN n INTEGER', 'ALTER TABLE log ADD COLUMN secs INTEGER',
   'ALTER TABLE stats ADD COLUMN gn INTEGER', 'ALTER TABLE stats ADD COLUMN gs INTEGER',
+  "ALTER TABLE routes ADD COLUMN rules TEXT NOT NULL DEFAULT ''",
 ];
 /* The tables are made the first time this copy of the code is asked for anything; asking
    again costs nothing. A failure is forgotten, so the next request tries afresh. */
@@ -120,7 +127,7 @@ function cleanMarks(v){
 async function snapshot(db, wall){
   const [p, r, s, f] = await db.batch([
     db.prepare('SELECT name FROM people WHERE wall = ? ORDER BY t, name').bind(wall),
-    db.prepare('SELECT id, name, grade, setter, marks, feet, tape, note, t, edited, retired FROM routes WHERE wall = ? ORDER BY id').bind(wall),
+    db.prepare('SELECT id, name, grade, setter, marks, feet, rules, tape, note, t, edited, retired FROM routes WHERE wall = ? ORDER BY id').bind(wall),
     db.prepare('SELECT person, route, a, r, s, d, gn, gs FROM stats WHERE wall = ?').bind(wall),
     db.prepare('SELECT k, who, kind, v, x, y, h, size FROM fixes WHERE wall = ? AND done = 0 ORDER BY k').bind(wall),
   ]);
@@ -134,7 +141,7 @@ async function snapshot(db, wall){
   }
   return {
     wall, people: p.results.map(x => x.name),
-    routes: r.results.map(x => ({ ...x, marks: JSON.parse(x.marks), retired: !!x.retired })),
+    routes: r.results.map(x => { const o = { ...x, marks: JSON.parse(x.marks), retired: !!x.retired }; if (x.rules) o.rules = x.rules.split(' '); else delete o.rules; return o; }),
     stats,
     fixes: f.results.map(x => { const o = { k: x.k, by: x.who, kind: x.kind, v: x.v, x: x.x, y: x.y }; if (x.h) o.h = x.h; if (x.size) o.size = x.size; return o; }),
   };
@@ -216,6 +223,7 @@ export async function handle(request, db, now = () => new Date().toISOString()){
     const by = clean(body.by, 40), name = clean(body.name, 60);
     const grade = Number(body.grade), marks = cleanMarks(body.marks);
     const feet = FEET.includes(body.feet) ? body.feet : 'any';
+    const rules = Array.isArray(body.rules) ? rulesOf(body.rules) : null;      // (not said: a page from before there were any, and a change by it leaves them alone)
     const tape = clean(body.tape, 40), note = clean(body.note, 200);
     if (!by || !(await knows(db, wall, by))) return bad('say who you are first', 404);
     if (!name) return bad('the route needs a name');
@@ -231,17 +239,27 @@ export async function handle(request, db, now = () => new Date().toISOString()){
       const cur = await db.prepare('SELECT setter FROM routes WHERE wall = ? AND id = ?').bind(wall, id).first();
       if (!cur) return bad('no such route', 404);
       if (cur.setter !== by) return bad('only ' + cur.setter + ' changes this route', 403);
-      await db.prepare('UPDATE routes SET name = ?, grade = ?, marks = ?, feet = ?, tape = ?, note = ?, edited = ? WHERE wall = ? AND id = ?')
-        .bind(name, grade, JSON.stringify(marks), feet, tape, note, now(), wall, id).run();
+      await db.prepare('UPDATE routes SET name = ?, grade = ?, marks = ?, feet = ?, rules = COALESCE(?, rules), tape = ?, note = ?, edited = ? WHERE wall = ? AND id = ?')
+        .bind(name, grade, JSON.stringify(marks), feet, rules, tape, note, now(), wall, id).run();
       return json({ ...(await snapshot(db, wall)), id });
     }
     const count = (await db.prepare('SELECT COUNT(*) AS n FROM routes WHERE wall = ?').bind(wall).first()).n;
     if (count >= MAX_ROUTES) return bad('this wall has all the routes it can hold', 409);
     // the number is taken in the same statement that uses it, so two phones cannot be given the same one
-    const made = await db.prepare(`INSERT INTO routes (wall, id, name, grade, setter, marks, feet, tape, note, t)
-        SELECT ?, COALESCE(MAX(id), 0) + 1, ?, ?, ?, ?, ?, ?, ?, ? FROM routes WHERE wall = ? RETURNING id`)
-      .bind(wall, name, grade, by, JSON.stringify(marks), feet, tape, note, when(), wall).first();
+    const made = await db.prepare(`INSERT INTO routes (wall, id, name, grade, setter, marks, feet, rules, tape, note, t)
+        SELECT ?, COALESCE(MAX(id), 0) + 1, ?, ?, ?, ?, ?, ?, ?, ?, ? FROM routes WHERE wall = ? RETURNING id`)
+      .bind(wall, name, grade, by, JSON.stringify(marks), feet, rules || '', tape, note, when(), wall).first();
     return json({ ...(await snapshot(db, wall)), id: made.id });
+  }
+
+  if (path === '/route/rules'){            // which further rules a route has, and nothing else of it: its holds are not sent, so cannot be changed
+    const by = clean(body.by, 40), id = Number(body.id);
+    if (!Array.isArray(body.rules)) return bad('say which rules, as a list');
+    const cur = await db.prepare('SELECT setter FROM routes WHERE wall = ? AND id = ?').bind(wall, id).first();
+    if (!cur) return bad('no such route', 404);
+    if (cur.setter !== by) return bad('only ' + cur.setter + ' changes this route', 403);
+    await db.prepare('UPDATE routes SET rules = ?, edited = ? WHERE wall = ? AND id = ?').bind(rulesOf(body.rules), now(), wall, id).run();
+    return json(await snapshot(db, wall));
   }
 
   if (path === '/route/retire'){
