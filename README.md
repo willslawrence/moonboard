@@ -141,8 +141,14 @@ how long the rest is (half a minute to half an hour), and **Start the session** 
 the board. There, at the top of the panel beside the wall, is a circle for each go. A tap
 pops the next one (a tap on a popped one puts it back). When the last is popped the rest
 counts down in the same box, beside the wall and never over it, so the next route can be
-looked for meanwhile. When it is up the screen flashes, the phone buzzes and sounds two
-notes where it can, and the circles are empty again for the next set. A tap on the time
+looked for meanwhile. When it is up the phone pings, the whole screen goes white and fades
+back to the page, a phone that can buzzes, and the circles are empty again for the next
+set. The ping is two notes made on the page and played by an audio element, because on
+an iPhone that sounds even with the ring switch on silent; a phone lets a page make a
+sound only after a touch has allowed it, so the taps that start a session and pop a circle
+wake it with its sound off. **Try the ping**, under Start, plays it and shows the flash at
+once, to check the sound is up. (The first flash was there in name only: its class shared
+a name with a ten-pixel dot of the logbook, and that dot in a corner was all of it.) A tap on the time
 skips a rest, and **End** puts the box away. A tick-box makes each popped circle log a
 try on the route that is up; it is off unless ticked. The session is the phone's own,
 kept in its storage (`mb-rest`), so it runs through a reload, and the screen is kept
@@ -349,7 +355,11 @@ feet (any feet, feet follow hands, marked feet only); it can carry the tape it h
 wall and a note. Beside the rule for feet it can have a further one, **Flat wall off
 limits**: no feet on the bare flat wall, which climbers call smearing. It is a button of
 its own under the three, on or off, and goes with any of them. Every route Abdullah set
-has it. Once saved everyone has it. *Search routes* lists the routes that use
+has it. While a route with the rule is on the picture, or is being made with the button
+on, the flat wall has a wash of red over it, so that stepping through the routes it can
+be seen without reading the rules. The wash lies on the flat wall's own face in the
+model, in that face's place in the pile, so the island box and the overhang in front of
+the wall are not coloured by it. Once saved everyone has it. *Search routes* lists the routes that use
 every picked hold. Making a route is deliberately not on the front of the page: Will asked
 for it to be found the way the MoonBoard's custom route is.
 

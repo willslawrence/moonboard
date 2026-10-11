@@ -810,9 +810,12 @@
   #rsDots button.on{background:#22c55e;border-color:#22c55e}
   #rsBox.rest #rsDots button{opacity:.4}
   #rsEndBtn{width:auto;height:auto;padding:1px 8px;border:0;background:transparent;font-size:10.5px;font-weight:600;color:var(--dimmer)}
-  #rsFlash{position:fixed;inset:0;z-index:200;pointer-events:none;background:#fff;opacity:0}
-  #rsFlash.go{animation:rsFlash 1.4s ease-out}
-  @keyframes rsFlash{0%{opacity:.9}18%{opacity:0}36%{opacity:.9}54%{opacity:0}72%{opacity:.8}100%{opacity:0}}
+  /* the end of a rest: the whole screen goes white and fades back to the page. Its class has a name of its own: under
+     the name "go" it was also a dot of the logbook, ten pixels across, and that dot in a corner was all the flash there was. */
+  #rsFlash{position:fixed;left:0;top:0;right:0;bottom:0;width:auto;height:auto;margin:0;border:0;border-radius:0;z-index:200;pointer-events:none;background:#fff;opacity:0}
+  #rsFlash.rs-on{animation:rsFlash 2s ease-out}
+  @keyframes rsFlash{0%{opacity:0}4%{opacity:.97}22%{opacity:.97}100%{opacity:0}}
+  #rsTry{display:block;width:auto;height:auto;margin:9px auto 0;padding:3px 10px;border:0;background:transparent;font-size:12.5px;font-weight:600;color:var(--dim);text-decoration:underline;text-underline-offset:2px}
   #rsDet{margin:14px 0 4px;border:1px solid var(--edge);border-radius:10px;background:var(--panel)}
   #rsDet summary{display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:13px;font-weight:700;list-style:none;cursor:pointer}
   #rsDet summary::-webkit-details-marker{display:none}
@@ -1228,7 +1231,8 @@
       <div class="rsRow"><span>Rest between sets</span><button data-k="rest" data-d="-30" aria-label="Half a minute less">&#8722;</button><b id="rsRest">5:00</b><button data-k="rest" data-d="30" aria-label="Half a minute more">+</button></div>
       <label class="rsChk"><input type="checkbox" id="rsLog"> Each go logs a try on the route that is up</label>
       <button id="rsGo" class="solid">Start the session</button>
-      <div class="hint">On the board, tap a circle after each go. After the last one the rest counts down beside the wall, and the screen flashes when it is time to climb again. Tap the time to skip a rest.</div>
+      <button id="rsTry" type="button">Try the ping</button>
+      <div class="hint">On the board, tap a circle after each go. After the last one the rest counts down beside the wall. When it is up the phone pings and the screen flashes white. Tap the time to skip a rest.</div>
     </div>
   </details>
 
@@ -1479,7 +1483,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-10 22:01';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-11 12:59';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -6847,7 +6851,7 @@ try{ const k = JSON.parse(localStorage.getItem('mb-rest') || 'null'); if (k && t
 RS.reps = Math.max(1, Math.min(8, Math.round(RS.reps) || 3)); RS.rest = Math.max(30, Math.min(1800, Math.round(RS.rest) || 300));
 const rsKeep = () => { try{ localStorage.setItem('mb-rest', JSON.stringify(RS)); }catch(e){} };
 const rsClock = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
-let rsTick = 0, rsAudio = null, rsBeep = null, rsLock = null;
+let rsTick = 0, rsAudio = null, rsLock = null, rsPingEl = null, rsArmed = false, rsFlashT = 0;
 /* the screen stays on through a session, where a phone allows it, so that the flash at the end of a rest is seen */
 async function rsAwake(){
   try{
@@ -6882,37 +6886,74 @@ function rsPop(){
   if (!RS.on || RS.until) return;
   RS.done = Math.min(RS.reps, RS.done + 1);
   if (RS.log && current && meNow()) doTry();
-  if (RS.done >= RS.reps){ RS.until = Date.now() + RS.rest * 1000; rsSound(RS.rest); }
+  if (RS.done >= RS.reps) RS.until = Date.now() + RS.rest * 1000;
   rsKeep(); rsPaint();
 }
 /* a circle popped by mistake is put back (a try it logged stays in the logbook, where it can be taken out) */
 function rsUnpop(){ if (RS.on && !RS.until && RS.done > 0){ RS.done--; rsKeep(); rsPaint(); } }
-/* the rest is over, or was skipped: the circles are empty again, with a flash if it ran its time */
+/* the rest is over, or was skipped: the circles are empty again, and if it ran its time the phone says so */
 function rsOver(flash){
   RS.until = 0; RS.done = 0; RS.set++; rsKeep();
-  if (rsBeep && !flash){ try{ rsBeep.forEach(o => o.stop()); }catch(e){} }
-  rsBeep = null;
   rsPaint();
-  if (flash){
-    const f = $('rsFlash'); f.hidden = false; f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
-    setTimeout(() => { f.hidden = true; }, 1500);
-    try{ if (navigator.vibrate) navigator.vibrate([220, 120, 220]); }catch(e){}
-  }
+  if (flash) rsAlarm();
 }
-/* two short notes when the rest is up, set going on the tap that started it (a page may not make a sound unasked) */
-function rsSound(inSecs){
+/* The phone says the rest is over (Will, 2026-10-11: "can it ping the phone... make the phone make a sound. And maybe
+   the screen flashes white, fades back into the normal view. Right now it just silently changes"): a ping, the whole
+   screen white and fading back, and a buzz where a phone can. */
+function rsAlarm(){
+  rsPing();
+  const f = $('rsFlash');
+  f.hidden = false; f.classList.remove('rs-on'); void f.offsetWidth; f.classList.add('rs-on');
+  clearTimeout(rsFlashT); rsFlashT = setTimeout(() => { f.hidden = true; f.classList.remove('rs-on'); }, 2100);
+  try{ if (navigator.vibrate) navigator.vibrate([220, 120, 220]); }catch(e){}
+}
+/* The ping: two notes, a little over a second, made here so there is no file to fetch. It is played by an <audio>
+   element, because on an iPhone that sounds with the ring switch on silent and a bare note from the page does not.
+   A phone lets a page make a sound only if a touch has allowed it to, so the element is woken on the touches that
+   start a session and pop a circle (played with its sound off for an instant); after that it may play when the rest
+   ends. If the phone still will not play it, a plainer note is tried the other way. */
+function rsChime(){
+  const sr = 22050, n = Math.floor(sr * 1.15), dv = new DataView(new ArrayBuffer(44 + n * 2));
+  const w = (o, t) => { for (let i = 0; i < t.length; i++) dv.setUint8(o + i, t.charCodeAt(i)); };
+  w(0, 'RIFF'); dv.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+  dv.setUint32(24, sr, true); dv.setUint32(28, sr * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true); w(36, 'data'); dv.setUint32(40, n * 2, true);
+  const note = (t, t0, f) => t < t0 ? 0 : Math.exp(-(t - t0) * 5) * Math.min(1, (t - t0) * 300) * (Math.sin(2 * Math.PI * f * (t - t0)) + 0.3 * Math.sin(4 * Math.PI * f * (t - t0)));
+  for (let i = 0; i < n; i++){ const t = i / sr, v = 0.6 * note(t, 0, 880) + 0.6 * note(t, 0.2, 1318.5); dv.setInt16(44 + i * 2, Math.max(-1, Math.min(1, v)) * 29000, true); }
+  const b = new Uint8Array(dv.buffer); let bin = '';
+  for (let i = 0; i < b.length; i += 8192) bin += String.fromCharCode.apply(null, b.subarray(i, i + 8192));
+  return 'data:audio/wav;base64,' + btoa(bin);
+}
+function rsArm(){
   try{
-    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
-    rsAudio = rsAudio || new AC(); if (rsAudio.state === 'suspended') rsAudio.resume();
-    rsBeep = [0, 0.28].map(d => { const o = rsAudio.createOscillator(), g = rsAudio.createGain(), t = rsAudio.currentTime + inSecs + d;
-      o.frequency.value = 880; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
-      o.connect(g); g.connect(rsAudio.destination); o.start(t); o.stop(t + 0.22); return o; });
+    if (!rsPingEl){ rsPingEl = new Audio(rsChime()); rsPingEl.preload = 'auto'; rsPingEl.setAttribute('playsinline', ''); }
+    if (!rsArmed){
+      rsPingEl.muted = true;
+      const quiet = () => { if (rsPingEl.muted){ try{ rsPingEl.pause(); rsPingEl.currentTime = 0; }catch(e){} rsPingEl.muted = false; } };     // (not if the ping itself has started meanwhile)
+      const p = rsPingEl.play();
+      if (p && p.then) p.then(() => { rsArmed = true; quiet(); }, quiet); else { rsArmed = true; quiet(); }
+    }
   }catch(e){}
+  try{ const AC = window.AudioContext || window.webkitAudioContext; if (AC){ rsAudio = rsAudio || new AC(); if (rsAudio.state !== 'running') rsAudio.resume(); } }catch(e){}
+}
+function rsPing(){
+  const plain = () => { try{
+    if (!rsAudio || rsAudio.state !== 'running') return;
+    [[0, 880], [0.2, 1318.5]].forEach(([d, f]) => { const o = rsAudio.createOscillator(), g = rsAudio.createGain(), t = rsAudio.currentTime + d;
+      o.frequency.value = f; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.3, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+      o.connect(g); g.connect(rsAudio.destination); o.start(t); o.stop(t + 0.55); });
+  }catch(e){} };
+  try{
+    if (!rsPingEl) rsPingEl = new Audio(rsChime());
+    rsPingEl.muted = false; rsPingEl.currentTime = 0;
+    const p = rsPingEl.play();
+    if (p && p.then) p.then(() => { rsArmed = true; }, plain);
+  }catch(e){ plain(); }
 }
 function rsStart(){ RS.on = true; RS.done = 0; RS.set = 1; RS.until = 0; rsKeep(); rsPaint(); }
-function rsEnd(){ RS.on = false; RS.done = 0; RS.set = 1; RS.until = 0; if (rsBeep){ try{ rsBeep.forEach(o => o.stop()); }catch(e){} rsBeep = null; } rsKeep(); rsPaint(); }
-$('rsDots').onclick = e => { const b = e.target.closest('button'); if (!b) return; b.classList.contains('on') ? rsUnpop() : rsPop(); };
-$('rsTime').onclick = () => { if (RS.until) rsOver(false); };
+function rsEnd(){ RS.on = false; RS.done = 0; RS.set = 1; RS.until = 0; rsKeep(); rsPaint(); }
+$('rsDots').onclick = e => { const b = e.target.closest('button'); if (!b) return; rsArm(); b.classList.contains('on') ? rsUnpop() : rsPop(); };
+$('rsTime').onclick = () => { rsArm(); if (RS.until) rsOver(false); };
+$('rsTry').onclick = () => rsAlarm();            // hear it and see it now: is the sound up, is the phone on silent
 $('rsEndBtn').onclick = () => rsEnd();
 $('rsSet').onclick = e => {
   const b = e.target.closest('button[data-k]'); if (!b) return;
@@ -6920,7 +6961,7 @@ $('rsSet').onclick = e => {
   RS.done = Math.min(RS.done, RS.reps); rsKeep(); rsPaint();
 };
 $('rsLog').onchange = () => { RS.log = $('rsLog').checked; rsKeep(); };
-$('rsGo').onclick = () => { if (RS.on) return rsEnd(); rsStart(); $('rsDet').open = false; showPage('board'); };
+$('rsGo').onclick = () => { if (RS.on) return rsEnd(); rsArm(); rsStart(); $('rsDet').open = false; showPage('board'); };
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') rsPaint(); });
 rsPaint();
 
