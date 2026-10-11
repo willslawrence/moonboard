@@ -196,6 +196,33 @@ awake while one is on where the phone allows. The Sun board has the same session
 the same name, so one carries from wall to wall: there the circles lie on the picture,
 down its left edge under the corner button, with nothing behind them.
 
+**The rest counted down on the wall.** A second tick-box in the sheet, **Count the rest
+down on the wall**, off unless ticked and kept by the phone (`mb-rest-wall`). While a session
+with it ticked is on, row 1 of the wall is the count's: the grade is not shown there, and a
+route that is up with its grade when the session starts goes up again without it. When a
+rest begins the wall gets a red light on row 1 for each minute left, from A1 (eleven at
+most), and the picture shows the same; a minute on, one fewer, one write each time. Five
+seconds before the rest is up the wall spells **S, T, A, R, T**, a big green letter at a
+time, then the rim flashes twice and the route is put back as it was, with nothing on row 1.
+The phone pings and flashes as before.
+
+It never takes the wall from anybody, which is the point of it on a wall that is shared:
+
+- It only begins if the route open on this phone is the one on the wall, by itself. With
+  another route up, or two, the rest is counted on the phone alone, and a line says so.
+- Before every frame it looks at what is on the wall, asking the relay afresh when another
+  phone holds the wall. If that is not exactly what the count last put there, somebody has
+  lit something else: the count is off the wall for what is left of that rest, nothing more
+  is sent, START neither, and a line says so. The climber lights the route again when the
+  rest is up, and the next rest is counted as usual.
+- Every frame goes up as the same lighting of the same route under the same name, so it is
+  nobody's turn in the line and nothing new in tonight's list (the page tells the relay it
+  is a repeat; see `write`, `again`).
+
+A rest skipped, a session ended, or the box unticked takes the count's lights off again, if
+the wall is still the count's. The letters are seven wide and nine tall and no frame is
+over 130 bytes, well inside what the box will draw.
+
 ### How a send is asked
 
 A send needs one more answer: which go it was. Four green bubbles swing out in an arc
@@ -593,7 +620,11 @@ instead; tap **In line** to give the place up.
 Under it the panel reads down towards the wall. A **History** bar, folded until it is
 tapped, holds the problems that have been up this session; each is there once, however often
 it was lit. Then the line, with whoever is next nearest the wall and **Put it up** on their
-card. Then a band marked *Next up*, and at the foot what is on the wall now.
+card. Each card says what it is at its head, as the wall's card says *On wall*: **Up next**
+for whoever is next, then **Up next 2**, **Up next 3** and so on, each its own colour
+(violet, orange, green, and yellow for any after) beside the wall's blue. (Until 2026-10-11
+the cards carried a number and one band under them said *Next up*.) At the foot is what is
+on the wall now.
 
 Tapping a card, in the line or in the history, opens that problem on your phone and lights
 nothing. **Put it up** is the one tap that changes the wall. Anyone can tap it, and the problem
@@ -658,7 +689,10 @@ asked*). Both are on the log page, and **Quick log** does the same from the boar
 The log page's own undo is careful. The relay's undo takes off a climber's newest entry,
 whenever that was, so the page only offers it for a go from the current session, names the
 go, and wants a second tap. Anything older is changed in the **Logbook**, where it can be
-seen: any climber's entries, a block for each day, with the newest open. Tap a row there to
+seen: any climber's entries, a block for each day, with the newest open. It opens on
+whoever is climbing, the name at the top of the page, each time it is opened; the picker
+inside shows anybody else's. (Until 2026-10-11 it went on opening on whoever was looked at
+last.) Tap a row there to
 lock it or delete it (every row ends in three dots; until 2026-10-11 it took a held finger,
 which nobody found). A locked entry cannot be deleted or undone, and **Lock my entries**
 locks all of yours at once.

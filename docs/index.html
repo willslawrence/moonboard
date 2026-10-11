@@ -96,6 +96,8 @@
     --onink:#0e0e0f; --bright:#fff; --orange-ink:#fb923c; --gold:#f5c542; --blue-ink:#8fb8ff;
     --now-bg:#131d33; --now-edge:#2f4a86; --now-cap:#8fb0f5; --now-press:#1b2a4a;
     --next-bg:#1b1630; --next-edge:#5b47a8; --next-cap:#b9a5f5;
+    --next2-bg:#2a1a0b; --next2-edge:#a9651f; --next2-cap:#f7b26b; --next3-bg:#0f2619; --next3-edge:#2f8a55; --next3-cap:#7fdba3;
+    --next4-bg:#282207; --next4-edge:#8f7b1c; --next4-cap:#f2d665;
     --green-ink:#22c55e;
   }
   /* ---- backgrounds ----
@@ -114,6 +116,8 @@
     --onink:#f8f4ee; --bright:#000; --orange-ink:#a04a06; --gold:#7a5600; --blue-ink:#1f4fae;
     --now-bg:#dbe4f8; --now-edge:#6f8fd6; --now-cap:#234a9e; --now-press:#c8d6f5;
     --next-bg:#e7dff8; --next-edge:#8672cf; --next-cap:#46348f;
+    --next2-bg:#f9e6d2; --next2-edge:#d98b42; --next2-cap:#8f4307; --next3-bg:#d9efdd; --next3-edge:#5aa96c; --next3-cap:#1c6431;
+    --next4-bg:#f5eec4; --next4-edge:#bfa033; --next4-cap:#6e5200;
     --green-ink:#15803d;
   }
   html[data-bg="fog"]{
@@ -125,6 +129,8 @@
     --onink:#f4f6f8; --bright:#000; --orange-ink:#a04a06; --gold:#7a5600; --blue-ink:#1f4fae;
     --now-bg:#dbe4f8; --now-edge:#6f8fd6; --now-cap:#234a9e; --now-press:#c8d6f5;
     --next-bg:#e7dff8; --next-edge:#8672cf; --next-cap:#46348f;
+    --next2-bg:#f9e6d2; --next2-edge:#d98b42; --next2-cap:#8f4307; --next3-bg:#d9efdd; --next3-edge:#5aa96c; --next3-cap:#1c6431;
+    --next4-bg:#f5eec4; --next4-edge:#bfa033; --next4-cap:#6e5200;
     --green-ink:#15803d;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -1008,14 +1014,20 @@
   .stackSep[hidden]{display:none}
   .stackSep::before,.stackSep::after{content:'';flex:1;height:1px;background:var(--box2)}
   /* the panel left of the board, as Will laid it out on the design canvas: the Next up
-     button on top, then the line with whoever is next nearest the wall, a filled band
-     that names it, and what is on the wall at the foot */
+     button on top, then the line with whoever is next nearest the wall, and what is on
+     the wall at the foot. Each card in the line says what it is at its head, as the
+     wall's card does: Up next, then Up next 2 and Up next 3, each its own colour (violet,
+     orange, green; yellow for any after). They were one filled band under the line,
+     "Next up", and a number on each card, until Will asked for this on 2026-10-11. */
   #wallCol #nextBtn{flex:none;width:100%;height:40px;font-size:12px;border-radius:9px}
   #wallCol #nextBtn[hidden]{display:none}
   #wallNext{flex-direction:column-reverse !important}
-  #nextSep{display:block;margin:2px 0 0;padding:5px 0;border-radius:6px;background:var(--next-bg);color:var(--next-cap);
-           font-size:9px;font-weight:700;letter-spacing:.1em;text-align:center}
-  #nextSep::before,#nextSep::after{display:none}
+  .nrow .cap{align-self:center;max-width:100%;font-size:10px;font-weight:700;line-height:1.3;letter-spacing:.08em;text-transform:uppercase;
+             white-space:nowrap;color:var(--next-cap)}
+  .nrow.n2{border-color:var(--next2-edge) !important;background:var(--next2-bg)} .nrow.n2 .cap{color:var(--next2-cap)}
+  .nrow.n3{border-color:var(--next3-edge) !important;background:var(--next3-bg)} .nrow.n3 .cap{color:var(--next3-cap)}
+  .nrow.n4{border-color:var(--next4-edge) !important;background:var(--next4-bg)} .nrow.n4 .cap{color:var(--next4-cap)}
+  .nrow.n2.mine{border-color:var(--next2-cap) !important} .nrow.n3.mine{border-color:var(--next3-cap) !important} .nrow.n4.mine{border-color:var(--next4-cap) !important}
   .nrow{border-style:dashed !important;border-width:1.5px !important}
   .nrow .put{align-self:flex-start;width:auto !important;padding:3px 8px !important;font-size:8.5px !important}
   #nowBtn{border-width:2px !important}
@@ -1042,7 +1054,6 @@
   .nrow:active{filter:brightness(1.15)}
   .nrow.mine{border-color:var(--next-cap)}
   .nrow .by{display:flex;align-items:center;gap:4px;min-width:0;font-size:9.5px;color:var(--dim)}
-  .nrow .by em{flex:none;font:700 9px ui-monospace,Menlo,monospace;font-style:normal;color:var(--next-cap)}
   .nrow .by i{flex:none;display:grid;place-items:center;width:13px;height:13px;border-radius:50%;
               font-size:8px;font-weight:700;font-style:normal;color:#0e0e0f}
   .nrow .by span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1149,7 +1160,6 @@
         <button id="histBar" hidden></button>
         <div id="wallHist" hidden></div>
         <div id="wallNext"></div>
-        <div id="nextSep" class="stackSep" hidden>Next up</div>
         <button id="nowBtn" hidden><span class="cap">On wall</span><b class="nm3"></b><b class="nm4"></b><span class="by"></span></button>
       </div>
       <div id="betaTools">
@@ -1509,9 +1519,11 @@
     <div class="rsRow"><span>Goes in a set</span><button data-k="reps" data-d="-1" aria-label="One fewer">&#8722;</button><b id="rsReps">3</b><button data-k="reps" data-d="1" aria-label="One more">+</button></div>
     <div class="rsRow"><span>Rest between sets</span><button data-k="rest" data-d="-30" aria-label="Half a minute less">&#8722;</button><b id="rsRest">5:00</b><button data-k="rest" data-d="30" aria-label="Half a minute more">+</button></div>
     <label class="rsChk"><input type="checkbox" id="rsLog"> Each go logs a try on the route that is up</label>
+    <label class="rsChk"><input type="checkbox" id="rsWallChk"> Count the rest down on the wall</label>
     <button id="rsGo" class="solid">Start the session</button>
     <button id="rsTry" type="button">Try the ping</button>
     <div class="hint">On the board, tap a circle after each go. After the last one the rest counts down beside the wall. When it is up the phone pings and the screen flashes white. Tap the time to skip a rest.</div>
+    <div class="hint">Counted on the wall, a rest is a red light on the bottom row for each minute left, then START in big letters and the rim flashing twice. That is only while the route you have open is the one on the wall. If somebody lights another, the count stops and the wall is theirs: light yours again when your rest is up. The grade is left off the bottom row while the session is on.</div>
   </div>
 </div>
 
@@ -1597,7 +1609,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-11 21:44';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-11 22:08';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -1611,6 +1623,9 @@ const BLOCKED = ['0000fe59','00001530-1212-efde-1523-785feabcd123'];
 let device = null, rx = null, tx = null;
 const state = {};                      // "col,row" -> 'S' | 'P' | 'E'
 let gradeCells = {};                   // "col,1"   -> the row-1 grade meter
+let rsWallWant = false;                // a timed session counts its rests on the wall (see "the rest counted down on the wall")
+let rsWall = null;                     // ...and while one is being counted there: whose route, what it shows, what it last sent
+try{ rsWallWant = localStorage.getItem('mb-rest-wall') === '1'; }catch(e){}
 let picks = {};                        // "col,row" -> true: holds tapped in focus (see "picking holds")
 let holdFilter = [];                   // the same keys, once "Search routes" is tapped: the list is only routes that use them all
 const CUSTOM_ID = 0;
@@ -3806,8 +3821,17 @@ function renderResults(){
   if (cap) cap.querySelector('span').textContent = hits.length + ' shown';
 }
 
-/* Row 1 reads out the grade: first three green, next three blue, rest red. */
+/* Row 1 reads out the grade: first three green, next three blue, rest red. In a timed
+   session that counts its rests on the wall the row is the count's instead: no grade on
+   it at all, and while a rest is being counted, the count's own lights on the route it
+   is counted on (see "the rest counted down on the wall"). */
 function gradeBarFor(r){
+  if (r && rsOwnsRow()) return rsWall && !rsWall.ending && rsWall.id === r.id && rsWall.board === r.board ? rsRowCells(rsWall.shown) : {};
+  return gradeBarOf(r);
+}
+function rsOwnsRow(){ try{ return RS.on && rsWallWant; }catch(e){ return false; } }      // (asked before the session's own lines have run: no)
+function rsRowCells(n){ const c = {}; for (let i = 1; i <= n; i++) c[i + ',1'] = RS_WALL_TAG; return c; }
+function gradeBarOf(r){                // the grade's own lights, whatever a session is doing
   const cells = {};
   if (!r || !$('gbar').checked) return cells;
   // Row 1 is free on every 2016 benchmark, but the other sets use it now and then.
@@ -4187,7 +4211,7 @@ function paintRelayBtn(){
                'connected by Bluetooth. Nothing to turn on.');
 }
 
-async function relaySend(str, quiet, meta){
+async function relaySend(str, quiet, meta, again){
   const room = relayRoom();
   if (!quiet) log('→ relay  ' + str);
   try{
@@ -4201,7 +4225,7 @@ async function relaySend(str, quiet, meta){
     if (typeof d.bridges === 'number') bridgeLive = d.bridges > 0;
     // It is up there now, so this phone need not wait for the next look to say so.
     if (bridgeSeen && wallKnown) setWallNow(nowFrom(str, meta));
-    if (bridgeSeen && meta) lineWentUp(meta);
+    if (bridgeSeen && meta && !again) lineWentUp(meta);
     if (d.error) log('relay: ' + d.error);
     else if (!d.bridges) log('relay: nothing is connected to the board — ' +
                              'somebody has to tap Connect.');
@@ -4213,23 +4237,26 @@ async function relaySend(str, quiet, meta){
 
 /* meta says which problem this is and whose phone lit it - {id, by, board} - and
    is left off for everything that isn't a problem: art, games, a cleared wall.
-   asked is set when the relay requested the write, so it is not told about it twice. */
-async function write(str, quiet, meta, asked){
+   asked is set when the relay requested the write, so it is not told about it twice.
+   again is set when this is the same lighting of the same problem with something added
+   or taken away (a rest counted on row 1): it is not that climber's turn come round,
+   and the relay is told it is a repeat. */
+async function write(str, quiet, meta, asked, again){
   if (!(str.startsWith('l#') && str.endsWith('#'))) return log('refusing — payload must be l#…#');
   if (!rx){
-    if (relayRoom()) return relaySend(str, quiet, meta);
+    if (relayRoom()) return relaySend(str, quiet, meta, again);
     return log('not connected — tap Connect, or set a relay room code in Settings.');
   }
   // One write at a time: a payload goes out in pieces, and two at once would mix them.
   // A game's frame that a newer write has overtaken while it waited is not sent at all.
   const mine = ++writeSeq;
-  const run = writeTail.then(() => (quiet && mine !== writeSeq) ? false : bleWrite(str, quiet, meta, asked));
+  const run = writeTail.then(() => (quiet && mine !== writeSeq) ? false : bleWrite(str, quiet, meta, asked, again));
   writeTail = run.catch(() => {});
   return run;
 }
 let writeSeq = 0, writeTail = Promise.resolve();
 /* true once the box has the whole payload; false, with a line in the log, if not. */
-async function bleWrite(str, quiet, meta, asked){
+async function bleWrite(str, quiet, meta, asked, again){
   if (!rx){ log('write failed: the board is no longer connected.'); return false; }
   if (BLOCKED.some(b => rx.uuid.toLowerCase().includes(b))){ log('refusing — DFU characteristic.'); return false; }
   const bytes = new TextEncoder().encode(str);
@@ -4247,7 +4274,7 @@ async function bleWrite(str, quiet, meta, asked){
       await new Promise(r => setTimeout(r, 30));
     }
     if (!quiet) log('written.');
-    wrote(str, meta, asked);
+    wrote(str, meta, asked, again);
     return true;
   }catch(e){ log('write failed: ' + e.message); return false; }
 }
@@ -4288,15 +4315,15 @@ function setWallNow(now){
    and tell the relay unless it was the relay that asked. Only problems are worth
    a message: a game redraws the wall several times a second, and all anyone else
    needs to hear is that the problem is no longer up. */
-function wrote(payload, meta, asked){
+function wrote(payload, meta, asked, again){
   lastWrite = { payload, meta: meta || null };
   setWallNow(nowFrom(payload, meta));
-  if (meta) lineWentUp(meta);
+  if (meta && !again) lineWentUp(meta);
   if (asked){ told = 'asked|' + payload; return; }
   const key = tellKey(payload, meta);
   if (key === told) return;
   told = key;
-  tellRelay();
+  tellRelay(!!again);
 }
 /* again: this is a repeat after reconnecting, not a problem newly lit. The relay
    needs to know the difference - a repeat must not count as someone's go. */
@@ -4523,9 +4550,9 @@ function paintStack(){
   line.forEach((e, i) => {
     const r = byId[e.id];
     const row = document.createElement('div');
-    row.className = 'nrow' + (sameName(e.by, me) ? ' mine' : '');
-    row.innerHTML = '<span class="by"><em></em><i></i><span></span></span><b></b><span class="gd"></span>';
-    row.querySelector('em').textContent = i + 1;
+    row.className = 'nrow n' + Math.min(i + 1, 4) + (sameName(e.by, me) ? ' mine' : '');
+    row.innerHTML = '<span class="cap"></span><span class="by"><i></i><span></span></span><b></b><span class="gd"></span>';
+    row.querySelector('.cap').textContent = i ? 'Up next ' + (i + 1) : 'Up next';      // said on the card itself, as "On wall" is on the wall's
     const chip = row.querySelector('i');
     chip.textContent = chipFor(e.by);
     chip.style.background = personColor(e.by);
@@ -4554,7 +4581,6 @@ function paintStack(){
     row.onclick = () => stackOpen(r);
     hbox.appendChild(row);
   });
-  $('nextSep').hidden = !line.length;
   paintHist();
   if (histOpen) hbox.scrollTop = hbox.scrollHeight;    // the latest, nearest the wall
 }
@@ -4964,8 +4990,12 @@ function whoFill(box){
   });
 }
 
+/* The Logbook opens on whoever is climbing: the name at the top of the page. (Until 2026-10-11 it opened on
+   whoever its own picker was last on, so after one look at another climber's it went on opening on theirs: Will,
+   "it should follow the climber".) With nobody picked at the top it is the one last looked at, or the first. The
+   picker inside still shows anybody else's. */
 async function openLog(){
-  const sel = $('logWho'), keep = sel.value || meNow();
+  const sel = $('logWho'), keep = meNow() || sel.value;
   sel.innerHTML = '';
   people.forEach(p => sel.appendChild(new Option(p, p)));
   sel.value = people.includes(keep) ? keep : (people[0] || '');
@@ -7083,7 +7113,7 @@ function rsPaint(){
   clearInterval(rsTick); rsTick = 0;
   // the setting-up, in the sheet the timer button opens; the button is green while a session is on
   $('rsBtn').classList.toggle('on', RS.on); $('rsBtn').setAttribute('aria-label', RS.on ? 'Timed session, on' : 'Timed session');
-  $('rsReps').textContent = RS.reps; $('rsRest').textContent = rsClock(RS.rest); $('rsLog').checked = RS.log;
+  $('rsReps').textContent = RS.reps; $('rsRest').textContent = rsClock(RS.rest); $('rsLog').checked = RS.log; $('rsWallChk').checked = rsWallWant;
   $('rsSum').textContent = (RS.on ? 'on \u00b7 ' : '') + RS.reps + (RS.reps === 1 ? ' go' : ' goes') + ', then ' + rsClock(RS.rest) + ' rest';
   $('rsGo').textContent = RS.on ? 'End the session' : 'Start the session';
   $('rsGo').classList.toggle('solid', !RS.on);
@@ -7095,6 +7125,7 @@ function rsPaint(){
     const left = (RS.until - Date.now()) / 1000;
     if (left <= 0) return rsOver(true);
     $('rsTime').textContent = rsClock(left); $('rsTime').disabled = false;
+    rsWallTick(left);
   };
   show();
   if (RS.on && RS.until > 0) rsTick = setInterval(show, 250);
@@ -7104,7 +7135,7 @@ function rsPop(){
   if (!RS.on || RS.until) return;
   RS.done = Math.min(RS.reps, RS.done + 1);
   if (RS.log && current && meNow()) doTry();
-  if (RS.done >= RS.reps) RS.until = Date.now() + RS.rest * 1000;
+  if (RS.done >= RS.reps){ RS.until = Date.now() + RS.rest * 1000; rsWallStart(); }
   rsKeep(); rsPaint();
 }
 /* a circle popped by mistake is put back (a try it logged stays in the logbook, where it can be taken out) */
@@ -7113,6 +7144,7 @@ function rsUnpop(){ if (RS.on && !RS.until && RS.done > 0){ RS.done--; rsKeep();
 function rsOver(flash){
   RS.until = 0; RS.done = 0; RS.set++; rsKeep();
   rsPaint();
+  rsWallEnd(!flash);
   if (flash) rsAlarm();
 }
 /* The phone says the rest is over (Will, 2026-10-11: "can it ping the phone... make the phone make a sound. And maybe
@@ -7167,8 +7199,159 @@ function rsPing(){
     if (p && p.then) p.then(() => { rsArmed = true; }, plain);
   }catch(e){ plain(); }
 }
-function rsStart(){ RS.on = true; RS.done = 0; RS.set = 1; RS.until = 0; rsKeep(); rsPaint(); }
-function rsEnd(){ RS.on = false; RS.done = 0; RS.set = 1; RS.until = 0; rsKeep(); rsPaint(); }
+function rsStart(){ RS.on = true; RS.done = 0; RS.set = 1; RS.until = 0; rsKeep(); rsPaint(); rsWallFor = 0; rsRowClear(); }
+function rsEnd(){ RS.on = false; RS.done = 0; RS.set = 1; RS.until = 0; rsKeep(); rsPaint(); rsWallEnd(true); }
+
+/* ---------- the rest counted down on the wall ----------
+   Will, 2026-10-11: "For the timed session. Don't show the grade on the bottom row. If I chose 3 repeats and 5
+   minutes rest. Once I start the rest show 5 lights for the 5 minutes and every minute have the phone send only 4
+   lights. Then reducing each minute. When the 5 mins done or almost done have the board cycle through the letters
+   S T A R T and then flash the rim lights 2x." Then: "If another climber [throws] up a new route [stop] the
+   further light commands for the timer. At the end of the 5 minutes the climber will just need to light up the
+   route again. So the key here is don't let this timer session [disrupt] the other climbers." And: "There could
+   be a toggle for this count [down] on the board feature. So the climber controls it instead of the code."
+
+   So it is a tick-box in the session's sheet, off unless ticked, kept by this phone (rsWallWant, "mb-rest-wall":
+   apart from the session itself, which the Sun board's page shares and would not keep it). While a session with it
+   ticked is on, row 1 of the wall is the count's and carries no grade (gradeBarFor). When a rest begins the wall
+   gets a red light on row 1 for each minute left, from A1, eleven at most; a minute on, one fewer. Five seconds
+   before the rest is up the wall spells S, T, A, R, T, a letter at a time, in green; the rim flashes twice; and the
+   route is put back as it was, with nothing on row 1.
+
+   It never takes the wall from anybody:
+   - It only begins if this phone's open route is the one on the wall, by itself. Otherwise the rest is counted on
+     the phone alone, as it always was.
+   - Before every frame it looks at what is on the wall, asking the relay afresh where another phone holds the wall.
+     If that is not exactly what the count last put there, somebody has lit something else: the count is off the
+     wall for what is left of this rest, nothing more is sent, START neither, and the climber lights the route
+     again when the time comes.
+   - Every frame goes up as the same lighting of the same route under the same name ("again", see write), so it is
+     nobody's turn in the line and nothing new in tonight's list. (Through the relay, which does not know of
+     "again", a frame counts as that route lit once more by the same climber: the same name on the wall's card, the
+     same place in tonight's list.)
+   A rest that is skipped, or a session that is ended, takes the count's lights off again, if the wall is still the
+   count's. The frames wait their turn one behind another (rsWallDo), so two never cross. */
+const RS_WALL_TAG = 'E', RS_END_LEAD = 5000;       // red, for not yet; and how long before the end START begins, so that the rim's last flash lands on it
+const RS_GLYPH = {                                 // seven wide and nine tall: one letter fills the middle of the wall
+  S: ['.#####.', '#.....#', '#......', '#......', '.#####.', '......#', '......#', '#.....#', '.#####.'],
+  T: ['#######', '...#...', '...#...', '...#...', '...#...', '...#...', '...#...', '...#...', '...#...'],
+  A: ['..###..', '.#...#.', '#.....#', '#.....#', '#######', '#.....#', '#.....#', '#.....#', '#.....#'],
+  R: ['######.', '#.....#', '#.....#', '#.....#', '######.', '#..#...', '#...#..', '#....#.', '#.....#'],
+};
+let rsWallFor = 0;                                 // the rest (by its set, RS.set) that the wall's part has been settled for: begun, declined or given up
+function rsRow(){ applyGradeBar(); paint(); }      // row 1 on the picture follows: the grade, the count, or nothing
+const rsMinutes = () => Math.max(1, Math.min(COLS, Math.ceil((RS.until - Date.now()) / 60000)));
+function rsLetter(ch){
+  const cells = [];
+  RS_GLYPH[ch].forEach((line, i) => [...line].forEach((c, j) => { if (c === '#') cells.push({ tag: 'S', n: holdNum(j + 3, 14 - i) }); }));
+  return payloadFrom(cells);
+}
+const rsWallDo = (w, job) => (w.q = w.q.then(job).catch(e => log('wall count: ' + (e && e.message || e))));
+async function rsWallOurs(w){            // is the wall exactly as this count last left it?
+  if (!rx && document.visibilityState === 'visible') await relayPeek();        // (asked afresh, where another phone holds the wall)
+  return canSend() && !!wallNow && wallNow.payload === w.last;
+}
+async function rsWallSend(w, payload){   // one frame, as the same lighting of the same route under the same name
+  await write(payload, true, { id: w.id, by: w.by, board: w.board }, false, true);
+  const ok = !!wallNow && wallNow.payload === payload;
+  if (ok) w.last = payload;
+  return ok;
+}
+function rsWallVoid(w, say){             // the wall is somebody else's now, or cannot be reached: nothing more from this count
+  w.dead = true;
+  if (rsWall === w){ rsWall = null; rsRow(); }
+  if (say) quickSay(say);
+}
+/* A rest has begun (or one that is running has only now been met: the box ticked part way, the page loaded again).
+   Is its count to go on the wall? Only if this phone's open route is up there by itself. */
+async function rsWallStart(){
+  const mine = RS.set;
+  rsWallFor = mine;
+  if (rsWall){ rsWall.dead = true; rsWall = null; }
+  const no = say => { rsRow(); if (say) quickSay(say); };
+  if (!rsOwnsRow() || !RS.until || !current || !canSend()) return no();
+  if (/(^|,)[A-K]1(,|$)/.test(current.s + ',' + current.m + ',' + current.e)) return no();      // a route with a hold on row 1: no room there for a count
+  if (!rx) await relayPeek();                              // what is up there this second
+  if (RS.set !== mine || !RS.until || !rsOwnsRow() || !current) return no();
+  if (!wallNow || wallCustom() || wallPlace() !== 'main' || wallSecond()) return no('No wall count: your route is not the one up');
+  rsWall = { id: current.id, board: current.board, by: (wallNow.by || '').trim(), base: Object.assign({}, state),
+             shown: 0, last: wallNow.payload, ending: false, dead: false, stop: false, asked: false, q: Promise.resolve() };
+  rsWallShow();
+}
+function rsWallShow(){                   // the count for this minute, if it is not the one showing
+  const w = rsWall;
+  if (!w || w.ending || w.asked || rsMinutes() === w.shown) return;
+  w.asked = true;
+  rsWallDo(w, async () => {
+    w.asked = false;
+    if (w.dead || w.stop || w.ending || !RS.until) return;
+    const n = rsMinutes();
+    if (n === w.shown) return;
+    if (!(await rsWallOurs(w))) return rsWallVoid(w, 'Wall count stopped: another route is up');
+    if (w.dead || w.stop || w.ending) return;
+    w.shown = n; rsRow();
+    if (!(await rsWallSend(w, payloadOf(Object.assign({}, rsRowCells(n), w.base))))) rsWallVoid(w, '');
+  });
+}
+function rsWallFinish(w){                // START, the rim twice, and the route again
+  w.ending = true; rsRow();
+  rsWallDo(w, async () => {
+    const wait = ms => new Promise(r => setTimeout(r, ms));
+    const base = payloadOf(Object.assign({}, w.base)), rim = () => payloadFrom(frameCells());
+    const frames = [...'START'].map(ch => [rsLetter(ch), 700]).concat([[rim(), 500], [base, 350], [rim(), 500], [base, 0]]);
+    for (const [payload, ms] of frames){
+      if (w.dead) return;
+      if (w.stop) break;                                   // skipped part way: straight to the route
+      const t0 = Date.now();
+      if (!(await rsWallOurs(w))) return rsWallVoid(w, 'Wall count stopped: another route is up');
+      if (!(await rsWallSend(w, payload))) return rsWallVoid(w, '');
+      await wait(Math.max(0, ms - (Date.now() - t0)));
+    }
+    if (!w.dead && w.last !== base && await rsWallOurs(w)) await rsWallSend(w, base);
+    if (rsWall === w) rsWall = null;
+    rsRow();
+  });
+}
+function rsWallTick(left){               // from the session's clock, four times a second while a rest runs
+  if (!rsWallWant || document.visibilityState !== 'visible') return;
+  if (rsWallFor !== RS.set) return void rsWallStart();      // a rest not settled yet (the page was loaded again part way through it, or the box ticked)
+  const w = rsWall;
+  if (!w) return;
+  if (left * 1000 <= RS_END_LEAD){ if (!w.ending) rsWallFinish(w); }
+  else rsWallShow();
+}
+/* The rest is over, was skipped, or the session has ended (or the box was unticked). If the rest ran its time and
+   START is on its way, START is left to finish: it puts the route back itself. Otherwise the count's lights come
+   off the wall now, if the wall is still as the count left it. */
+function rsWallEnd(skipped){
+  const w = rsWall;
+  rsWallFor = 0;
+  if (!w) return rsRow();
+  if (w.ending && !skipped) return;
+  rsWall = null; w.stop = true; rsRow();
+  if (!w.ending) rsWallDo(w, async () => {
+    const base = payloadOf(Object.assign({}, w.base));
+    if (!w.dead && w.shown && w.last !== base && await rsWallOurs(w)) await rsWallSend(w, base);
+  });
+}
+/* A session that counts on the wall has begun, or the box was ticked while one is on: row 1 is the count's now. If
+   this phone's open route is up there by itself with its grade on that row, it goes up again without the grade. */
+async function rsRowClear(){
+  rsRow();
+  if (!rsOwnsRow() || RS.until || !current || !canSend() || document.visibilityState !== 'visible') return;
+  if (!rx) await relayPeek();
+  if (!rsOwnsRow() || RS.until || !current || !wallNow || wallCustom() || wallPlace() !== 'main') return;
+  const bare = payloadOf(Object.assign({}, state)), graded = payloadOf(Object.assign({}, gradeBarOf(current), state));
+  if (graded === bare || wallNow.payload !== graded) return;           // only ever this route with its grade, and nothing else
+  write(bare, true, { id: current.id, by: (wallNow.by || '').trim(), board: current.board }, false, true);
+}
+$('rsWallChk').onchange = () => {
+  rsWallWant = $('rsWallChk').checked;
+  try{ localStorage.setItem('mb-rest-wall', rsWallWant ? '1' : '0'); }catch(e){}
+  if (!rsWallWant) return rsWallEnd(true);                  // unticked: what the count has on the wall comes off, and the grade is the row's again
+  rsWallFor = 0;                                           // ticked: a rest that is running is taken up at the clock's next beat
+  if (RS.on && !RS.until) rsRowClear(); else rsRow();
+};
 $('rsDots').onclick = e => { const b = e.target.closest('button'); if (!b) return; rsArm(); b.classList.contains('on') ? rsUnpop() : rsPop(); };
 $('rsTime').onclick = () => { rsArm(); if (RS.until) rsOver(false); };
 $('rsTry').onclick = () => rsAlarm();            // hear it and see it now: is the sound up, is the phone on silent
