@@ -18,7 +18,9 @@
                                       n and secs: a go against the clock on a climb by number, which number was reached and how long it took)
      POST /api/w/sun/log/undo         { person }                           take back that climber's last entry
      POST /api/w/sun/log/delete       { person, k }                        take that one entry (k, as the rows give it) out of that climber's logbook
-     GET  /api/w/sun/log?person=&route=&limit=                             logbook rows, newest first
+     POST /api/w/sun/log/import       { person, entries: [{ route, result, t, n?, secs? }], dry? }
+                                      a logbook brought in from a file: many goes at once, each with when it happened
+     GET  /api/w/sun/log?person=&route=&limit=                             logbook rows, the latest to have happened first
      POST /api/w/sun/fix              { by, kind, v, x, y, h?, size? }     the map of holds is wrong here (see below)
      POST /api/w/sun/fix/undo         { k }                                take that back
      POST /api/w/sun/fixes/done       { ks }                               these are in the published map now
@@ -32,7 +34,9 @@
      a  tries since the last send        r  the last send's result, or null
      s  every send's result, in order     d  when the last row was written
      g  the best go against the clock, [number reached, seconds]: the furthest, and of those the quickest
-   and it is always worked out again from the rows, so an undo cannot leave it wrong.
+   and it is always worked out again from the rows, so an undo cannot leave it wrong. The rows are taken in the
+   order the goes happened, which is not always the order they were written: a logbook brought in from a file
+   has goes of last year in it, written today.
 
    The map of holds (which outline on which picture is a hold) is a file that ships with the
    page. It is made from photos by a program, and the program is sometimes wrong, so anyone at
@@ -74,6 +78,7 @@ const SCHEMA = [
      person TEXT NOT NULL, route INTEGER NOT NULL, result TEXT NOT NULL)`,
   `CREATE INDEX IF NOT EXISTS log_pair ON log (wall, person, route, k)`,
   `CREATE INDEX IF NOT EXISTS log_wall ON log (wall, k)`,
+  `CREATE INDEX IF NOT EXISTS log_when ON log (wall, t)`,
   `CREATE TABLE IF NOT EXISTS stats (wall TEXT NOT NULL, person TEXT NOT NULL, route INTEGER NOT NULL, a INTEGER NOT NULL,
      r TEXT, s TEXT NOT NULL, d TEXT, PRIMARY KEY (wall, person, route))`,
   `CREATE TABLE IF NOT EXISTS fixes (k INTEGER PRIMARY KEY AUTOINCREMENT, wall TEXT NOT NULL, t TEXT NOT NULL, who TEXT NOT NULL,
@@ -149,9 +154,8 @@ async function snapshot(db, wall){
 }
 
 /* One climber's tally on one route, from that pair's rows. */
-async function recount(db, wall, person, route){
-  const rows = (await db.prepare('SELECT result, t, n, secs FROM log WHERE wall = ? AND person = ? AND route = ? ORDER BY k')
-    .bind(wall, person, route).all()).results;
+/* One climber's tally on one route, from that climber's goes on it in the order they happened. */
+function tally(rows){
   let a = 0, d = null, gn = null, gs = null; const sends = [];
   for (const row of rows){
     if (row.result === 'try') a++; else { sends.push(row.result); a = 0; }
@@ -159,11 +163,17 @@ async function recount(db, wall, person, route){
     // the best go against the clock: the furthest, and of the goes that got that far the quickest
     if (row.n && row.secs && (gn === null || row.n > gn || (row.n === gn && row.secs < gs))){ gn = row.n; gs = row.secs; }
   }
+  return { a, r: sends.length ? sends[sends.length - 1] : null, s: JSON.stringify(sends), d, gn, gs };
+}
+async function recount(db, wall, person, route){
+  const rows = (await db.prepare('SELECT result, t, n, secs FROM log WHERE wall = ? AND person = ? AND route = ? ORDER BY t, k')
+    .bind(wall, person, route).all()).results;
   if (!rows.length)
     return db.prepare('DELETE FROM stats WHERE wall = ? AND person = ? AND route = ?').bind(wall, person, route).run();
+  const y = tally(rows);
   return db.prepare(`INSERT INTO stats (wall, person, route, a, r, s, d, gn, gs) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT (wall, person, route) DO UPDATE SET a = excluded.a, r = excluded.r, s = excluded.s, d = excluded.d, gn = excluded.gn, gs = excluded.gs`)
-    .bind(wall, person, route, a, sends.length ? sends[sends.length - 1] : null, JSON.stringify(sends), d, gn, gs).run();
+    .bind(wall, person, route, y.a, y.r, y.s, y.d, y.gn, y.gs).run();
 }
 
 const knows = async (db, wall, name) =>
@@ -187,7 +197,7 @@ export async function handle(request, db, now = () => new Date().toISOString()){
       const where = ['wall = ?'], args = [wall];
       if (person){ where.push('person = ?'); args.push(person); }
       if (route){ where.push('route = ?'); args.push(route); }
-      const rows = await db.prepare('SELECT k, t, person, route, result, n, secs FROM log WHERE ' + where.join(' AND ') + ' ORDER BY k DESC LIMIT ?')
+      const rows = await db.prepare('SELECT k, t, person, route, result, n, secs FROM log WHERE ' + where.join(' AND ') + ' ORDER BY t DESC, k DESC LIMIT ?')
         .bind(...args, limit).all();
       // (a row with no clock says nothing of one)
       return json({ entries: rows.results.map(x => { if (!x.n){ delete x.n; delete x.secs; } return x; }) });
@@ -285,6 +295,58 @@ export async function handle(request, db, now = () => new Date().toISOString()){
     await db.prepare('INSERT INTO log (wall, t, person, route, result, n, secs) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(wall, when(), person, route, result, n, secs).run();
     await recount(db, wall, person, route);
     return json(await snapshot(db, wall));
+  }
+
+  /* A logbook brought in from a file (the page's Import CSV): many goes of one climber in one call, each saying when
+     it happened. A go is left out, and said to be, when it is not one (no such route, not a result, no time that
+     can be read, a time still to come, half of a go against the clock) or when the logbook has it already: the same
+     route and the same result in the same minute, so a file brought in twice adds nothing the second time. The rest
+     go in, the oldest first, and the tally of every route touched is counted again. dry: true says what would
+     happen and writes nothing. Five hundred goes a call at most; the page sends a long file in pieces. */
+  if (path === '/log/import'){
+    const person = clean(body.person, 40);
+    if (!person || !(await knows(db, wall, person))) return bad('say who you are first', 404);
+    if (!Array.isArray(body.entries)) return bad('entries must be a list of goes');
+    const entries = body.entries.slice(0, 500);
+    const routes = new Set((await db.prepare('SELECT id FROM routes WHERE wall = ?').bind(wall).all()).results.map(x => x.id));
+    const have = new Set((await db.prepare('SELECT route, result, t FROM log WHERE wall = ? AND person = ?').bind(wall, person).all())
+      .results.map(x => x.route + '|' + x.result + '|' + String(x.t).slice(0, 16)));
+    const nowMs = Date.parse(now()), add = [], skipped = [];
+    entries.forEach((e, i) => {
+      const route = Number(e && e.route), result = e && e.result, t = e && typeof e.t === 'string' ? Date.parse(e.t) : NaN;
+      const timed = !!e && (e.n != null || e.secs != null);
+      const n = e && Number.isInteger(e.n) && e.n >= 1 && e.n <= 999 ? e.n : null;
+      const secs = e && Number.isInteger(e.secs) && e.secs >= 1 && e.secs <= 86400 ? e.secs : null;
+      const why = !routes.has(route) ? 'no such route' : !RESULTS.includes(result) ? 'not a try or a send'
+        : !(Number.isFinite(t) && t > Date.parse('2015-01-01')) ? 'no time that can be read' : t > nowMs ? 'a time still to come'
+        : timed && (n === null || secs === null) ? 'a go against the clock says both how far and how long' : '';
+      if (why) return void skipped.push({ i, why });
+      const iso = new Date(t).toISOString(), key = route + '|' + result + '|' + iso.slice(0, 16);
+      if (have.has(key)) return void skipped.push({ i, why: 'already in the logbook' });
+      have.add(key);
+      add.push({ i, t: iso, route, result, n, secs });
+    });
+    if (body.dry) return json({ dry: true, would: add.length, skipped });
+    if (!add.length) return json({ ...(await snapshot(db, wall)), imported: 0, skipped });
+    add.sort((x, y) => x.t < y.t ? -1 : x.t > y.t ? 1 : x.i - y.i);
+    // (one statement for all of them: the rows are read out of a JSON list)
+    await db.prepare(`INSERT INTO log (wall, t, person, route, result, n, secs)
+        SELECT ?, json_extract(value, '$.t'), ?, json_extract(value, '$.route'), json_extract(value, '$.result'), json_extract(value, '$.n'), json_extract(value, '$.secs')
+        FROM json_each(?)`).bind(wall, person, JSON.stringify(add.map(({ t, route, result, n, secs }) => ({ t, route, result, n, secs })))).run();
+    // the tallies of the routes touched, counted again from everything the climber now has on them
+    const touched = new Set(add.map(x => x.route)), by = new Map();
+    for (const row of (await db.prepare('SELECT route, result, t, n, secs FROM log WHERE wall = ? AND person = ? ORDER BY t, k').bind(wall, person).all()).results){
+      if (!touched.has(row.route)) continue;
+      if (!by.has(row.route)) by.set(row.route, []);
+      by.get(row.route).push(row);
+    }
+    await db.prepare(`INSERT INTO stats (wall, person, route, a, r, s, d, gn, gs)
+        SELECT ?, ?, json_extract(value, '$.route'), json_extract(value, '$.a'), json_extract(value, '$.r'), json_extract(value, '$.s'), json_extract(value, '$.d'),
+               json_extract(value, '$.gn'), json_extract(value, '$.gs')
+        FROM json_each(?) WHERE true
+        ON CONFLICT (wall, person, route) DO UPDATE SET a = excluded.a, r = excluded.r, s = excluded.s, d = excluded.d, gn = excluded.gn, gs = excluded.gs`)
+      .bind(wall, person, JSON.stringify([...by].map(([route, rows]) => ({ route, ...tally(rows) })))).run();
+    return json({ ...(await snapshot(db, wall)), imported: add.length, skipped });
   }
 
   if (path === '/log/undo'){

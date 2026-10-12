@@ -241,6 +241,60 @@ console.log('taking one entry out of a logbook');
   check('with her last entry gone she has no tally on it, and his stands', d.status === 200 && !(d.stats.Ana || {})[rt] && d.stats.Bo[rt].s.join() === 'flash', d.stats || d);
   check('taking the same entry twice finds nothing the second time', (await call('POST', '/api/w/test-d/log/delete', { person: 'Ana', k: rows[1].k })).status === 404);
 }
+console.log('a logbook brought in from a file');
+{
+  const W = '/api/w/test-i';
+  await call('POST', W + '/reset', {});
+  await call('POST', W + '/person', { name: 'Ida' }); await call('POST', W + '/person', { name: 'Jo' });
+  let d = await call('POST', W + '/route', { by: 'Ida', name: 'Slab', grade: 2, marks: [{ h: 'a1', r: 's' }, { h: 'a2', r: 'e' }] });
+  const slab = d.id;
+  d = await call('POST', W + '/route', { by: 'Ida', name: 'Numbers', grade: 4, marks: Array.from({ length: 12 }, (_, i) => ({ h: 'n' + i, r: 'n', n: i + 1 })) });
+  const nums = d.id;
+  // she has logged something today already: a try, then a send
+  await call('POST', W + '/log', { person: 'Ida', route: slab, result: 'try' });
+  d = await call('POST', W + '/log', { person: 'Ida', route: slab, result: '2nd' });
+  check('(before: one send of it, second go)', d.stats.Ida[slab].s.join() === '2nd' && d.stats.Ida[slab].a === 0, d.stats);
+  const file = [
+    { route: slab, result: 'flash', t: '2026-03-01T09:00:00.000Z' },                // a year's-old flash of the same route
+    { route: slab, result: 'try', t: '2026-03-02T09:00:00.000Z' },
+    { route: nums, result: 'try', t: '2026-03-02T09:05:00.000Z', n: 7, secs: 61 },   // a go against the clock
+    { route: nums, result: '3rd', t: '2026-03-03T09:05:00.000Z', n: 12, secs: 200 },
+    { route: 999, result: 'try', t: '2026-03-01T09:00:00.000Z' },                    // no such route
+    { route: slab, result: 'sent', t: '2026-03-01T09:00:00.000Z' },                  // not a result
+    { route: slab, result: 'try', t: 'last week' },                                  // no time
+    { route: slab, result: 'try', t: '2031-01-01T00:00:00.000Z' },                   // still to come
+    { route: nums, result: 'try', t: '2026-03-04T09:00:00.000Z', n: 5 },             // half a go against the clock
+    { route: slab, result: 'flash', t: '2026-03-01T09:00:30.000Z' },                 // the first line again, half a minute on
+  ];
+  check('a stranger cannot import', (await call('POST', W + '/log/import', { person: 'Nobody', entries: file })).status === 404);
+  check('and it wants a list', (await call('POST', W + '/log/import', { person: 'Ida' })).status === 400);
+  d = await call('POST', W + '/log/import', { person: 'Ida', entries: file, dry: true });
+  check('asked first, it says what would go in and what would not, and writes nothing', d.status === 200 && d.dry === true && d.would === 4 && d.skipped.length === 6 &&
+    d.skipped.map(x => x.i).join() === '4,5,6,7,8,9' && (await call('GET', W + '/log?person=Ida')).entries.length === 2, d);
+  check('each line left out says why', d.skipped.map(x => x.why).join(' | ') ===
+    'no such route | not a try or a send | no time that can be read | a time still to come | a go against the clock says both how far and how long | already in the logbook', d.skipped);
+  d = await call('POST', W + '/log/import', { person: 'Ida', entries: file });
+  check('then the four goes are in, each with the time it happened', d.status === 200 && d.imported === 4 && d.skipped.length === 6, d);
+  let l = await call('GET', W + '/log?person=Ida');
+  check('the logbook gives the latest to have happened first, though the old ones were written last', l.entries.length === 6 &&
+    l.entries.map(e => e.t.slice(0, 10)).join() === '2026-10-09,2026-10-09,2026-03-03,2026-03-02,2026-03-02,2026-03-01' && l.entries[0].result === '2nd', l.entries.map(e => e.t + ' ' + e.result));
+  check('the tally is counted in the order the goes happened: the old flash is her first send, and no try has come since her last',
+    d.stats.Ida[slab].s.join() === 'flash,2nd' && d.stats.Ida[slab].a === 0 && d.stats.Ida[slab].r === '2nd' && d.stats.Ida[slab].d.startsWith('2026-10-09'), d.stats.Ida[slab]);
+  check('a go against the clock keeps how far and how long, and the best of them is in the tally',
+    d.stats.Ida[nums].s.join() === '3rd' && JSON.stringify(d.stats.Ida[nums].g) === '[12,200]' && l.entries.some(e => e.route === nums && e.n === 7 && e.secs === 61), d.stats.Ida[nums]);
+  d = await call('POST', W + '/log/import', { person: 'Ida', entries: file });
+  check('the same file again adds nothing', d.imported === 0 && d.skipped.filter(x => x.why === 'already in the logbook').length === 5 && (await call('GET', W + '/log?person=Ida')).entries.length === 6, d);
+  check('nobody else has gained anything', !d.stats.Jo && (await call('GET', W + '/log?person=Jo')).entries.length === 0);
+  // a go logged with an earlier time, the ordinary way, is counted where it belongs too
+  d = await call('POST', W + '/log', { person: 'Jo', route: slab, result: '3rd' });
+  d = await call('POST', W + '/log', { person: 'Jo', route: slab, result: 'flash', t: '2026-02-01T10:00:00Z' });
+  check('an earlier go written later is her first send all the same', d.stats.Jo[slab].s.join() === 'flash,3rd' && d.stats.Jo[slab].r === '3rd', d.stats.Jo[slab]);
+  // many at once
+  const many = Array.from({ length: 500 }, (_, i) => ({ route: i % 2 ? slab : nums, result: 'try', t: new Date(Date.parse('2026-01-01T08:00:00Z') + i * 3600e3).toISOString() }));
+  d = await call('POST', W + '/log/import', { person: 'Jo', entries: many.concat([{ route: slab, result: 'try', t: '2026-09-09T09:09:00Z' }]) });
+  check('five hundred goes go in at one call, and no more than that', d.imported === 500 && (await call('GET', W + '/log?person=Jo&limit=3000')).entries.length === 502, [d.imported, d.error]);
+  await call('POST', W + '/reset', {});
+}
 check('a body that is not JSON is refused',
   (await handle(new Request('https://x.test/api/w/sun/person', { method: 'POST', body: 'name=Will' }), db)).status === 400);
 check('other methods are refused', (await handle(new Request('https://x.test/api/w/sun', { method: 'DELETE' }), db)).status === 405);

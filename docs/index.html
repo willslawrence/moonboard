@@ -707,17 +707,17 @@
   #gamePanel[hidden]{display:none}
   #snakePanel{gap:8px !important}
   #snakePanel #snPad{margin-top:auto}      /* pushed to the bottom of the sheet */
-  #logPanel,#snakePanel,#entryPanel,#pairPanel,#igPanel{position:fixed;inset:0;z-index:60;background:var(--bg);
+  #snakePanel,#pairPanel,#igPanel{position:fixed;inset:0;z-index:60;background:var(--bg);
              display:flex;flex-direction:column;gap:12px;overflow-y:auto;
              padding:calc(env(safe-area-inset-top) + 16px) 16px
                      calc(env(safe-area-inset-bottom) + 16px)}
-  #logPanel[hidden],#snakePanel[hidden],#entryPanel[hidden],#pairPanel[hidden],#igPanel[hidden]{display:none}
+  #snakePanel[hidden],#pairPanel[hidden],#igPanel[hidden]{display:none}
   /* The timed session's setting-up is a sheet that rises from the foot of the screen, with the board dimmed behind
      it, as on the Sun board's page. It filled the screen until 2026-10-12 (Will: "the time session pop up on the sun
      board is good but on the moon board it take up the whole acreen. I like the sun board one better"). A tap on the
      dimmed board shuts it, as Close does. */
-  #rsScrim{position:fixed;left:0;top:0;right:0;bottom:0;z-index:60;background:rgba(0,0,0,.45)}
-  #rsScrim[hidden]{display:none}
+  #rsScrim,#logScrim{position:fixed;left:0;top:0;right:0;bottom:0;z-index:60;background:rgba(0,0,0,.45)}
+  #rsScrim[hidden],#logScrim[hidden]{display:none}
   #rsPanel{position:fixed;left:0;right:0;bottom:0;z-index:61;max-height:92vh;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;
            background:var(--bg);border-radius:16px 16px 0 0;border-top:1px solid var(--edge);
            padding:14px var(--pad) calc(env(safe-area-inset-bottom) + 14px)}
@@ -774,38 +774,65 @@
   #pairGo[hidden]{display:none}
   button.res{padding:15px;font-size:15px;font-weight:600;border-radius:9px}
   button.res.pick{background:var(--ink);border-color:var(--ink);color:var(--onink)}
-  #logWho{max-width:220px}
-  #logSum{font-size:12px;color:var(--dim)}
-  #logRows .e{display:flex;align-items:center;gap:9px;padding:9px 2px;
-              border-bottom:1px solid var(--line)}
-  #logRows .e .d{flex:none;width:52px;font-size:11px;color:var(--dimmer)}
-  #logRows .e .n{flex:1;min-width:0;font-size:14px;font-weight:600;
-                 white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #logRows .e .rs{flex:none;padding:2px 7px;border-radius:5px;
-                  font:700 10px ui-monospace,Menlo,monospace;
-                  background:var(--chip);color:var(--dim)}
-  #logRows .e.sent .rs{background:#22c55e;color:#06240e}
-  #logRows .none{font-size:12px;color:var(--dimmer);padding:8px 2px}
-  #logRows .day{display:flex;align-items:center;gap:8px;padding:11px 2px;cursor:pointer;
-                border-bottom:1px solid var(--edge);user-select:none;-webkit-user-select:none}
-  #logRows .day:active{background:var(--panel)}
-  #logRows .day .cv{flex:none;color:var(--dimmer);font-size:14px;
-                    transition:transform .12s;display:inline-block}
-  #logRows .day.open .cv{transform:rotate(90deg)}
-  #logRows .day b{flex:1;font-size:14px;font-weight:600}
-  #logRows .day .ds{flex:none;font-size:11px;color:var(--dimmer)}
-  #logRows .dayRows[hidden]{display:none}
-  #logRows .dayRows .e{padding-left:18px}
-  #logRows .dayRows .e .d{width:58px}
-  #logRows .e{user-select:none;-webkit-user-select:none}
-  #logRows .e:active{background:var(--panel)}
+  /* ---- the Logbook: a sheet at the foot of the screen, laid out as the Sun board's is ----
+     Will, 2026-10-12, of matching the two walls' logbooks: "good idea". Whose it is, the buttons for the file and
+     the lock, a line that sums it up, every go by session with the newest open, then everyone's points. It is as
+     tall as a sheet goes, so that it reads as a place. (It took the whole screen, and listed a day to a line.) */
+  #logPanel{position:fixed;left:0;right:0;bottom:0;z-index:61;height:92vh;height:92dvh;overflow-y:auto;overscroll-behavior:contain;
+            background:var(--bg);border-radius:16px 16px 0 0;border-top:1px solid var(--edge);
+            padding:14px var(--pad) calc(env(safe-area-inset-bottom) + 14px)}
+  #logPanel[hidden]{display:none}
+  #logPanel .lbl{margin:20px 0 7px}
+  #logWho{height:40px;padding:0 10px;font-size:16px}
+  .bookBtns{display:flex;align-items:center;gap:8px;margin-top:8px}
+  .bookBtns button.mini{flex:1 1 0;min-width:0;padding:8px 4px;font-size:12.5px}
+  .bookBtns button.tipBtn{margin-left:0}
+  #logFile{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}      /* out of sight but in the page: a phone opens its picker for it */
+  #logHint{margin:8px 0 0;font-size:12.5px;color:var(--dim);line-height:1.4}
+  #logHint:empty{display:none}
+  /* what an import did, and what it left out */
+  #logNote{margin:8px 0 0;padding:8px 10px;border:1px solid var(--edge);border-radius:9px;background:var(--panel);font-size:12.5px;line-height:1.45;color:var(--ink)}
+  #logNote[hidden]{display:none}
+  #logNote.bad{border-color:#ef4444}
+  #logSum{margin:10px 0 4px;font-size:12.5px;color:var(--dim);line-height:1.5}
+  /* a session to a line, which opens to its goes */
+  .lpses{border-bottom:1px solid var(--line)}
+  .lpses > .h{display:flex;align-items:center;gap:9px;padding:11px 2px;cursor:pointer;user-select:none;-webkit-user-select:none}
+  .lpses > .h:active{background:var(--panel)}
+  .lpses > .h .cv{flex:none;color:var(--dimmer);font-size:13px;transition:transform .15s}
+  .lpses.open > .h .cv{transform:rotate(90deg)}
+  .lpses > .h b{flex:1;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lpses > .h .s{flex:none;font-size:12px;color:var(--dim)}
+  .lpses > .h .gd{font-size:9px}
+  .lpses > .body{padding:0 0 4px 12px}
+  .lpses > .body[hidden]{display:none}
+  .lpses > .body .bke:last-child{border-bottom:0}
+  /* a go: when, the route and its grade, how it went, a padlock if it is locked, and three dots on one of your own */
+  .bke{display:flex;align-items:center;gap:9px;padding:10px 2px;border-bottom:1px solid var(--line);user-select:none;-webkit-user-select:none}
+  .bke .d{flex:none;width:56px;font-size:11px;color:var(--dimmer)}
+  .bke .n{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:6px}
+  .bke .n b{min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bke .n .gd{flex:none;font-size:9px}
+  .bke .rs{flex:none;padding:2px 7px;border-radius:5px;background:var(--panel2);font-size:11.5px;font-weight:600;white-space:nowrap}
+  .bke.sent .rs{background:#22c55e;color:#06240e}
+  .bke .lk{flex:none;font-size:10px;color:var(--dimmer)}
+  .bke .lk:empty{display:none}
+  .bke .mo{flex:none;width:26px;text-align:center;color:var(--dim);font-size:19px;line-height:1;letter-spacing:.02em}
+  .bke.own:active{background:var(--panel)}
+  /* one entry, in a card over the logbook: what it is, and the buttons that lock it or take it out. The logbook
+     stays where it was under it. */
+  #entryPanel{position:fixed;left:0;top:0;right:0;bottom:0;z-index:63;display:flex;align-items:flex-end;background:rgba(0,0,0,.5)}
+  #entryPanel[hidden]{display:none}
+  #entryPanel .card{flex:1 1 auto;background:var(--bg);border-radius:16px 16px 0 0;border-top:1px solid var(--edge);
+                    padding:14px var(--pad) calc(env(safe-area-inset-bottom) + 14px)}
+  #entryPanel .two{margin-top:2px}
+  #enDelete{background:#dc2626;border-color:#dc2626;color:#fff;font-weight:700}
+  #enDelete:disabled{background:var(--panel2);border-color:var(--edge);color:var(--dim)}
+  #enUnlock{margin-top:8px}
+  #entryPanel .hint{margin-top:10px}
   #snakeBtn[hidden]{display:none}        /* put away: through the relay the wall is too slow for it (Will, 2026-10-11) */
-  #logRows .e .mo{flex:none;width:24px;text-align:center;color:var(--dim);font-size:19px;line-height:1}      /* three dots: a tap opens the entry */
-  #logRows .e .lk{flex:none;font-size:10px;color:var(--dimmer)}
-  #enFor{font-size:15px;font-weight:600}
-  #enFor span{display:block;font-size:12px;color:var(--dimmer);font-weight:400;margin-top:2px}
-  #enPicks{display:grid;gap:8px}
-  #enPicks button:disabled{opacity:.35}
+  #enFor{margin:2px 0 14px;font-size:14px;color:var(--dim);line-height:1.5}
+  #enFor b{display:block;font-size:17px;color:var(--ink)}
   #ptsRank .r{display:flex;align-items:center;gap:9px;padding:7px 2px;
               border-bottom:1px solid var(--line);font-size:13px}
   #ptsRank .r .pos{flex:none;width:20px;color:var(--dimmer);
@@ -1127,8 +1154,8 @@
   /* a row whose picker is too long for the row: the picker under its name, at full width */
   .optCol{padding:0 0 12px}
   .optCol > .opt{min-height:40px;padding:6px 0 4px}
-  .card{border:1px solid var(--edge);border-radius:14px;background:var(--panel);padding:0 12px}
-  .card > * + *{border-top:1px solid var(--line)}
+  #setPanel .card{border:1px solid var(--edge);border-radius:14px;background:var(--panel);padding:0 12px}
+  #setPanel .card > * + *{border-top:1px solid var(--line)}
   /* ---- the i beside an option, and the bubble it opens ----
      Will, 2026-10-12: "put the descriptions or explanations inside a tooltip for each. Those [would] significantly
      clean up the setting page." The words are in the page still, out of sight, straight after their i (.tipTxt);
@@ -1173,6 +1200,23 @@
   #a2hsHow p{margin:0;font-size:13.5px;line-height:1.5;color:var(--dim)}
   #a2hsHow ol{margin:0;padding-left:20px;font-size:14px;line-height:1.6}
   #a2hsHow button{margin-top:16px}
+  /* ---- what a finger does on the picture: a card at the foot, shown once (see gestures at the foot of the script) ---- */
+  #gestHow{position:fixed;left:0;top:0;right:0;bottom:0;z-index:95;display:flex;align-items:flex-end;background:rgba(0,0,0,.5)}
+  #gestHow[hidden]{display:none}
+  #gestHow .card{flex:1 1 auto;max-height:92vh;max-height:92dvh;overflow-y:auto;background:var(--bg);color:var(--ink);border-radius:16px 16px 0 0;
+                 border-top:1px solid var(--edge);padding:16px 16px calc(env(safe-area-inset-bottom) + 16px)}
+  #gestHow h2{margin:0 0 4px;font-size:18px}
+  #gestHow p{margin:0 0 6px;font-size:13.5px;line-height:1.5;color:var(--dim)}
+  #gestHow ul{list-style:none;margin:0;padding:0}
+  #gestHow li{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+  #gestHow li:last-child{border-bottom:0}
+  #gestHow li > i{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--ink);color:var(--onink)}
+  #gestHow li svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  #gestHow li svg .f{fill:currentColor;stroke:none}
+  #gestHow li b{display:block;font-size:14.5px;font-weight:700}
+  #gestHow li span{display:block;margin-top:1px;font-size:12.5px;line-height:1.4;color:var(--dim)}
+  #gestHow button{margin-top:14px}
+  #helpBtns button{padding:11px 8px;font-size:13px}
 </style>
 </head>
 <body>
@@ -1446,8 +1490,8 @@
   <!-- Settings, in this order since 2026-10-12 (Will: "You can re organize the setting page for a better order of
        options"). Which wall, first, as he asked on 2026-10-11 ("put that option change right at the top"), and who
        is climbing; then what this phone does with the wall's lights; how the app looks on this phone; the games;
-       and last the two things that are the same for everyone and seldom change, with the connection's log under
-       them. An option that is on or off is a row with a switch, and what it does is behind the small i beside it. -->
+       and last the two things that are the same for everyone and seldom change, then Help (the card of what a
+       finger does on the picture, and the one about the Home Screen) with the connection's log under it. An option that is on or off is a row with a switch, and what it does is behind the small i beside it. -->
   <div id="wallPick">
     <div class="lbl tipLbl">Which wall<button type="button" class="tipBtn" aria-label="About: the two walls" aria-expanded="false">i</button><span class="tipTxt">Both are at Will's. The Sun board has no lights: its routes are made by picking holds on a picture of it, and it has a list of routes, a logbook and points of its own. The sun at the top of the page goes there too.</span></div>
     <div class="two">
@@ -1521,6 +1565,12 @@
     </select>
   </div>
 
+  <div class="lbl">Help</div>
+  <div class="two" id="helpBtns">
+    <button id="gestBtn" class="ghost" type="button">Picture gestures</button>
+    <button id="a2hsBtn" class="ghost" type="button">Add to Home Screen</button>
+  </div>
+
   <div class="lbl tipLbl">Connection log<button type="button" class="tipBtn" aria-label="About: the connection log" aria-expanded="false">i</button><span class="tipTxt">What the app has been doing with the wall and the relay, the newest line last. Copy log puts it on the clipboard, to pass on when something is not working.</span></div>
   <div id="log">idle.</div>
   <div style="margin-top:10px"><button id="copy" class="ghost">Copy log</button></div>
@@ -1575,23 +1625,26 @@
   <div id="igG2"></div>
 </div>
 
-<div id="logPanel" hidden>
-  <div id="gameHead">
-    <b>Logbook</b>
-    <button id="logClose" class="ghost mini">Close</button>
-  </div>
-  <select id="logWho"></select>
-  <div class="two">
-    <button id="logLock" class="ghost mini">Lock my entries</button>
+<!-- The Logbook: a sheet at the foot of the screen, laid out as the Sun board's is. Every go of one climber, by
+     session, newest first; then everyone's points. An entry of your own is opened by tapping it. -->
+<div id="logScrim" hidden></div>
+<div id="logPanel" hidden role="dialog" aria-label="Logbook">
+  <div class="shHead"><h2>Logbook</h2><button id="logClose" class="ghost">Close</button></div>
+  <select id="logWho" aria-label="Whose logbook"></select>
+  <div class="bookBtns">
     <button id="logCsv" class="ghost mini" disabled>Export CSV</button>
+    <button id="logImp" class="ghost mini" disabled>Import CSV</button>
+    <button id="logLock" class="ghost mini" disabled>Lock my entries</button>
+    <button type="button" class="tipBtn" aria-label="About: the file, and the lock" aria-expanded="false">i</button><span class="tipTxt"><b>Export CSV</b> makes a file of the logbook that is showing, a line a go. <b>Import CSV</b> reads a file laid out the same way and adds its goes to your own logbook. To bring an old logbook in: export first (an empty logbook gives the line of headings), fill in a line for each go, and import the file. A line needs a date (2026-10-12), the route's name as the list has it, and how it went: try, flash, 2nd go, 3rd go or 4+ goes. The time and the other columns may be left empty; the hold set, if empty, is the one on the wall. Goes come in locked, a try and a send at most for each route each day, and a go the logbook already has is left out. <b>Lock my entries</b> locks every go of yours, so that none can be deleted by a slip.</span>
   </div>
-  <div class="hint" style="margin:0">Tap a row to delete it</div>
+  <input type="file" id="logFile" accept=".csv,text/csv,text/comma-separated-values,text/plain" tabindex="-1" aria-hidden="true">
+  <p id="logHint"></p>
+  <div id="logNote" role="status" hidden></div>
   <div id="logSum"></div>
   <div id="logRows"></div>
 
-  <div class="lbl" style="margin-top:18px">Points</div>
+  <div class="lbl tipLbl">Points<button type="button" class="tipBtn" aria-label="About: the points" aria-expanded="false">i</button><span class="tipTxt">MoonBoard scoring: 350 at 5+, 50 more for each grade above it, by the setter's grade; then 53 more for a flash, 2 for a second go, 1 for a third. Benchmarks only, and only the first time you send a route.</span></div>
   <div id="ptsRank"></div>
-  <div class="hint" id="ptsNote"></div>
 </div>
 
 <!-- The timed session's setting-up: a sheet at the foot of the screen, opened by the timer button on the board. -->
@@ -1630,17 +1683,18 @@
   <div id="snRank" hidden></div>
 </div>
 
-<div id="entryPanel" hidden>
-  <div id="gameHead">
-    <b>Log entry</b>
-    <button id="enClose" class="ghost mini">Cancel</button>
+<!-- One entry of the logbook, in a card over it: keep it, take it out, or lock it. -->
+<div id="entryPanel" hidden role="dialog" aria-label="Log entry">
+  <div class="card">
+    <div class="shHead"><h2>Log entry</h2></div>
+    <div id="enFor"></div>
+    <div class="two">
+      <button id="enClose" class="ghost">Keep it</button>
+      <button id="enDelete">Delete this entry</button>
+    </div>
+    <button id="enUnlock" class="ghost">Lock</button>
+    <div class="hint" id="enHint"></div>
   </div>
-  <div id="enFor"></div>
-  <div id="enPicks">
-    <button id="enUnlock" class="res">Unlock</button>
-    <button id="enDelete" class="res">Delete this entry</button>
-  </div>
-  <div class="hint" id="enHint"></div>
 </div>
 
 <div id="gamePanel" hidden>
@@ -1680,6 +1734,21 @@
     <button id="a2hsOk" class="solid">Got it</button>
   </div>
 </div>
+<!-- What a finger does on the picture: shown once, the first time a route is open on the board, and again from Settings. -->
+<div id="gestHow" hidden role="dialog" aria-label="What a finger does on the picture">
+  <div class="card">
+    <h2>On the picture of the wall</h2>
+    <p>Five things a finger does there.</p>
+    <ul>
+      <li><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle class="f" cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="10" stroke-dasharray="3 3.3"/></svg></i><div><b>Two taps</b><span>The picture fills the screen, for a closer look. Two more put the page back.</span></div></li>
+      <li><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle class="f" cx="12" cy="5" r="2.4"/><path d="M12 10v10M7.5 15.5L12 20l4.5-4.5"/></svg></i><div><b>A short swipe down</b><span>The same: on to the full screen, and off it again.</span></div></li>
+      <li><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle class="f" cx="12" cy="20.5" r="2.2"/><path d="M12 16V3M7.5 7.5L12 3l4.5 4.5"/></svg></i><div><b>A long swipe up</b><span>Lights the open route on the wall. It has to go far, so that it cannot happen by a slip.</span></div></li>
+      <li><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg></i><div><b>A flick left or right</b><span>The next route in the list, or the one before.</span></div></li>
+      <li><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/><circle class="f" cx="12" cy="12" r="2.8"/></svg></i><div><b>On the full screen, tap a hold</b><span>It is picked. Light the holds you pick, or find the routes that use them.</span></div></li>
+    </ul>
+    <button id="gestOk" class="solid">Got it</button>
+  </div>
+</div>
 <script>
 /* On the address the app has left, nothing below runs: the first lines of the page are
    already sending this phone on, and the card is on the screen. */
@@ -1687,7 +1756,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-12 09:27';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-12 10:24';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -4131,6 +4200,7 @@ function loadRoute(r, look){
   log('loaded "' + r.name + '" \u2014 ' + GRADES[r.grade] + ' (V' + VGRADE[r.grade] + '), set by ' + r.setter);
   if (!look && $('auto').checked && rx) sendProblem();
   if (page === 'list') showPage('board');     // picked from the page of routes: back to the board, with it open
+  if (window.gestMaybe) gestMaybe();          // the first route this phone has opened: what a finger does on the picture
 }
 
 function clearRoute(leaveWall){
@@ -4834,10 +4904,6 @@ function ptsRank(){
   const rows = people.map(n => ({ n, ...scoreFor(n) }))
                      .filter(r => r.total > 0)
                      .sort((a, b) => b.total - a.total);
-  $('ptsNote').textContent = rows.length
-    ? 'MoonBoard scoring: 350 at 5+, +50 a grade off the setter grade, plus ' +
-      'flash +53, 2nd +2, 3rd +1. Benchmarks only, first ascent counts.'
-    : '';
   if (!rows.length){
     const d = document.createElement('div');
     d.className = 'none';
@@ -4890,14 +4956,15 @@ function openEntry(e, p){
   const b = document.createElement('b');
   b.textContent = p ? p.name : 'problem ' + e.id;
   const sub = document.createElement('span');
-  sub.textContent = new Date(e.t).toLocaleString() + ' \u00b7 ' + (e.rep ? RESULT_WORDS[shown(e)] : e.result) +
-    (e.lock ? ' \u00b7 locked' : '');
+  sub.textContent = (RESULT_WORDS[shown(e)] || e.result) + ' \u00b7 ' +
+    new Date(logTime(e)).toLocaleString(undefined, dayOnly(e) ? { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }
+      : { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) + (e.lock ? ' \u00b7 locked' : '');
   $('enFor').append(b, sub);
-  $('enUnlock').textContent = e.lock ? 'Unlock' : 'Lock';
+  $('enUnlock').textContent = e.lock ? 'Unlock it' : 'Lock it';
   $('enDelete').disabled = !!e.lock;
   $('enHint').textContent = e.lock
-    ? 'Locked entries cannot be deleted. Unlock it first if you really mean to.'
-    : 'Deleting recalculates your attempts and score from what is left.';
+    ? 'A locked entry cannot be deleted. Unlock it first if you really mean to.'
+    : 'Deleting works your tries, sends and points out again from what is left. Locked, it cannot be deleted by a slip.';
   showPanel('entry');
 }
 
@@ -5004,7 +5071,7 @@ function histFill(entries, r, me, sum, rows){
     row.innerHTML = '<div class="n"><b></b><span></span></div><div class="r"><div class="dots"></div><div class="w"></div></div>';
     row.querySelector('b').textContent = sessionDay(s);
     // imported rows carry the day it was climbed but not a real time of day
-    row.querySelector('span').textContent = s.rows.every(e => e.src === 'moonboard') ? 'MoonBoard app'
+    row.querySelector('span').textContent = s.rows.every(dayOnly) ? 'imported'
       : new Date(s.t0).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
     row.querySelector('.dots').innerHTML = goDots(goes);
     row.querySelector('.w').textContent = sent.length
@@ -5092,35 +5159,55 @@ async function openLog(){
   sel.innerHTML = '';
   people.forEach(p => sel.appendChild(new Option(p, p)));
   sel.value = people.includes(keep) ? keep : (people[0] || '');
+  sel.hidden = !people.length;
+  logOpen = new Set([0]); logNote('');
   showPanel('log');
   ptsRank();
   loadLog();
 }
 
-/* ---------- the logbook, as a file ----------
-   Will, 2026-10-12: "Add an export log option which would export a CSV of the climbers log book." Export CSV, in
-   the Logbook, makes a file of the logbook that is showing, whoever's it is: a line a go, the oldest first, with
-   the day, the time, the climber, the route, its grade both ways, how the go went, whether a send was a repeat,
-   who set the route and which hold set it is on. On a phone the file goes to the share sheet (Save to Files,
-   AirDrop, Mail, Numbers); where there is none it is downloaded. The goes are the ones the Logbook has already
-   fetched, so the sheet opens on the tap itself: a phone lets a page open one at no other time. */
+/* ---------- the logbook, as a file, and a file into the logbook ----------
+   Will, 2026-10-12: "Add an export log option which would export a CSV of the climbers log book." And then: "can
+   we add a logbook import button. if they use the same csv format. to get started, they can click the button
+   Export CSV and it exports whatever is in their app. Maybe it's nothing and it just shows the columns or maybe
+   it's a few logs."
+
+   Export CSV makes a file of the logbook that is showing, whoever's it is: a line a go, the oldest first, with the
+   day, the time, the climber, the route, its grade both ways, how the go went, whether a send was a repeat, who
+   set the route, which hold set it is on, and the route's number. A logbook with nothing in it gives the line of
+   headings and no more, which is the layout to fill in. On a phone the file goes to the share sheet (Save to
+   Files, AirDrop, Mail, Numbers); where there is none it is downloaded. The goes are the ones the Logbook has
+   already fetched, so the sheet opens on the tap itself: a phone lets a page open one at no other time.
+
+   Import CSV reads a file laid out the same way and adds its goes to the logbook of whoever is climbing, and to
+   nobody else's. A line needs a day, a route and how it went; everything else may be left empty. The route is
+   found by its number if the line has one, and by its name on the line's hold set if not (the hold set on the
+   wall, if the line names none). The goes are handed to the relay as a logbook brought in from elsewhere, which is
+   what they are: they come in locked, a try and a send at most for each route each day, and a go the logbook has
+   already is left out, so a file can be imported twice without harm. What is about to happen is said first and
+   asked about, and what was left out, and why, is said afterwards. */
 let logShown = null;                      // { who, entries }: what the Logbook is showing
+const CSV_HEAD = ['Date', 'Time', 'Climber', 'Route', 'Grade', 'V grade', 'Result', 'Repeat send', 'Setter', 'Hold set', 'Wall', 'Route id'];
 const CSV_RESULT = { try: 'try', flash: 'flash', '2nd': '2nd go', '3rd': '3rd go', '4+': '4+ goes' };
+const CR = String.fromCharCode(13), NL = String.fromCharCode(10), TAB = String.fromCharCode(9), BOM = String.fromCharCode(0xfeff);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 function csvCell(v){
   let s = v === null || v === undefined ? '' : String(v);
-  if (/^[=+\u002d@\u0009\u000d]/.test(s)) s = "'" + s;          // a sheet must not take a route's name for a sum
-  return /[",\u000d\u000a]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  if ('=+-@'.includes(s[0] || ' ') || s[0] === TAB || s[0] === CR) s = "'" + s;       // a sheet must not take a route's name for a sum
+  return s.includes('"') || s.includes(',') || s.includes(CR) || s.includes(NL) ? '"' + s.split('"').join('""') + '"' : s;
 }
 // (the first character tells Excel the file is UTF-8, which the names in it need)
-const csvOf = rows => '\ufeff' + rows.map(r => r.map(csvCell).join(',')).join('\u000d\u000a') + '\u000d\u000a';
-const csvDay = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const csvOf = rows => BOM + rows.map(r => r.map(csvCell).join(',')).join(CR + NL) + CR + NL;
+const pad2 = n => String(n).padStart(2, '0');
+const csvDay = d => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+const dayOnly = e => e.src === 'moonboard' && String(e.t).slice(11, 16) === '00:00';       // brought in with a day and no time
 function logCsvRows(who, entries){
-  const rows = [['Date', 'Time', 'Climber', 'Route', 'Grade', 'V grade', 'Result', 'Repeat send', 'Setter', 'Hold set', 'Wall']];
+  const rows = [CSV_HEAD.slice()];
   entries.slice().sort((a, b) => logTime(a) - logTime(b)).forEach(e => {
-    const d = new Date(e.t), ok = !isNaN(d), r = byId[e.id], set = r && BOARDS.find(b => b.key === r.board);
-    rows.push([ok ? csvDay(d) : '', ok ? String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') : '',
+    const d = new Date(logTime(e)), ok = !isNaN(d) && logTime(e) > 0, r = byId[e.id], set = r && BOARDS.find(b => b.key === r.board);
+    rows.push([ok ? csvDay(d) : '', ok && !dayOnly(e) ? pad2(d.getHours()) + ':' + pad2(d.getMinutes()) : '',
                e.person || who, r ? r.name : 'problem ' + e.id, r ? GRADES[r.grade] : '', r ? 'V' + VGRADE[r.grade] : '',
-               CSV_RESULT[e.result] || e.result, e.rep ? 'yes' : '', r ? r.setter : '', set ? set.label : '', 'MoonBoard']);
+               CSV_RESULT[e.result] || e.result, e.rep ? 'yes' : '', r ? r.setter : '', set ? set.label : '', 'MoonBoard', e.id]);
   });
   return rows;
 }
@@ -5145,7 +5232,7 @@ function fileOut(name, text, type){
 let csvBusy = false;                      // one at a time: a second tap while the share sheet is coming up starts nothing behind it
 $('logCsv').onclick = async () => {
   const b = $('logCsv'), shown = logShown;
-  if (csvBusy || !shown || !shown.entries.length) return;
+  if (csvBusy || !shown) return;
   const name = 'wills-wall-moonboard-' + fileSlug(shown.who) + '-' + csvDay(new Date()) + '.csv';
   let how = 'saved';
   csvBusy = true;
@@ -5153,115 +5240,276 @@ $('logCsv').onclick = async () => {
   catch(e){ how = 'failed'; log('export: ' + e.message); }
   csvBusy = false;
   if (how === 'cancelled') return;
-  b.textContent = how === 'failed' ? 'Could not export' : how === 'shared' ? 'Exported' : 'Saved to downloads';
+  b.textContent = how === 'failed' ? 'Not exported' : how === 'shared' ? 'Exported' : 'Saved';
   setTimeout(() => { b.textContent = 'Export CSV'; }, 2200);
 };
 
+/* A file of lines and cells: commas between the cells (or semicolons or tabs, which some sheets write: whichever
+   the first line has most of), a cell in double quotes where it has one of those or a line's end in it, and a
+   double quote in such a cell written twice. Empty lines are left out. */
+function csvParse(text){
+  text = String(text || '');
+  if (text[0] === BOM) text = text.slice(1);
+  const first = text.split(NL)[0], count = ch => first.split(ch).length - 1;
+  const sep = count(';') > count(',') && count(';') >= count(TAB) ? ';' : count(TAB) > count(',') ? TAB : ',';
+  const rows = [];
+  let row = [], cell = '', quoted = false;
+  for (let i = 0; i < text.length; i++){
+    const c = text[i];
+    if (quoted){
+      if (c !== '"') cell += c;
+      else if (text[i + 1] === '"'){ cell += '"'; i++; }
+      else quoted = false;
+    }
+    else if (c === '"' && cell === '') quoted = true;
+    else if (c === sep){ row.push(cell); cell = ''; }
+    else if (c === NL || c === CR){
+      if (c === CR && text[i + 1] === NL) i++;
+      row.push(cell); cell = '';
+      rows.push(row); row = [];
+    }
+    else cell += c;
+  }
+  if (cell !== '' || row.length){ row.push(cell); rows.push(row); }
+  return rows.map(r => r.map(c => c.trim())).filter(r => r.some(c => c !== ''));
+}
+const csvWord = s => String(s || '').normalize('NFKC').toLowerCase().replace(/\s+/g, ' ').trim();
+// how a go went, from the words a file might use for it
+function csvResult(v){
+  const s = csvWord(v).replace(/^session /, '').replace(/[^a-z0-9+ ]/g, '').trim();
+  if (/^flash/.test(s)) return 'flash';
+  if (/^(2|second)/.test(s)) return '2nd';
+  if (/^(3|third)/.test(s)) return '3rd';
+  if (/^(4|more|sent|send|top)/.test(s)) return '4+';
+  if (/^(try|tried|attempt|project|fail|fell)/.test(s)) return 'try';
+  return null;
+}
+/* A day, and perhaps a time, as a file may write them: 2026-10-12, or 12/10/2026 with the day or the month first
+   (dayFirst says which; see csvDayFirst), or with the month as a word. Nothing that is not a real day. */
+function csvWhen(day, time, dayFirst){
+  let y, m, d;
+  let a = /^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/.exec(day);
+  if (a){ y = +a[1]; m = +a[2]; d = +a[3]; }
+  else if ((a = /^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2}|\d{4})$/.exec(day))){
+    y = +a[3]; if (y < 100) y += 2000;
+    if (dayFirst){ d = +a[1]; m = +a[2]; } else { m = +a[1]; d = +a[2]; }
+  } else {
+    const t = /[a-z]{3}/i.test(day) ? new Date(day) : null;
+    if (!t || isNaN(t)) return null;
+    y = t.getFullYear(); m = t.getMonth() + 1; d = t.getDate();
+  }
+  const real = new Date(y, m - 1, d);
+  if (real.getFullYear() !== y || real.getMonth() !== m - 1 || real.getDate() !== d || y < 2015) return null;
+  let hh = 0, mm = 0, timed = false;
+  const c = /^(\d{1,2})[:.](\d{2})(?::\d{2})?\s*([ap])?\.?m?\.?$/i.exec(String(time || '').trim());
+  if (c){
+    hh = +c[1]; mm = +c[2];
+    if (c[3]){ const pm = c[3].toLowerCase() === 'p'; if (hh === 12) hh = pm ? 12 : 0; else if (pm) hh += 12; }
+    if (hh > 23 || mm > 59) return null;
+    timed = true;
+  } else if (String(time || '').trim()) return null;
+  return { y, m, d, hh, mm, timed, key: y + '-' + pad2(m) + '-' + pad2(d) };
+}
+// in "3/4/2026", which is the day? The file says, if any of its lines has a number over twelve; else the phone's own way
+function csvDayFirst(days){
+  let first = false, second = false;
+  days.forEach(s => { const a = /^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2}|\d{4})$/.exec(s); if (a){ if (+a[1] > 12) first = true; if (+a[2] > 12) second = true; } });
+  if (first !== second) return first;
+  try{ const parts = new Intl.DateTimeFormat().formatToParts(new Date(2020, 11, 25)).map(p => p.type); return parts.indexOf('day') < parts.indexOf('month'); }catch(e){ return true; }
+}
+// which hold set a line means: its name as the app writes it, or enough of it (the year, and the angle where a year has two)
+function csvBoard(v){
+  const s = csvWord(v);
+  if (!s) return boardKey;
+  const exact = BOARDS.find(b => csvWord(b.label) === s || b.key === s);
+  if (exact) return exact.key;
+  const year = (/20\d\d/.exec(s) || [])[0], angle = (/(25|40)/.exec(s.replace(/20\d\d/, '')) || [])[0];
+  const fits = BOARDS.filter(b => year && b.key.startsWith(year) && (!angle || b.key.endsWith(angle)));
+  return fits.length === 1 ? fits[0].key : fits.some(b => b.key === boardKey) ? boardKey : null;
+}
+// the route a line means: by its number, or by its name on that hold set (and then on any, if only one has it)
+let csvNames = null;
+function csvRoute(name, set, id){
+  if (id && byId[id]) return byId[id];
+  if (!csvNames){
+    csvNames = {};
+    BOARDS.forEach(b => BY_BOARD[b.key].forEach(r => { const k = b.key + '|' + csvWord(r.name); (csvNames[k] = csvNames[k] || []).push(r); }));
+  }
+  const n = csvWord(String(name || '').replace(/^'(?=[=+@-])/, ''));
+  if (!n) return null;
+  const best = list => list.slice().sort((a, b) => (b.repeats || 0) - (a.repeats || 0))[0];       // two routes of one name: the one more people have climbed
+  if (set && csvNames[set + '|' + n]) return best(csvNames[set + '|' + n]);
+  const any = BOARDS.map(b => csvNames[b.key + '|' + n]).filter(Boolean);
+  return any.length === 1 ? best(any[0]) : null;
+}
+const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
+function logNote(html, bad){
+  const el = $('logNote');
+  el.innerHTML = html; el.className = bad ? 'bad' : ''; el.hidden = !html;
+}
+/* Reads the file's text and says what is in it: the goes that can go in (ready), and the lines that cannot, each
+   with its number in the file and why (left). Nothing is sent or changed here. */
+function csvRead(text, me, entries){
+  const rows = csvParse(text);
+  if (!rows.length) return { error: 'There is nothing in that file.' };
+  const head = rows[0].map(csvWord), col = name => head.indexOf(name);
+  const C = { day: col('date'), time: col('time'), who: col('climber'), route: col('route'), result: col('result'), set: col('hold set'), wall: col('wall'), id: col('route id') };
+  if (C.day < 0 || C.route < 0 || C.result < 0)
+    return { error: 'That does not look like a logbook: its first line should have Date, Route and Result among its headings. Export CSV gives the layout.' };
+  const cell = (r, i) => i < 0 || r[i] === undefined ? '' : r[i];
+  const lines = rows.slice(1), dayFirst = csvDayFirst(lines.map(r => cell(r, C.day)));
+  // what the logbook has already: a try and a send for each route each day, as the relay counts them
+  const kind = res => res === 'try' ? 'try' : 'send', have = new Set(), seen = new Set();
+  entries.forEach(e => have.add(e.id + '|' + csvDay(new Date(logTime(e))) + '|' + kind(e.result)));
+  const ready = [], left = [];
+  let other = 0;
+  lines.forEach((r, i) => {
+    const line = i + 2, out = why => left.push({ line, why });
+    const wall = csvWord(cell(r, C.wall));
+    if (wall && wall !== 'moonboard'){ other++; return out('it is from the ' + cell(r, C.wall)); }
+    const who = cell(r, C.who);
+    if (who && csvWord(who) !== csvWord(me)) return out('it is ' + who + '’s');
+    const when = csvWhen(cell(r, C.day), cell(r, C.time), dayFirst);
+    if (!when) return out(cell(r, C.day) ? 'its day or time cannot be read' : 'it has no day');
+    if (new Date(when.y, when.m - 1, when.d).getTime() > Date.now()) return out('its day is still to come');
+    const result = csvResult(cell(r, C.result));
+    if (!result) return out(cell(r, C.result) ? '“' + cell(r, C.result) + '” is not a try or a send' : 'it does not say how it went');
+    const set = csvBoard(cell(r, C.set));
+    const route = csvRoute(cell(r, C.route), set, +cell(r, C.id) || 0);
+    if (!route) return out(cell(r, C.route) ? 'no route is called “' + cell(r, C.route) + '”' + (set ? ' on that hold set' : '') : 'it names no route');
+    const k = route.id + '|' + when.key + '|' + kind(result);
+    if (have.has(k)) return out('the logbook has it already');
+    if (seen.has(k)) return out('it is a second ' + kind(result) + ' of a route on one day');
+    seen.add(k);
+    ready.push({ id: route.id, result, t: when.key + 'T' + pad2(when.hh) + ':' + pad2(when.mm) + ':00.000Z' });
+  });
+  return { ready, left, lines: lines.length, other };
+}
+// the lines left out, in a few words: how many for each reason, and where the first of each is
+function csvLeft(left){
+  const by = new Map();
+  left.forEach(x => { if (!by.has(x.why)) by.set(x.why, []); by.get(x.why).push(x.line); });
+  return [...by].slice(0, 6).map(([why, at]) => plural(at.length, 'line', 'lines') + ' because ' + esc(why) + ' (line ' + at.slice(0, 3).join(', ') + (at.length > 3 ? ', …' : '') + ')').join('; ') +
+    (by.size > 6 ? '; and more' : '');
+}
+let importBusy = false;
+async function importCsv(text){
+  const me = meNow();
+  if (importBusy || !me || !logShown || logShown.who !== me) return;
+  const got = csvRead(text, me, logShown.entries);
+  if (got.error) return logNote(esc(got.error), true);
+  if (got.lines && got.other === got.lines) return logNote('That file is another wall’s logbook. Import it on that wall’s page.', true);
+  const said = got.left.length ? ' Left out: ' + csvLeft(got.left) + '.' : '';
+  if (!got.ready.length) return logNote(got.lines ? 'Nothing was imported.' + said : 'That file has the headings and no goes under them: nothing to import.', !!got.lines);
+  importBusy = true; $('logImp').disabled = true;
+  const post = body => fetch(LISTS_API + '/lists/log/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json());
+  try{
+    const dry = await post({ person: me, entries: got.ready, dry: true });
+    if (dry.error) throw new Error(dry.error);
+    const twice = (dry.skipped || []).length;
+    if (!dry.would){ logNote('Nothing was imported: the logbook has every one of those goes already.' + said); return; }
+    if (!confirm('Import ' + plural(dry.would, 'go', 'goes') + ' into ' + me + '’s logbook?' + String.fromCharCode(10, 10) +
+                 'They come in locked, like any logbook brought in from elsewhere.' +
+                 (twice ? ' ' + plural(twice, 'line is', 'lines are') + ' left out as a second try or send of a route on one day.' : '') +
+                 (got.left.length ? ' ' + plural(got.left.length, 'more line', 'more lines') + ' cannot go in.' : ''))) return void logNote('');
+    const d = await post({ person: me, entries: got.ready });
+    if (d.error) throw new Error(d.error);
+    applyLists(d); logStale();
+    log('imported ' + d.imported + ' goes from a file into ' + me + '’s logbook.');
+    await loadLog();
+    logNote('Imported ' + plural(d.imported, 'go', 'goes') + '.' + said);
+    if (page === 'log') paintLogPage();
+  }catch(e){ logNote('The import did not go through: ' + esc(e.message) + '. Nothing was changed.', true); }
+  finally{ importBusy = false; paintLogBtns(); }
+}
+$('logImp').onclick = () => { logNote(''); $('logFile').value = ''; $('logFile').click(); };
+$('logFile').onchange = async () => {
+  const f = $('logFile').files && $('logFile').files[0];
+  if (!f) return;
+  let text = '';
+  try{ text = await f.text(); }catch(e){ return logNote('That file could not be read.', true); }
+  importCsv(text);
+};
+
+/* ---------- the Logbook ----------
+   A sheet that rises from the foot of the screen, laid out as the Sun board's is (Will, 2026-10-12, of matching
+   the two: "good idea"): whose logbook, the buttons for the file and the lock, a line that sums it up, then every
+   go, a session to a line with the newest open, then everyone's points. A tap on an entry of your own opens it, to
+   lock it or take it out. Somebody else's logbook can be read and not changed, which is a courtesy and not a lock:
+   there are no accounts. (Until then it took the whole screen, listed a day to a line, and anybody's entries
+   opened.) */
 let logLoad = 0;                          // guards against a slow answer landing on a later one's rows
+let logOpen = new Set([0]);               // which sessions stand open: the newest, to begin with
+function paintLogBtns(){
+  const me = meNow(), who = $('logWho').value, own = !!me && who === me;
+  $('logCsv').disabled = !logShown;
+  $('logImp').disabled = !own || !logShown || importBusy;
+  $('logLock').disabled = !own || !logShown;
+}
 async function loadLog(){
   const who = $('logWho').value, mine = ++logLoad;
-  logShown = null; $('logCsv').disabled = true;
-  $('logRows').innerHTML = '';
-  $('logSum').textContent = 'loading\u2026';
+  logShown = null; paintLogBtns();
+  $('logRows').innerHTML = ''; $('logHint').textContent = '';
+  $('logSum').textContent = who ? 'Loading…' : 'Pick your name at the top of the page to keep a logbook.';
+  if (!who) return;
   let entries = [];
   try{
     const r = await fetch(LISTS_API + '/lists/log?limit=2000&person=' + encodeURIComponent(who));
     entries = (await r.json()).entries || [];
-  }catch(e){ if (mine === logLoad) $('logSum').textContent = 'logbook unreachable'; return; }
+  }catch(e){ if (mine === logLoad) $('logSum').textContent = 'The logbook cannot be reached just now. Try again in a moment.'; return; }
   if (mine !== logLoad) return;
   tagRepeats(entries);
-  logShown = { who, entries }; $('logCsv').disabled = !entries.length;
-
-  const sends = entries.filter(e => e.result !== 'try');
-  const flashes = sends.filter(e => e.result === 'flash' && !e.rep).length;    // a session flash is not a flash
-  const hardest = sends.reduce((best, e) => {
-    const p = byId[e.id];
-    return p && (!best || p.grade > best.grade) ? p : best;
-  }, null);
-  $('logSum').textContent =
-    sends.length + (sends.length === 1 ? ' send' : ' sends') + ' \u00b7 ' +
-    flashes + ' flashed \u00b7 ' +
-    entries.filter(e => e.result === 'try').length + ' tries' +
-    (hardest ? ' \u00b7 hardest ' + GRADES[hardest.grade] : '');
-
-  if (!entries.length){
-    const d = document.createElement('div');
-    d.className = 'none';
-    d.textContent = 'Nothing logged yet.';
-    $('logRows').appendChild(d);
-    return;
+  logShown = { who, entries };
+  paintLogRows();
+}
+function logRow(e, own){
+  const r = byId[e.id], row = document.createElement('div');
+  row.className = 'bke' + (e.result !== 'try' ? ' sent' : '') + (own ? ' own' : '');
+  row.innerHTML = '<div class="d"></div><div class="n"><b></b><span class="gd"></span></div><div class="rs"></div><div class="lk"></div>' + (own ? '<div class="mo" aria-hidden="true">⋯</div>' : '');
+  row.querySelector('.d').textContent = dayOnly(e) ? 'imported' : new Date(logTime(e)).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  row.querySelector('b').textContent = r ? r.name : 'problem ' + e.id;
+  if (r) paintPill(row.querySelector('.gd'), r.grade); else row.querySelector('.gd').remove();
+  row.querySelector('.rs').textContent = RESULT_WORDS[shown(e)] || e.result;
+  row.querySelector('.lk').textContent = e.lock ? '🔒' : '';
+  if (own){
+    row.setAttribute('role', 'button');
+    row.setAttribute('aria-label', 'Lock, delete or keep: ' + (r ? r.name : 'problem ' + e.id) + ', ' + (RESULT_WORDS[shown(e)] || e.result));
+    row.onclick = () => openEntry(e, r);
   }
-
-  /* One block per day, newest first, with today's open and the rest folded away -
-     a session is the unit you actually think in, and a few months of tries is a
-     lot of rows to scroll past to reach them. */
-  const days = [];
-  entries.forEach(e => {
-    const key = new Date(e.t).toDateString();
-    let day = days.find(d => d.key === key);
-    if (!day) days.push(day = { key, t: e.t, rows: [] });
-    day.rows.push(e);
-  });
-
-  days.forEach((day, i) => {
-    const sends = day.rows.filter(e => e.result !== 'try').length;
-    const tries = day.rows.length - sends;
-    const when = new Date(day.t);
-    const today = when.toDateString() === new Date().toDateString();
-
-    const head = document.createElement('div');
-    head.className = 'day' + (i === 0 ? ' open' : '');
-    const chev = document.createElement('span');
-    chev.className = 'cv';
-    chev.textContent = '\u203a';
-    const label = document.createElement('b');
-    label.textContent = today ? 'Today' : when.toLocaleDateString(undefined,
-      { weekday: 'short', day: 'numeric', month: 'short' });
-    const sum = document.createElement('span');
-    sum.className = 'ds';
-    sum.textContent = [sends && sends + (sends === 1 ? ' send' : ' sends'),
-                       tries && tries + (tries === 1 ? ' try' : ' tries')]
-                      .filter(Boolean).join(' \u00b7 ');
-    head.append(chev, label, sum);
-
-    const body = document.createElement('div');
-    body.className = 'dayRows';
-    if (i !== 0) body.hidden = true;
-
-    head.onclick = () => {
-      body.hidden = !body.hidden;
-      head.classList.toggle('open', !body.hidden);
+  return row;
+}
+function paintLogRows(){
+  if (!logShown) return;
+  const { who, entries } = logShown, me = meNow(), own = !!me && who === me, box = $('logRows');
+  box.innerHTML = '';
+  paintLogBtns();
+  const sorted = entries.slice().sort((a, b) => logTime(b) - logTime(a));
+  const sends = sorted.filter(e => e.result !== 'try'), tries = sorted.length - sends.length, flashes = sends.filter(e => e.result === 'flash' && !e.rep).length;
+  let hard = null;
+  sends.forEach(e => { const r = byId[e.id]; if (r && (!hard || r.grade > hard.grade)) hard = r; });
+  $('logHint').textContent = own ? (sorted.length ? 'Tap an entry to lock it or delete it.' : '')
+    : 'This is ' + who + '’s logbook. To change an entry of your own, or to import a file, pick your name here.';
+  $('logSum').textContent = !sorted.length ? 'Nothing logged yet.'
+    : [plural(sends.length, 'send', 'sends'), flashes + ' flashed', plural(tries, 'try', 'tries'), hard ? 'hardest ' + GRADES[hard.grade] : '',
+       scoreFor(who).total.toLocaleString() + ' points'].filter(Boolean).join(' · ');
+  logSessions(sorted).forEach((ses, i) => {
+    const sum = sessionSum(ses), el = document.createElement('div');
+    el.className = 'lpses';
+    el.innerHTML = '<div class="h"><span class="cv">›</span><b></b><span class="s"></span><span class="gd"></span></div><div class="body" hidden></div>';
+    el.querySelector('b').textContent = sessionDay(ses);
+    el.querySelector('.s').textContent = [sum.sends ? plural(sum.sends, 'send', 'sends') : '', sum.tries ? plural(sum.tries, 'try', 'tries') : ''].filter(Boolean).join(' · ');
+    if (sum.hard) paintPill(el.querySelector('.gd'), sum.hard.grade); else el.querySelector('.gd').remove();
+    const body = el.querySelector('.body');
+    const show = on => {
+      if (on && !body.children.length) ses.rows.forEach(e => body.appendChild(logRow(e, own)));
+      body.hidden = !on; el.classList.toggle('open', on);
+      if (on) logOpen.add(i); else logOpen.delete(i);
     };
-
-    day.rows.forEach(e => {
-      const p = byId[e.id];
-      const row = document.createElement('div');
-      row.className = 'e' + (e.result !== 'try' ? ' sent' : '');
-      const d = document.createElement('div');
-      d.className = 'd';
-      d.textContent = new Date(e.t).toLocaleTimeString(undefined,
-        { hour: 'numeric', minute: '2-digit' });
-      const n = document.createElement('div');
-      n.className = 'n';
-      n.textContent = p ? p.name : 'problem ' + e.id;
-      const rs = document.createElement('div');
-      rs.className = 'rs';
-      rs.textContent = e.rep ? RESULT_WORDS[shown(e)] : e.result === 'try' ? 'try' : (e.result === 'flash' ? '\u26a1 flash' : e.result);
-      const lk = document.createElement('div');
-      lk.className = 'lk';
-      lk.textContent = e.lock ? '\ud83d\udd12' : '';
-      const mo = document.createElement('div');
-      mo.className = 'mo'; mo.textContent = '\u22ef'; mo.setAttribute('aria-hidden', 'true');
-      row.append(d, n, rs, lk, mo);
-      row.setAttribute('role', 'button');
-      row.onclick = () => openEntry(e, p);
-      body.appendChild(row);
-    });
-
-    $('logRows').append(head, body);
+    el.querySelector('.h').onclick = () => show(body.hidden);
+    if (logOpen.has(i)) show(true);
+    box.appendChild(el);
   });
 }
-
 
 /* ---------- beta ----------
    How to climb it: the order hands and feet go on, one beta per problem, shared
@@ -6970,7 +7218,7 @@ document.body.addEventListener('animationend', e => {
 
 (function pageSwipe(){
   let x0 = null, y0 = null;
-  const off = '#board, #kb, select, #quick, #gSlide, #sendFan, #setPanel input, #log, #logPanel, #pairPanel, #snakePanel, #entryPanel, #gamePanel, #rsPanel, #rsScrim, #tipBox, #a2hs, #a2hsHow';
+  const off = '#board, #kb, select, #quick, #gSlide, #sendFan, #setPanel input, #log, #logPanel, #pairPanel, #snakePanel, #entryPanel, #gamePanel, #rsPanel, #rsScrim, #logScrim, #tipBox, #a2hs, #a2hsHow, #gestHow';
   document.addEventListener('pointerdown', e => {
     x0 = null;
     if (betaDraft || panelOpen || focusOn) return;
@@ -7004,7 +7252,17 @@ document.body.addEventListener('animationend', e => {
    the page inside a minute of the last look asks nothing. */
 const SESSION_GAP = 4 * 3600e3, SESSION_LIVE = 8 * 3600e3;
 let lpFor = 0;
-const logTime = e => Date.parse(e.t) || 0;
+/* When a go happened, for putting goes in order and into days. A go brought in from a file, or from the MoonBoard
+   app, carries the day (and the time, if it had one) as it was written down, in the fields of its stamp: it is read
+   as this phone's own clock time, so that its day is the same day wherever the phone is. Any other go is the moment
+   it was logged. */
+const logTime = e => {
+  if (e.src === 'moonboard'){
+    const m = /^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)/.exec(e.t || '');
+    if (m) return new Date(+m[1], m[2] - 1, +m[3], +m[4], +m[5]).getTime();
+  }
+  return Date.parse(e.t) || 0;
+};
 
 function logSessions(entries){             // newest first in; sessions newest first out
   const out = [];
@@ -7036,8 +7294,7 @@ const goDots = goes => goes.map(g => '<i class="go' + (g === 'try' ? '' : g === 
 // a day imported from the MoonBoard app is midnight UTC: read anywhere west of Greenwich it would slip back a day
 const sessionDay = s => new Date(s.t1).toLocaleDateString(undefined, Object.assign(
   { weekday: 'short', day: 'numeric', month: 'short' },
-  new Date(s.t1).getFullYear() === new Date().getFullYear() ? {} : { year: 'numeric' },
-  s.rows.every(e => e.src === 'moonboard') ? { timeZone: 'UTC' } : {}));
+  new Date(s.t1).getFullYear() === new Date().getFullYear() ? {} : { year: 'numeric' }));
 
 function lpRow(x, clock){
   const p = byId[x.id];
@@ -7904,15 +8161,16 @@ const PANELS = { game: 'gamePanel', log: 'logPanel', ig: 'igPanel',
                  snake: 'snakePanel', entry: 'entryPanel', pair: 'pairPanel', rs: 'rsPanel' };
 
 function showPanel(which, fromBack){  // a key of PANELS, or null for none
+  const back = which === 'log' && !$('entryPanel').hidden;           // from an entry's card back to the logbook under it
   $('gamePanel').hidden = which !== 'game';
-  $('logPanel').hidden  = which !== 'log';
+  $('logPanel').hidden = $('logScrim').hidden = which !== 'log' && which !== 'entry';     // an entry is shown over the logbook, which stays where it was
   $('igPanel').hidden   = which !== 'ig';
   $('pairPanel').hidden = which !== 'pair';
   $('snakePanel').hidden = which !== 'snake';
   $('entryPanel').hidden = which !== 'entry';
   $('rsPanel').hidden = $('rsScrim').hidden = which !== 'rs';
   if (which !== 'snake' && which !== 'entry' && sn) snStop();          // don't leave it running unseen, or a finished one on the wall
-  if (PANELS[which]) $(PANELS[which]).scrollTop = 0;   // open at the top, always
+  if (PANELS[which] && !back) $(PANELS[which]).scrollTop = 0;   // open at the top, always (but the logbook as it was left, back from an entry)
   // One step in the history for "a sheet is open", however many are swapped through.
   const open = !!PANELS[which];
   if (open && !panelOpen) layerOpen('panel');
@@ -7926,7 +8184,8 @@ $('gameBtn').onclick = () => {
 };
 $('c4close').onclick = () => showPanel(null);
 $('logBtn').onclick = () => ($('logPanel').hidden ? openLog() : showPanel(null));
-$('logClose').onclick = () => showPanel(null);
+$('logClose').onclick = $('logScrim').onclick = () => showPanel(null);
+$('entryPanel').onclick = e => { if (e.target === $('entryPanel')) $('enClose').onclick(); };      // a tap on the dark round the card
 $('snakeBtn').onclick = () => {
   const open = $('snakePanel').hidden;
   showPanel(open ? 'snake' : null);
@@ -7965,7 +8224,7 @@ $('snRankBtn').onclick = () => {
                                        : (dy < 0 ? 'up' : 'down'));
   });
 })();
-$('logWho').onchange = loadLog;
+$('logWho').onchange = () => { logOpen = new Set([0]); logNote(''); loadLog(); };
 $('c4new').onclick = c4New;
 $('c4off').onclick = c4Stop;
 $('c4pg').onchange = $('c4pb').onchange = () => c4Draw();
@@ -8148,6 +8407,34 @@ else log('ready. Power the box, force-quit the MoonBoard app, then Connect.');
   el.addEventListener('click', e => { if (moved) return; if (e.target.closest('#a2hsX')) return away(true); clearTimeout(gone); how.hidden = false; });
   how.addEventListener('click', e => { if (e.target === how || e.target.closest('#a2hsOk')){ how.hidden = true; away(true); } });
   setTimeout(window.a2hsShow, 1200);
+})();
+
+/* ---------- what a finger does on the picture, said once ----------
+   There are five things a finger can do on the picture of the wall, and none of them shows: two taps, a short
+   stroke down, a long stroke up, a flick across, and in focus a tap on a hold. Somebody new to the app does not
+   find them (Will, 2026-10-12, of a card that says them: "do the gesture card"). So the first time a route is open
+   on the board's page, a moment after it opens, a card rises from the foot of the screen with the five on it, and
+   Got it puts it away for good: one note on the phone (mb-gest). It waits its turn: not over a sheet, not in
+   focus, not while a beta is being drawn. Settings has a button that shows it again whenever it is wanted, and
+   one beside it for the card about the Home Screen. A phone that cannot keep the note is not shown the card, so
+   that it is not shown it every time. */
+(function gestures(){
+  const how = $('gestHow');
+  const seen = () => { try{ return localStorage.getItem('mb-gest') === '1'; }catch(e){ return true; } };
+  let due = 0;
+  window.gestShow = () => { clearTimeout(due); how.hidden = false; how.querySelector('.card').scrollTop = 0; };
+  const shut = () => { how.hidden = true; try{ localStorage.setItem('mb-gest', '1'); }catch(e){} };
+  how.addEventListener('click', e => { if (e.target === how || e.target.closest('#gestOk')) shut(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !how.hidden) shut(); });
+  window.gestMaybe = () => {
+    if (seen() || !how.hidden) return;
+    clearTimeout(due);
+    due = setTimeout(() => {
+      if (!seen() && current && page === 'board' && !panelOpen && !focusOn && !betaDraft && $('a2hsHow').hidden) window.gestShow();
+    }, 900);
+  };
+  $('gestBtn').onclick = () => window.gestShow();
+  $('a2hsBtn').onclick = () => { $('a2hsHow').hidden = false; };
 })();
 </script>
 </body>

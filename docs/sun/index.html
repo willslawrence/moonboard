@@ -384,8 +384,8 @@
   .opt > label{flex:0 1 auto;min-width:0;font-size:14.5px;line-height:1.25}
   .opt > .sw,.opt > select{margin-left:auto}
   .opt > select{flex:0 1 auto;width:auto;max-width:60%;padding:7px 10px}
-  .card{border:1px solid var(--edge);border-radius:14px;background:var(--panel);padding:0 12px}
-  .card > * + *{border-top:1px solid var(--line)}
+  #setPanel .card{border:1px solid var(--edge);border-radius:14px;background:var(--panel);padding:0 12px}
+  #setPanel .card > * + *{border-top:1px solid var(--line)}
   /* ---- the i beside an option, and the bubble it opens ----
      Will, 2026-10-12: "put the descriptions or explanations inside a tooltip for each. Those [would] significantly
      clean up the setting page." The words are in the page still, out of sight, straight after their i (.tipTxt);
@@ -454,6 +454,23 @@
   #bookSheet .lbl{margin:20px 0 7px}
   #bookWho{height:40px;padding:0 10px;font-size:16px}
   #bookHint{margin:8px 0 0}
+  #bookHint:empty{display:none}
+  /* the buttons for the file, a row under the picker, as on the MoonBoard page */
+  .bookBtns{display:flex;align-items:center;gap:8px;margin-top:8px}
+  .bookBtns button.mini{flex:1 1 0;min-width:0;padding:8px 4px;font-size:12.5px;border-radius:8px}
+  .bookBtns button.tipBtn{margin-left:0}
+  #bookFile{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}      /* out of sight but in the page: a phone opens its picker for it */
+  /* what an import did, and what it left out */
+  #bookNote{margin:8px 0 0;padding:8px 10px;border:1px solid var(--edge);border-radius:9px;background:var(--panel);font-size:12.5px;line-height:1.45}
+  #bookNote.bad{border-color:#ef4444}
+  /* everyone's points, listed as the MoonBoard page lists them: place, name, sends, points */
+  #lpPoints .r{display:flex;align-items:center;gap:9px;padding:7px 2px;border-bottom:1px solid var(--line);font-size:13px}
+  #lpPoints .r .pos{flex:none;width:20px;color:var(--dimmer);font:700 11px ui-monospace,Menlo,monospace}
+  #lpPoints .r b{flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #lpPoints .r .n{flex:none;color:var(--dimmer);font-size:11px}
+  #lpPoints .r span.p{flex:none;font:700 13px ui-monospace,Menlo,monospace;color:var(--ink)}
+  #lpPoints .me{background:var(--soft)}
+  #lpPoints .r.lead b{color:#7a5600}
   #bookSum{margin:10px 0 4px;font-size:12.5px;color:var(--dim);line-height:1.5}
   .bke{display:flex;align-items:center;gap:9px;padding:10px 2px;border-bottom:1px solid var(--line);user-select:none;-webkit-user-select:none}
   .lpses > .body .bke:last-child{border-bottom:0}
@@ -682,6 +699,22 @@
   #a2hsHow p{margin:0;font-size:13.5px;line-height:1.5;color:var(--dim)}
   #a2hsHow ol{margin:0;padding-left:20px;font-size:14px;line-height:1.6}
   #a2hsHow button{margin-top:16px}
+  /* ---- what a finger does on the picture: a card at the foot, shown once (see gestures at the foot of the script) ---- */
+  #gestHow{position:fixed;left:0;top:0;right:0;bottom:0;z-index:95;display:flex;align-items:flex-end;background:rgba(0,0,0,.5)}
+  #gestHow .card{flex:1 1 auto;max-height:92vh;max-height:92dvh;overflow-y:auto;background:var(--bg);color:var(--ink);border-radius:16px 16px 0 0;
+                 border-top:1px solid var(--edge);padding:16px 16px calc(env(safe-area-inset-bottom) + 16px)}
+  #gestHow h2{margin:0 0 4px;font-size:18px}
+  #gestHow p{margin:0 0 6px;font-size:13.5px;line-height:1.5;color:var(--dim)}
+  #gestHow ul{list-style:none;margin:0;padding:0}
+  #gestHow li{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+  #gestHow li:last-child{border-bottom:0}
+  #gestHow li > i{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--ink);color:var(--onink)}
+  #gestHow li svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  #gestHow li svg .f{fill:currentColor;stroke:none}
+  #gestHow li b{display:block;font-size:14.5px;font-weight:700}
+  #gestHow li span{display:block;margin-top:1px;font-size:12.5px;line-height:1.4;color:var(--dim)}
+  #gestHow button{margin-top:14px}
+  #helpBtns button{padding:11px 8px;font-size:13px}
 </style>
 </head>
 <body>
@@ -865,7 +898,8 @@
 <div id="setPanel">
   <!-- Settings, in this order since 2026-10-12 (Will: "You can re organize the setting page for a better order of
        options"): which wall and who is climbing, as on the MoonBoard page; then the picture, how the app looks on
-       this phone, and last the map of holds, which is seldom needed. An option that is on or off is a row with a
+       this phone, the map of holds, which is seldom needed, and last Help: the card of what a finger does on the
+       picture, and the one about the Home Screen. An option that is on or off is a row with a
        switch, and what it does is behind the small i beside it. -->
   <div class="lbl tipLbl" style="margin-top:4px">Which wall<button type="button" class="tipBtn" aria-label="About: the two walls" aria-expanded="false">i</button><span class="tipTxt">Both are at Will's. The Sun board has no lights. Its routes are made here: two taps on the picture, tap the holds, and save them as a route. Everyone who climbs it sees them. Nothing from the MoonBoard shows here, and nothing from here shows there.</span></div>
   <div class="two">
@@ -895,6 +929,12 @@
 
   <div class="lbl tipLbl">The map of holds<button type="button" class="tipBtn" aria-label="About: the map of holds" aria-expanded="false">i</button><span class="tipTxt">The outlines were drawn from photos by a program, and it gets some wrong. Stand at the wall and tap a hold it missed, an outline that is only tape, or one that is the wrong shape. Everyone has your fixes straight away, and the outlines are then redrawn properly from them. While you fix, the picture is a photo of one wall at a time: a hold the map has missed is only in the photo.</span></div>
   <button id="fixBtn">Fix the map of holds</button>
+
+  <div class="lbl">Help</div>
+  <div class="two" id="helpBtns">
+    <button id="gestBtn" class="ghost" type="button">Picture gestures</button>
+    <button id="a2hsBtn" class="ghost" type="button">Add to Home Screen</button>
+  </div>
 
   <div id="ver"></div>
 </div>
@@ -975,9 +1015,16 @@
 <!-- The logbook: every go of one climber, by session, newest first; then everyone's points. Opened by the Logbook
      button on the log page. An entry of your own is taken out by tapping it. -->
 <div id="bookSheet" hidden role="dialog" aria-label="Logbook">
-  <div class="shHead"><h2>Logbook</h2><button id="bookCsv" class="ghost" disabled>Export CSV</button><button id="bookShut" class="ghost">Close</button></div>
+  <div class="shHead"><h2>Logbook</h2><button id="bookShut" class="ghost">Close</button></div>
   <select id="bookWho" aria-label="Whose logbook"></select>
+  <div class="bookBtns">
+    <button id="bookCsv" class="ghost mini" disabled>Export CSV</button>
+    <button id="bookImp" class="ghost mini" disabled>Import CSV</button>
+    <button type="button" class="tipBtn" aria-label="About: the file" aria-expanded="false">i</button><span class="tipTxt"><b>Export CSV</b> makes a file of the logbook that is showing, a line a go. <b>Import CSV</b> reads a file laid out the same way and adds its goes to your own logbook. To bring a logbook in: export first (an empty logbook gives the line of headings), fill in a line for each go, and import the file. A line needs a date (2026-10-12), the route's name as the list has it, and how it went: try, flash, 2nd go, 3rd go or 4+ goes. The time and the other columns may be left empty; Hold reached and Seconds on the wall are for a go against the clock. A go the logbook already has is left out.</span>
+  </div>
+  <input type="file" id="bookFile" accept=".csv,text/csv,text/comma-separated-values,text/plain" tabindex="-1" aria-hidden="true">
   <p class="hint" id="bookHint"></p>
+  <div id="bookNote" role="status" hidden></div>
   <div id="bookSum"></div>
   <div id="bookRows"></div>
   <div class="lbl tipLbl">Points on the Sun board<button type="button" class="tipBtn" aria-label="About: the points" aria-expanded="false">i</button><span class="tipTxt">A route scores once, the first time you send it: its V number plus one (V0 is 1, V4 is 5), and one more for a flash. Tries score nothing. These are the Sun board's own points and are not added to MoonBoard points.</span></div>
@@ -1011,6 +1058,20 @@
     <button id="a2hsOk" class="solid">Got it</button>
   </div>
 </div>
+<!-- What a finger does on the picture: shown once, the first time a route is open on the board, and again from Settings. -->
+<div id="gestHow" hidden role="dialog" aria-label="What a finger does on the picture">
+  <div class="card">
+    <h2>On the picture of the wall</h2>
+    <p>Four things fingers do there.</p>
+    <ul>
+      <li><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle class="f" cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="10" stroke-dasharray="3 3.3"/></svg></i><div><b>Two taps, or a short swipe down</b><span>The picture fills the screen, with every hold outlined. A swipe up or down, or the cross, puts the page back.</span></div></li>
+      <li><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg></i><div><b>A finger across</b><span>Turns your head, from the flat wall round to the overhang. It stays where you leave it.</span></div></li>
+      <li><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle class="f" cx="9" cy="15" r="2.2"/><circle class="f" cx="15" cy="9" r="2.2"/><path d="M6.5 17.5L3 21M3 17v4h4M17.5 6.5L21 3M21 7V3h-4"/></svg></i><div><b>Two fingers</b><span>Apart for a closer look, together to stand further off, until the whole wall is in sight.</span></div></li>
+      <li><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/><circle class="f" cx="12" cy="12" r="2.8"/></svg></i><div><b>On the full screen, tap a hold</b><span>It is picked. Save the holds you pick as a route, or find the routes on them.</span></div></li>
+    </ul>
+    <button id="gestOk" class="solid">Got it</button>
+  </div>
+</div>
 <script>
 /* The Sun board: the wall at Will's that has no lights. Routes are made by picking holds on
    pictures of the wall, named, graded, and shared with everyone who climbs there.
@@ -1031,7 +1092,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-12 09:27';
+const BUILD = '2026-10-12 10:24';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -2219,6 +2280,7 @@ function open(id, stay){
     const b = bestLook(marksShown(r), tv); turnTo(b.t, b.x);
   }
   paintAll();
+  if (window.gestMaybe) gestMaybe();    // the first route this phone has opened: what a finger does on the picture
 }
 function step(dir){
   const list = shown();
@@ -2893,7 +2955,8 @@ function paintLog(){
   whoFill(r);
   paintBook();
   const rows = snap.people.map(n => ({ n, ...scoreFor(n) })).filter(x => x.total > 0).sort((a, b) => b.total - a.total);
-  $('lpPoints').innerHTML = rows.length ? rows.map((x, i) => kv((i + 1) + '. <b>' + esc(x.n) + '</b>', x.total + ' points · ' + x.sends + ' sent' + (x.flashes ? ' · ' + x.flashes + ' flashed' : ''), x.n === me ? 'me' : '')).join('')
+  $('lpPoints').innerHTML = rows.length ? rows.map((x, i) => '<div class="r' + (i === 0 ? ' lead' : '') + (x.n === me ? ' me' : '') + '"><div class="pos">' + (i + 1) + '.</div><b>' + esc(x.n) +
+      '</b><div class="n">' + x.sends + (x.sends === 1 ? ' send' : ' sends') + (x.flashes ? ' \u00b7 ' + x.flashes + ' flashed' : '') + '</div><span class="p">' + x.total + '</span></div>').join('')
     : '<div class="none">No sends yet.</div>';
   // The crew's latest goes, on any route, in rows like the session's: a climber's goes on a route together, with a
   // dot for each. A tap on one goes to the board with that route up (Will, 2026-10-11: "if you tap one of those, it
@@ -2986,34 +3049,49 @@ function openBook(){
   sel.innerHTML = snap.people.map(p => '<option>' + esc(p) + '</option>').join('');
   sel.value = snap.people.includes(me) ? me : (snap.people[0] || '');
   sel.hidden = !snap.people.length;
-  bookOpen = new Set([0]);
+  bookOpen = new Set([0]); bookNote('');
   showSheet('bookSheet'); $('bookSheet').scrollTop = 0;
   paintLog();                                // everyone's points, which live in this sheet
   loadBook();
 }
-/* ---------- the logbook, as a file ----------
-   Will, 2026-10-12: "Add an export log option which would export a CSV of the climbers log book." Export CSV, at the
-   top of the Logbook, makes a file of the logbook that is showing, whoever's it is: a line a go, the oldest first,
-   with the day, the time, the climber, the route, its grade, how the go went, whether a send was a repeat, how far a
-   go against the clock got and how long it took, who set the route, its feet rule and its tape. On a phone the file
-   goes to the share sheet (Save to Files, AirDrop, Mail, Numbers); where there is none it is downloaded. The goes are
-   the ones the Logbook has already fetched, so the sheet opens on the tap itself: a phone lets a page open one at no
-   other time. */
+/* ---------- the logbook, as a file, and a file into the logbook ----------
+   Will, 2026-10-12: "Add an export log option which would export a CSV of the climbers log book." And then: "can
+   we add a logbook import button. if they use the same csv format. to get started, they can click the button
+   Export CSV and it exports whatever is in their app. Maybe it's nothing and it just shows the columns or maybe
+   it's a few logs."
+
+   Export CSV, in the Logbook, makes a file of the logbook that is showing, whoever's it is: a line a go, the
+   oldest first, with the day, the time, the climber, the route, its grade, how the go went, whether a send was a
+   repeat, how far a go against the clock got and how long it took, who set the route, its feet rule, its tape, and
+   the route's number. A logbook with nothing in it gives the line of headings and no more, which is the layout to
+   fill in. On a phone the file goes to the share sheet (Save to Files, AirDrop, Mail, Numbers); where there is
+   none it is downloaded. The goes are the ones the Logbook has already fetched, so the sheet opens on the tap
+   itself: a phone lets a page open one at no other time.
+
+   Import CSV reads a file laid out the same way and adds its goes to the logbook of whoever is climbing, and to
+   nobody else's. A line needs a day, a route and how it went; everything else may be left empty. The route is
+   found by its number if the line has one and by its name if not. The store takes the goes in one call (in pieces,
+   if there are very many), each with when it happened, and leaves out any the logbook has already: the same route
+   and result in the same minute, so a file can be imported twice without harm. What is about to happen is said
+   first and asked about, and what was left out, and why, is said afterwards. */
+const CSV_HEAD = ['Date', 'Time', 'Climber', 'Route', 'Grade', 'Result', 'Repeat send', 'Hold reached', 'Seconds on the wall', 'Setter', 'Feet', 'Tape', 'Wall', 'Route id'];
+const CR = String.fromCharCode(13), NL = String.fromCharCode(10), TAB = String.fromCharCode(9), BOM = String.fromCharCode(0xfeff);
 function csvCell(v){
   let s = v === null || v === undefined ? '' : String(v);
-  if (/^[=+\u002d@\u0009\u000d]/.test(s)) s = "'" + s;          // a sheet must not take a route's name for a sum
-  return /[",\u000d\u000a]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  if ('=+-@'.includes(s[0] || ' ') || s[0] === TAB || s[0] === CR) s = "'" + s;       // a sheet must not take a route's name for a sum
+  return s.includes('"') || s.includes(',') || s.includes(CR) || s.includes(NL) ? '"' + s.split('"').join('""') + '"' : s;
 }
 // (the first character tells Excel the file is UTF-8, which the names in it need)
-const csvOf = rows => '\ufeff' + rows.map(r => r.map(csvCell).join(',')).join('\u000d\u000a') + '\u000d\u000a';
-const csvDay = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const csvOf = rows => BOM + rows.map(r => r.map(csvCell).join(',')).join(CR + NL) + CR + NL;
+const pad2 = n => String(n).padStart(2, '0');
+const csvDay = d => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
 function bookCsvRows(who, entries){
-  const rows = [['Date', 'Time', 'Climber', 'Route', 'Grade', 'Result', 'Repeat send', 'Hold reached', 'Seconds on the wall', 'Setter', 'Feet', 'Tape', 'Wall']];
+  const rows = [CSV_HEAD.slice()];
   tagRepeats(entries.slice()).sort((a, b) => logTime(a) - logTime(b)).forEach(e => {
     const d = new Date(e.t), ok = !isNaN(d), r = routeById(e.route);
-    rows.push([ok ? csvDay(d) : '', ok ? String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') : '',
+    rows.push([ok ? csvDay(d) : '', ok ? pad2(d.getHours()) + ':' + pad2(d.getMinutes()) : '',
                e.person || who, r ? r.name : 'a route that is gone', r ? vName(r.grade) : '', RESULT[e.result] || e.result, e.rep ? 'yes' : '',
-               e.n || '', e.secs || '', r ? r.setter : '', r ? FEET[r.feet] || '' : '', r ? r.tape || '' : '', 'Sun board']);
+               e.n || '', e.secs || '', r ? r.setter : '', r ? FEET[r.feet] || '' : '', r ? r.tape || '' : '', 'Sun board', e.route]);
   });
   return rows;
 }
@@ -3036,9 +3114,10 @@ function fileOut(name, text, type){
   return Promise.resolve(fileDown(name, blob));
 }
 let csvBusy = false;                      // one at a time: a second tap while the share sheet is coming up starts nothing behind it
+let bookLoaded = '';                      // whose logbook has been fetched and is showing (an empty one is still one)
 $('bookCsv').onclick = async () => {
   const who = $('bookWho').value, rows = bookRows;
-  if (csvBusy || !who || !rows.length) return;
+  if (csvBusy || !who || bookLoaded !== who) return;
   let how = 'saved';
   csvBusy = true;
   try{ how = await fileOut('wills-wall-sun-board-' + fileSlug(who) + '-' + csvDay(new Date()) + '.csv', csvOf(bookCsvRows(who, rows)), 'text/csv'); }
@@ -3046,9 +3125,193 @@ $('bookCsv').onclick = async () => {
   csvBusy = false;
   if (how !== 'cancelled') toast(how === 'failed' ? 'Could not export' : how === 'shared' ? 'Exported' : 'Saved to downloads', how === 'failed');
 };
+
+/* A file of lines and cells: commas between the cells (or semicolons or tabs, which some sheets write: whichever
+   the first line has most of), a cell in double quotes where it has one of those or a line's end in it, and a
+   double quote in such a cell written twice. Empty lines are left out. */
+function csvParse(text){
+  text = String(text || '');
+  if (text[0] === BOM) text = text.slice(1);
+  const first = text.split(NL)[0], count = ch => first.split(ch).length - 1;
+  const sep = count(';') > count(',') && count(';') >= count(TAB) ? ';' : count(TAB) > count(',') ? TAB : ',';
+  const rows = [];
+  let row = [], cell = '', quoted = false;
+  for (let i = 0; i < text.length; i++){
+    const c = text[i];
+    if (quoted){
+      if (c !== '"') cell += c;
+      else if (text[i + 1] === '"'){ cell += '"'; i++; }
+      else quoted = false;
+    }
+    else if (c === '"' && cell === '') quoted = true;
+    else if (c === sep){ row.push(cell); cell = ''; }
+    else if (c === NL || c === CR){
+      if (c === CR && text[i + 1] === NL) i++;
+      row.push(cell); cell = '';
+      rows.push(row); row = [];
+    }
+    else cell += c;
+  }
+  if (cell !== '' || row.length){ row.push(cell); rows.push(row); }
+  return rows.map(r => r.map(c => c.trim())).filter(r => r.some(c => c !== ''));
+}
+const csvWord = s => String(s || '').normalize('NFKC').toLowerCase().replace(/\s+/g, ' ').trim();
+// how a go went, from the words a file might use for it
+function csvResult(v){
+  const s = csvWord(v).replace(/^session /, '').replace(/[^a-z0-9+ ]/g, '').trim();
+  if (/^flash/.test(s)) return 'flash';
+  if (/^(2|second)/.test(s)) return '2nd';
+  if (/^(3|third)/.test(s)) return '3rd';
+  if (/^(4|more|sent|send|top)/.test(s)) return '4+';
+  if (/^(try|tried|attempt|project|fail|fell)/.test(s)) return 'try';
+  return null;
+}
+/* A day, and perhaps a time, as a file may write them: 2026-10-12, or 12/10/2026 with the day or the month first
+   (dayFirst says which; see csvDayFirst), or with the month as a word. Nothing that is not a real day. */
+function csvWhen(day, time, dayFirst){
+  let y, m, d;
+  let a = /^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/.exec(day);
+  if (a){ y = +a[1]; m = +a[2]; d = +a[3]; }
+  else if ((a = /^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2}|\d{4})$/.exec(day))){
+    y = +a[3]; if (y < 100) y += 2000;
+    if (dayFirst){ d = +a[1]; m = +a[2]; } else { m = +a[1]; d = +a[2]; }
+  } else {
+    const t = /[a-z]{3}/i.test(day) ? new Date(day) : null;
+    if (!t || isNaN(t)) return null;
+    y = t.getFullYear(); m = t.getMonth() + 1; d = t.getDate();
+  }
+  const real = new Date(y, m - 1, d);
+  if (real.getFullYear() !== y || real.getMonth() !== m - 1 || real.getDate() !== d || y < 2015) return null;
+  let hh = 12, mm = 0, timed = false;                    // no time said: the middle of the day, so that the day is right wherever it is read
+  const c = /^(\d{1,2})[:.](\d{2})(?::\d{2})?\s*([ap])?\.?m?\.?$/i.exec(String(time || '').trim());
+  if (c){
+    hh = +c[1]; mm = +c[2];
+    if (c[3]){ const pm = c[3].toLowerCase() === 'p'; if (hh === 12) hh = pm ? 12 : 0; else if (pm) hh += 12; }
+    if (hh > 23 || mm > 59) return null;
+    timed = true;
+  } else if (String(time || '').trim()) return null;
+  return { at: new Date(y, m - 1, d, hh, mm), timed };
+}
+// in "3/4/2026", which is the day? The file says, if any of its lines has a number over twelve; else the phone's own way
+function csvDayFirst(days){
+  let first = false, second = false;
+  days.forEach(s => { const a = /^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2}|\d{4})$/.exec(s); if (a){ if (+a[1] > 12) first = true; if (+a[2] > 12) second = true; } });
+  if (first !== second) return first;
+  try{ const parts = new Intl.DateTimeFormat().formatToParts(new Date(2020, 11, 25)).map(p => p.type); return parts.indexOf('day') < parts.indexOf('month'); }catch(e){ return true; }
+}
+// the route a line means: by its number, or by its name (and of several of one name: the setter's, the grade's, one that is still up, the newest)
+function csvRoute(name, id, setter, grade){
+  if (id && routeById(id)) return routeById(id);
+  const n = csvWord(String(name || '').replace(/^'(?=[=+@-])/, ''));
+  if (!n) return null;
+  let list = snap.routes.filter(r => csvWord(r.name) === n);
+  const keep = test => { const some = list.filter(test); if (some.length) list = some; };
+  if (setter) keep(r => csvWord(r.setter) === csvWord(setter));
+  if (grade) keep(r => csvWord(vName(r.grade)) === csvWord(grade));
+  keep(r => !r.retired);
+  return list.sort((a, b) => b.id - a.id)[0] || null;
+}
+const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
+function bookNote(html, bad){
+  const el = $('bookNote');
+  el.innerHTML = html; el.className = bad ? 'bad' : ''; el.hidden = !html;
+}
+/* Reads the file's text and says what is in it: the goes that can go in (ready, each with the line it came from),
+   and the lines that cannot, each with its number in the file and why (left). Nothing is sent or changed here. */
+function csvRead(text){
+  const rows = csvParse(text);
+  if (!rows.length) return { error: 'There is nothing in that file.' };
+  const head = rows[0].map(csvWord), col = name => head.indexOf(name);
+  const C = { day: col('date'), time: col('time'), who: col('climber'), route: col('route'), grade: col('grade'), result: col('result'), n: col('hold reached'),
+              secs: col('seconds on the wall'), setter: col('setter'), wall: col('wall'), id: col('route id') };
+  if (C.day < 0 || C.route < 0 || C.result < 0)
+    return { error: 'That does not look like a logbook: its first line should have Date, Route and Result among its headings. Export CSV gives the layout.' };
+  const cell = (r, i) => i < 0 || r[i] === undefined ? '' : r[i];
+  const lines = rows.slice(1), dayFirst = csvDayFirst(lines.map(r => cell(r, C.day)));
+  const ready = [], left = [];
+  let other = 0;
+  lines.forEach((r, i) => {
+    const line = i + 2, out = why => left.push({ line, why });
+    const wall = csvWord(cell(r, C.wall));
+    if (wall && wall !== 'sun board'){ other++; return out('it is from the ' + cell(r, C.wall)); }
+    const who = cell(r, C.who);
+    if (who && csvWord(who) !== csvWord(me)) return out('it is ' + who + '’s');
+    const when = csvWhen(cell(r, C.day), cell(r, C.time), dayFirst);
+    if (!when) return out(cell(r, C.day) ? 'its day or time cannot be read' : 'it has no day');
+    if (when.at.getTime() > Date.now()) return out('its day is still to come');
+    const result = csvResult(cell(r, C.result));
+    if (!result) return out(cell(r, C.result) ? '“' + cell(r, C.result) + '” is not a try or a send' : 'it does not say how it went');
+    const route = csvRoute(cell(r, C.route), +cell(r, C.id) || 0, cell(r, C.setter), cell(r, C.grade));
+    if (!route) return out(cell(r, C.route) ? 'no route is called “' + cell(r, C.route) + '”' : 'it names no route');
+    const go = { route: route.id, result, t: when.at.toISOString() };
+    const n = cell(r, C.n), secs = cell(r, C.secs);
+    if (n || secs){
+      if (!/^\d{1,3}$/.test(n) || !/^\d{1,5}$/.test(secs) || !+n || !+secs) return out('a go against the clock needs both the hold reached and the seconds, as numbers');
+      go.n = +n; go.secs = +secs;
+    }
+    ready.push({ line, go });
+  });
+  return { ready, left, lines: lines.length, other };
+}
+// the lines left out, in a few words: how many for each reason, and where the first of each is
+function csvLeft(left){
+  const by = new Map();
+  left.forEach(x => { if (!by.has(x.why)) by.set(x.why, []); by.get(x.why).push(x.line); });
+  return [...by].slice(0, 6).map(([why, at]) => plural(at.length, 'line', 'lines') + ' because ' + esc(why) + ' (line ' + at.slice(0, 3).join(', ') + (at.length > 3 ? ', …' : '') + ')').join('; ') +
+    (by.size > 6 ? '; and more' : '');
+}
+const IMPORT_PIECE = 250;                 // goes to a call: a long file goes in pieces (the store reads forty thousand characters of a request and no more)
+let importBusy = false;
+function paintBookBtns(){
+  const who = $('bookWho').value, shown = !!who && bookLoaded === who;
+  $('bookCsv').disabled = !shown;
+  $('bookImp').disabled = !shown || !me || who !== me || importBusy;
+}
+async function importCsv(text){
+  if (importBusy || !me || bookLoaded !== me || $('bookWho').value !== me) return;
+  const got = csvRead(text);
+  if (got.error) return bookNote(esc(got.error), true);
+  if (got.lines && got.other === got.lines) return bookNote('That file is another wall’s logbook. Import it on that wall’s page.', true);
+  if (!got.ready.length) return bookNote(got.lines ? 'Nothing was imported. Left out: ' + csvLeft(got.left) + '.' : 'That file has the headings and no goes under them: nothing to import.', !!got.lines);
+  importBusy = true; paintBookBtns();
+  const pieces = [];
+  for (let i = 0; i < got.ready.length; i += IMPORT_PIECE) pieces.push(got.ready.slice(i, i + IMPORT_PIECE));
+  // what the store says of each piece: how many would go in, and which lines it leaves out
+  const send = async dry => {
+    let n = 0, last = null; const left = [];
+    for (const piece of pieces){
+      const d = await call('/log/import', { person: me, entries: piece.map(x => x.go), dry });
+      n += dry ? d.would : d.imported; last = d;
+      (d.skipped || []).forEach(x => left.push({ line: piece[x.i] ? piece[x.i].line : 0, why: x.why === 'already in the logbook' ? 'the logbook has it already' : x.why }));
+    }
+    return { n, left, last };
+  };
+  try{
+    const dry = await send(true), all = got.left.concat(dry.left).sort((a, b) => a.line - b.line);
+    const said = all.length ? ' Left out: ' + csvLeft(all) + '.' : '';
+    if (!dry.n){ bookNote('Nothing was imported.' + said); return; }
+    if (!confirm('Import ' + plural(dry.n, 'go', 'goes') + ' into ' + me + '’s logbook?' +
+                 (all.length ? String.fromCharCode(10, 10) + plural(all.length, 'line', 'lines') + ' cannot go in, or ' + (all.length === 1 ? 'is' : 'are') + ' there already.' : ''))) return void bookNote('');
+    const done = await send(false);
+    mine = []; logAt = 0;                    // Undo on the log page takes off the last go written, which is now one of these
+    take(done.last);
+    await loadBook();
+    bookNote('Imported ' + plural(done.n, 'go', 'goes') + '.' + said);
+    loadLog();
+  }catch(e){ bookNote('The import did not go through: ' + esc(e.message) + '.', true); loadBook(); }
+  finally{ importBusy = false; paintBookBtns(); }
+}
+$('bookImp').onclick = () => { bookNote(''); $('bookFile').value = ''; $('bookFile').click(); };
+$('bookFile').onchange = async () => {
+  const f = $('bookFile').files && $('bookFile').files[0];
+  if (!f) return;
+  let text = '';
+  try{ text = await f.text(); }catch(e){ return bookNote('That file could not be read.', true); }
+  importCsv(text);
+};
 async function loadBook(){
   const who = $('bookWho').value, ask = ++bookAsk;
-  bookRows = []; $('bookRows').innerHTML = ''; $('bookCsv').disabled = true;
+  bookRows = []; $('bookRows').innerHTML = ''; bookLoaded = ''; paintBookBtns();
   $('bookHint').textContent = '';
   $('bookSum').textContent = who ? 'Loading\u2026' : 'Say who you are, at the top of the page, to keep a logbook.';
   if (!who) return;
@@ -3056,8 +3319,8 @@ async function loadBook(){
   try{ rows = (await call('/log?limit=3000&person=' + encodeURIComponent(who))).entries; }
   catch(e){ if (ask === bookAsk) $('bookSum').textContent = 'The logbook cannot be reached just now. Try again in a moment.'; return; }
   if (ask !== bookAsk) return;               // another climber was picked while this was on its way
-  bookRows = rows; paintBookRows();
-  $('bookCsv').disabled = !rows.length;
+  bookRows = rows; bookLoaded = who; paintBookRows();
+  paintBookBtns();
 }
 function bookRow(e, own){
   const r = routeById(e.route), row = document.createElement('div');
@@ -3076,7 +3339,7 @@ function paintBookRows(){
   const sorted = tagRepeats(bookRows.slice()).sort((a, b) => logTime(b) - logTime(a));
   const sends = sorted.filter(e => e.result !== 'try'), tries = sorted.length - sends.length, flashes = sends.filter(e => e.result === 'flash' && !e.rep).length;
   let hard = null; sends.forEach(e => { const r = routeById(e.route); if (r && (!hard || r.grade > hard.grade)) hard = r; });
-  $('bookHint').textContent = !sorted.length ? '' : own ? 'Tap an entry to delete it.' : 'This is ' + who + '\u2019s logbook. To delete an entry of your own, pick your name here.';
+  $('bookHint').textContent = own ? (sorted.length ? 'Tap an entry to delete it.' : '') : 'This is ' + who + '\u2019s logbook. To delete an entry of your own, or to import a file, pick your name here.';
   $('bookSum').textContent = !sorted.length ? 'Nothing logged yet.' : [sends.length + (sends.length === 1 ? ' send' : ' sends'), flashes + ' flashed',
     tries + (tries === 1 ? ' try' : ' tries'), hard ? 'hardest ' + vName(hard.grade) : '', scoreFor(who).total + ' points'].filter(Boolean).join(' \u00b7 ');
   logSessions(sorted).forEach((ses, i) => {
@@ -3108,7 +3371,7 @@ function openEntry(e){
 }
 $('logBtn').onclick = openBook;
 $('bookShut').onclick = () => showSheet(null);
-$('bookWho').onchange = () => { bookOpen = new Set([0]); loadBook(); };
+$('bookWho').onchange = () => { bookOpen = new Set([0]); bookNote(''); loadBook(); };
 $('enCancel').onclick = () => { bookEntry = null; showSheet('bookSheet'); };
 $('entrySheet').onclick = e => { if (e.target === $('entrySheet')) $('enCancel').onclick(); };       // a tap on the dark round it
 $('enDelete').onclick = async () => {
@@ -3120,7 +3383,6 @@ $('enDelete').onclick = async () => {
     bookEntry = null;
     mine = []; logAt = 0;                    // Undo on the log page takes off the newest go, which may be the one that has just gone
     bookRows = bookRows.filter(x => x.k !== e.k);
-    $('bookCsv').disabled = !bookRows.length;
     showSheet('bookSheet'); take(d); paintBookRows(); loadLog(); toast('Deleted');
   }catch(err){ $('enErr').textContent = err.message; $('enDelete').disabled = false; }
 };
@@ -3594,6 +3856,35 @@ setInterval(() => { tick++; if (document.visibilityState === 'visible' && wall &
   el.addEventListener('click', e => { if (moved) return; if (e.target.closest('#a2hsX')) return away(true); clearTimeout(gone); how.hidden = false; });
   how.addEventListener('click', e => { if (e.target === how || e.target.closest('#a2hsOk')){ how.hidden = true; away(true); } });
   setTimeout(window.a2hsShow, 1200);
+})();
+
+/* ---------- what a finger does on the picture, said once ----------
+   There are four things a finger can do on the picture of the wall, and none of them shows: two taps or a short
+   stroke down, a finger drawn across, two fingers, and in focus a tap on a hold. Somebody new to the app does not
+   find them (Will, 2026-10-12, of a card that says them: "do the gesture card"). So the first time a route is open
+   on the board's page, a moment after it opens, a card rises from the foot of the screen with the four on it, and
+   Got it puts it away for good: one note on the phone (sb-gest; the MoonBoard page has its own card and its own
+   note, because its gestures are not these). It waits its turn: not over a sheet, not in focus, not while a route
+   is being made. Settings has a button that shows it again whenever it is wanted, and one beside it for the card
+   about the Home Screen. A phone that cannot keep the note is not shown the card, so that it is not shown it every
+   time. */
+(function gestures(){
+  const how = $('gestHow');
+  const seen = () => { try{ return localStorage.getItem('sb-gest') === '1'; }catch(e){ return true; } };
+  let due = 0;
+  window.gestShow = () => { clearTimeout(due); how.hidden = false; how.querySelector('.card').scrollTop = 0; };
+  const shut = () => { how.hidden = true; try{ localStorage.setItem('sb-gest', '1'); }catch(e){} };
+  how.addEventListener('click', e => { if (e.target === how || e.target.closest('#gestOk')) shut(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !how.hidden) shut(); });
+  window.gestMaybe = () => {
+    if (seen() || !how.hidden) return;
+    clearTimeout(due);
+    due = setTimeout(() => {
+      if (!seen() && openId !== null && page === 'board' && !focus && !draft && !fixing && !sheetUp() && $('sheet').hidden && $('goSheet').hidden && $('a2hsHow').hidden) window.gestShow();
+    }, 900);
+  };
+  $('gestBtn').onclick = () => window.gestShow();
+  $('a2hsBtn').onclick = () => { $('a2hsHow').hidden = false; };
 })();
 </script>
 </body>

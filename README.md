@@ -157,7 +157,7 @@ Logging, and what you have climbed. Top to bottom:
 - **Community**: who has climbed the open problem and how each of them first got up it,
   then what the rest of the crew have logged in the last eight hours. Tap one of their
   routes to open it.
-- Earlier sessions are not listed here: the **Logbook** has every one of them, a day to a
+- Earlier sessions are not listed here: the **Logbook** has every one of them, a session to a
   line (they were on this page too until 2026-10-11, which said the same thing twice).
 
 ### Somebody new
@@ -169,6 +169,18 @@ iPhone and on an Android phone. Its cross, a stroke across it, or having read ho
 away for good on that phone (one note, `mb-a2hs`, shared by both walls' pages); left alone
 it slides off after twelve seconds and comes again at the next visit. It never shows when
 the app is opened from the Home Screen, nor once a name is picked.
+
+**What a finger does on the picture** does not show either, so it is said once (Will,
+2026-10-12: "do the gesture card"). The first time a route is open on the board, a moment
+after it opens, a card rises from the foot of the screen with the five things on it: two
+taps (the picture fills the screen), a short swipe down (the same), a long swipe up (lights
+the route), a flick left or right (the next route), and on the full screen a tap on a hold
+(picks it). **Got it**, or a tap on the dark over the card, puts it away for good on that
+phone (`mb-gest`). It does not come up over a sheet, in focus, or while a beta is being
+drawn. The Sun board's page has a card of its own, with that wall's four (two taps or a
+short swipe down, a finger across to turn the head, two fingers to zoom, a tap on a hold)
+and a note of its own (`sb-gest`). Both cards, and the one about the Home Screen, are to be
+had again from **Help** in Settings.
 
 ### Quick log
 
@@ -346,6 +358,8 @@ Top to bottom (the order is of 2026-10-12):
 - **The wall, for everyone**: **Hold set on the wall**, which changes the route list and
   the picture for everyone, so only switch it when the holds on the wall actually change;
   and **Where you're climbing** (see below).
+- **Help**: **Picture gestures**, the card of what a finger does on the picture, and **Add
+  to Home Screen**, the card that says how.
 - **Connection log**: what the page has done with the wall and the relay, with **Copy
   log**, and the build stamp.
 
@@ -547,10 +561,13 @@ page has and this one has not is the beta, so the setter's two buttons, **Change
 **Take it down**, stand where its button is.
 
 **The Logbook** is a sheet of its own, opened by the button in the route's card or the line
-at the foot of the log page. It has every go of one climber, a session to a line with the
-newest open, then everyone's points (how they are worked out is behind the i beside their
-heading). **Export CSV**, at its top, makes a file of the logbook that is showing (see
-*Logbook* below). A tap on an entry of your own opens it, and **Delete
+at the foot of the log page, and the MoonBoard page's is laid out the same since
+2026-10-12. It has every go of one climber, a session to a line with the newest open, then
+everyone's points, listed as that page lists them (how they are worked out is behind the i
+beside their heading). Under the picker, **Export CSV** makes a file of the logbook that is
+showing and **Import CSV** adds a file's goes to your own (see *Logbook* below; here a go
+keeps its exact time, a line may say how far a go against the clock got and how long it
+took, and nothing comes in locked, because this wall has no locks). A tap on an entry of your own opens it, and **Delete
 this entry** takes it out (`POST /log/delete`, which counts the tally again from the rest).
 Somebody else's logbook can be read and not changed, which is a courtesy: there are no
 accounts.
@@ -615,6 +632,16 @@ keeps and how to ask. It runs as a Pages Function (`functions/api/[[path]].js`) 
 database (`wrangler.toml`), at `/api/w/sun` on the site's own address, so it goes out with
 a push like the pages do. The relay and the crew's MoonBoard logbook are not involved,
 except once: the first time anyone opens the Sun board it copies the crew's names across.
+
+A logbook brought in from a file goes to `POST /api/w/sun/log/import`: many goes of one
+climber in a call, each with when it happened. A go the logbook already has (the same
+route and result in the same minute) is left out, `dry` says what would happen and writes
+nothing, and the page sends a long file in pieces of 250. Since goes of last year can now
+be written today, a climber's tally on a route is counted from the goes in the order they
+happened, not the order they were written, and the logbook is handed out the same way.
+The whole import is a handful of queries however long the file, because the free plan
+allows fifty to a request: the rows go in with one statement that reads them out of a JSON
+list, and the tallies with one more.
 
 **Checking it.** `node store/test.mjs` checks the store alone, on a stand-in for D1 made
 from Node's own SQLite. The page is checked together with the real store in headless
@@ -745,24 +772,66 @@ asked*). Both are on the log page, and **Quick log** does the same from the boar
 The log page's own undo is careful. The relay's undo takes off a climber's newest entry,
 whenever that was, so the page only offers it for a go from the current session, names the
 go, and wants a second tap. Anything older is changed in the **Logbook**, where it can be
-seen: any climber's entries, a block for each day, with the newest open. It opens on
-whoever is climbing, the name at the top of the page, each time it is opened; the picker
-inside shows anybody else's. (Until 2026-10-11 it went on opening on whoever was looked at
-last.) Tap a row there to
-lock it or delete it (every row ends in three dots; until 2026-10-11 it took a held finger,
-which nobody found). A locked entry cannot be deleted or undone, and **Lock my entries**
-locks all of yours at once.
+seen.
+
+The **Logbook** is a sheet that rises from the foot of the screen, laid out as the Sun
+board's is (since 2026-10-12, when Will said of matching the two: "good idea"; it took the
+whole screen until then, and listed a day to a line). Top to bottom: whose logbook it is;
+**Export CSV**, **Import CSV** and **Lock my entries** on one line, with an i that explains
+them; a line that sums the logbook up; every go, a session to a line with the newest open,
+each go with its time, the route and its grade, how it went, and a padlock if it is locked;
+then everyone's points, with how they are worked out behind an i. It opens on whoever is
+climbing, the name at the top of the page, each time it is opened; the picker inside shows
+anybody else's. (Until 2026-10-11 it went on opening on whoever was looked at last.)
+
+A tap on an entry of your own opens it in a card over the Logbook: **Keep it**, **Delete
+this entry**, and **Lock it** or **Unlock it**. Every such entry ends in three dots (until
+2026-10-11 it took a held finger, which nobody found). A locked entry cannot be deleted or
+undone, and **Lock my entries** locks all of yours at once. Somebody else's logbook can be
+read and exported and not changed: its entries do not open. That is a courtesy and not a
+lock, since a name is all there is; until 2026-10-12 anybody's entries opened.
 
 **Export CSV**, in the Logbook, makes a file of the logbook that is showing, whoever's it
 is (Will, 2026-10-12: "an export log option which would export a CSV of the climbers log
 book"). A line a go, the oldest first: the day, the time, the climber, the route, its
-grade both ways, how the go went, whether a send was a repeat, who set the route, and
-which hold set it is on. On a phone the file goes to the share sheet, where it can be saved
+grade both ways, how the go went, whether a send was a repeat, who set the route, which
+hold set it is on, and the route's number. A logbook with nothing in it gives the line of
+headings and no more, which is the layout to fill in. On a phone the file goes to the share sheet, where it can be saved
 to Files, sent by AirDrop or mail, or opened in Numbers; anywhere else it is downloaded.
 It is named `wills-wall-moonboard-<climber>-<day>.csv`, is UTF-8 with the mark Excel wants
 at its head, and a name that a sheet would take for a sum has an apostrophe put in front
 of it. The Sun board's Logbook has the same button, with that wall's columns (how far a go
 against the clock got and how long it took, the feet rule, the tape).
+
+**Import CSV** reads a file laid out the same way and adds its goes to the logbook of
+whoever is climbing, and to nobody else's (Will, 2026-10-12: "can we add a logbook import
+button. if they use the same csv format. to get started, they can click the button Export
+CSV and it exports whatever is in their app"). So the way to bring an old logbook in is to
+export, which gives the headings, fill in a line for each go, and import the file.
+
+- A line needs a **Date**, a **Route** and a **Result**. Every other column may be empty or
+  missing, and the columns may be in any order.
+- The date is best written `2026-10-12`. `12/10/2026` is read too: the file's own lines say
+  whether the day or the month comes first, where one of them has a number over twelve,
+  and otherwise it is read the phone's way. A month as a word is read as well.
+- The time may be `18:05` or `6:05 PM`, or left out.
+- The result is `try`, `flash`, `2nd go`, `3rd go` or `4+ goes`; the usual other words for
+  them are understood (`flashed`, `2nd try`, `project`, `sent`).
+- The route is found by its number, if the line has one in **Route id**, and by its name
+  if not, whatever its capitals. The name is looked for on the line's **Hold set**, or on
+  the hold set that is on the wall if the line names none.
+- A line with another climber's name in it is left out, and so is a line that says it is
+  from the other wall.
+- Commas between the cells, or the semicolons or tabs some sheets write.
+
+The goes are handed to the relay's `POST /lists/log/import`, which was made for logbooks
+from the MoonBoard app, and its rules hold: they come in **locked**, with a try and a send
+at most for each route each day, and a go the logbook already has is left out, so a file
+can be imported twice without harm. What is about to happen is asked first (the relay is
+asked what it would do, with `dry`), and afterwards a line in the Logbook says how many
+went in and which lines were left out, and why. A go brought in keeps the day and the time
+the file gave it, written into its stamp as they stand; the page reads such a stamp as the
+phone's own clock time, so its day is the same day wherever the phone is.
 
 Rows live in the relay Worker as an append-only `log:` prefix, with a per-person `stats:`
 index carrying the attempt count and the sends in order. `/lists` returns the index; the rows
@@ -771,8 +840,9 @@ without slowing the page. `done:` is still the chip and filter
 index and is kept in step by the same write: each row of the route list carries the names of
 those who have sent it, as coloured chips.
 
-`POST /lists/log/import` takes a climber's logbook from the official MoonBoard app in one
-batch, every row carrying the day it was really climbed. The rows land locked.
+`POST /lists/log/import` takes a climber's logbook from the official MoonBoard app, or
+from a file through **Import CSV**, in one batch, every row carrying the day it was really
+climbed. The rows land locked.
 
 ## Points
 
