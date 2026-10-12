@@ -74,14 +74,17 @@
   .gd{flex:none;padding:2px 6px;border-radius:5px;font:700 10px ui-monospace,Menlo,monospace;letter-spacing:-.02em}
 
   #top{flex:0 0 auto;background:var(--bg);border-bottom:1px solid var(--edge);margin-bottom:6px}
-  header{display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top) + 4px) 0 4px;border-bottom:1px solid var(--edge)}
+  /* As tall as the MoonBoard page's (51px, where it was 41) since 2026-10-12, and the name picker as tall as that
+     page's, so that the two walls are the same thing in the same place on both pages: a finger that has just gone
+     from one wall to the other is still on them (Will: "Match the sun moon toggle size between sites"). */
+  header{display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top) + 6px) 0 6px;border-bottom:1px solid var(--edge)}
   h1{flex:1;min-width:0;font-size:11px;margin:0;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
      white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* which wall: the two at Will's, side by side; the one you are on is filled */
   #walls{flex:none;display:flex;padding:2px;border-radius:9px;background:var(--panel);border:1px solid var(--edge)}
   #walls button{width:34px;height:26px;padding:0;border:0;border-radius:7px;background:transparent;font-size:14px;line-height:1}
   #walls button.on{background:var(--ink);opacity:1}
-  header #me{flex:none;width:136px;padding:2px 8px;font-size:16px;text-overflow:ellipsis}
+  header #me{flex:none;width:136px;height:38px;padding:2px 8px;font-size:16px;text-overflow:ellipsis;border-radius:8px}
   header #me.ask{outline:2px solid var(--blue-ink);outline-offset:1px}
 
   /* ---- the board ---- */
@@ -208,7 +211,14 @@
   .numBar b{flex:none;min-width:46px;text-align:center;font:700 13px ui-monospace,Menlo,monospace;letter-spacing:-.02em}
   /* at the far end of the slider: the whole route at once (see showFull) */
   .numBar label{flex:none;display:flex;align-items:center;gap:5px;margin:0 1px 0 0;font-size:10px;font-weight:600;line-height:1.12;letter-spacing:.01em;color:#fff;white-space:nowrap}
-  .numBar label input{flex:none;width:19px;height:19px;margin:0;padding:0;accent-color:#fff}
+  /* its switch: smaller than a row's, and in the bar's own colours (white for on, on the dark bar) */
+  .sw.sm{width:36px;height:22px}
+  .sw.sm i{border-radius:11px}
+  .sw.sm i::after{width:18px;height:18px}
+  .sw.sm input:checked + i::after{transform:translateX(14px)}
+  .numBar .sw i{background:rgba(255,255,255,.3)}
+  .numBar .sw input:checked + i{background:#fff}
+  .numBar .sw input:checked + i::after{background:#16181c}
   .numBar input[type=range]:disabled{opacity:.3}
   .numBar input[type=range]{flex:1 1 auto;min-width:0;width:auto;height:28px;margin:0;padding:0;border:0;background:transparent;-webkit-appearance:none;appearance:none;touch-action:none}
   .numBar input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:rgba(255,255,255,.38)}
@@ -279,27 +289,38 @@
   #fixWall{display:flex;gap:6px;margin-bottom:8px}
   #fixWall button{flex:1 1 0;min-width:0;height:34px;padding:0 6px;font-size:13px;border-radius:9px;background:var(--panel)}
   #fixWall button.on{background:var(--ink);border-color:var(--ink);color:var(--onink)}
-  /* ---- the filters, the MoonBoard page's: every one on a single line, under a line for the grades ---- */
-  .four{display:grid;grid-template-columns:1.15fr 1.15fr .85fr 1fr;gap:5px}
-  #gWrap{display:none;border-top:1px solid var(--edge);padding-top:6px;margin-top:7px}
-  body.listPage #gWrap{display:block}
-  #filters{padding-top:0;margin-top:0}
-  #filters select{text-align:center;text-align-last:center;height:38px;padding:0 8px;font-size:16px;border-radius:9px}
+  /* ---- the filters, on one line, as on the MoonBoard page ----
+     Will, 2026-10-12: "Match the two sites route page filters and pickers I like the moon boards". So: the grades by
+     sliding, then Sent and Sort, small, so that the line has the room. From and To are no longer shown (they still
+     hold the choice, out of sight), each dot says its grade over itself all the time, and the two pickers are as
+     narrow as their longest word. What is seen of a picker is a small box with the choice in it; the picker itself
+     lies over the box, unseen, with writing of the size a phone does not zoom in on. (Until then the line stood
+     alone over a row of four pickers.) */
+  #filters{border-top:1px solid var(--edge);padding-top:6px;margin-top:7px}
   #filters .lbl{margin-bottom:2px;margin-top:0}
-  /* grades, by sliding: a line with a dot at each end of the range. The row is as tall as a fingertip so either dot is
-     easy to catch, and it takes every touch for itself: a drag along it must not scroll anything or turn the page.
-     While a dot is held it grows a little and says its grade above itself, where the finger does not cover it. */
-  #gSlide{position:relative;height:40px;margin:0 14px 2px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-  #gSlide .rail{position:absolute;left:-6px;right:-6px;top:50%;height:4px;margin-top:-2px;border-radius:2px;background:var(--box2)}
+  #fRow{display:flex;align-items:flex-end;gap:6px}
+  .fPick{flex:none;min-width:0}
+  #fSentP{margin-left:auto}                /* (they keep to the right when the wall has one grade and no line) */
+  .fPick .lbl{padding-left:2px}
+  .fPick .chip{position:relative;display:grid;place-items:center;height:32px;border:1px solid var(--edge);border-radius:8px;
+               background:var(--panel2);color:var(--ink);font-size:12.5px;white-space:nowrap}
+  .fPick .chip b{font-weight:600}
+  .fPick .chip select{position:absolute;left:0;top:0;width:100%;height:100%;padding:0;border:0;opacity:0}
+  #fSentP .chip{width:46px}
+  #fSortP .chip{width:62px}
+  /* grades, by sliding: a line with a dot at each end of the range, and over each dot its grade. The row is as tall
+     as a fingertip so either dot is easy to catch, and it takes every touch for itself: a drag along it must not
+     scroll anything or turn the page. While a dot is held it grows a little and its grade stands in a box. */
+  #gSlide{position:relative;flex:1 1 0;min-width:0;height:46px;margin:0 13px;touch-action:none;
+          -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  #gSlide .rail{position:absolute;left:-6px;right:-6px;top:30px;height:4px;margin-top:-2px;border-radius:2px;background:var(--box2)}
   #gSlide .fill{position:absolute;top:0;bottom:0;margin:0 6px;border-radius:2px;background:var(--ink)}
-  #gSlide .dot{position:absolute;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:var(--ink);
+  #gSlide .dot{position:absolute;top:30px;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:var(--ink);
                box-shadow:0 0 0 3px var(--bg),0 1px 5px rgba(0,0,0,.35);transition:transform .1s ease-out}
   #gSlide .dot.on{transform:scale(1.18);z-index:2}
-  #gSlide .dot span{position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);display:none;padding:3px 7px;border-radius:6px;
-                    background:var(--ink);color:var(--onink);font:700 11px ui-monospace,Menlo,monospace;white-space:nowrap}
-  #gSlide .dot span.l{left:-4px;transform:none}          /* near an end of the line: keep the words on the screen */
-  #gSlide .dot span.r{left:auto;right:-4px;transform:none}
-  #gSlide .dot.on span{display:block}
+  #gSlide .cap{position:absolute;left:0;top:0;height:13px;padding:0 3px;border-radius:4px;color:var(--dim);
+               font:700 10.5px/13px ui-monospace,Menlo,monospace;white-space:nowrap;pointer-events:none}
+  #gSlide .cap.on{background:var(--ink);color:var(--onink)}
   #listCap{display:none}
   body.listPage #listCap{display:flex;align-items:baseline;gap:8px;height:20px;margin-bottom:8px;font-size:11px;letter-spacing:.13em;
        text-transform:uppercase;color:var(--dim)}
@@ -341,9 +362,46 @@
        padding:10px 0 calc(env(safe-area-inset-bottom) + 30px)}
   body.setPage #setPanel{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;
        padding:10px 2px calc(env(safe-area-inset-bottom) + 30px)}
-  #setPanel .lbl{margin:18px 0 7px}
-  #setPanel label.ck{display:flex;gap:10px;align-items:center;font-size:15px;margin-top:10px}
-  #setPanel label.ck input{width:20px;height:20px}
+  #setPanel .lbl{margin:20px 2px 7px}
+  /* ---- a switch, where there was a tick-box ----
+     Will, 2026-10-12: "swap out the check box for a pill toggle like the iPhone uses but to match the site theme".
+     It is a tick-box still, unseen, lying over a track with a white knob on it, so everything that reads it or
+     sets it does so as before. The track is the grade slider's two colours: grey when off, the page's ink when on. */
+  .sw{position:relative;flex:none;display:inline-block;width:46px;height:28px;vertical-align:middle}
+  .sw input{position:absolute;left:0;top:0;width:100%;height:100%;margin:0;padding:0;border:0;opacity:0;
+            -webkit-appearance:none;appearance:none;cursor:pointer}
+  .sw i{position:absolute;left:0;top:0;right:0;bottom:0;border-radius:14px;background:var(--box2);
+        transition:background .18s ease-out;pointer-events:none}
+  .sw i::after{content:'';position:absolute;left:2px;top:2px;width:24px;height:24px;border-radius:50%;background:#fff;
+               box-shadow:0 1px 3px rgba(0,0,0,.32);transition:transform .18s ease-out}
+  .sw input:checked + i{background:var(--ink)}
+  .sw input:checked + i::after{transform:translateX(18px)}
+  .sw input:focus-visible + i{outline:2px solid var(--blue-ink);outline-offset:2px}
+  .sw input:disabled + i{opacity:.4}
+  @media (prefers-reduced-motion:reduce){ .sw i,.sw i::after{transition:none} }
+  /* a row: what it is on the left with the i that explains it, and its switch (or its picker) at the right */
+  .opt{display:flex;align-items:center;gap:8px;min-height:48px;padding:7px 0}
+  .opt > label{flex:0 1 auto;min-width:0;font-size:14.5px;line-height:1.25}
+  .opt > .sw,.opt > select{margin-left:auto}
+  .opt > select{flex:0 1 auto;width:auto;max-width:60%;padding:7px 10px}
+  .card{border:1px solid var(--edge);border-radius:14px;background:var(--panel);padding:0 12px}
+  .card > * + *{border-top:1px solid var(--line)}
+  /* ---- the i beside an option, and the bubble it opens ----
+     Will, 2026-10-12: "put the descriptions or explanations inside a tooltip for each. Those [would] significantly
+     clean up the setting page." The words are in the page still, out of sight, straight after their i (.tipTxt);
+     a tap on the i shows them in the one bubble there is, hung from the i, under it or over it (see tipShow). */
+  button.tipBtn{position:relative;flex:none;display:inline-grid;place-items:center;width:18px;height:18px;margin:0 0 0 7px;padding:0;
+                border:1.5px solid var(--dimmer);border-radius:50%;background:transparent;color:var(--dim);
+                font:italic 700 11.5px/1 Georgia,'Times New Roman',serif;letter-spacing:0;text-transform:none;vertical-align:-4px}
+  button.tipBtn::after{content:'';position:absolute;left:-11px;top:-11px;right:-11px;bottom:-11px}      /* a fingertip's room round it */
+  button.tipBtn[aria-expanded="true"]{background:var(--ink);border-color:var(--ink);color:var(--onink)}
+  .opt > button.tipBtn{margin-left:0}
+  .tipTxt{display:none}
+  .lbl.tipLbl{display:flex;align-items:center}
+  #tipBox{position:fixed;left:0;top:0;z-index:90;max-width:min(320px,calc(100vw - 20px));max-height:calc(100vh - 40px);overflow-y:auto;
+          padding:10px 12px;border-radius:11px;background:var(--ink);color:var(--onink);font-size:13px;font-weight:400;line-height:1.45;
+          letter-spacing:0;text-transform:none;box-shadow:0 8px 28px rgba(0,0,0,.38)}
+  #tipArrow{position:fixed;z-index:90;width:12px;height:12px;margin:-6px 0 0 -6px;background:var(--ink);transform:rotate(45deg);pointer-events:none}
 
   /* ---- the log page ---- */
   #logPage .lbl{margin:18px 0 7px}
@@ -354,8 +412,36 @@
   #lpNow .sub{margin-top:3px;font-size:12px;color:var(--dim);line-height:1.4}
   #lpNow .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px}
   #lpNow .btns button{padding:7px 6px;font-size:16px;font-weight:700;border-radius:12px}
-  #try{background:#dc2626;border-color:#dc2626;color:#fff}
-  #done{background:#22c55e;border-color:#22c55e;color:#06240e}
+  /* The two buttons as on the MoonBoard page (they were red and green here until 2026-10-12): Log try says how many
+     tries there have been since the last send, and is filled once there is one; Log send is filled once the route
+     has been sent. */
+  #lpNow .btns button.on{background:var(--ink);border-color:var(--ink);color:var(--onink)}
+  #lpNow .sub:empty{display:none}
+  /* its own top line, as on the MoonBoard page: the way back on the left, where the board is, and the page's name */
+  #lpCap{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin-bottom:10px}
+  #lpCap button{justify-self:start;width:auto;height:32px;padding:0 10px;font-size:13px;white-space:nowrap}
+  #lpCap b{font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase}
+  /* the open route's own history: a line that sums it up, then a row a session, the day where a route's name is */
+  #lpHistSum{font-size:13px;color:var(--dim);line-height:1.5}
+  #lpHistSum b{color:var(--ink);font-weight:600}
+  .lprow.hist{padding:8px 2px}
+  .lprow.hist .n{display:flex;align-items:baseline;gap:8px}
+  .lprow.hist .n b{flex:none;font-size:14px}
+  .lprow.hist .n span{display:block;margin-top:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lprow.hist .r{flex-direction:row;align-items:center;gap:9px;max-width:62%}
+  #logPage .more{display:block;width:auto;margin:10px 0 0}
+  /* who has climbed it: a row a climber, their initial in their colour (the same colour as on the MoonBoard page) */
+  .whoRows .p{display:flex;align-items:center;gap:9px;padding:9px 2px;border-bottom:1px solid var(--line)}
+  .whoRows .p i{flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;
+               font-size:11px;font-weight:700;font-style:normal;color:#0e0e0f}
+  .whoRows .p .n{flex:1;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .whoRows .p .n span{display:block;font-size:11px;font-weight:400;color:var(--dimmer);margin-top:1px}
+  .whoRows .p .rs{flex:none;padding:2px 7px;border-radius:5px;font:700 10px ui-monospace,Menlo,monospace;background:#22c55e;color:#06240e}
+  .whoRows .p .rs.far{background:var(--panel2);color:var(--dim)}       /* not sent: how far against the clock */
+  .lprow .n em i{display:inline-grid;place-items:center;width:16px;height:16px;margin-right:5px;border-radius:50%;
+                 font-size:9px;font-weight:700;font-style:normal;color:#0e0e0f;vertical-align:-3px}
+  #lpCrewLbl{margin-top:18px}
+  .sublbl:empty{display:none}
   #lpNow .more3{display:flex;gap:8px;margin-top:8px}
   #lpNow .more3 button{flex:1 1 0;min-width:0;padding:9px 6px;font-size:13px;border-radius:10px}
   #lpNow .more3 button[hidden]{display:none}
@@ -536,8 +622,8 @@
   .rsRow span{flex:1 1 auto}
   .rsRow button{flex:none;width:44px;height:38px;padding:0;font-size:17px;font-weight:700}
   .rsRow b{flex:none;min-width:58px;text-align:center;font:700 17px ui-monospace,Menlo,monospace}
-  .rsChk{display:flex;align-items:center;gap:8px;margin:2px 0 10px;font-size:13px;color:var(--dim)}
-  .rsChk input{width:18px;height:18px;flex:none;margin:0}
+  #rsSheet .opt{min-height:40px;padding:4px 0;margin:0 0 6px}
+  #rsSheet .opt > label{font-size:13.5px;color:var(--dim)}
   #rsGo{width:100%}
   /* on this page it lies on the picture, down its left edge under the corner button, with nothing behind it (as the
      clock of a timed go has nothing behind it): the time or the set, the circles, and End. A finger goes through the
@@ -651,14 +737,14 @@
       <p id="fixSay"></p>
       <div class="two"><button id="fixDone" class="solid">Done</button></div>
     </div>
-    <div id="numBarF" class="numBar" hidden><button class="nb-prev" aria-label="The three before">&#8249;</button><input type="range" class="nb-range" min="0" max="1" step="1" value="0" aria-label="Which numbers are shown"><button class="nb-next" aria-label="The next three">&#8250;</button><b class="nb-say"></b><label><input type="checkbox" class="nb-full"><span>Reveal<br>full route</span></label></div>
+    <div id="numBarF" class="numBar" hidden><button class="nb-prev" aria-label="The three before">&#8249;</button><input type="range" class="nb-range" min="0" max="1" step="1" value="0" aria-label="Which numbers are shown"><button class="nb-next" aria-label="The next three">&#8250;</button><b class="nb-say"></b><label><span class="sw sm"><input type="checkbox" role="switch" class="nb-full"><i></i></span><span>Reveal<br>full route</span></label></div>
     <div id="focusHint"></div>
   </div>
 </section>
 
 <div id="bar">
   <div id="listCap"><b>Routes</b><span id="listN"></span></div>
-  <div id="numBar" class="numBar" hidden><button class="nb-prev" aria-label="The three before">&#8249;</button><input type="range" class="nb-range" min="0" max="1" step="1" value="0" aria-label="Which numbers are shown"><button class="nb-next" aria-label="The next three">&#8250;</button><b class="nb-say"></b><label><input type="checkbox" class="nb-full"><span>Reveal<br>full route</span></label></div>
+  <div id="numBar" class="numBar" hidden><button class="nb-prev" aria-label="The three before">&#8249;</button><input type="range" class="nb-range" min="0" max="1" step="1" value="0" aria-label="Which numbers are shown"><button class="nb-next" aria-label="The next three">&#8250;</button><b class="nb-say"></b><label><span class="sw sm"><input type="checkbox" role="switch" class="nb-full"><i></i></span><span>Reveal<br>full route</span></label></div>
   <div id="barTxt">
     <button id="filtBtn" class="ghost" aria-label="Filters">&#9776;</button>
     <button id="prevBtn" aria-label="The route before this one in the list">&#8249;</button>
@@ -683,34 +769,37 @@
       <button id="quickBtn" class="mini solid" disabled aria-expanded="false" aria-label="Quick log"></button>
     </div>
   </div>
-  <!-- Grades, by sliding, as on the MoonBoard page: two dots on a line, the easiest wanted on the left and the hardest
-       on the right. It is the same choice as From and To, which follow as the dots move. Out of the way of a screen
-       reader: the two pickers say it already. It is always there on the Routes page; the four pickers under it open
-       with the button (Will, 2026-10-11: "by default show the route grade slider on the routes list page"). -->
-  <div id="gWrap">
-    <div id="gSlide" aria-hidden="true">
-      <div class="rail"><div class="fill"></div></div>
-      <div class="dot" data-end="lo"><span></span></div>
-      <div class="dot" data-end="hi"><span></span></div>
-    </div>
-  </div>
   <div id="filters" hidden>
-    <div class="four">
-      <div><div class="lbl">From</div><select id="fMin" aria-label="Easiest grade"></select></div>
-      <div><div class="lbl">To</div><select id="fMax" aria-label="Hardest grade"></select></div>
-      <div><div class="lbl">Sent</div><select id="fMine" aria-label="The routes I have sent">
+    <!-- From and To, the two ends of the grades. They are no longer shown (as on the MoonBoard page since
+         2026-10-11), but they still hold the choice: the line below sets them. -->
+    <div hidden>
+      <select id="fMin" aria-label="Easiest grade"></select>
+      <select id="fMax" aria-label="Hardest grade"></select>
+    </div>
+    <!-- One line, the MoonBoard page's. The grades by sliding: two dots on a line, the easiest wanted on the left
+         and the hardest on the right, each with its grade over it (and an arrow key moves the one that has the
+         focus). Then Sent and Sort, small, so that the line has the room. It stands open on the Routes page; the
+         button beside the search box shuts it. -->
+    <div id="fRow">
+      <div id="gSlide" role="group" aria-label="Grades">
+        <div class="rail"><div class="fill"></div></div>
+        <span class="cap" data-end="lo"></span><span class="cap" data-end="hi"></span>
+        <div class="dot" data-end="lo" role="slider" tabindex="0" aria-label="Easiest grade"></div>
+        <div class="dot" data-end="hi" role="slider" tabindex="0" aria-label="Hardest grade"></div>
+      </div>
+      <div class="fPick" id="fSentP"><div class="lbl">Sent</div><div class="chip"><b id="mineSay">Show</b><select id="fMine" aria-label="The routes I have sent">
         <option value="all">Show</option>
         <option value="todo">Hide</option>
         <option value="sent">Only</option>
-        <option value="gone">Taken down</option>
-      </select></div>
-      <div><div class="lbl">Sort</div><select id="fSort" aria-label="Order">
+        <option value="gone" data-say="Gone">Taken down</option>
+      </select></div></div>
+      <div class="fPick" id="fSortP"><div class="lbl">Sort</div><div class="chip"><b id="sortSay">Newest</b><select id="fSort" aria-label="Order">
         <option value="new">Newest</option>
         <option value="sent">Popular</option>
         <option value="up">Easiest</option>
         <option value="down">Hardest</option>
         <option value="name">A&ndash;Z</option>
-      </select></div>
+      </select></div></div>
     </div>
   </div>
 </div>
@@ -722,7 +811,12 @@
   <div id="results"></div>
 </div>
 
+<!-- The log page, laid out as the MoonBoard page's is (Will, 2026-10-12: "Match the two pages log pages"): its own top
+     line with the way back to the board; this session's card; the open route with its buttons; your history on it, a
+     line that sums it up and a row a session; and the community, who has climbed it and what the crew has been on.
+     What that page has and this one has not is the beta, so here the setter's two buttons stand where its button is. -->
 <div id="logPage">
+  <div id="lpCap"><button id="lpBack" class="ghost" aria-label="Back to the board">&#8249; Board</button><b>Log</b><span></span></div>
   <!-- This session, first on the page: three numbers and a dot for every go. A tap opens the session's climbs under
        them, and another shuts them. Not there until there is a session. -->
   <div id="lpHero" hidden>
@@ -740,6 +834,7 @@
   <div id="lpNow">
     <div class="top"><b id="lpName"></b><span class="gd" id="lpGd" hidden></span></div>
     <div class="sub" id="lpSub"></div>
+    <div class="sub" id="lpSub2"></div>
     <div class="btns" id="lpBtns">
       <button id="try" class="mini">Log try</button>
       <button id="done" class="mini">Log send</button>
@@ -752,11 +847,14 @@
     <button id="lpUndo" class="ghost mini" hidden></button>
   </div>
   <div class="lbl" id="lpRouteLbl">Your history on this route</div>
+  <div id="lpHistSum"></div>
   <div id="lpHist"></div>
+
+  <div class="lbl" id="lpComLbl">Community</div>
   <div class="sublbl" id="lpWhoLbl"></div>
-  <div id="lpWho"></div>
-  <!-- what the crew has been on lately, on any route: a tap on a line goes to the board with that route up -->
-  <div class="lbl" id="lpCrewLbl">Lately on the Sun board</div>
+  <div id="lpWho" class="whoRows"></div>
+  <!-- what the crew has been on lately, on any route: a tap on a row goes to the board with that route up -->
+  <div class="sublbl" id="lpCrewLbl">Lately on the Sun board</div>
   <div id="lpCrew"></div>
   <!-- only when there is no session's card to show and a reason to give: nobody has said who they are -->
   <div class="lbl" id="lpSesLbl" hidden>This session</div>
@@ -765,38 +863,44 @@
 </div>
 
 <div id="setPanel">
-  <div class="lbl" style="margin-top:4px">Which wall</div>
+  <!-- Settings, in this order since 2026-10-12 (Will: "You can re organize the setting page for a better order of
+       options"): which wall and who is climbing, as on the MoonBoard page; then the picture, how the app looks on
+       this phone, and last the map of holds, which is seldom needed. An option that is on or off is a row with a
+       switch, and what it does is behind the small i beside it. -->
+  <div class="lbl tipLbl" style="margin-top:4px">Which wall<button type="button" class="tipBtn" aria-label="About: the two walls" aria-expanded="false">i</button><span class="tipTxt">Both are at Will's. The Sun board has no lights. Its routes are made here: two taps on the picture, tap the holds, and save them as a route. Everyone who climbs it sees them. Nothing from the MoonBoard shows here, and nothing from here shows there.</span></div>
   <div class="two">
     <button id="setMoon">&#127769; MoonBoard</button>
     <button class="solid" disabled>&#9728;&#65039; Sun board</button>
   </div>
-  <p class="hint">Both are at Will's. The Sun board has no lights. Its routes are made here: two taps on the picture, tap the holds, and save them as a route. Everyone who climbs it sees them. Nothing from the MoonBoard shows here, and nothing from here shows there.</p>
 
-  <div class="lbl">Climbing as</div>
+  <div class="lbl tipLbl">Climbing as<button type="button" class="tipBtn" aria-label="About: your name" aria-expanded="false">i</button><span class="tipTxt">The name your tries and sends are logged under. It is the picker at the top of the page, and the same name on the MoonBoard. There are no passwords: a name is a name.</span></div>
   <div class="two">
     <select id="me2" aria-label="Climbing as"></select>
     <button id="addMe" style="flex:none;width:auto">Add a name</button>
   </div>
-  <p class="hint">The same name as on the MoonBoard. There are no passwords: a name is a name.</p>
 
-  <div class="lbl">Background</div>
-  <select id="bgSel">
-    <option value="fog">Light foggy grey</option>
-    <option value="taupe">Light taupe</option>
-  </select>
-  <p class="hint">For this phone only, and for both walls.</p>
+  <div class="lbl tipLbl">The picture<button type="button" class="tipBtn" aria-label="About: the picture" aria-expanded="false">i</button><span class="tipTxt">A finger across the picture turns your head, from the flat wall round to the overhang, and it stays where you leave it. Flat and Overhang in the picture's corners go back to those two views. Two taps, or a short stroke down, and the picture fills the screen; there a tap picks a hold, and a stroke up or down, or the cross, goes back. Two fingers zoom: apart for closer, together for further off, until the whole wall is in sight. A hold that has no outline can still go in a route: tap it while marking the route and a ring goes where you tapped.</span></div>
+  <div class="card">
+    <div class="opt"><label for="dimChk">Dim the wall behind an open route</label><button type="button" class="tipBtn" aria-label="About: dimming the wall" aria-expanded="false">i</button><span class="tipTxt">On, everything but the open route's holds is darkened, so that they stand out. For this phone only.</span><span class="sw"><input type="checkbox" role="switch" id="dimChk"><i></i></span></div>
+    <div class="opt"><label for="allChk">Always outline every hold</label><button type="button" class="tipBtn" aria-label="About: outlining every hold" aria-expanded="false">i</button><span class="tipTxt">On, every hold on the wall has its outline all the time. Off, the outlines show only when the picture fills the screen, where they are what can be tapped. For this phone only.</span><span class="sw"><input type="checkbox" role="switch" id="allChk"><i></i></span></div>
+  </div>
 
-  <div class="lbl">The map of holds</div>
+  <div class="lbl">How it looks on this phone</div>
+  <div class="card">
+    <div class="opt"><label for="bgSel">Background</label><button type="button" class="tipBtn" aria-label="About: the background" aria-expanded="false">i</button><span class="tipTxt">For this phone only, and for both walls. Light foggy grey is what everyone starts on.</span><select id="bgSel">
+      <option value="fog">Light foggy grey</option>
+      <option value="taupe">Light taupe</option>
+    </select></div>
+  </div>
+
+  <div class="lbl tipLbl">The map of holds<button type="button" class="tipBtn" aria-label="About: the map of holds" aria-expanded="false">i</button><span class="tipTxt">The outlines were drawn from photos by a program, and it gets some wrong. Stand at the wall and tap a hold it missed, an outline that is only tape, or one that is the wrong shape. Everyone has your fixes straight away, and the outlines are then redrawn properly from them. While you fix, the picture is a photo of one wall at a time: a hold the map has missed is only in the photo.</span></div>
   <button id="fixBtn">Fix the map of holds</button>
-  <p class="hint">The outlines were drawn from photos by a program, and it gets some wrong. Stand at the wall and tap a hold it missed, an outline that is only tape, or one that is the wrong shape. Everyone has your fixes straight away, and the outlines are then redrawn properly from them. While you fix, the picture is a photo of one wall at a time: a hold the map has missed is only in the photo.</p>
-
-  <div class="lbl">The picture</div>
-  <label class="ck"><input type="checkbox" id="dimChk"> Dim the wall behind an open route</label>
-  <label class="ck"><input type="checkbox" id="allChk"> Always outline every hold</label>
-  <p class="hint">A finger across the picture turns your head, from the flat wall round to the overhang, and it stays where you leave it. Flat and Overhang in the picture's corners go back to those two views. Two taps and the picture fills the screen; there a tap picks a hold, and a swipe up or down, or the cross, goes back. Two fingers zoom: apart for closer, together for further off, until the whole wall is in sight. A hold that has no outline can still go in a route: tap it while marking the route and a ring goes where you tapped.</p>
 
   <div id="ver"></div>
 </div>
+<!-- the one bubble that an i opens (see tipShow), and the corner that points at the i -->
+<div id="tipBox" role="status" aria-live="polite" hidden></div>
+<div id="tipArrow" hidden></div>
 
 <nav id="pgDots" aria-label="Pages"><button data-go="list">&#8249; Routes</button><button data-go="board">Board</button><button data-go="log">Log &#8250;</button><button data-go="set" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor"><circle cx="12" cy="12" r="5.6" stroke-width="2"/><circle cx="12" cy="12" r="2" stroke-width="1.8"/><path stroke-width="3" d="M12 2.6v3.2M12 18.2v3.2M2.6 12h3.2M18.2 12h3.2M5.35 5.35l2.26 2.26M16.39 16.39l2.26 2.26M5.35 18.65l2.26-2.26M16.39 7.61l2.26-2.26"/></g></svg></button></nav>
 
@@ -862,7 +966,7 @@
   <div id="rsSet">
     <div class="rsRow"><span>Goes in a set</span><button data-k="reps" data-d="-1" aria-label="One fewer">&#8722;</button><b id="rsReps">3</b><button data-k="reps" data-d="1" aria-label="One more">+</button></div>
     <div class="rsRow"><span>Rest between sets</span><button data-k="rest" data-d="-30" aria-label="Half a minute less">&#8722;</button><b id="rsRest">5:00</b><button data-k="rest" data-d="30" aria-label="Half a minute more">+</button></div>
-    <label class="rsChk"><input type="checkbox" id="rsLog"> Each go logs a try on the route that is up</label>
+    <div class="opt"><label for="rsLog">Each go logs a try on the route that is up</label><span class="sw"><input type="checkbox" role="switch" id="rsLog"><i></i></span></div>
     <button id="rsGo" class="solid">Start the session</button>
     <button id="rsTry" type="button">Try the ping</button>
     <div class="hint">On the board, tap a circle after each go. After the last one the rest counts down beside the wall. When it is up the phone pings and the screen flashes white. Tap the time to skip a rest.</div>
@@ -871,14 +975,13 @@
 <!-- The logbook: every go of one climber, by session, newest first; then everyone's points. Opened by the Logbook
      button on the log page. An entry of your own is taken out by tapping it. -->
 <div id="bookSheet" hidden role="dialog" aria-label="Logbook">
-  <div class="shHead"><h2>Logbook</h2><button id="bookShut" class="ghost">Close</button></div>
+  <div class="shHead"><h2>Logbook</h2><button id="bookCsv" class="ghost" disabled>Export CSV</button><button id="bookShut" class="ghost">Close</button></div>
   <select id="bookWho" aria-label="Whose logbook"></select>
   <p class="hint" id="bookHint"></p>
   <div id="bookSum"></div>
   <div id="bookRows"></div>
-  <div class="lbl">Points on the Sun board</div>
+  <div class="lbl tipLbl">Points on the Sun board<button type="button" class="tipBtn" aria-label="About: the points" aria-expanded="false">i</button><span class="tipTxt">A route scores once, the first time you send it: its V number plus one (V0 is 1, V4 is 5), and one more for a flash. Tries score nothing. These are the Sun board's own points and are not added to MoonBoard points.</span></div>
   <div id="lpPoints"></div>
-  <p class="hint">A route scores once, the first time you send it: its V number plus one (V0 is 1, V4 is 5), and one more for a flash. Tries score nothing. These are the Sun board's own points and are not added to MoonBoard points.</p>
 </div>
 <div id="entrySheet" hidden role="dialog" aria-label="Log entry">
   <div class="card">
@@ -928,7 +1031,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-11 22:26';
+const BUILD = '2026-10-12 09:27';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -1660,9 +1763,11 @@ if (window.ResizeObserver) new ResizeObserver(() => fit()).observe($('pic'));   
    I click too fast it closes the focus and I lose the progress. Make it so the double tap does not close that focus.
    Only a swipe up or down"). One finger that moves drags the wall (see dragTo): it turns the head, and the picture
    stays where the finger leaves it. In focus, with the picture left to itself, a quick stroke up or down goes back
-   to the page, and so does the cross over the picture. Two fingers zoom about the point between them. */
+   to the page, and so does the cross over the picture; out of focus a quick stroke down is two taps: into focus.
+   Two fingers zoom about the point between them. */
 const fingers = new Map();
 let g = null, lastTap = null;
+const FOCUS_SWIPE = 32;                 // how far a stroke up or down the picture has to go: a thumb's width (a tap moves less than 9)
 /* which of the two buttons in the picture's corners is at a place on the screen, if either */
 function chipAt(x, y){
   if ($('turnBar').hidden) return null;
@@ -1783,8 +1888,11 @@ function fingerUp(e){
     if (twice) return focusOn();
     tapAt(e.clientX - r.left, e.clientY - r.top);
   } else if (dt < 700 && (viewNow().faces ? was.drag !== 'yes' : Z.k <= 1.01)){
-    // a quick stroke up or down: out of focus (while a route is being marked or the map fixed, the way out is the button)
-    if (focus && !draft && !fixing && Math.abs(dy) > 50 && Math.abs(dy) > Math.abs(dx)) focusOff();
+    // a quick stroke up or down: out of focus (while a route is being marked or the map fixed, the way out is the button).
+    // And a quick stroke down, out of focus, is the way into it, as two taps are (Will, 2026-10-12: "if I swipe the
+    // board down it enters or exits focus mode like the double tap. Doesn't need to swipe long").
+    if (focus && !draft && !fixing && Math.abs(dy) > FOCUS_SWIPE && Math.abs(dy) > Math.abs(dx)) focusOff();
+    else if (!focus && !draft && !fixing && dy > FOCUS_SWIPE && dy > Math.abs(dx)) focusOn();
     else if (!viewNow().faces && !draft && !fixing && Math.abs(dx) > 60 && Math.abs(dx) > 2 * Math.abs(dy)) step(dx < 0 ? 1 : -1);
   }
 }
@@ -2675,6 +2783,89 @@ function paintBook(){
     foot.appendChild(book);
   }
 }
+/* ---------- the open route's own history, and who else has climbed it: as on the MoonBoard page ----------
+   Your history is a line that sums it up (sends, tries, when it was first sent and how, and on a climb by number
+   your best go against the clock), then a row a session with a dot for every go: the four latest, and a button for
+   the rest. Who has climbed it is a row a climber: their initial in their colour, how often and when last, and how
+   the first send went. On a climb by number those who have not sent it follow, with how far they have got. */
+function chipFor(name){
+  const m = name.match(/\p{Extended_Pictographic}/u);
+  return m ? m[0] : name[0].toUpperCase();
+}
+function personColor(name){                // the same colour for a name as on the MoonBoard page
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360;
+  return 'hsl(' + h + ' 62% 62%)';
+}
+let histRoute = null, histShown = 4;
+function histFill(r){
+  const sum = $('lpHistSum'), rows = $('lpHist');
+  sum.textContent = ''; rows.innerHTML = '';
+  if (!r) return;
+  if (!me){ rows.innerHTML = '<div class="none">Say who you are to keep a logbook.</div>'; return; }
+  if (histRoute !== r.id){ histRoute = r.id; histShown = 4; }
+  const entries = tagRepeats(myLog.filter(e => e.route === r.id && e.person === me)).sort((a, b) => logTime(b) - logTime(a));     // newest first
+  if (!entries.length){ rows.innerHTML = '<div class="none">Nothing logged on this one yet. Log try and Log send will start filling it in.</div>'; return; }
+  const sends = entries.filter(e => e.result !== 'try'), tries = entries.length - sends.length, first = sends[sends.length - 1];    // first: the oldest send, the one that scores
+  const head = document.createElement('b'), said = [];
+  head.textContent = [sends.length ? sends.length + (sends.length === 1 ? ' send' : ' sends') : 'Not sent yet',
+                      tries ? tries + (tries === 1 ? ' try' : ' tries') : ''].filter(Boolean).join(' \u00b7 ');
+  sum.appendChild(head);
+  if (first) said.push('first sent ' + new Date(first.t).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }) + ', ' + RESULT[first.result]);
+  const best = bestWords(me, r);
+  if (best) said.push('best ' + (statOf(me, r.id).g[0] >= topOf(r) ? 'the top in ' : '') + best.replace(/^to /, 'to hold ').replace(' \u00b7 ', ' in '));
+  if (said.length) sum.appendChild(document.createTextNode(' \u00b7 ' + said.join(' \u00b7 ')));
+  const all = logSessions(entries);
+  all.slice(0, histShown).forEach(s => {
+    const goes = s.rows.slice().reverse(), sent = goes.filter(g => g.result !== 'try'), n = goes.length - sent.length, last = sent[sent.length - 1];   // goes: in the order they happened
+    const timed = goes.filter(g => g.n && g.secs).sort((a, b) => b.n - a.n || a.secs - b.secs)[0];      // the best go against the clock among them
+    const row = document.createElement('div');
+    row.className = 'lprow hist' + (sent.length ? ' sent' : '');
+    row.innerHTML = '<div class="n"><b></b><span></span></div><div class="r"><div class="dots"></div><div class="w"></div></div>';
+    row.querySelector('b').textContent = sessionDay(s);
+    row.querySelector('span').textContent = new Date(s.t0).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    row.querySelector('.dots').innerHTML = goDots(goes);
+    row.querySelector('.w').textContent = sent.length
+      ? (last.rep ? SESSION_SAID['s' + last.result] : RESULT[last.result]) + (sent.length > 1 ? ' \u00d7' + sent.length : '') + (timed && timed.result !== 'try' ? ' \u00b7 ' + clock(timed.secs) : '')
+      : n + (n === 1 ? ' try' : ' tries') + (timed ? ' \u00b7 to ' + timed.n + ' in ' + clock(timed.secs) : '');
+    rows.appendChild(row);
+  });
+  if (all.length > histShown){
+    const more = document.createElement('button');
+    more.className = 'ghost mini more';
+    more.textContent = 'Show ' + (all.length - histShown) + ' earlier';
+    more.onclick = () => { histShown = 1e9; histFill(r); };
+    rows.appendChild(more);
+  }
+}
+function whoFill(r){
+  const box = $('lpWho');
+  box.innerHTML = '';
+  $('lpComLbl').hidden = !r;
+  $('lpWhoLbl').textContent = '';
+  if (!r) return;
+  // who has sent it; on a climb by number, also those who have not, with how far each has got against the clock, the furthest first
+  const sent = senders(r.id), timed = byNumber(r) ? snap.people.filter(n => (statOf(n, r.id) || {}).g && !sent.includes(n)) : [];
+  timed.sort((a, b) => { const x = statOf(a, r.id).g, y = statOf(b, r.id).g; return y[0] - x[0] || x[1] - y[1]; });
+  $('lpWhoLbl').textContent = !sent.length && timed.length ? 'How far people have got on ' + r.name : 'Who has climbed ' + r.name;
+  if (!sent.length && !timed.length){ box.innerHTML = '<div class="none">Nobody has logged a send on this one yet.</div>'; return; }
+  sent.concat(timed).forEach(n => {
+    const st = statOf(n, r.id), first = firstSend(n, r.id), sends = st && st.s ? st.s.length : 0, best = bestWords(n, r), d = st && st.d ? new Date(st.d) : null;
+    const row = document.createElement('div');
+    row.className = 'p' + (n === me ? ' me' : '');
+    row.innerHTML = '<i></i><div class="n"></div><div class="rs"></div>';
+    const chip = row.querySelector('i'), nm = row.querySelector('.n'), rs = row.querySelector('.rs'), sub = document.createElement('span');
+    chip.textContent = chipFor(n); chip.style.background = personColor(n);
+    nm.textContent = n;
+    sub.textContent = [sends > 1 ? sends + ' sends' : '',
+      first && best ? (st.g[0] >= topOf(r) ? 'the top in ' : '') + best.replace(/^to /, 'to hold ').replace(' \u00b7 ', ' in ') : '',
+      d && !isNaN(d) ? 'last on it ' + d.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }) : ''].filter(Boolean).join(' \u00b7 ');
+    if (sub.textContent) nm.appendChild(sub);
+    if (first) rs.textContent = first === 'flash' ? '\u26a1 flash' : RESULT[first];
+    else { rs.textContent = best; rs.classList.add('far'); }
+    box.appendChild(row);
+  });
+}
 const kv = (left, right, cls) => '<div class="kv' + (cls ? ' ' + cls : '') + '"><span>' + left + '</span><span>' + right + '</span></div>';
 function paintLog(){
   const r = openRoute();
@@ -2683,6 +2874,14 @@ function paintLog(){
   $('lpSub').textContent = r ? 'by ' + r.setter + ' · ' + FEET[r.feet] + rulesSay(r) + (r.tape ? ' · tape: ' + r.tape : '') + (r.note ? ' · ' + r.note : '') + (r.retired ? ' · taken down' : '')
                              : 'Pick one on the Routes page, or make one: two taps on the picture, tap its holds, and save them.';
   $('lpBtns').hidden = !r || r.retired;
+  // the two buttons as on the MoonBoard page: the tries since the last send on Log try, and Log send filled once it has been sent
+  const t = r && me ? myTries(r.id) : 0, sends = r && me && statOf(me, r.id) && statOf(me, r.id).s ? statOf(me, r.id).s.length : 0;
+  $('try').textContent = t ? 'Log try \u00b7 ' + t : 'Log try';
+  $('try').className = 'mini' + (t ? ' on' : '');
+  $('done').className = 'mini' + (sends ? ' on' : '');
+  $('lpSub2').textContent = !r || r.retired ? '' : !me ? 'Pick your name at the top to log a go.'
+    : [t ? t + (t === 1 ? ' try' : ' tries') + (sends ? ' since your last send' : ' so far') : (sends ? '' : 'Not tried yet'),
+       sends ? 'sent ' + (sends === 1 ? 'once' : sends === 2 ? 'twice' : sends + ' times') : ''].filter(Boolean).join(' \u00b7 ');
   $('editBtn').hidden = $('goneBtn').hidden = !r || r.setter !== me;        // the setter's two; the logbook's button is always there
   if (r) $('goneBtn').textContent = r.retired ? 'Put it back' : 'Take it down';
   const last = mine[mine.length - 1], lr = last && routeById(last.route);
@@ -2690,29 +2889,80 @@ function paintLog(){
   if (last){ const armed = Date.now() - undoArmed <= 4000; $('lpUndo').classList.toggle('armed', armed);
     $('lpUndo').textContent = armed ? 'Tap again to take it back' : 'Undo: ' + goWords(last) + ' on ' + (lr ? lr.name : 'a route'); }
   $('lpRouteLbl').hidden = !r;
-  const here = r ? myLog.filter(e => e.route === r.id) : [];
-  $('lpHist').innerHTML = !r ? '' : !me ? '<div class="none">Say who you are to keep a logbook.</div>'
-    : here.length ? (r && bestWords(me, r) ? kv('<b>Your best</b>', (statOf(me, r.id).g[0] >= topOf(r) ? 'the top in ' : '') + bestWords(me, r).replace(/^to /, 'to hold ').replace(' · ', ' in '), 'me') : '') +
-        here.map(e => kv('<b>' + goWords(e) + '</b>', when(e.t))).join('') : '<div class="none">You have not been on it yet.</div>';
-  // who has climbed it; on a climb by number, also how far each has got against the clock, the furthest first
-  const sent = r ? senders(r.id) : [], timed = r && byNumber(r) ? snap.people.filter(p => (statOf(p, r.id) || {}).g && !sent.includes(p)) : [];
-  timed.sort((a, b) => { const x = statOf(a, r.id).g, y = statOf(b, r.id).g; return y[0] - x[0] || x[1] - y[1]; });
-  const who = sent.concat(timed);
-  $('lpWhoLbl').textContent = r ? (sent.length ? 'Who has climbed it' : timed.length ? 'How far people have got' : 'Nobody has climbed it yet') : '';
-  $('lpWho').innerHTML = who.map(p => kv('<b>' + esc(p) + '</b>', sent.includes(p) ? RESULT[firstSend(p, r.id)] + (bestWords(p, r) && statOf(p, r.id).g[0] >= topOf(r) ? ' · ' + bestWords(p, r) : '') : bestWords(p, r), p === me ? 'me' : '')).join('');
+  histFill(r);
+  whoFill(r);
   paintBook();
   const rows = snap.people.map(n => ({ n, ...scoreFor(n) })).filter(x => x.total > 0).sort((a, b) => b.total - a.total);
   $('lpPoints').innerHTML = rows.length ? rows.map((x, i) => kv((i + 1) + '. <b>' + esc(x.n) + '</b>', x.total + ' points · ' + x.sends + ' sent' + (x.flashes ? ' · ' + x.flashes + ' flashed' : ''), x.n === me ? 'me' : '')).join('')
     : '<div class="none">No sends yet.</div>';
-  // The crew's latest goes, on any route. A tap on one goes to the board with that route up (Will, 2026-10-11: "if you tap
-  // one of those, it should jump you back to the board page and show you that route").
-  $('lpCrewLbl').hidden = !crewLog.length;
-  $('lpCrew').innerHTML = crewLog.slice(0, CREW_SHOWN).map(e => { const x = routeById(e.route);
-      return '<div class="kv' + (x ? ' tap' : '') + (e.person === me ? ' me' : '') + '"' + (x ? ' data-id="' + x.id + '" role="button"' : '') + '><span><b>' + esc(e.person) + '</b> · ' + esc(x ? x.name : 'a route that is gone') +
-        '</span><span>' + goWords(e) + ' · ' + when(e.t) + '</span></div>'; }).join('');
+  // The crew's latest goes, on any route, in rows like the session's: a climber's goes on a route together, with a
+  // dot for each. A tap on one goes to the board with that route up (Will, 2026-10-11: "if you tap one of those, it
+  // should jump you back to the board page and show you that route").
+  const groups = [], at = new Map();
+  tagRepeats(crewLog.slice()).sort((a, b) => logTime(b) - logTime(a)).forEach(e => {           // newest first
+    const k = e.person + '|' + e.route, t = logTime(e), x = at.get(k);
+    if (x && x.t0 - t < SESSION_GAP){ x.goes.unshift(e); x.t0 = t; }                           // (goes: in the order they happened)
+    else { const nx = { id: e.route, who: e.person, goes: [e], t, t0: t, iso: e.t }; at.set(k, nx); groups.push(nx); }
+  });
+  $('lpCrewLbl').hidden = !groups.length;
+  $('lpCrew').innerHTML = '';
+  groups.slice(0, CREW_SHOWN).forEach(x => {
+    const row = lpRow(x, false), em = row.querySelector('em'), chip = document.createElement('i');
+    chip.textContent = chipFor(x.who); chip.style.background = personColor(x.who);
+    em.textContent = x.who + ' \u00b7 ' + when(x.iso);
+    em.prepend(chip);
+    row.classList.add('crew'); if (x.who === me) row.classList.add('me');
+    row.dataset.id = x.id;
+    row.onclick = routeById(x.id) ? () => open(x.id) : null;
+    $('lpCrew').appendChild(row);
+  });
 }
 const CREW_SHOWN = 8;                        // the log page is the open route's; this is a glance at the rest
-$('lpCrew').onclick = e => { const row = e.target.closest('.kv[data-id]'); if (row) open(+row.dataset.id); };
+$('lpBack').onclick = () => showPage('board');
+
+/* ---------- the i beside an option: what it does, in a bubble ----------
+   The words are in the page, out of sight, straight after their i. A tap on an i shows them in the one bubble there
+   is: under the i where there is room, over it where there is not, never off the side of the screen, and with a
+   corner that points at the i. Another tap on the i, a tap on the bubble or anywhere else, a scroll, Escape or a
+   turn of the phone puts it away. */
+let tipFor = null;
+function tipShut(){
+  if (!tipFor) return;
+  tipFor.setAttribute('aria-expanded', 'false');
+  tipFor = null;
+  $('tipBox').hidden = $('tipArrow').hidden = true;
+}
+function tipShow(btn){
+  const src = btn.nextElementSibling, box = $('tipBox'), arrow = $('tipArrow');
+  if (tipFor === btn) return tipShut();
+  tipShut();
+  if (!src || !src.classList.contains('tipTxt')) return;
+  box.innerHTML = src.innerHTML;
+  box.hidden = false;
+  const r = btn.getBoundingClientRect(), W = document.documentElement.clientWidth, H = innerHeight;
+  const w = box.offsetWidth, h = box.offsetHeight, mid = r.left + r.width / 2;
+  const under = r.bottom + 9 + h <= H - 8 || r.top - 9 - h < 8;          // under it, unless only over it is there room
+  box.style.left = Math.round(Math.max(10, Math.min(W - w - 10, mid - w / 2))) + 'px';
+  box.style.top = Math.round(under ? r.bottom + 9 : r.top - 9 - h) + 'px';
+  arrow.style.left = Math.round(mid) + 'px';
+  arrow.style.top = Math.round(under ? r.bottom + 9 : r.top - 9) + 'px';
+  arrow.hidden = false;
+  btn.setAttribute('aria-expanded', 'true');
+  tipFor = btn;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest ? e.target.closest('.tipBtn') : null;
+  if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  tipShow(b);
+}, true);
+document.addEventListener('pointerdown', e => {
+  if (tipFor && !(e.target.closest && e.target.closest('.tipBtn, #tipBox'))) tipShut();
+}, true);
+$('tipBox').onclick = tipShut;                              // and a tap on the bubble itself
+document.addEventListener('scroll', e => { if (e.target !== $('tipBox')) tipShut(); }, true);
+window.addEventListener('resize', tipShut);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') tipShut(); });
 
 /* ---------- sheets that rise from the foot: the timed session, the logbook, and one entry over it ---------- */
 function showSheet(id){
@@ -2741,9 +2991,64 @@ function openBook(){
   paintLog();                                // everyone's points, which live in this sheet
   loadBook();
 }
+/* ---------- the logbook, as a file ----------
+   Will, 2026-10-12: "Add an export log option which would export a CSV of the climbers log book." Export CSV, at the
+   top of the Logbook, makes a file of the logbook that is showing, whoever's it is: a line a go, the oldest first,
+   with the day, the time, the climber, the route, its grade, how the go went, whether a send was a repeat, how far a
+   go against the clock got and how long it took, who set the route, its feet rule and its tape. On a phone the file
+   goes to the share sheet (Save to Files, AirDrop, Mail, Numbers); where there is none it is downloaded. The goes are
+   the ones the Logbook has already fetched, so the sheet opens on the tap itself: a phone lets a page open one at no
+   other time. */
+function csvCell(v){
+  let s = v === null || v === undefined ? '' : String(v);
+  if (/^[=+\u002d@\u0009\u000d]/.test(s)) s = "'" + s;          // a sheet must not take a route's name for a sum
+  return /[",\u000d\u000a]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+// (the first character tells Excel the file is UTF-8, which the names in it need)
+const csvOf = rows => '\ufeff' + rows.map(r => r.map(csvCell).join(',')).join('\u000d\u000a') + '\u000d\u000a';
+const csvDay = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+function bookCsvRows(who, entries){
+  const rows = [['Date', 'Time', 'Climber', 'Route', 'Grade', 'Result', 'Repeat send', 'Hold reached', 'Seconds on the wall', 'Setter', 'Feet', 'Tape', 'Wall']];
+  tagRepeats(entries.slice()).sort((a, b) => logTime(a) - logTime(b)).forEach(e => {
+    const d = new Date(e.t), ok = !isNaN(d), r = routeById(e.route);
+    rows.push([ok ? csvDay(d) : '', ok ? String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') : '',
+               e.person || who, r ? r.name : 'a route that is gone', r ? vName(r.grade) : '', RESULT[e.result] || e.result, e.rep ? 'yes' : '',
+               e.n || '', e.secs || '', r ? r.setter : '', r ? FEET[r.feet] || '' : '', r ? r.tape || '' : '', 'Sun board']);
+  });
+  return rows;
+}
+const fileSlug = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'climber';
+function fileDown(name, blob){
+  const a = document.createElement('a'), url = URL.createObjectURL(blob);
+  a.href = url; a.download = name; a.style.display = 'none';
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 4000);
+  return 'saved';
+}
+// to the share sheet on a phone, to the downloads anywhere else; says which it was ('shared', 'saved', or 'cancelled')
+function fileOut(name, text, type){
+  const blob = new Blob([text], { type: type + ';charset=utf-8' });
+  let file = null, phone = false;
+  try{ file = new File([blob], name, { type }); }catch(e){}
+  try{ phone = matchMedia('(pointer:coarse)').matches; }catch(e){}
+  if (phone && file && navigator.canShare && navigator.share && navigator.canShare({ files: [file] }))
+    return navigator.share({ files: [file], title: name }).then(() => 'shared', err => err && err.name === 'AbortError' ? 'cancelled' : fileDown(name, blob));
+  return Promise.resolve(fileDown(name, blob));
+}
+let csvBusy = false;                      // one at a time: a second tap while the share sheet is coming up starts nothing behind it
+$('bookCsv').onclick = async () => {
+  const who = $('bookWho').value, rows = bookRows;
+  if (csvBusy || !who || !rows.length) return;
+  let how = 'saved';
+  csvBusy = true;
+  try{ how = await fileOut('wills-wall-sun-board-' + fileSlug(who) + '-' + csvDay(new Date()) + '.csv', csvOf(bookCsvRows(who, rows)), 'text/csv'); }
+  catch(e){ how = 'failed'; }
+  csvBusy = false;
+  if (how !== 'cancelled') toast(how === 'failed' ? 'Could not export' : how === 'shared' ? 'Exported' : 'Saved to downloads', how === 'failed');
+};
 async function loadBook(){
   const who = $('bookWho').value, ask = ++bookAsk;
-  bookRows = []; $('bookRows').innerHTML = '';
+  bookRows = []; $('bookRows').innerHTML = ''; $('bookCsv').disabled = true;
   $('bookHint').textContent = '';
   $('bookSum').textContent = who ? 'Loading\u2026' : 'Say who you are, at the top of the page, to keep a logbook.';
   if (!who) return;
@@ -2752,6 +3057,7 @@ async function loadBook(){
   catch(e){ if (ask === bookAsk) $('bookSum').textContent = 'The logbook cannot be reached just now. Try again in a moment.'; return; }
   if (ask !== bookAsk) return;               // another climber was picked while this was on its way
   bookRows = rows; paintBookRows();
+  $('bookCsv').disabled = !rows.length;
 }
 function bookRow(e, own){
   const r = routeById(e.route), row = document.createElement('div');
@@ -2814,6 +3120,7 @@ $('enDelete').onclick = async () => {
     bookEntry = null;
     mine = []; logAt = 0;                    // Undo on the log page takes off the newest go, which may be the one that has just gone
     bookRows = bookRows.filter(x => x.k !== e.k);
+    $('bookCsv').disabled = !bookRows.length;
     showSheet('bookSheet'); take(d); paintBookRows(); loadLog(); toast('Deleted');
   }catch(err){ $('enErr').textContent = err.message; $('enDelete').disabled = false; }
 };
@@ -2829,6 +3136,7 @@ function paintList(){
   $('filtBtn').classList.toggle('on', !$('filters').hidden);
   $('filtBtn').classList.toggle('dot', narrowed());
   $('qX').hidden = !FILTERS.q;
+  paintChips();
   $('prevBtn').disabled = $('nextBtn').disabled = !!draft || fixing || !list.length || (list.length === 1 && list[0].id === openId);
   const box = $('results');
   if (!list.length){
@@ -2849,11 +3157,18 @@ function paintList(){
 $('results').onclick = e => { const row = e.target.closest('.rt'); if (row) open(+row.dataset.id); };
 /* ---------- the filters: the MoonBoard page's, with this wall's grades ----------
    Will, 2026-10-10: "The sun board routes page filters looks differently also no slider. Match it with the moonboard
-   app." So: a line with a dot at each end of the range of grades, over one row of four. From and To are the same
-   choice as the two dots; Sent shows, hides or keeps only the routes I have sent (and is where the routes taken down
-   are found); Sort is the order. The line runs from the easiest route on the wall to the hardest, as the MoonBoard
-   page's runs over the grades its board has, so none of it is dead. An end left alone stays an end when a route is
-   added beyond it. There is no picker of setters any more: the search box finds a setter by name. */
+   app." And again on 2026-10-12, when the MoonBoard page's had become one line: "Match the two sites route page
+   filters and pickers I like the moon boards". So: one line, a dot at each end of the range of grades with its grade
+   over it, then Sent and Sort as two small boxes. Sent shows, hides or keeps only the routes I have sent (and is
+   where the routes taken down are found); Sort is the order. From and To, which the two dots set, are out of sight.
+   The line runs from the easiest route on the wall to the hardest, as the MoonBoard page's runs over the grades its
+   board has, so none of it is dead. An end left alone stays an end when a route is added beyond it. There is no
+   picker of setters any more: the search box finds a setter by name. */
+function paintChips(){                     // what each of the two small boxes says: its picker's choice
+  const said = id => { const o = $(id).selectedOptions[0]; return o ? o.dataset.say || o.textContent : ''; };
+  $('mineSay').textContent = said('fMine');
+  $('sortSay').textContent = said('fSort');
+}
 function fillFilters(){
   const gs = snap.routes.map(r => r.grade);
   const lo = gs.length ? Math.min(...gs) : GRADE_MIN, hi = gs.length ? Math.max(...gs) : GRADE_MAX;
@@ -2871,9 +3186,9 @@ function fillFilters(){
   $('fMin').value = FILTERS.min; $('fMax').value = FILTERS.max;
   paintGradeSlide(slideHeld);
 }
-/* Two dots on a line over the From and To pickers: drag the left one to the easiest grade wanted and the right one to
-   the hardest. The dots cannot pass each other. When they sit on the same grade, the way the finger first moves says
-   which one it took. A tap on the line brings the nearer dot to it. */
+/* Two dots on a line: drag the left one to the easiest grade wanted and the right one to the hardest. The dots
+   cannot pass each other. When they sit on the same grade, the way the finger first moves says which one it took. A
+   tap on the line brings the nearer dot to it, and an arrow key moves the dot that has the focus. */
 let slideHeld = null;
 function paintGradeSlide(held){
   const box = $('gSlide'), n = gradeHi - gradeLo;
@@ -2883,12 +3198,31 @@ function paintGradeSlide(held){
   fill.style.left = at(lo) + '%';
   fill.style.width = (at(hi) - at(lo)) + '%';
   box.querySelectorAll('.dot').forEach(d => {
-    const v = d.dataset.end === 'lo' ? lo : hi, t = d.querySelector('span');
+    const v = d.dataset.end === 'lo' ? lo : hi;
     d.style.left = at(v) + '%';
     d.classList.toggle('on', held === d.dataset.end);
-    t.textContent = vName(v);
-    t.className = at(v) < 20 ? 'l' : at(v) > 80 ? 'r' : '';
+    d.setAttribute('aria-valuemin', gradeLo); d.setAttribute('aria-valuemax', gradeHi);
+    d.setAttribute('aria-valuenow', v); d.setAttribute('aria-valuetext', vName(v));
   });
+  // Each grade over its dot. Where the two would lie on each other they move apart just far enough, and neither
+  // goes past the ends of the line; on one grade there is one of them (the held dot's, while one is held).
+  const cl = box.querySelector('.cap[data-end="lo"]'), ch = box.querySelector('.cap[data-end="hi"]');
+  cl.textContent = vName(lo); ch.textContent = vName(hi);
+  cl.classList.toggle('on', held === 'lo'); ch.classList.toggle('on', held === 'hi');
+  cl.hidden = hi === lo && held === 'hi'; ch.hidden = hi === lo && held !== 'hi';
+  const W = box.clientWidth;
+  if (!W) return;                         // the filters are shut: the words are placed when they open
+  const M = 13, wl = cl.hidden ? 0 : cl.offsetWidth, wh = ch.hidden ? 0 : ch.offsetWidth;
+  const fit = (x, w) => Math.min(W + M - w, Math.max(-M, x));
+  let a = fit(at(lo) / 100 * W - wl / 2, wl), b = fit(at(hi) / 100 * W - wh / 2, wh);
+  const over = wl && wh ? a + wl + 5 - b : 0;
+  if (over > 0){
+    a -= over / 2; b += over / 2;
+    if (a < -M){ b += -M - a; a = -M; }
+    if (b + wh > W + M){ a -= b + wh - (W + M); b = W + M - wh; }
+  }
+  cl.style.transform = 'translateX(' + a.toFixed(1) + 'px)';
+  ch.style.transform = 'translateX(' + b.toFixed(1) + 'px)';
 }
 (function gradeSlide(){
   const box = $('gSlide');
@@ -2926,6 +3260,19 @@ function paintGradeSlide(held){
   const up = () => { if (!down) return; down = false; end = null; slideHeld = null; paintGradeSlide(null); };
   box.addEventListener('pointerup', up);
   box.addEventListener('pointercancel', up);
+  // by the keys as well, now that the two pickers which said the same are out of sight
+  box.addEventListener('keydown', e => {
+    const d = e.target.closest ? e.target.closest('.dot') : null, step = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1 }[e.key];
+    if (!d || !step) return;
+    e.preventDefault();
+    const low = d.dataset.end === 'lo', lo = FILTERS.min, hi = FILTERS.max;
+    const v = low ? Math.min(Math.max(lo + step, gradeLo), hi) : Math.max(Math.min(hi + step, gradeHi), lo);
+    if (v === (low ? lo : hi)) return;
+    if (low) FILTERS.min = v; else FILTERS.max = v;
+    $('fMin').value = FILTERS.min; $('fMax').value = FILTERS.max;
+    paintGradeSlide(null); paintList();
+  });
+  window.addEventListener('resize', () => paintGradeSlide(slideHeld));      // the words over the dots are placed in pixels
 })();
 $('q').oninput = () => { FILTERS.q = $('q').value; paintList(); };
 $('qX').onclick = () => { $('q').value = ''; FILTERS.q = ''; paintList(); };
@@ -2936,7 +3283,7 @@ $('fMax').onchange = () => { FILTERS.max = +$('fMax').value; if (FILTERS.min > F
 $('fMine').onchange = () => { FILTERS.mine = $('fMine').value; paintList(); };
 $('fSort').onchange = () => { FILTERS.sort = $('fSort').value; paintList(); };
 $('holdX').onclick = () => { holdFilter = []; paintList(); };
-$('filtBtn').onclick = () => { $('filters').hidden = !$('filters').hidden; paintList(); };
+$('filtBtn').onclick = () => { $('filters').hidden = !$('filters').hidden; paintList(); paintGradeSlide(slideHeld); };
 $('toBoard').onclick = () => showPage('board');
 
 /* ---------- picked holds: find the routes on them, or save them as a route ---------- */
@@ -3156,7 +3503,10 @@ function showPage(p){
     if (r && tv.faces && !fixing && !draft){ const b = bestLook(marksShown(r), tv); turnTo(b.t, b.x); }      // opened from the logbook: look at it
   });
   if (p === 'log'){ paintLog(); loadLog(); }
+  // on the Routes page the filters stand open, as on the MoonBoard page (the button beside the search box shuts them)
+  if (p !== 'list') $('filters').hidden = true; else if (was !== 'list') $('filters').hidden = false;
   paintList();
+  if (p === 'list') paintGradeSlide(slideHeld);          // the grades' words can only be placed over their dots once the line has a width
   if (p === 'list' && was !== 'list') $('scroll').scrollTop = listTop;
   else if (p === 'board') pinList(was === 'board');
 }

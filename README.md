@@ -69,7 +69,7 @@ The page you climb from, top to bottom:
   on a phone that has asked for it in Settings.
 - The picture of the wall with the open problem ringed: green start, blue, red finish.
   Flick it left or right to step through the list. A long stroke up it lights the problem
-  (see *A long stroke upwards*).
+  (see *A long stroke upwards*), and a short stroke down it is two taps: into focus.
 - Left of the picture, the wall's panel: **Next up**, **History**, the line, and what is
   on the wall (see *Two phones, one wall*).
 - A row with the open problem's name and grade, which is also the way to the search,
@@ -82,7 +82,7 @@ The page you climb from, top to bottom:
 There is no Hide button: once a problem is open the board stays, and taking a problem
 off the wall is not something a stray tap should do with other people climbing. One tap on
 the picture never opens anything either. It only undoes: it puts a shrunken picture back
-and stops the beta climber. Two taps are for focus.
+and stops the beta climber. Two taps are for focus, and so is a short stroke down the picture.
 
 ### A long stroke upwards
 
@@ -100,10 +100,13 @@ focus.
 
 ### Focus, and picking holds
 
-Two taps on the picture and it fills the screen, with the open problem's name and grade
-over it. Two more taps put the page back, and so do Back and a swipe downwards from
-anywhere on the screen. (It was a swipe upwards until 2026-10-11, when the stroke upwards
-was given to lighting the problem.) A flick across still steps through the list.
+Two taps on the picture, or a short stroke down it, and it fills the screen, with the open
+problem's name and grade over it. Two more taps put the page back, and so do Back and a
+short stroke downwards from anywhere on the screen. (The way out was a swipe upwards until
+2026-10-11, when the stroke upwards was given to lighting the problem. Since 2026-10-12 the
+stroke down is the way in as well, and a thumb's width of it, 32 pixels, is enough where
+it took 50: Will, "if I swipe the board down it enters or exits focus mode like the double
+tap. Doesn't need to swipe long".) A flick across still steps through the list.
 
 At the left end of the name's line is a small bulb: it lights the open problem, as *Light
 up Route* does, without leaving focus. It is pale with its bulb out until this problem is
@@ -179,7 +182,9 @@ Some come for attempts and the rest between them, not for sends. On the board, b
 **Quick log**, is a button with a timer on it. It opens a sheet that sets how many goes
 make a set (one to eight) and how long the rest is (half a minute to half an hour), and
 **Start the session** shuts the sheet. (The setting-up was on the log page until
-2026-10-11.) The button is green while a session is on, and opens the same sheet to end
+2026-10-11.) The sheet rises from the foot of the screen with the board dimmed behind it,
+as on the Sun board's page, and a tap on the dimmed board shuts it; until 2026-10-12 it
+took the whole screen. The button is green while a session is on, and opens the same sheet to end
 it. At the top of the panel beside the wall is a circle for each go. A tap
 pops the next one (a tap on a popped one puts it back). When the last is popped the rest
 counts down in the same box, beside the wall and never over it, so the next route can be
@@ -191,16 +196,16 @@ sound only after a touch has allowed it, so the taps that start a session and po
 wake it with its sound off. **Try the ping**, under Start, plays it and shows the flash at
 once, to check the sound is up. (The first flash was there in name only: its class shared
 a name with a ten-pixel dot of the logbook, and that dot in a corner was all of it.) A tap on the time
-skips a rest, and **End** puts the box away. A tick-box makes each popped circle log a
-try on the route that is up; it is off unless ticked. The session is the phone's own,
+skips a rest, and **End** puts the box away. A switch makes each popped circle log a
+try on the route that is up; it is off unless turned on. The session is the phone's own,
 kept in its storage (`mb-rest`), so it runs through a reload, and the screen is kept
 awake while one is on where the phone allows. The Sun board has the same session, under
 the same name, so one carries from wall to wall: there the circles lie on the picture,
 down its left edge under the corner button, with nothing behind them.
 
-**The rest counted down on the wall.** A second tick-box in the sheet, **Count the rest
-down on the wall**, off unless ticked and kept by the phone (`mb-rest-wall`). While a session
-with it ticked is on, row 1 of the wall is the count's: the grade is not shown there, and a
+**The rest counted down on the wall.** A second switch in the sheet, **Count the rest
+down on the wall**, off unless turned on and kept by the phone (`mb-rest-wall`); what it
+does is behind the i beside it. While a session with it on is running, row 1 of the wall is the count's: the grade is not shown there, and a
 route that is up with its grade when the session starts goes up again without it. When a
 rest begins the wall gets a red light on row 1 for each minute left, from A1 (eleven at
 most), and the picture shows the same; a minute on, one fewer, one write each time. Five
@@ -221,7 +226,7 @@ It never takes the wall from anybody, which is the point of it on a wall that is
   nobody's turn in the line and nothing new in tonight's list (the page tells the relay it
   is a repeat; see `write`, `again`).
 
-A rest skipped, a session ended, or the box unticked takes the count's lights off again, if
+A rest skipped, a session ended, or the switch turned off takes the count's lights off again, if
 the wall is still the count's. The letters are seven wide and nine tall and no frame is
 over 130 bytes, well inside what the box will draw.
 
@@ -303,28 +308,48 @@ engine's id is `IG_CX` in the page; were it empty, the button would open the web
 The fourth page, behind the cog at the end of the row of pages. It was a sheet opened from
 the search row until the cog moved down there.
 
-- **Games on the wall**: Snake and Connect four. They open over the page.
-- **Background**, for this phone only: light foggy grey, which every phone starts on, or
-  light taupe. (Every phone was put back on the grey once, on 2026-10-08. Black, which is
-  how the app first looked, could be chosen until 2026-10-11; a phone that had chosen it
-  is on the grey.) It is the same choice on the Sun board's page.
-- **Show the board on plywood**, for this phone only. Plywood is drawn for the 2016 and
-  2024 hold sets. On the 2016 set a phone starts on Moon's yellow board and the box is
-  unticked; on the 2024 set it starts on plywood and the box is ticked. Once a phone has
-  ticked or unticked the box, that is what it gets on every set. Masters 2019 keeps its
-  own picture.
-- **Show the "Show 2nd route" button**, for this phone only, off unless a phone turns it
-  on (`mb-pair`). Until 2026-10-11 the button was always there; Will did not expect it to
-  be used much. Two routes that somebody else puts up are shown as two either way.
-- **Light the wall as soon as I pick a problem**, off unless a phone turns it on.
-- **Show the grade on row 1**. Row 1 carries no holds on any 2016 benchmark, so it reads
-  out the grade from A1 onward, one light per V-grade: five green up to V5, two blue for
-  V6–V7, red from V8. On the 2019 and 2024 sets a few routes use row 1, and the meter is
-  left off for those.
-- **Hold set on the wall**. This changes the route list and the picture for everyone, so
-  only switch it when the holds on the wall actually change.
-- **Where you're climbing** (see below), a log of what the page has done, and the build
-  stamp.
+An option that is on or off is a row with a switch: the phone's own kind in the page's
+colours, a grey track when off and the page's ink when on. (They were tick-boxes until
+2026-10-12: Will, "swap out the check box for a pill toggle like the iPhone uses but to
+match the site theme". Each is a tick-box still, unseen, under its switch, so nothing that
+reads one changed.) What an option does is no longer written out under it. It is behind the
+small **i** beside it, which opens a bubble with the words, under the i or over it,
+wherever there is room; a tap anywhere else, a scroll, or another tap on the i puts the
+bubble away. The same switches and the same i are in the sheets (the timed session's,
+Connect four's) and on the Sun board's page.
+
+Top to bottom (the order is of 2026-10-12):
+
+- **Which wall**, at Will's: the MoonBoard and the Sun board.
+- **Climbing as**: the name picker at the top of the page, here as well, with **Add a
+  name** beside it, as on the Sun board's page. Whichever of the two pickers is changed,
+  the other follows.
+- **Lighting the wall**
+  - **Light a route as soon as I open it**, off unless a phone turns it on.
+  - **Show the grade on the bottom row**. Row 1 carries no holds on any 2016 benchmark, so
+    it reads out the grade from A1 onward, one light per V-grade: five green up to V5, two
+    blue for V6–V7, red from V8. On the 2019 and 2024 sets a few routes use row 1, and the
+    meter is left off for those.
+  - **Show the "Show 2nd route" button**, for this phone only, off unless a phone turns it
+    on (`mb-pair`). Until 2026-10-11 the button was always there; Will did not expect it to
+    be used much. Two routes that somebody else puts up are shown as two either way.
+- **How it looks on this phone**
+  - **Background**: light foggy grey, which every phone starts on, or light taupe. (Every
+    phone was put back on the grey once, on 2026-10-08. Black, which is how the app first
+    looked, could be chosen until 2026-10-11; a phone that had chosen it is on the grey.)
+    It is the same choice on the Sun board's page.
+  - **Show the board on plywood**. Plywood is drawn for the 2016 and 2024 hold sets. On the
+    2016 set a phone starts on Moon's yellow board and the switch is off; on the 2024 set
+    it starts on plywood and the switch is on. Once a phone has moved the switch, that is
+    what it gets on every set. Masters 2019 keeps its own picture.
+- **Games on the wall**: Connect four (Snake is put away). It opens over the page.
+- **The wall, for everyone**: **Hold set on the wall**, which changes the route list and
+  the picture for everyone, so only switch it when the holds on the wall actually change;
+  and **Where you're climbing** (see below).
+- **Connection log**: what the page has done with the wall and the relay, with **Copy
+  log**, and the build stamp.
+
+The page's heading stays at the very top while the rows go by under it.
 
 ## The Sun board
 
@@ -416,7 +441,8 @@ tap on the model is first taken back to the face it fell on, and a hold behind a
 face cannot be tapped.
 
 **Focus, and making a route.** As on the MoonBoard, one tap on the picture does nothing and
-two taps make it the whole screen, with every hold outlined; a stroke up or down, or the
+two taps make it the whole screen, with every hold outlined, and so does a short stroke
+down the picture (since 2026-10-12, as on the MoonBoard page); a stroke up or down, or the
 cross, goes back. Two more taps do not: this wall's holds are close together, and two of
 them tapped quickly used to shut the picture and lose every hold picked. The holds picked
 are kept when the picture shuts, out of sight, and are there when it opens again; they go
@@ -479,10 +505,14 @@ stays as it was left. A short climb by number, which has no slider, keeps its li
 **Changing a route.** Only its setter is offered **Change it** and **Take it down**, on
 the log page. A route taken down leaves the list and keeps what was logged on it.
 
-**The filters on the Routes page are the MoonBoard page's.** A line with two dots to drag
-for the easiest and hardest grade wanted, over one row of four: **From** and **To**, which
-say the same as the dots, **Sent** (show, hide, or only what you have climbed; the routes
-taken down are found here too) and **Sort** (newest, popular, easiest, hardest, A–Z). The
+**The filters on the Routes page are the MoonBoard page's.** One line: a line with two dots
+to drag for the easiest and hardest grade wanted, each dot with its grade over it, then
+**Sent** (show, hide, or only what you have climbed; the routes taken down are found here
+too) and **Sort** (newest, popular, easiest, hardest, A–Z) as two small boxes. They stand
+open on the Routes page and the button beside the search box folds them away. (Until
+2026-10-12 the line stood over a row of four pickers, with **From** and **To** saying the
+same as the dots; Will: "Match the two sites route page filters and pickers I like the
+moon boards". From and To are still in the page, out of sight.) The
 line runs from the easiest route on the wall to the hardest, so none of it is dead, and
 an end left alone moves with the wall when a route is added beyond it. There is no picker
 of setters: the search box finds a setter by name.
@@ -505,15 +535,31 @@ page is everything in a line: sends in all, flashes, the hardest, points. A sess
 of four hours in it, and it is "this session" until its last go is eight hours old. A tap
 on a route opens it on the page, ready for another go, and the board turns to look at it.
 Changing the name at the top changes whose logbook it is. The page is otherwise the open
-route's: its card, your history on it, who has climbed it, and **Lately on the Sun board**,
-a few of the crew's latest goes, where a tap on a line goes to the board with that route up.
+route's, and since 2026-10-12 it is laid out as the MoonBoard page's is (Will: "Match the
+two pages log pages"): its own top line with the way back to the board; the route's card,
+where **Log try** carries the tries since the last send and **Log send** is filled once
+the route has been sent (they were red and green); **Your history on this route**, a line
+that sums it up and a row a session with a dot for every go; and **Community**, who has
+climbed it, a row a climber with their initial in their colour and how their first send
+went, then **Lately on the Sun board**, a few of the crew's latest goes in rows of the
+same kind, where a tap on a row goes to the board with that route up. What the MoonBoard
+page has and this one has not is the beta, so the setter's two buttons, **Change it** and
+**Take it down**, stand where its button is.
 
 **The Logbook** is a sheet of its own, opened by the button in the route's card or the line
 at the foot of the log page. It has every go of one climber, a session to a line with the
-newest open, then everyone's points. A tap on an entry of your own opens it, and **Delete
+newest open, then everyone's points (how they are worked out is behind the i beside their
+heading). **Export CSV**, at its top, makes a file of the logbook that is showing (see
+*Logbook* below). A tap on an entry of your own opens it, and **Delete
 this entry** takes it out (`POST /log/delete`, which counts the tally again from the rest).
 Somebody else's logbook can be read and not changed, which is a courtesy: there are no
 accounts.
+
+**Settings.** As on the MoonBoard page since 2026-10-12: which wall, who is climbing, then
+**The picture** (two switches: dim the wall behind an open route, and always outline
+every hold), **How it looks on this phone** (the background), and **The map of holds**.
+What each does is behind the i beside it. The header is as tall as the MoonBoard page's,
+so the two walls in it are the same thing in the same place on both pages.
 
 **Round the board.** The timed session's button is beside Quick log, as on the MoonBoard
 page. Either side of the open route's name is an arrow, to the route before and the route
@@ -707,6 +753,17 @@ lock it or delete it (every row ends in three dots; until 2026-10-11 it took a h
 which nobody found). A locked entry cannot be deleted or undone, and **Lock my entries**
 locks all of yours at once.
 
+**Export CSV**, in the Logbook, makes a file of the logbook that is showing, whoever's it
+is (Will, 2026-10-12: "an export log option which would export a CSV of the climbers log
+book"). A line a go, the oldest first: the day, the time, the climber, the route, its
+grade both ways, how the go went, whether a send was a repeat, who set the route, and
+which hold set it is on. On a phone the file goes to the share sheet, where it can be saved
+to Files, sent by AirDrop or mail, or opened in Numbers; anywhere else it is downloaded.
+It is named `wills-wall-moonboard-<climber>-<day>.csv`, is UTF-8 with the mark Excel wants
+at its head, and a name that a sheet would take for a sum has an apostrophe put in front
+of it. The Sun board's Logbook has the same button, with that wall's columns (how far a go
+against the clock got and how long it took, the feet rule, the tape).
+
 Rows live in the relay Worker as an append-only `log:` prefix, with a per-person `stats:`
 index carrying the attempt count and the sends in order. `/lists` returns the index; the rows
 themselves are only fetched when the log page or the **Logbook** opens, so the log can grow
@@ -744,6 +801,7 @@ are kept per climber.
 ## Connect four
 
 In Settings, under *Games on the wall*. Opens as a full screen sheet and starts a game.
+The rules are behind the i beside its name, and the chess clock is a switch.
 
 Each seat takes a climber from the name picker's roster, and a chess clock gives both the same
 budget - two minutes by default - counting down only on their own turn. Run out and you lose

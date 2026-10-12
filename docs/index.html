@@ -179,8 +179,11 @@
   #dot.busy{background:var(--dim);animation:pulse 1s infinite}
   @keyframes pulse{50%{opacity:.25}}
   #connect{flex:none;width:auto;height:38px;padding:0 9px;font-size:12.5px;letter-spacing:.02em}
-  /* a narrow phone: the name picker and the two walls give a little, so that what the wall is doing is said whole */
-  @media (max-width:380px){ header{gap:6px} header #me{width:82px} #walls button{width:30px} }
+  /* a narrow phone: the name picker and Connect give a little, so that what the wall is doing is said whole. The two
+     walls do not: they are one size on every phone and on both pages (Will, 2026-10-12: "Match the sun moon toggle
+     size between sites"). */
+  @media (max-width:380px){ header{gap:6px} header #me{width:78px} #connect{padding:0 7px} }
+  @media (max-width:340px){ header #me{width:66px} #connect{padding:0 5px;font-size:12px} header h1{font-size:10px;letter-spacing:.04em} }
   /* which wall: the two at Will's, side by side, the one you are on filled. It is the same thing in the same
      place as on the Sun board's page (Will, 2026-10-11: "The sun moon toggle you show on the sun board. Add to
      the moonboard the same way"). Not shown on anyone else's wall (see "which wall"). */
@@ -490,7 +493,7 @@
      be a page you can swipe to. */
   #setPanel{display:none}
   body.setPage #top,body.setPage #scroll,body.setPage #kb{display:none !important}
-  body.setPage #setPanel{display:flex;flex-direction:column;gap:12px;flex:1 1 auto;min-height:0;overflow-y:auto;
+  body.setPage #setPanel{display:flex;flex-direction:column;gap:0;flex:1 1 auto;min-height:0;overflow-y:auto;
                          overscroll-behavior:contain;touch-action:pan-y;
                          padding:calc(env(safe-area-inset-top) + 16px) 9px calc(env(safe-area-inset-bottom) + 30px)}
   body.setPage #setPanel > *{flex:none}
@@ -704,11 +707,26 @@
   #gamePanel[hidden]{display:none}
   #snakePanel{gap:8px !important}
   #snakePanel #snPad{margin-top:auto}      /* pushed to the bottom of the sheet */
-  #logPanel,#snakePanel,#entryPanel,#pairPanel,#igPanel,#rsPanel{position:fixed;inset:0;z-index:60;background:var(--bg);
+  #logPanel,#snakePanel,#entryPanel,#pairPanel,#igPanel{position:fixed;inset:0;z-index:60;background:var(--bg);
              display:flex;flex-direction:column;gap:12px;overflow-y:auto;
              padding:calc(env(safe-area-inset-top) + 16px) 16px
                      calc(env(safe-area-inset-bottom) + 16px)}
-  #logPanel[hidden],#snakePanel[hidden],#entryPanel[hidden],#pairPanel[hidden],#igPanel[hidden],#rsPanel[hidden]{display:none}
+  #logPanel[hidden],#snakePanel[hidden],#entryPanel[hidden],#pairPanel[hidden],#igPanel[hidden]{display:none}
+  /* The timed session's setting-up is a sheet that rises from the foot of the screen, with the board dimmed behind
+     it, as on the Sun board's page. It filled the screen until 2026-10-12 (Will: "the time session pop up on the sun
+     board is good but on the moon board it take up the whole acreen. I like the sun board one better"). A tap on the
+     dimmed board shuts it, as Close does. */
+  #rsScrim{position:fixed;left:0;top:0;right:0;bottom:0;z-index:60;background:rgba(0,0,0,.45)}
+  #rsScrim[hidden]{display:none}
+  #rsPanel{position:fixed;left:0;right:0;bottom:0;z-index:61;max-height:92vh;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;
+           background:var(--bg);border-radius:16px 16px 0 0;border-top:1px solid var(--edge);
+           padding:14px var(--pad) calc(env(safe-area-inset-bottom) + 14px)}
+  #rsPanel[hidden]{display:none}
+  .shHead{display:flex;align-items:center;gap:10px;margin:0 0 8px}
+  .shHead h2{flex:1 1 auto;min-width:0;margin:0;font-size:18px}
+  .shHead button{flex:none;width:auto;padding:6px 12px;font-size:13px}
+  #rsPanel .opt{min-height:40px;padding:4px 0;margin:0 0 6px}
+  #rsPanel .opt > label{font-size:13.5px;color:var(--dim)}
   /* ---- videos of the open route: a sheet ----
      A row a video, found on Instagram: a small picture where there is one, how the
      caption begins, who posted it and when. A tap opens that video in Instagram. */
@@ -800,11 +818,15 @@
   #ptsRank .none{font-size:12px;color:var(--dimmer);padding:6px 2px}
   /* Pinned. Settings is far taller than the screen, so a header that scrolled
      away left you at the bottom of a full-screen sheet with no way out. */
-  #gameHead{position:sticky;top:0;z-index:2;background:var(--bg);
-            display:flex;align-items:center;gap:12px;padding-bottom:10px}
+  /* (It reaches up over the sheet's own top padding, and is pinned that much higher: pinned at 0 it stood under the
+     padding, and the rows scrolling by showed in the strip over it.) */
+  #gameHead{position:sticky;top:calc(-1 * (env(safe-area-inset-top) + 16px));z-index:2;background:var(--bg);
+            display:flex;align-items:center;gap:12px;margin-top:calc(-1 * (env(safe-area-inset-top) + 16px));
+            padding:calc(env(safe-area-inset-top) + 16px) 0 10px}
   #gameHead b{flex:1;font-size:13px;font-weight:700;letter-spacing:.13em;
               text-transform:uppercase}
   #gameHead button{width:auto;padding:8px 14px}
+  #gameHead button.tipBtn{width:18px;padding:0}
   #c4{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;
       width:min(100%,56vh);margin:0 auto}
   #c4 div{aspect-ratio:1;border-radius:50%;border:2px solid var(--box)}
@@ -897,14 +919,12 @@
   #rsBtn svg{width:21px;height:21px}
   #rsBtn.on{background:#22c55e;border-color:#22c55e;color:#06240e}
   body.listPage #barTxt #rsBtn,body.betaEdit #barTxt #rsBtn{display:none}
-  #rsSum{margin:0;font-size:13px;color:var(--dim)}
+  #rsSum{margin:0 0 12px;font-size:13px;color:var(--dim)}
   #rsSet{padding:0}
   .rsRow{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:14px}
   .rsRow span{flex:1 1 auto}
   .rsRow button{flex:none;width:44px;height:38px;padding:0;font-size:17px;font-weight:700}
   .rsRow b{flex:none;min-width:58px;text-align:center;font:700 17px ui-monospace,Menlo,monospace}
-  .rsChk{display:flex;align-items:center;gap:8px;margin:2px 0 10px;font-size:13px;color:var(--dim)}
-  .rsChk input{width:18px;height:18px;flex:none;margin:0}
   #rsGo{width:100%}
   #rsBox{flex:none;display:flex;flex-direction:column;align-items:center;gap:6px;padding:7px 4px 4px;border:1px solid var(--edge);border-radius:10px;background:var(--panel)}
   /* ---- quick log: a button at the foot of the panel, and the two it opens ----
@@ -1083,8 +1103,58 @@
   code{font:12px ui-monospace,Menlo,monospace;color:var(--dim);word-break:break-all}
   #log{font:11px/1.6 ui-monospace,Menlo,monospace;color:var(--dimmer);
        max-height:150px;overflow:auto;white-space:pre-wrap;word-break:break-all;margin-top:8px}
-  label.ck{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--dim);margin-top:12px}
-  label.ck input{width:17px;height:17px;flex:none;accent-color:#8b8b93}
+  /* ---- a switch, where there was a tick-box ----
+     Will, 2026-10-12: "swap out the check box for a pill toggle like the iPhone uses but to match the site theme".
+     It is a tick-box still, unseen, lying over a track with a white knob on it, so everything that reads it or
+     sets it does so as before. The track is the grade slider's two colours: grey when off, the page's ink when on. */
+  .sw{position:relative;flex:none;display:inline-block;width:46px;height:28px;vertical-align:middle}
+  .sw input{position:absolute;left:0;top:0;width:100%;height:100%;margin:0;padding:0;border:0;opacity:0;
+            -webkit-appearance:none;appearance:none;cursor:pointer}
+  .sw i{position:absolute;left:0;top:0;right:0;bottom:0;border-radius:14px;background:var(--box2);
+        transition:background .18s ease-out;pointer-events:none}
+  .sw i::after{content:'';position:absolute;left:2px;top:2px;width:24px;height:24px;border-radius:50%;background:#fff;
+               box-shadow:0 1px 3px rgba(0,0,0,.32);transition:transform .18s ease-out}
+  .sw input:checked + i{background:var(--ink)}
+  .sw input:checked + i::after{transform:translateX(18px)}
+  .sw input:focus-visible + i{outline:2px solid var(--blue-ink);outline-offset:2px}
+  .sw input:disabled + i{opacity:.4}
+  @media (prefers-reduced-motion:reduce){ .sw i,.sw i::after{transition:none} }
+  /* a row: what it is on the left with the i that explains it, and its switch (or its picker) at the right */
+  .opt{display:flex;align-items:center;gap:8px;min-height:48px;padding:7px 0}
+  .opt > label{flex:0 1 auto;min-width:0;font-size:14.5px;line-height:1.25}
+  .opt > .sw,.opt > select{margin-left:auto}
+  .opt > select{flex:0 1 auto;width:auto;max-width:60%;padding:7px 10px}
+  /* a row whose picker is too long for the row: the picker under its name, at full width */
+  .optCol{padding:0 0 12px}
+  .optCol > .opt{min-height:40px;padding:6px 0 4px}
+  .card{border:1px solid var(--edge);border-radius:14px;background:var(--panel);padding:0 12px}
+  .card > * + *{border-top:1px solid var(--line)}
+  /* ---- the i beside an option, and the bubble it opens ----
+     Will, 2026-10-12: "put the descriptions or explanations inside a tooltip for each. Those [would] significantly
+     clean up the setting page." The words are in the page still, out of sight, straight after their i (.tipTxt);
+     a tap on the i shows them in the one bubble there is, hung from the i, under it or over it (see tipShow). */
+  button.tipBtn{position:relative;flex:none;display:inline-grid;place-items:center;width:18px;height:18px;margin:0 0 0 7px;padding:0;
+                border:1.5px solid var(--dimmer);border-radius:50%;background:transparent;color:var(--dim);
+                font:italic 700 11.5px/1 Georgia,'Times New Roman',serif;letter-spacing:0;text-transform:none;vertical-align:-4px}
+  button.tipBtn::after{content:'';position:absolute;left:-11px;top:-11px;right:-11px;bottom:-11px}      /* a fingertip's room round it */
+  button.tipBtn[aria-expanded="true"]{background:var(--ink);border-color:var(--ink);color:var(--onink)}
+  .opt > button.tipBtn{margin-left:0}
+  .tipTxt{display:none}
+  .lbl.tipLbl{display:flex;align-items:center}
+  #tipBox{position:fixed;left:0;top:0;z-index:90;max-width:min(320px,calc(100vw - 20px));max-height:calc(100vh - 40px);overflow-y:auto;
+          padding:10px 12px;border-radius:11px;background:var(--ink);color:var(--onink);font-size:13px;font-weight:400;line-height:1.45;
+          letter-spacing:0;text-transform:none;box-shadow:0 8px 28px rgba(0,0,0,.38)}
+  #tipBox[hidden]{display:none}
+  #tipArrow{position:fixed;z-index:90;width:12px;height:12px;margin:-6px 0 0 -6px;background:var(--ink);transform:rotate(45deg);pointer-events:none}
+  #tipArrow[hidden]{display:none}
+  /* ---- Settings: a heading, then what belongs under it ---- */
+  #setPanel .lbl{margin:20px 2px 7px}
+  #setPanel #wallPick .lbl{margin-top:4px}
+  #meRow{display:flex;gap:8px}
+  #meRow select{flex:1 1 0;min-width:0}
+  #meRow button{flex:none;width:auto;padding:0 14px}
+  #setPanel #log{margin-top:0}
+  #c4clock .mins{flex:none;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--dim)}
   /* ---- somebody new: better from the Home Screen (see a2hs at the foot of the script) ---- */
   #a2hs{position:fixed;left:8px;right:8px;top:calc(env(safe-area-inset-top) + 6px);z-index:64;transform:translateY(-18px);opacity:0;display:flex;align-items:center;gap:2px;
         padding:0 4px 0 14px;height:44px;border-radius:22px;border:1px solid var(--edge);background:var(--ink);color:var(--onink);
@@ -1373,17 +1443,41 @@
     <b>Settings</b>
   </div>
 
-  <!-- Which wall, first: it is the thing most often come here for (Will, 2026-10-11: "put that option change right at
-       the top"). -->
+  <!-- Settings, in this order since 2026-10-12 (Will: "You can re organize the setting page for a better order of
+       options"). Which wall, first, as he asked on 2026-10-11 ("put that option change right at the top"), and who
+       is climbing; then what this phone does with the wall's lights; how the app looks on this phone; the games;
+       and last the two things that are the same for everyone and seldom change, with the connection's log under
+       them. An option that is on or off is a row with a switch, and what it does is behind the small i beside it. -->
   <div id="wallPick">
-    <div class="lbl">Which wall</div>
+    <div class="lbl tipLbl">Which wall<button type="button" class="tipBtn" aria-label="About: the two walls" aria-expanded="false">i</button><span class="tipTxt">Both are at Will's. The Sun board has no lights: its routes are made by picking holds on a picture of it, and it has a list of routes, a logbook and points of its own. The sun at the top of the page goes there too.</span></div>
     <div class="two">
       <button class="solid" disabled>&#127769; MoonBoard</button>
       <button id="toSun">&#9728;&#65039; Sun board</button>
     </div>
-    <div class="hint">Both are at Will's. The Sun board has no lights: its routes are made by
-      picking holds on a picture of it, and it has a list of routes, a logbook and points of
-      its own. The sun at the top of the page goes there too.</div>
+  </div>
+
+  <!-- Who is climbing: the picker at the top of the page, here as well, as on the Sun board's page (Will,
+       2026-10-12: "On the moon setting page add a climbing as input field like there is on the sun settings page"). -->
+  <div class="lbl tipLbl">Climbing as<button type="button" class="tipBtn" aria-label="About: your name" aria-expanded="false">i</button><span class="tipTxt">The name your tries and sends are logged under. It is the picker at the top of the page, and the same name on the Sun board. There are no passwords: a name is a name.</span></div>
+  <div id="meRow">
+    <select id="me2" aria-label="Climbing as"></select>
+    <button id="addMe" type="button">Add a name</button>
+  </div>
+
+  <div class="lbl">Lighting the wall</div>
+  <div class="card">
+    <div class="opt"><label for="auto">Light a route as soon as I open it</label><button type="button" class="tipBtn" aria-label="About: lighting a route as soon as it is opened" aria-expanded="false">i</button><span class="tipTxt">Off to begin with. On, a route goes up on the wall the moment you open it, with no need to press Light up Route. With several phones on one wall that can change what somebody else is half way up, so it is only for a phone that asks. For this phone only.</span><span class="sw"><input type="checkbox" role="switch" id="auto"><i></i></span></div>
+    <div class="opt"><label for="gbar">Show the grade on the bottom row</label><button type="button" class="tipBtn" aria-label="About: the grade on the bottom row" aria-expanded="false">i</button><span class="tipTxt">Row 1, the bottom row, carries no holds on any benchmark, so it reads out the grade: from A1 onward, one light for each V-grade. Five green up to V5, two blue for V6 and V7, red from V8, and eleven at most. On the 2019 and 2024 sets a few routes use row 1, and the grade is left off for those.</span><span class="sw"><input type="checkbox" role="switch" id="gbar" checked><i></i></span></div>
+    <div class="opt"><label for="pairChk">Show the &ldquo;Show 2nd route&rdquo; button</label><button type="button" class="tipBtn" aria-label="About: the second route" aria-expanded="false">i</button><span class="tipTxt">For this phone only, and off to begin with. The button stands beside Light up Route and puts the open route up next to the one already on the wall, in a second colour. Two routes that somebody else puts up are shown as two either way.</span><span class="sw"><input type="checkbox" role="switch" id="pairChk"><i></i></span></div>
+  </div>
+
+  <div class="lbl">How it looks on this phone</div>
+  <div class="card">
+    <div class="opt"><label for="bgSel">Background</label><button type="button" class="tipBtn" aria-label="About: the background" aria-expanded="false">i</button><span class="tipTxt">For this phone only, and for both walls. Light foggy grey is what everyone starts on.</span><select id="bgSel">
+      <option value="fog">Light foggy grey</option>
+      <option value="taupe">Light taupe</option>
+    </select></div>
+    <div class="opt"><label for="plyChk">Show the board on plywood</label><button type="button" class="tipBtn" aria-label="About: the board on plywood" aria-expanded="false">i</button><span class="tipTxt">For this phone only. Off, the picture is Moon's own board. Plywood is drawn for the 2016 and 2024 hold sets: on the 2016 set a phone starts on Moon's yellow board, on the 2024 set it starts on plywood. Masters 2019 keeps its own picture.</span><span class="sw"><input type="checkbox" role="switch" id="plyChk"><i></i></span></div>
   </div>
 
   <div class="lbl">Games on the wall</div>
@@ -1392,39 +1486,26 @@
     <button id="gameBtn" class="ghost"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="4.5" cy="4.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="4.5" cy="9.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="4.5" cy="14.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="4.5" cy="19.5" r="2.1" fill="#22c55e"/><circle cx="9.5" cy="4.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="9.5" cy="9.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="9.5" cy="14.5" r="2.1" fill="#22c55e"/><circle cx="9.5" cy="19.5" r="2.1" fill="#2563eb"/><circle cx="14.5" cy="4.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="14.5" cy="9.5" r="2.1" fill="#22c55e"/><circle cx="14.5" cy="14.5" r="2.1" fill="#2563eb"/><circle cx="14.5" cy="19.5" r="2.1" fill="#2563eb"/><circle cx="19.5" cy="4.5" r="2.1" fill="#22c55e"/><circle cx="19.5" cy="9.5" r="2.1" fill="#2563eb"/><circle cx="19.5" cy="14.5" r="2.1" fill="#22c55e"/><circle cx="19.5" cy="19.5" r="2.1" fill="#2563eb"/></svg> Connect four</button>
   </div>
 
-
-  <div class="lbl" style="margin-top:14px">Background</div>
-  <select id="bgSel">
-    <option value="fog">Light foggy grey</option>
-    <option value="taupe">Light taupe</option>
-  </select>
-  <div class="hint">For this phone only. Light foggy grey is what everyone starts on.</div>
-
-  <label class="ck"><input type="checkbox" id="plyChk">
-    Show the board on plywood</label>
-  <div class="hint">For this phone only. Unticked, the picture is Moon's own board. Plywood
-    is drawn for the 2016 and 2024 hold sets: on the 2016 set a phone starts on Moon's
-    yellow board, on the 2024 set it starts on plywood. Masters 2019 keeps its own picture.</div>
-
-  <label class="ck"><input type="checkbox" id="pairChk">
-    Show the &ldquo;Show 2nd route&rdquo; button</label>
-  <div class="hint">For this phone only, and off to begin with. The button stands beside Light up Route
-    and puts the open route up next to the one already on the wall, in a second colour. Two
-    routes that somebody else puts up are shown as two either way.</div>
-
-  <label class="ck"><input type="checkbox" id="auto">
-    Light the wall as soon as I pick a problem</label>
-  <label class="ck"><input type="checkbox" id="gbar" checked>
-    Show the grade on row 1 — one light per V-grade</label>
-  <div class="hint">Row 1 carries no holds on any benchmark, so it reads out the grade:
-    A1 onward, one light per V-grade — five green up to V5, two blue for V6–V7,
-    red from V8, capping at eleven. On the 2019 and 2024 sets a few routes use row 1,
-    and the bar is left off for those.</div>
-
-  <div class="lbl">Hold set on the wall</div>
-  <select id="boardSel"></select>
-  <div class="hint">Changes the route list and the board picture for everyone, so only
-    switch it when the holds on the wall actually change.</div>
+  <div class="lbl">The wall, for everyone</div>
+  <div class="card">
+    <div class="optCol">
+      <div class="opt"><label for="boardSel">Hold set on the wall</label><button type="button" class="tipBtn" aria-label="About: the hold set" aria-expanded="false">i</button><span class="tipTxt">Changes the route list and the board picture for everyone, so only switch it when the holds on the wall actually change.</span></div>
+      <select id="boardSel"></select>
+    </div>
+    <div class="optCol">
+      <div class="opt"><label for="loc">Where you're climbing</label><button type="button" class="tipBtn" aria-label="About: where you are climbing" aria-expanded="false">i</button><span class="tipTxt">The board takes one Bluetooth connection, so everyone shares the phone that has it. Whoever taps Connect becomes the bridge automatically, and every other phone sends what it lights through them. On a different MoonBoard? Pick Another wall and give it a code of its own, the same on every phone there, so the two walls never light each other's problems.</span></div>
+      <select id="loc">
+        <option value="home">Will's Wall</option>
+        <option value="other">Another wall</option>
+      </select>
+      <div class="two" style="margin-top:8px">
+        <input type="text" id="room" placeholder="that wall's code" spellcheck="false"
+               autocapitalize="off" autocomplete="off">
+        <button id="relayBtn" class="ghost">Connect relay</button>
+      </div>
+      <div class="hint" id="relayState">relay off</div>
+    </div>
+  </div>
 
   <!-- What the wall shows on connect is WW for everyone now. The choice is hidden,
        not gone: the select still feeds standbyPayload(). -->
@@ -1440,29 +1521,14 @@
     </select>
   </div>
 
-  <div class="lbl">Where you're climbing</div>
-  <select id="loc">
-    <option value="home">Will's Wall</option>
-    <option value="other">Another wall</option>
-  </select>
-  <div class="hint">The board takes one Bluetooth connection, so everyone shares the phone
-    that has it. Whoever taps Connect becomes the bridge automatically, and every other
-    phone sends what it lights through them. On a different MoonBoard? Pick Another wall
-    and give it a code of its own, the same on every phone there, so the two walls never
-    light each other's problems.</div>
-  <div class="two" style="margin-top:8px">
-    <input type="text" id="room" placeholder="that wall's code" spellcheck="false"
-           autocapitalize="off" autocomplete="off">
-    <button id="relayBtn" class="ghost">Connect relay</button>
-  </div>
-  <div class="hint" id="relayState">relay off</div>
-
-
-  <div class="lbl">Log</div>
+  <div class="lbl tipLbl">Connection log<button type="button" class="tipBtn" aria-label="About: the connection log" aria-expanded="false">i</button><span class="tipTxt">What the app has been doing with the wall and the relay, the newest line last. Copy log puts it on the clipboard, to pass on when something is not working.</span></div>
   <div id="log">idle.</div>
   <div style="margin-top:10px"><button id="copy" class="ghost">Copy log</button></div>
   <div id="ver"></div>
 </div>
+<!-- the one bubble that an i opens (see tipShow), and the corner that points at the i -->
+<div id="tipBox" role="status" aria-live="polite" hidden></div>
+<div id="tipArrow" hidden></div>
 <div id="kb" hidden></div>
 
 <!-- three pages: routes, the board, the log -->
@@ -1517,8 +1583,9 @@
   <select id="logWho"></select>
   <div class="two">
     <button id="logLock" class="ghost mini">Lock my entries</button>
-    <div class="hint" style="margin:0;align-self:center">Tap a row to delete it</div>
+    <button id="logCsv" class="ghost mini" disabled>Export CSV</button>
   </div>
+  <div class="hint" style="margin:0">Tap a row to delete it</div>
   <div id="logSum"></div>
   <div id="logRows"></div>
 
@@ -1527,22 +1594,19 @@
   <div class="hint" id="ptsNote"></div>
 </div>
 
-<!-- The timed session's setting-up: opened by the timer button on the board. -->
-<div id="rsPanel" hidden>
-  <div id="gameHead">
-    <b>Timed session</b>
-    <button id="rsShut" class="ghost mini">Close</button>
-  </div>
+<!-- The timed session's setting-up: a sheet at the foot of the screen, opened by the timer button on the board. -->
+<div id="rsScrim" hidden></div>
+<div id="rsPanel" hidden role="dialog" aria-label="Timed session">
+  <div class="shHead"><h2>Timed session</h2><button id="rsShut" class="ghost">Close</button></div>
   <p id="rsSum"></p>
   <div id="rsSet">
     <div class="rsRow"><span>Goes in a set</span><button data-k="reps" data-d="-1" aria-label="One fewer">&#8722;</button><b id="rsReps">3</b><button data-k="reps" data-d="1" aria-label="One more">+</button></div>
     <div class="rsRow"><span>Rest between sets</span><button data-k="rest" data-d="-30" aria-label="Half a minute less">&#8722;</button><b id="rsRest">5:00</b><button data-k="rest" data-d="30" aria-label="Half a minute more">+</button></div>
-    <label class="rsChk"><input type="checkbox" id="rsLog"> Each go logs a try on the route that is up</label>
-    <label class="rsChk"><input type="checkbox" id="rsWallChk"> Count the rest down on the wall</label>
+    <div class="opt"><label for="rsLog">Each go logs a try on the route that is up</label><span class="sw"><input type="checkbox" role="switch" id="rsLog"><i></i></span></div>
+    <div class="opt"><label for="rsWallChk">Count the rest down on the wall</label><button type="button" class="tipBtn" aria-label="About: counting the rest on the wall" aria-expanded="false">i</button><span class="tipTxt">Counted on the wall, a rest is a red light on the bottom row for each minute left, then START in big letters and the rim flashing twice. That is only while the route you have open is the one on the wall. If somebody lights another, the count stops and the wall is theirs: light yours again when your rest is up. The grade is left off the bottom row while the session is on.</span><span class="sw"><input type="checkbox" role="switch" id="rsWallChk"><i></i></span></div>
     <button id="rsGo" class="solid">Start the session</button>
     <button id="rsTry" type="button">Try the ping</button>
     <div class="hint">On the board, tap a circle after each go. After the last one the rest counts down beside the wall. When it is up the phone pings and the screen flashes white. Tap the time to skip a rest.</div>
-    <div class="hint">Counted on the wall, a rest is a red light on the bottom row for each minute left, then START in big letters and the rim flashing twice. That is only while the route you have open is the one on the wall. If somebody lights another, the count stops and the wall is theirs: light yours again when your rest is up. The grade is left off the bottom row while the session is on.</div>
   </div>
 </div>
 
@@ -1581,7 +1645,7 @@
 
 <div id="gamePanel" hidden>
   <div id="gameHead">
-    <b>Connect four</b>
+    <b>Connect four<button type="button" class="tipBtn" aria-label="About: Connect four" aria-expanded="false">i</button><span class="tipTxt">Green drops first, then blue. Played on C to I, rows 7 to 12, which keeps clear of the dead A2 and A4 holds. A win only counts towards the ranking when both players are named.</span></b>
     <button id="c4close" class="ghost mini">Close</button>
   </div>
   <div id="c4players">
@@ -1597,15 +1661,10 @@
     <button id="c4new" class="ghost mini">New game</button>
     <button id="c4off" class="ghost mini">Clear the wall</button>
   </div>
-  <label class="ck"><input type="checkbox" id="c4timed" checked>
-    Chess clock — <input type="number" id="c4mins" value="2" min="1" max="30"> min each</label>
+  <div class="opt" id="c4clock"><label for="c4timed">Chess clock</label><span class="mins"><input type="number" id="c4mins" value="2" min="1" max="30" aria-label="Minutes each"> min each</span><span class="sw"><input type="checkbox" role="switch" id="c4timed" checked><i></i></span></div>
 
   <div class="lbl" style="margin-top:6px">Ranking</div>
   <div id="c4rank"></div>
-
-  <div class="hint">Green drops first, then blue. Played on C–I, rows 7–12, which
-    keeps clear of the dead A2 and A4 holds. A win only counts towards the ranking
-    when both players are named.</div>
 </div>
 
 <!-- Somebody new to the app: it is better from the Home Screen, and this says so once (see a2hs in the script). -->
@@ -1628,7 +1687,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-11 22:47';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-12 09:27';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3513,17 +3572,27 @@ function fillWho(){
   people.forEach(p => me.appendChild(new Option(p, p)));
   me.appendChild(new Option('+ New climber\u2026', NEW_CLIMBER));
   me.value = people.includes(keepMe) ? keepMe : '';
+  meMirror();
   try{
     localStorage.setItem('mb-who', sel.value);
     localStorage.setItem('mb-me', me.value);
   }catch(e){}
 }
 
-/* Reached only from the last option of the name picker, so a new name means
+/* Settings has the name picker as well, under "Climbing as": the same names, and whichever of the two is changed
+   the other follows. */
+function meMirror(){
+  const a = $('me'), b = $('me2');
+  if (!b) return;
+  b.innerHTML = '';
+  [...a.options].forEach(o => b.appendChild(new Option(o.textContent, o.value)));     // (not by copying the HTML: the value of "+ New climber" does not survive it)
+  b.value = a.value;
+}
+/* Reached from the last option of the name picker, or from Add a name in Settings, so a new name means
    "this is me" - select it. Pick someone else from the list to switch back. */
 async function addPerson(previous){
   const name = (prompt('Your name?') || '').trim();
-  if (!name){ $('me').value = previous; return; }
+  if (!name){ $('me').value = previous; meMirror(); return; }
   await listsCall('/lists/person', { name });
   $('me').value = people.includes(name) ? name : previous;
   try{ localStorage.setItem('mb-me', $('me').value); }catch(e){}
@@ -5028,9 +5097,70 @@ async function openLog(){
   loadLog();
 }
 
+/* ---------- the logbook, as a file ----------
+   Will, 2026-10-12: "Add an export log option which would export a CSV of the climbers log book." Export CSV, in
+   the Logbook, makes a file of the logbook that is showing, whoever's it is: a line a go, the oldest first, with
+   the day, the time, the climber, the route, its grade both ways, how the go went, whether a send was a repeat,
+   who set the route and which hold set it is on. On a phone the file goes to the share sheet (Save to Files,
+   AirDrop, Mail, Numbers); where there is none it is downloaded. The goes are the ones the Logbook has already
+   fetched, so the sheet opens on the tap itself: a phone lets a page open one at no other time. */
+let logShown = null;                      // { who, entries }: what the Logbook is showing
+const CSV_RESULT = { try: 'try', flash: 'flash', '2nd': '2nd go', '3rd': '3rd go', '4+': '4+ goes' };
+function csvCell(v){
+  let s = v === null || v === undefined ? '' : String(v);
+  if (/^[=+\u002d@\u0009\u000d]/.test(s)) s = "'" + s;          // a sheet must not take a route's name for a sum
+  return /[",\u000d\u000a]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+// (the first character tells Excel the file is UTF-8, which the names in it need)
+const csvOf = rows => '\ufeff' + rows.map(r => r.map(csvCell).join(',')).join('\u000d\u000a') + '\u000d\u000a';
+const csvDay = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+function logCsvRows(who, entries){
+  const rows = [['Date', 'Time', 'Climber', 'Route', 'Grade', 'V grade', 'Result', 'Repeat send', 'Setter', 'Hold set', 'Wall']];
+  entries.slice().sort((a, b) => logTime(a) - logTime(b)).forEach(e => {
+    const d = new Date(e.t), ok = !isNaN(d), r = byId[e.id], set = r && BOARDS.find(b => b.key === r.board);
+    rows.push([ok ? csvDay(d) : '', ok ? String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') : '',
+               e.person || who, r ? r.name : 'problem ' + e.id, r ? GRADES[r.grade] : '', r ? 'V' + VGRADE[r.grade] : '',
+               CSV_RESULT[e.result] || e.result, e.rep ? 'yes' : '', r ? r.setter : '', set ? set.label : '', 'MoonBoard']);
+  });
+  return rows;
+}
+const fileSlug = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'climber';
+function fileDown(name, blob){
+  const a = document.createElement('a'), url = URL.createObjectURL(blob);
+  a.href = url; a.download = name; a.style.display = 'none';
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 4000);
+  return 'saved';
+}
+// to the share sheet on a phone, to the downloads anywhere else; says which it was ('shared', 'saved', or 'cancelled')
+function fileOut(name, text, type){
+  const blob = new Blob([text], { type: type + ';charset=utf-8' });
+  let file = null, phone = false;
+  try{ file = new File([blob], name, { type }); }catch(e){}
+  try{ phone = matchMedia('(pointer:coarse)').matches; }catch(e){}
+  if (phone && file && navigator.canShare && navigator.share && navigator.canShare({ files: [file] }))
+    return navigator.share({ files: [file], title: name }).then(() => 'shared', err => err && err.name === 'AbortError' ? 'cancelled' : fileDown(name, blob));
+  return Promise.resolve(fileDown(name, blob));
+}
+let csvBusy = false;                      // one at a time: a second tap while the share sheet is coming up starts nothing behind it
+$('logCsv').onclick = async () => {
+  const b = $('logCsv'), shown = logShown;
+  if (csvBusy || !shown || !shown.entries.length) return;
+  const name = 'wills-wall-moonboard-' + fileSlug(shown.who) + '-' + csvDay(new Date()) + '.csv';
+  let how = 'saved';
+  csvBusy = true;
+  try{ how = await fileOut(name, csvOf(logCsvRows(shown.who, shown.entries)), 'text/csv'); }
+  catch(e){ how = 'failed'; log('export: ' + e.message); }
+  csvBusy = false;
+  if (how === 'cancelled') return;
+  b.textContent = how === 'failed' ? 'Could not export' : how === 'shared' ? 'Exported' : 'Saved to downloads';
+  setTimeout(() => { b.textContent = 'Export CSV'; }, 2200);
+};
+
 let logLoad = 0;                          // guards against a slow answer landing on a later one's rows
 async function loadLog(){
   const who = $('logWho').value, mine = ++logLoad;
+  logShown = null; $('logCsv').disabled = true;
   $('logRows').innerHTML = '';
   $('logSum').textContent = 'loading\u2026';
   let entries = [];
@@ -5040,6 +5170,7 @@ async function loadLog(){
   }catch(e){ if (mine === logLoad) $('logSum').textContent = 'logbook unreachable'; return; }
   if (mine !== logLoad) return;
   tagRepeats(entries);
+  logShown = { who, entries }; $('logCsv').disabled = !entries.length;
 
   const sends = entries.filter(e => e.result !== 'try');
   const flashes = sends.filter(e => e.result === 'flash' && !e.rep).length;    // a session flash is not a flash
@@ -5867,8 +5998,8 @@ function boardTap(x, y){
 
 /* ---------- focus ----------
    The picture over the whole screen with the route's name above it, and nothing to
-   press. In by two taps on the picture and out the same way, or by Back, or by a swipe
-   upwards anywhere on the screen (focusSwipe, further down). It is the
+   press. In by two taps on the picture, or a short stroke down it, and out the same two
+   ways, or by Back (focusSwipe, further down). It is the
    board's page still, with everything else covered: what the wall does goes on
    showing, and a swipe on the picture still goes to the next route. */
 let focusOn = false;
@@ -6140,32 +6271,36 @@ $('holdX').onclick = () => { holdFilter = []; paintHoldChip(); renderResults(); 
   }
 })();
 
-/* In focus a swipe downwards closes it as well. (It was a swipe upwards from 2026-10-09,
-   when Will asked for it, until 2026-10-11, when he gave the swipe up to lighting the
-   route: "to close focus mode it needs to change to a swipe down".) It counts from
-   anywhere on the screen, the room round the picture included. A swipe down is neither a
-   tap nor a step sideways, so the picture's own handler above lets it go by; and a touch
-   that was a stroke upwards is not read here at all, wherever it ended. */
+/* A short stroke down the picture is two taps on it: into focus, and out of it again (Will, 2026-10-12: "if I
+   swipe the board down it enters or exits focus mode like the double tap. Doesn't need to swipe long"). Out of
+   focus it has to begin on the picture; in focus it counts from anywhere on the screen, the room round the
+   picture included, as the stroke that shuts focus has since 2026-10-09 (upwards then, and downwards since
+   2026-10-11, when he gave the stroke upwards to lighting the route). FOCUS_SWIPE is how far is far enough: a
+   thumb's width, where a tap moves less than 8. A stroke down is neither a tap nor a step sideways, so the
+   picture's own handler above lets it go by; and a touch that was a stroke upwards is not read here at all,
+   wherever it ended. */
+const FOCUS_SWIPE = 32;
 (function focusSwipe(){
   const el = $('boardCol');
-  let x0 = null, y0 = null;
+  let x0 = null, y0 = null, onPic = false;
 
-  const start = (x, y) => { x0 = x; y0 = y; pullSeen = false; };
+  const start = (x, y, t) => { x0 = x; y0 = y; pullSeen = false; onPic = !!(t && t.closest && t.closest('#board')); };
   const end = (x, y) => {
     if (x0 === null) return;
     const dx = x - x0, dy = y - y0;
     x0 = null;
-    if (!focusOn || pullSeen || dy < 50 || Math.abs(dx) >= dy) return;     // not in focus, a stroke upwards, not far enough, or more across than down
-    focusBoard(false);
+    if (pullSeen || dy < FOCUS_SWIPE || Math.abs(dx) >= dy) return;        // a stroke upwards, not far enough, or more across than down
+    if (focusOn) return focusBoard(false);
+    if (onPic) focusBoard(true);                                           // (focusBoard itself says no while a beta is being drawn, or off the board's page)
   };
 
   if (window.PointerEvent){
-    el.addEventListener('pointerdown', e => start(e.clientX, e.clientY));
+    el.addEventListener('pointerdown', e => start(e.clientX, e.clientY, e.target));
     el.addEventListener('pointerup',   e => end(e.clientX, e.clientY));
     el.addEventListener('pointercancel', () => { x0 = null; });
   } else {
     el.addEventListener('touchstart', e => {
-      if (e.touches.length === 1) start(e.touches[0].clientX, e.touches[0].clientY);
+      if (e.touches.length === 1) start(e.touches[0].clientX, e.touches[0].clientY, e.target);
     }, { passive: true });
     el.addEventListener('touchend', e => {
       const t = e.changedTouches[0];
@@ -6835,7 +6970,7 @@ document.body.addEventListener('animationend', e => {
 
 (function pageSwipe(){
   let x0 = null, y0 = null;
-  const off = '#board, #kb, select, #quick, #gSlide, #sendFan, #setPanel input, #log, #logPanel, #pairPanel, #snakePanel, #entryPanel, #gamePanel, #rsPanel, #a2hs, #a2hsHow';
+  const off = '#board, #kb, select, #quick, #gSlide, #sendFan, #setPanel input, #log, #logPanel, #pairPanel, #snakePanel, #entryPanel, #gamePanel, #rsPanel, #rsScrim, #tipBox, #a2hs, #a2hsHow';
   document.addEventListener('pointerdown', e => {
     x0 = null;
     if (betaDraft || panelOpen || focusOn) return;
@@ -7401,7 +7536,7 @@ $('rsSet').onclick = e => {
 $('rsLog').onchange = () => { RS.log = $('rsLog').checked; rsKeep(); };
 $('rsGo').onclick = () => { showPanel(null); if (RS.on) return rsEnd(); rsArm(); rsStart(); showPage('board'); };
 $('rsBtn').onclick = () => { quickShow(false); rsPaint(); showPanel('rs'); };
-$('rsShut').onclick = () => showPanel(null);
+$('rsShut').onclick = $('rsScrim').onclick = () => showPanel(null);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') rsPaint(); });
 rsPaint();
 
@@ -7721,6 +7856,50 @@ function showFilters(on){
 }
 $('filtBtn').onclick = () => showFilters($('filters').hidden);
 
+/* ---------- the i beside an option: what it does, in a bubble ----------
+   The words are in the page, out of sight, straight after their i. A tap on an i shows them in the one bubble there
+   is: under the i where there is room, over it where there is not, never off the side of the screen, and with a
+   corner that points at the i. Another tap on the i, a tap on the bubble or anywhere else, a scroll, Escape or a
+   turn of the phone puts it away. */
+let tipFor = null;
+function tipShut(){
+  if (!tipFor) return;
+  tipFor.setAttribute('aria-expanded', 'false');
+  tipFor = null;
+  $('tipBox').hidden = $('tipArrow').hidden = true;
+}
+function tipShow(btn){
+  const src = btn.nextElementSibling, box = $('tipBox'), arrow = $('tipArrow');
+  if (tipFor === btn) return tipShut();
+  tipShut();
+  if (!src || !src.classList.contains('tipTxt')) return;
+  box.innerHTML = src.innerHTML;
+  box.hidden = false;
+  const r = btn.getBoundingClientRect(), W = document.documentElement.clientWidth, H = innerHeight;
+  const w = box.offsetWidth, h = box.offsetHeight, mid = r.left + r.width / 2;
+  const under = r.bottom + 9 + h <= H - 8 || r.top - 9 - h < 8;          // under it, unless only over it is there room
+  box.style.left = Math.round(Math.max(10, Math.min(W - w - 10, mid - w / 2))) + 'px';
+  box.style.top = Math.round(under ? r.bottom + 9 : r.top - 9 - h) + 'px';
+  arrow.style.left = Math.round(mid) + 'px';
+  arrow.style.top = Math.round(under ? r.bottom + 9 : r.top - 9) + 'px';
+  arrow.hidden = false;
+  btn.setAttribute('aria-expanded', 'true');
+  tipFor = btn;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest ? e.target.closest('.tipBtn') : null;
+  if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  tipShow(b);
+}, true);
+document.addEventListener('pointerdown', e => {
+  if (tipFor && !(e.target.closest && e.target.closest('.tipBtn, #tipBox'))) tipShut();
+}, true);
+$('tipBox').onclick = tipShut;                              // and a tap on the bubble itself
+document.addEventListener('scroll', e => { if (e.target !== $('tipBox')) tipShut(); }, true);
+window.addEventListener('resize', tipShut);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') tipShut(); });
+
 const PANELS = { game: 'gamePanel', log: 'logPanel', ig: 'igPanel',
                  snake: 'snakePanel', entry: 'entryPanel', pair: 'pairPanel', rs: 'rsPanel' };
 
@@ -7731,7 +7910,7 @@ function showPanel(which, fromBack){  // a key of PANELS, or null for none
   $('pairPanel').hidden = which !== 'pair';
   $('snakePanel').hidden = which !== 'snake';
   $('entryPanel').hidden = which !== 'entry';
-  $('rsPanel').hidden = which !== 'rs';
+  $('rsPanel').hidden = $('rsScrim').hidden = which !== 'rs';
   if (which !== 'snake' && which !== 'entry' && sn) snStop();          // don't leave it running unseen, or a finished one on the wall
   if (PANELS[which]) $(PANELS[which]).scrollTop = 0;   // open at the top, always
   // One step in the history for "a sheet is open", however many are swapped through.
@@ -7802,6 +7981,8 @@ $('me').onchange = () => {
   fillWho(); paintBar(); renderResults(); runPending();
   if (page === 'log') paintLogPage();
 };
+$('me2').onchange = () => { $('me').value = $('me2').value; $('me').onchange(); };
+$('addMe').onclick = () => addPerson(lastMe);
 /* The background: a name on the page's root, which the styles turn into colours. The
    browser's own bar round the page is told the same colour. */
 function setBg(v){
@@ -7938,6 +8119,7 @@ try{
   const m = localStorage.getItem('mb-me') || w;
   if (m){ $('me').appendChild(new Option(m, m)); $('me').value = m; lastMe = m; }
 }catch(e){}
+meMirror();
 renderResults();
 listsCall('/lists');
 setLive(false);
