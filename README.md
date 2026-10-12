@@ -634,9 +634,16 @@ a push like the pages do. The relay and the crew's MoonBoard logbook are not inv
 except once: the first time anyone opens the Sun board it copies the crew's names across.
 
 A logbook brought in from a file goes to `POST /api/w/sun/log/import`: many goes of one
-climber in a call, each with when it happened. A go the logbook already has (the same
-route and result in the same minute) is left out, `dry` says what would happen and writes
-nothing, and the page sends a long file in pieces of 250. Since goes of last year can now
+climber in a call, each with when it happened. For each route and day the logbook ends up
+with as many tries and as many sends as the file lists, so a route sent five times in an
+evening is five sends (Will, 2026-10-12: "I often climb a route on repeat and want to log
+multiple sends on the same day"). What the logbook has of that route on that day is taken
+off the file's count first, the goes of that very minute and result before any other, so
+a file can be imported twice without harm, and a file with one more send in it adds the
+one. `tz` says how far the climber's clock is ahead of UTC, in minutes, so that a day is
+the climber's day (with the limit said under *Import CSV* below). `dry` says what would
+happen and writes nothing. The page sends a long file in pieces of about 250 and never
+parts a route's goes of one day, since the store counts those together. Since goes of last year can now
 be written today, a climber's tally on a route is counted from the goes in the order they
 happened, not the order they were written, and the logbook is handed out the same way.
 The whole import is a handful of queries however long the file, because the free plan
@@ -795,8 +802,13 @@ lock, since a name is all there is; until 2026-10-12 anybody's entries opened.
 is (Will, 2026-10-12: "an export log option which would export a CSV of the climbers log
 book"). A line a go, the oldest first: the day, the time, the climber, the route, its
 grade both ways, how the go went, whether a send was a repeat, who set the route, which
-hold set it is on, and the route's number. A logbook with nothing in it gives the line of
-headings and no more, which is the layout to fill in. On a phone the file goes to the share sheet, where it can be saved
+hold set it is on, and the route's number. A logbook with nothing in it gives a **sample**
+(Will, 2026-10-12: "there should be sample data for the export so people can see how the
+date should be entered"): the headings and six example lines of routes that are on the
+wall, which show a flash, a try and the send after it, a send with a day and no time, and
+two more sends of one route on one day. The Sun board adds a go against the clock, where
+it has a climb by number. The lines have `Example` where the climber's name goes, which is
+how **Import CSV** knows to leave them out, and the file has `-sample-` in its name. On a phone the file goes to the share sheet, where it can be saved
 to Files, sent by AirDrop or mail, or opened in Numbers; anywhere else it is downloaded.
 It is named `wills-wall-moonboard-<climber>-<day>.csv`, is UTF-8 with the mark Excel wants
 at its head, and a name that a sheet would take for a sum has an apostrophe put in front
@@ -807,7 +819,8 @@ against the clock got and how long it took, the feet rule, the tape).
 whoever is climbing, and to nobody else's (Will, 2026-10-12: "can we add a logbook import
 button. if they use the same csv format. to get started, they can click the button Export
 CSV and it exports whatever is in their app"). So the way to bring an old logbook in is to
-export, which gives the headings, fill in a line for each go, and import the file.
+export, which gives the sample, put a line for each go under its example lines, and import
+the file.
 
 - A line needs a **Date**, a **Route** and a **Result**. Every other column may be empty or
   missing, and the columns may be in any order.
@@ -821,13 +834,35 @@ export, which gives the headings, fill in a line for each go, and import the fil
   if not, whatever its capitals. The name is looked for on the line's **Hold set**, or on
   the hold set that is on the wall if the line names none.
 - A line with another climber's name in it is left out, and so is a line that says it is
-  from the other wall.
+  from the other wall, and an example line (`Example` under **Climber**).
 - Commas between the cells, or the semicolons or tabs some sheets write.
 
 The goes are handed to the relay's `POST /lists/log/import`, which was made for logbooks
-from the MoonBoard app, and its rules hold: they come in **locked**, with a try and a send
-at most for each route each day, and a go the logbook already has is left out, so a file
-can be imported twice without harm. What is about to happen is asked first (the relay is
+from the MoonBoard app, and they come in **locked**, as those do. **Every go of a day is
+kept** (Will, 2026-10-12: "I often climb a route on repeat and want to log multiple sends
+on the same day"): for each route and day the logbook ends up with as many tries and as
+many sends as the file lists. What the logbook has of that route on that day is taken off
+the file's count first, the goes of that very minute and result before any other, so a
+file can be imported twice without harm, and a file with one more send in it adds the one.
+The page asks for that with `repeats: true` and sends `tz`, how far the phone's clock is
+ahead of UTC, so that a day is the climber's day.
+
+A relay from before 2026-10-12 does not know `repeats` and keeps a try and a send at most
+for each route each day. The page sees from the relay's answer which it has, and with the
+older one it keeps to that rule and says of the lines it leaves out that the relay keeps
+one until it is brought up to date (`npx wrangler deploy` in `relay/`, which is Will's to
+run). Logging in the app never had such a limit: it is only a file's goes that were held
+to one a day.
+
+A very long file goes in pieces of about two thousand, which never part a route's goes of
+one day. One limit: a day is reckoned by the clock of the phone that imports, as it is set
+on the day of the import. So a go logged in the app within an hour of midnight while the
+clocks were on summer time, or in another time zone, can be counted on the day next to it,
+and a file with a send of that route on that day would add one too many or one too few.
+(Nobody who climbs here has such a clock yet. The cure, if it is wanted, is for the page to
+send the name of its time zone and for the relay and the store to work a day out from that.)
+
+What is about to happen is asked first (the relay is
 asked what it would do, with `dry`), and afterwards a line in the Logbook says how many
 went in and which lines were left out, and why. A go brought in keeps the day and the time
 the file gave it, written into its stamp as they stand; the page reads such a stamp as the
@@ -842,7 +877,9 @@ those who have sent it, as coloured chips.
 
 `POST /lists/log/import` takes a climber's logbook from the official MoonBoard app, or
 from a file through **Import CSV**, in one batch, every row carrying the day it was really
-climbed. The rows land locked.
+climbed. The rows land locked. As the app's logbook is brought in, it keeps one send and
+one try for each problem each day. With `repeats: true` in the request it counts instead
+(see *Import CSV* above), takes `tz`, and says `repeats: true` in its answer.
 
 ## Points
 
@@ -1029,7 +1066,7 @@ The crew's data is under `/lists`, shared by every wall:
 | `POST /lists/log` | Log a go: `{person, id, result}`, result one of `try flash 2nd 3rd 4+` |
 | `POST /lists/log/undo` | Take off a climber's newest entry, unless it is locked |
 | `POST /lists/log/entry`, `/lists/log/lock` | Lock, unlock or delete one entry; lock all of a climber's |
-| `POST /lists/log/import` | Bring in a logbook from the official app |
+| `POST /lists/log/import` | Bring in a logbook from the official app, or from a file (`repeats: true` keeps every go of a day) |
 | `GET` and `POST /lists/beta` | Read or save a problem's beta |
 | `POST /lists/board` | Change the hold set that is up |
 | `POST /lists/snake`, `/lists/win` | Best snake length; a Connect four win |

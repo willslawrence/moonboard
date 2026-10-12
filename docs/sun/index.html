@@ -1020,7 +1020,7 @@
   <div class="bookBtns">
     <button id="bookCsv" class="ghost mini" disabled>Export CSV</button>
     <button id="bookImp" class="ghost mini" disabled>Import CSV</button>
-    <button type="button" class="tipBtn" aria-label="About: the file" aria-expanded="false">i</button><span class="tipTxt"><b>Export CSV</b> makes a file of the logbook that is showing, a line a go. <b>Import CSV</b> reads a file laid out the same way and adds its goes to your own logbook. To bring a logbook in: export first (an empty logbook gives the line of headings), fill in a line for each go, and import the file. A line needs a date (2026-10-12), the route's name as the list has it, and how it went: try, flash, 2nd go, 3rd go or 4+ goes. The time and the other columns may be left empty; Hold reached and Seconds on the wall are for a go against the clock. A go the logbook already has is left out.</span>
+    <button type="button" class="tipBtn" aria-label="About: the file" aria-expanded="false">i</button><span class="tipTxt"><b>Export CSV</b> makes a file of the logbook that is showing, a line a go. <b>Import CSV</b> reads a file laid out the same way and adds its goes to your own logbook. To bring a logbook in: export first (an empty logbook gives a sample, the headings and a few example lines), put a line for each go under them, and import the file. The example lines are left out. A line needs a date (2026-10-12), the route's name as the list has it, and how it went: try, flash, 2nd go, 3rd go or 4+ goes. The time and the other columns may be left empty; Hold reached and Seconds on the wall are for a go against the clock. Several sends of a route in a day are all kept, and a go the logbook already has is not added again.</span>
   </div>
   <input type="file" id="bookFile" accept=".csv,text/csv,text/comma-separated-values,text/plain" tabindex="-1" aria-hidden="true">
   <p class="hint" id="bookHint"></p>
@@ -1092,7 +1092,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-12 10:24';
+const BUILD = '2026-10-12 11:25';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -3063,16 +3063,18 @@ function openBook(){
    Export CSV, in the Logbook, makes a file of the logbook that is showing, whoever's it is: a line a go, the
    oldest first, with the day, the time, the climber, the route, its grade, how the go went, whether a send was a
    repeat, how far a go against the clock got and how long it took, who set the route, its feet rule, its tape, and
-   the route's number. A logbook with nothing in it gives the line of headings and no more, which is the layout to
-   fill in. On a phone the file goes to the share sheet (Save to Files, AirDrop, Mail, Numbers); where there is
+   the route's number. A logbook with nothing in it gives a sample: the headings and a few example lines, which is the
+   layout to fill in (see csvSample). On a phone the file goes to the share sheet (Save to Files, AirDrop, Mail, Numbers); where there is
    none it is downloaded. The goes are the ones the Logbook has already fetched, so the sheet opens on the tap
    itself: a phone lets a page open one at no other time.
 
    Import CSV reads a file laid out the same way and adds its goes to the logbook of whoever is climbing, and to
    nobody else's. A line needs a day, a route and how it went; everything else may be left empty. The route is
    found by its number if the line has one and by its name if not. The store takes the goes in one call (in pieces,
-   if there are very many), each with when it happened, and leaves out any the logbook has already: the same route
-   and result in the same minute, so a file can be imported twice without harm. What is about to happen is said
+   if there are very many), each with when it happened. For each route and day the logbook ends up with as many tries
+   and as many sends as the file lists, so a route sent five times in an evening is five sends (Will, 2026-10-12: "I
+   often climb a route on repeat and want to log multiple sends on the same day"), and a go the logbook has already
+   is not added again, so a file can be imported twice without harm. What is about to happen is said
    first and asked about, and what was left out, and why, is said afterwards. */
 const CSV_HEAD = ['Date', 'Time', 'Climber', 'Route', 'Grade', 'Result', 'Repeat send', 'Hold reached', 'Seconds on the wall', 'Setter', 'Feet', 'Tape', 'Wall', 'Route id'];
 const CR = String.fromCharCode(13), NL = String.fromCharCode(10), TAB = String.fromCharCode(9), BOM = String.fromCharCode(0xfeff);
@@ -3085,8 +3087,27 @@ function csvCell(v){
 const csvOf = rows => BOM + rows.map(r => r.map(csvCell).join(',')).join(CR + NL) + CR + NL;
 const pad2 = n => String(n).padStart(2, '0');
 const csvDay = d => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+/* A logbook with nothing in it is exported as a sample: the headings, and a few lines that show how a go is written
+   (Will, 2026-10-12: "there should be sample data for the export so people can see how the date should be
+   entered... if the climber has no logs then the site exports a sample with a few different log types"). The
+   lines are of routes that are up, the newest, with "Example" where the climber's name goes, which is how Import CSV
+   knows to leave them out: a new climber puts lines of their own under them. They show a flash, a try and the send
+   after it, a send with a day and no time, two more sends of one route on one day, and, where the wall has a climb
+   by number, a go against the clock. */
+function csvSample(){
+  const live = snap.routes.filter(r => !r.retired).sort((a, b) => b.id - a.id), plain = live.filter(r => !byNumber(r)), nums = live.find(r => byNumber(r));
+  if (!live.length) return [];
+  const A = plain[0] || live[0], B = plain[1] || A, C = plain[2] || A;
+  const day = ago => csvDay(new Date(Date.now() - ago * 864e5));
+  const line = (d, t, r, result, rep, n, secs) => [d, t, 'Example', r.name, vName(r.grade), result, rep ? 'yes' : '', n || '', secs || '', r.setter, FEET[r.feet] || '', r.tape || '', 'Sun board', r.id];
+  const out = [line(day(9), '18:05', A, 'flash'), line(day(9), '18:20', B, 'try'), line(day(9), '18:32', B, '2nd go'), line(day(2), '', C, '4+ goes'),
+               line(day(2), '19:10', A, '3rd go', true), line(day(2), '19:25', A, 'flash', true)];
+  if (nums) out.push(line(day(2), '19:40', nums, 'try', false, Math.max(1, Math.min(7, topOf(nums) - 1)), 95));
+  return out;
+}
 function bookCsvRows(who, entries){
   const rows = [CSV_HEAD.slice()];
+  if (!entries.length) return rows.concat(csvSample());
   tagRepeats(entries.slice()).sort((a, b) => logTime(a) - logTime(b)).forEach(e => {
     const d = new Date(e.t), ok = !isNaN(d), r = routeById(e.route);
     rows.push([ok ? csvDay(d) : '', ok ? pad2(d.getHours()) + ':' + pad2(d.getMinutes()) : '',
@@ -3120,7 +3141,7 @@ $('bookCsv').onclick = async () => {
   if (csvBusy || !who || bookLoaded !== who) return;
   let how = 'saved';
   csvBusy = true;
-  try{ how = await fileOut('wills-wall-sun-board-' + fileSlug(who) + '-' + csvDay(new Date()) + '.csv', csvOf(bookCsvRows(who, rows)), 'text/csv'); }
+  try{ how = await fileOut('wills-wall-sun-board-' + fileSlug(who) + (rows.length ? '-' : '-sample-') + csvDay(new Date()) + '.csv', csvOf(bookCsvRows(who, rows)), 'text/csv'); }
   catch(e){ how = 'failed'; }
   csvBusy = false;
   if (how !== 'cancelled') toast(how === 'failed' ? 'Could not export' : how === 'shared' ? 'Exported' : 'Saved to downloads', how === 'failed');
@@ -3229,12 +3250,13 @@ function csvRead(text){
   const cell = (r, i) => i < 0 || r[i] === undefined ? '' : r[i];
   const lines = rows.slice(1), dayFirst = csvDayFirst(lines.map(r => cell(r, C.day)));
   const ready = [], left = [];
-  let other = 0;
+  let other = 0, examples = 0;
   lines.forEach((r, i) => {
     const line = i + 2, out = why => left.push({ line, why });
     const wall = csvWord(cell(r, C.wall));
     if (wall && wall !== 'sun board'){ other++; return out('it is from the ' + cell(r, C.wall)); }
     const who = cell(r, C.who);
+    if (csvWord(who) === 'example'){ examples++; return out('it is an example line'); }
     if (who && csvWord(who) !== csvWord(me)) return out('it is ' + who + '’s');
     const when = csvWhen(cell(r, C.day), cell(r, C.time), dayFirst);
     if (!when) return out(cell(r, C.day) ? 'its day or time cannot be read' : 'it has no day');
@@ -3251,7 +3273,7 @@ function csvRead(text){
     }
     ready.push({ line, go });
   });
-  return { ready, left, lines: lines.length, other };
+  return { ready, left, lines: lines.length, other, examples };
 }
 // the lines left out, in a few words: how many for each reason, and where the first of each is
 function csvLeft(left){
@@ -3260,7 +3282,7 @@ function csvLeft(left){
   return [...by].slice(0, 6).map(([why, at]) => plural(at.length, 'line', 'lines') + ' because ' + esc(why) + ' (line ' + at.slice(0, 3).join(', ') + (at.length > 3 ? ', …' : '') + ')').join('; ') +
     (by.size > 6 ? '; and more' : '');
 }
-const IMPORT_PIECE = 250;                 // goes to a call: a long file goes in pieces (the store reads forty thousand characters of a request and no more)
+const IMPORT_PIECE = 250, IMPORT_MOST = 400;      // goes to a call: a long file goes in pieces (the store reads forty thousand characters of a request and no more)
 let importBusy = false;
 function paintBookBtns(){
   const who = $('bookWho').value, shown = !!who && bookLoaded === who;
@@ -3272,15 +3294,30 @@ async function importCsv(text){
   const got = csvRead(text);
   if (got.error) return bookNote(esc(got.error), true);
   if (got.lines && got.other === got.lines) return bookNote('That file is another wall’s logbook. Import it on that wall’s page.', true);
+  if (got.lines && got.examples === got.lines) return bookNote('That file has only the example lines in it. Put lines of your own under them, with your name or nothing under Climber, and import it again.');
   if (!got.ready.length) return bookNote(got.lines ? 'Nothing was imported. Left out: ' + csvLeft(got.left) + '.' : 'That file has the headings and no goes under them: nothing to import.', !!got.lines);
   importBusy = true; paintBookBtns();
+  const tz = -new Date().getTimezoneOffset();          // how far this phone's clock is ahead of UTC, in minutes, so that a day is the climber's day
+  /* A long file goes in pieces. The store counts a route's goes of a day together (as many tries and sends as the
+     file lists), so those must reach it together: the lines are put in the order of route and day (the day as the
+     store reckons it, by this phone's clock) and a piece is not cut in the middle of one. A file of the usual
+     length is one piece, sent as it stands. */
   const pieces = [];
-  for (let i = 0; i < got.ready.length; i += IMPORT_PIECE) pieces.push(got.ready.slice(i, i + IMPORT_PIECE));
+  if (got.ready.length <= IMPORT_PIECE) pieces.push(got.ready);
+  else {
+    const g = x => x.go.route + '|' + new Date(Date.parse(x.go.t) + tz * 60000).toISOString().slice(0, 10);
+    const all = got.ready.slice().sort((x, y) => g(x) < g(y) ? -1 : g(x) > g(y) ? 1 : x.line - y.line);
+    for (let i = 0; i < all.length; ){
+      let j = Math.min(all.length, i + IMPORT_PIECE);
+      while (j < all.length && j - i < IMPORT_MOST && g(all[j]) === g(all[j - 1])) j++;
+      pieces.push(all.slice(i, j)); i = j;
+    }
+  }
   // what the store says of each piece: how many would go in, and which lines it leaves out
   const send = async dry => {
     let n = 0, last = null; const left = [];
     for (const piece of pieces){
-      const d = await call('/log/import', { person: me, entries: piece.map(x => x.go), dry });
+      const d = await call('/log/import', { person: me, entries: piece.map(x => x.go), dry, tz });
       n += dry ? d.would : d.imported; last = d;
       (d.skipped || []).forEach(x => left.push({ line: piece[x.i] ? piece[x.i].line : 0, why: x.why === 'already in the logbook' ? 'the logbook has it already' : x.why }));
     }
@@ -3291,14 +3328,20 @@ async function importCsv(text){
     const said = all.length ? ' Left out: ' + csvLeft(all) + '.' : '';
     if (!dry.n){ bookNote('Nothing was imported.' + said); return; }
     if (!confirm('Import ' + plural(dry.n, 'go', 'goes') + ' into ' + me + '’s logbook?' +
-                 (all.length ? String.fromCharCode(10, 10) + plural(all.length, 'line', 'lines') + ' cannot go in, or ' + (all.length === 1 ? 'is' : 'are') + ' there already.' : ''))) return void bookNote('');
+                 (all.length ? String.fromCharCode(10, 10) + plural(all.length, 'line', 'lines') + ' of the file ' + (all.length === 1 ? 'is' : 'are') + ' left out.' : ''))) return void bookNote('');
     const done = await send(false);
     mine = []; logAt = 0;                    // Undo on the log page takes off the last go written, which is now one of these
     take(done.last);
     await loadBook();
     bookNote('Imported ' + plural(done.n, 'go', 'goes') + '.' + said);
     loadLog();
-  }catch(e){ bookNote('The import did not go through: ' + esc(e.message) + '.', true); loadBook(); }
+  }catch(e){
+    /* It may have gone through all the same, or part of it, if only an answer was lost. So the logbook is read
+       again, and a second go at the same file then adds only what is missing. */
+    await loadBook();
+    bookNote('The import did not go through: ' + esc(e.message) + '. ' + (bookLoaded === me ? 'The logbook has been read again: look before importing a second time.'
+             : 'The logbook cannot be read just now either: look at it before importing a second time.'), true);
+  }
   finally{ importBusy = false; paintBookBtns(); }
 }
 $('bookImp').onclick = () => { bookNote(''); $('bookFile').value = ''; $('bookFile').click(); };

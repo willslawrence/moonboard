@@ -1635,7 +1635,7 @@
     <button id="logCsv" class="ghost mini" disabled>Export CSV</button>
     <button id="logImp" class="ghost mini" disabled>Import CSV</button>
     <button id="logLock" class="ghost mini" disabled>Lock my entries</button>
-    <button type="button" class="tipBtn" aria-label="About: the file, and the lock" aria-expanded="false">i</button><span class="tipTxt"><b>Export CSV</b> makes a file of the logbook that is showing, a line a go. <b>Import CSV</b> reads a file laid out the same way and adds its goes to your own logbook. To bring an old logbook in: export first (an empty logbook gives the line of headings), fill in a line for each go, and import the file. A line needs a date (2026-10-12), the route's name as the list has it, and how it went: try, flash, 2nd go, 3rd go or 4+ goes. The time and the other columns may be left empty; the hold set, if empty, is the one on the wall. Goes come in locked, a try and a send at most for each route each day, and a go the logbook already has is left out. <b>Lock my entries</b> locks every go of yours, so that none can be deleted by a slip.</span>
+    <button type="button" class="tipBtn" aria-label="About: the file, and the lock" aria-expanded="false">i</button><span class="tipTxt"><b>Export CSV</b> makes a file of the logbook that is showing, a line a go. <b>Import CSV</b> reads a file laid out the same way and adds its goes to your own logbook. To bring an old logbook in: export first (an empty logbook gives a sample, the headings and a few example lines), put a line for each go under them, and import the file. The example lines are left out. A line needs a date (2026-10-12), the route's name as the list has it, and how it went: try, flash, 2nd go, 3rd go or 4+ goes. The time and the other columns may be left empty; the hold set, if empty, is the one on the wall. Goes come in locked. Several sends of a route in a day are all kept, and a go the logbook already has is not added again. <b>Lock my entries</b> locks every go of yours, so that none can be deleted by a slip.</span>
   </div>
   <input type="file" id="logFile" accept=".csv,text/csv,text/comma-separated-values,text/plain" tabindex="-1" aria-hidden="true">
   <p id="logHint"></p>
@@ -1756,7 +1756,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-12 10:24';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-12 11:25';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -5174,8 +5174,8 @@ async function openLog(){
 
    Export CSV makes a file of the logbook that is showing, whoever's it is: a line a go, the oldest first, with the
    day, the time, the climber, the route, its grade both ways, how the go went, whether a send was a repeat, who
-   set the route, which hold set it is on, and the route's number. A logbook with nothing in it gives the line of
-   headings and no more, which is the layout to fill in. On a phone the file goes to the share sheet (Save to
+   set the route, which hold set it is on, and the route's number. A logbook with nothing in it gives a sample: the
+   headings and a few example lines, which is the layout to fill in (see csvSample). On a phone the file goes to the share sheet (Save to
    Files, AirDrop, Mail, Numbers); where there is none it is downloaded. The goes are the ones the Logbook has
    already fetched, so the sheet opens on the tap itself: a phone lets a page open one at no other time.
 
@@ -5183,9 +5183,12 @@ async function openLog(){
    nobody else's. A line needs a day, a route and how it went; everything else may be left empty. The route is
    found by its number if the line has one, and by its name on the line's hold set if not (the hold set on the
    wall, if the line names none). The goes are handed to the relay as a logbook brought in from elsewhere, which is
-   what they are: they come in locked, a try and a send at most for each route each day, and a go the logbook has
-   already is left out, so a file can be imported twice without harm. What is about to happen is said first and
-   asked about, and what was left out, and why, is said afterwards. */
+   what they are: they come in locked. For each route and day the logbook ends up with as many tries and as many
+   sends as the file lists, so a route sent five times in an evening is five sends (Will, 2026-10-12: "I often climb
+   a route on repeat and want to log multiple sends on the same day"), and a go the logbook has already is not
+   added again, so a file can be imported twice without harm. (That count is the relay's, and a relay from before
+   it kept one try and one send a day: see importCsv.) What is about to happen is said first and asked about, and
+   what was left out, and why, is said afterwards. */
 let logShown = null;                      // { who, entries }: what the Logbook is showing
 const CSV_HEAD = ['Date', 'Time', 'Climber', 'Route', 'Grade', 'V grade', 'Result', 'Repeat send', 'Setter', 'Hold set', 'Wall', 'Route id'];
 const CSV_RESULT = { try: 'try', flash: 'flash', '2nd': '2nd go', '3rd': '3rd go', '4+': '4+ goes' };
@@ -5201,8 +5204,24 @@ const csvOf = rows => BOM + rows.map(r => r.map(csvCell).join(',')).join(CR + NL
 const pad2 = n => String(n).padStart(2, '0');
 const csvDay = d => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
 const dayOnly = e => e.src === 'moonboard' && String(e.t).slice(11, 16) === '00:00';       // brought in with a day and no time
+/* A logbook with nothing in it is exported as a sample: the headings, and a few lines that show how a go is written
+   (Will, 2026-10-12: "there should be sample data for the export so people can see how the date should be
+   entered... if the climber has no logs then the site exports a sample with a few different log types"). The
+   lines are of routes on the hold set that is up, with "Example" where the climber's name goes, which is how Import
+   CSV knows to leave them out: a new climber puts lines of their own under them. They show a flash, a try and the
+   send after it, a send with a day and no time, and two more sends of one route on one day. */
+function csvSample(){
+  const top = (BY_BOARD[boardKey] || []).slice().sort((a, b) => (b.repeats || 0) - (a.repeats || 0)), set = BOARDS.find(b => b.key === boardKey);
+  if (!top.length) return [];
+  const A = top[0], B = top[1] || A, C = top[2] || A;
+  const day = ago => csvDay(new Date(Date.now() - ago * 864e5));
+  const line = (d, t, r, result, rep) => [d, t, 'Example', r.name, GRADES[r.grade], 'V' + VGRADE[r.grade], result, rep ? 'yes' : '', r.setter, set ? set.label : '', 'MoonBoard', r.id];
+  return [line(day(9), '18:05', A, 'flash'), line(day(9), '18:20', B, 'try'), line(day(9), '18:32', B, '2nd go'), line(day(2), '', C, '4+ goes'),
+          line(day(2), '19:10', A, '3rd go', true), line(day(2), '19:25', A, 'flash', true)];
+}
 function logCsvRows(who, entries){
   const rows = [CSV_HEAD.slice()];
+  if (!entries.length) return rows.concat(csvSample());
   entries.slice().sort((a, b) => logTime(a) - logTime(b)).forEach(e => {
     const d = new Date(logTime(e)), ok = !isNaN(d) && logTime(e) > 0, r = byId[e.id], set = r && BOARDS.find(b => b.key === r.board);
     rows.push([ok ? csvDay(d) : '', ok && !dayOnly(e) ? pad2(d.getHours()) + ':' + pad2(d.getMinutes()) : '',
@@ -5233,7 +5252,7 @@ let csvBusy = false;                      // one at a time: a second tap while t
 $('logCsv').onclick = async () => {
   const b = $('logCsv'), shown = logShown;
   if (csvBusy || !shown) return;
-  const name = 'wills-wall-moonboard-' + fileSlug(shown.who) + '-' + csvDay(new Date()) + '.csv';
+  const name = 'wills-wall-moonboard-' + fileSlug(shown.who) + (shown.entries.length ? '-' : '-sample-') + csvDay(new Date()) + '.csv';
   let how = 'saved';
   csvBusy = true;
   try{ how = await fileOut(name, csvOf(logCsvRows(shown.who, shown.entries)), 'text/csv'); }
@@ -5347,9 +5366,10 @@ function logNote(html, bad){
   const el = $('logNote');
   el.innerHTML = html; el.className = bad ? 'bad' : ''; el.hidden = !html;
 }
-/* Reads the file's text and says what is in it: the goes that can go in (ready), and the lines that cannot, each
-   with its number in the file and why (left). Nothing is sent or changed here. */
-function csvRead(text, me, entries){
+/* Reads the file's text and says what is in it: the goes that can go in (ready, each with the line it came from),
+   and the lines that cannot, each with its number in the file and why (left). Nothing is sent or changed here, and
+   whether the logbook has a go already is not looked at: that is settled with the relay (see importCsv). */
+function csvRead(text, me){
   const rows = csvParse(text);
   if (!rows.length) return { error: 'There is nothing in that file.' };
   const head = rows[0].map(csvWord), col = name => head.indexOf(name);
@@ -5358,16 +5378,14 @@ function csvRead(text, me, entries){
     return { error: 'That does not look like a logbook: its first line should have Date, Route and Result among its headings. Export CSV gives the layout.' };
   const cell = (r, i) => i < 0 || r[i] === undefined ? '' : r[i];
   const lines = rows.slice(1), dayFirst = csvDayFirst(lines.map(r => cell(r, C.day)));
-  // what the logbook has already: a try and a send for each route each day, as the relay counts them
-  const kind = res => res === 'try' ? 'try' : 'send', have = new Set(), seen = new Set();
-  entries.forEach(e => have.add(e.id + '|' + csvDay(new Date(logTime(e))) + '|' + kind(e.result)));
   const ready = [], left = [];
-  let other = 0;
+  let other = 0, examples = 0;
   lines.forEach((r, i) => {
     const line = i + 2, out = why => left.push({ line, why });
     const wall = csvWord(cell(r, C.wall));
     if (wall && wall !== 'moonboard'){ other++; return out('it is from the ' + cell(r, C.wall)); }
     const who = cell(r, C.who);
+    if (csvWord(who) === 'example'){ examples++; return out('it is an example line'); }
     if (who && csvWord(who) !== csvWord(me)) return out('it is ' + who + '’s');
     const when = csvWhen(cell(r, C.day), cell(r, C.time), dayFirst);
     if (!when) return out(cell(r, C.day) ? 'its day or time cannot be read' : 'it has no day');
@@ -5377,13 +5395,22 @@ function csvRead(text, me, entries){
     const set = csvBoard(cell(r, C.set));
     const route = csvRoute(cell(r, C.route), set, +cell(r, C.id) || 0);
     if (!route) return out(cell(r, C.route) ? 'no route is called “' + cell(r, C.route) + '”' + (set ? ' on that hold set' : '') : 'it names no route');
-    const k = route.id + '|' + when.key + '|' + kind(result);
-    if (have.has(k)) return out('the logbook has it already');
-    if (seen.has(k)) return out('it is a second ' + kind(result) + ' of a route on one day');
-    seen.add(k);
-    ready.push({ id: route.id, result, t: when.key + 'T' + pad2(when.hh) + ':' + pad2(when.mm) + ':00.000Z' });
+    ready.push({ line, go: { id: route.id, result, t: when.key + 'T' + pad2(when.hh) + ':' + pad2(when.mm) + ':00.000Z' } });
   });
-  return { ready, left, lines: lines.length, other };
+  return { ready, left, lines: lines.length, other, examples };
+}
+/* The rule of a relay from before it kept repeats, as the page has to apply it to a file first, by this phone's own
+   days: a try and a send at most for each route each day. (A relay that counts needs none of this.) */
+function csvOnePerDay(ready, entries){
+  const kind = res => res === 'try' ? 'try' : 'send', have = new Set(), seen = new Set(), keep = [], left = [];
+  entries.forEach(e => have.add(e.id + '|' + csvDay(new Date(logTime(e))) + '|' + kind(e.result)));
+  ready.forEach(x => {
+    const k = x.go.id + '|' + x.go.t.slice(0, 10) + '|' + kind(x.go.result);
+    if (have.has(k)) return left.push({ line: x.line, why: 'the logbook has it already' });
+    if (seen.has(k)) return left.push({ line: x.line, why: 'it is a second ' + kind(x.go.result) + ' of a route on one day, and the relay keeps one until it is brought up to date' });
+    seen.add(k); keep.push(x);
+  });
+  return { keep, left };
 }
 // the lines left out, in a few words: how many for each reason, and where the first of each is
 function csvLeft(left){
@@ -5392,34 +5419,80 @@ function csvLeft(left){
   return [...by].slice(0, 6).map(([why, at]) => plural(at.length, 'line', 'lines') + ' because ' + esc(why) + ' (line ' + at.slice(0, 3).join(', ') + (at.length > 3 ? ', …' : '') + ')').join('; ') +
     (by.size > 6 ? '; and more' : '');
 }
+const IMPORT_PIECE = 2000, IMPORT_MOST = 2900;      // goes to a call: the relay takes three thousand of them and no more
+/* A long file goes in pieces. The relay counts a route's goes of a day together (as many tries and sends as the file
+   lists), so those must reach it together: the lines are put in the order of route and day, and a piece is not cut
+   in the middle of one. (A file of the usual length is one piece, sent as it stands.) */
+function csvPieces(ready){
+  if (ready.length <= IMPORT_PIECE) return [ready];
+  const g = x => x.go.id + '|' + x.go.t.slice(0, 10);
+  const all = ready.slice().sort((x, y) => g(x) < g(y) ? -1 : g(x) > g(y) ? 1 : x.line - y.line), pieces = [];
+  for (let i = 0; i < all.length; ){
+    let j = Math.min(all.length, i + IMPORT_PIECE);
+    while (j < all.length && j - i < IMPORT_MOST && g(all[j]) === g(all[j - 1])) j++;
+    pieces.push(all.slice(i, j)); i = j;
+  }
+  return pieces;
+}
 let importBusy = false;
 async function importCsv(text){
   const me = meNow();
   if (importBusy || !me || !logShown || logShown.who !== me) return;
-  const got = csvRead(text, me, logShown.entries);
+  const got = csvRead(text, me);
   if (got.error) return logNote(esc(got.error), true);
   if (got.lines && got.other === got.lines) return logNote('That file is another wall’s logbook. Import it on that wall’s page.', true);
-  const said = got.left.length ? ' Left out: ' + csvLeft(got.left) + '.' : '';
-  if (!got.ready.length) return logNote(got.lines ? 'Nothing was imported.' + said : 'That file has the headings and no goes under them: nothing to import.', !!got.lines);
-  importBusy = true; $('logImp').disabled = true;
+  if (got.lines && got.examples === got.lines) return logNote('That file has only the example lines in it. Put lines of your own under them, with your name or nothing under Climber, and import it again.');
+  if (!got.ready.length) return logNote(got.lines ? 'Nothing was imported. Left out: ' + csvLeft(got.left) + '.' : 'That file has the headings and no goes under them: nothing to import.', !!got.lines);
+  importBusy = true; paintLogBtns();
   const post = body => fetch(LISTS_API + '/lists/log/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json());
+  const tz = -new Date().getTimezoneOffset();          // how far this phone's clock is ahead of UTC, in minutes
+  /* Puts a list of lines to the relay, a piece at a time: asked only (dry) or for good, with the relay counting
+     (count) or not. Says how many go in, which lines the relay leaves out, and whether that relay counts. */
+  const put = async (list, dry, count) => {
+    let n = 0, last = null; const twice = [];
+    for (const piece of csvPieces(list)){
+      const d = await post(Object.assign({ person: me, entries: piece.map(x => x.go) }, dry ? { dry: true } : {}, count ? { repeats: true, tz } : {}));
+      if (d.error) throw new Error(d.error);
+      n += (dry ? d.would : d.imported) || 0; last = d;
+      (d.skipped || []).forEach(x => {
+        const from = typeof x.i === 'number' ? piece[x.i] : piece.find(y => y.go.id === x.id && y.go.t === x.t);
+        twice.push({ line: from ? from.line : 0, why: 'the logbook has it already' });
+      });
+    }
+    return { n, last, twice, counts: !!last && last.repeats === true };
+  };
   try{
-    const dry = await post({ person: me, entries: got.ready, dry: true });
-    if (dry.error) throw new Error(dry.error);
-    const twice = (dry.skipped || []).length;
-    if (!dry.would){ logNote('Nothing was imported: the logbook has every one of those goes already.' + said); return; }
-    if (!confirm('Import ' + plural(dry.would, 'go', 'goes') + ' into ' + me + '’s logbook?' + String.fromCharCode(10, 10) +
+    /* Every line that can be read is put to the relay, which says which of them the logbook has already. A relay
+       that keeps repeats says so in its answer (repeats): for each route and day the logbook ends up with as many
+       tries and sends as the file lists. A relay from before that keeps a try and a send at most for each route
+       each day; for that one the page applies its rule first, by this phone's own days, and asks again. */
+    let send = got.ready, left = got.left.slice();
+    let dry = await put(send, true, true);
+    const counts = dry.counts;
+    if (!counts){
+      const one = csvOnePerDay(got.ready, logShown.entries);
+      send = one.keep; left = left.concat(one.left);
+      dry = send.length ? await put(send, true, false) : { n: 0, twice: [] };
+    }
+    left = left.concat(dry.twice).sort((a, b) => a.line - b.line);
+    const said = left.length ? ' Left out: ' + csvLeft(left) + '.' : '';
+    if (!dry.n){ logNote('Nothing was imported.' + said); return; }
+    if (!confirm('Import ' + plural(dry.n, 'go', 'goes') + ' into ' + me + '’s logbook?' + String.fromCharCode(10, 10) +
                  'They come in locked, like any logbook brought in from elsewhere.' +
-                 (twice ? ' ' + plural(twice, 'line is', 'lines are') + ' left out as a second try or send of a route on one day.' : '') +
-                 (got.left.length ? ' ' + plural(got.left.length, 'more line', 'more lines') + ' cannot go in.' : ''))) return void logNote('');
-    const d = await post({ person: me, entries: got.ready });
-    if (d.error) throw new Error(d.error);
-    applyLists(d); logStale();
-    log('imported ' + d.imported + ' goes from a file into ' + me + '’s logbook.');
+                 (left.length ? ' ' + plural(left.length, 'line', 'lines') + ' of the file ' + (left.length === 1 ? 'is' : 'are') + ' left out.' : ''))) return void logNote('');
+    const done = await put(send, false, counts);
+    applyLists(done.last); logStale();
+    log('imported ' + done.n + ' goes from a file into ' + me + '’s logbook.');
     await loadLog();
-    logNote('Imported ' + plural(d.imported, 'go', 'goes') + '.' + said);
+    logNote('Imported ' + plural(done.n, 'go', 'goes') + '.' + said);
     if (page === 'log') paintLogPage();
-  }catch(e){ logNote('The import did not go through: ' + esc(e.message) + '. Nothing was changed.', true); }
+  }catch(e){
+    /* It may have gone through all the same, or part of it, if only an answer was lost. So the logbook is read
+       again, and a second go at the same file then adds only what is missing. */
+    await loadLog();
+    logNote('The import did not go through: ' + esc(e.message) + '. ' + (logShown ? 'The logbook has been read again: look before importing a second time.'
+            : 'The logbook cannot be read just now either: look at it before importing a second time.'), true);
+  }
   finally{ importBusy = false; paintLogBtns(); }
 }
 $('logImp').onclick = () => { logNote(''); $('logFile').value = ''; $('logFile').click(); };

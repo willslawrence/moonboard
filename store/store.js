@@ -18,8 +18,9 @@
                                       n and secs: a go against the clock on a climb by number, which number was reached and how long it took)
      POST /api/w/sun/log/undo         { person }                           take back that climber's last entry
      POST /api/w/sun/log/delete       { person, k }                        take that one entry (k, as the rows give it) out of that climber's logbook
-     POST /api/w/sun/log/import       { person, entries: [{ route, result, t, n?, secs? }], dry? }
+     POST /api/w/sun/log/import       { person, entries: [{ route, result, t, n?, secs? }], tz?, dry? }
                                       a logbook brought in from a file: many goes at once, each with when it happened
+                                      (tz: how far the climber's clock is ahead of UTC, in minutes, so that a day is the climber's day)
      GET  /api/w/sun/log?person=&route=&limit=                             logbook rows, the latest to have happened first
      POST /api/w/sun/fix              { by, kind, v, x, y, h?, size? }     the map of holds is wrong here (see below)
      POST /api/w/sun/fix/undo         { k }                                take that back
@@ -299,19 +300,33 @@ export async function handle(request, db, now = () => new Date().toISOString()){
 
   /* A logbook brought in from a file (the page's Import CSV): many goes of one climber in one call, each saying when
      it happened. A go is left out, and said to be, when it is not one (no such route, not a result, no time that
-     can be read, a time still to come, half of a go against the clock) or when the logbook has it already: the same
-     route and the same result in the same minute, so a file brought in twice adds nothing the second time. The rest
-     go in, the oldest first, and the tally of every route touched is counted again. dry: true says what would
-     happen and writes nothing. Five hundred goes a call at most; the page sends a long file in pieces. */
+     can be read, a time still to come, half of a go against the clock) or when the logbook has it already. That
+     is a count: for each route and day the logbook ends up with as many tries and as many sends as the file lists,
+     so a route sent five times in an evening is five sends (Will, 2026-10-12: "I often climb a route on repeat and
+     want to log multiple sends on the same day"). What the logbook has that day already is taken off the file's
+     count first, a go at that very minute with that result before any other, so a file brought in twice adds
+     nothing the second time and a go logged here and written in the file is not doubled. (Until that day the
+     rule was "the same route and result in the same minute, once", which lost the second of two tries logged in
+     one minute.) The rest go in, the oldest first, and the tally of every route touched is counted again.
+     dry: true says what would happen and writes nothing. Five hundred goes a call at most; the page sends a long
+     file in pieces. The count is made within a call, so a route's goes of one day must come in one call: the page
+     never parts them. */
   if (path === '/log/import'){
     const person = clean(body.person, 40);
     if (!person || !(await knows(db, wall, person))) return bad('say who you are first', 404);
     if (!Array.isArray(body.entries)) return bad('entries must be a list of goes');
     const entries = body.entries.slice(0, 500);
     const routes = new Set((await db.prepare('SELECT id FROM routes WHERE wall = ?').bind(wall).all()).results.map(x => x.id));
-    const have = new Set((await db.prepare('SELECT route, result, t FROM log WHERE wall = ? AND person = ?').bind(wall, person).all())
-      .results.map(x => x.route + '|' + x.result + '|' + String(x.t).slice(0, 16)));
-    const nowMs = Date.parse(now()), add = [], skipped = [];
+    const tz = Math.max(-840, Math.min(840, Number(body.tz) || 0));
+    const clock = t => new Date(Date.parse(t) + tz * 60000).toISOString().slice(0, 16);      // "YYYY-MM-DDTHH:MM" as the climber's own clock had it
+    const kind = result => result === 'try' ? 'try' : 'send';
+    const had = new Map();                   // "route|day|kind" -> the goes the logbook has for it
+    for (const x of (await db.prepare('SELECT route, result, t FROM log WHERE wall = ? AND person = ?').bind(wall, person).all()).results){
+      const c = clock(x.t), k = x.route + '|' + c.slice(0, 10) + '|' + kind(x.result);
+      if (!had.has(k)) had.set(k, []);
+      had.get(k).push({ at: c.slice(11), result: x.result, used: false });
+    }
+    const nowMs = Date.parse(now()), good = [], add = [], skipped = [];
     entries.forEach((e, i) => {
       const route = Number(e && e.route), result = e && e.result, t = e && typeof e.t === 'string' ? Date.parse(e.t) : NaN;
       const timed = !!e && (e.n != null || e.secs != null);
@@ -321,11 +336,21 @@ export async function handle(request, db, now = () => new Date().toISOString()){
         : !(Number.isFinite(t) && t > Date.parse('2015-01-01')) ? 'no time that can be read' : t > nowMs ? 'a time still to come'
         : timed && (n === null || secs === null) ? 'a go against the clock says both how far and how long' : '';
       if (why) return void skipped.push({ i, why });
-      const iso = new Date(t).toISOString(), key = route + '|' + result + '|' + iso.slice(0, 16);
-      if (have.has(key)) return void skipped.push({ i, why: 'already in the logbook' });
-      have.add(key);
-      add.push({ i, t: iso, route, result, n, secs });
+      const iso = new Date(t).toISOString(), c = clock(iso);
+      good.push({ i, t: iso, route, result, n, secs, key: route + '|' + c.slice(0, 10) + '|' + kind(result), at: c.slice(11) });
     });
+    // first the goes the logbook has at that very minute with that result, then any other of that day
+    for (const g of good){
+      const hit = (had.get(g.key) || []).find(x => !x.used && x.at === g.at && x.result === g.result);
+      if (hit){ hit.used = true; g.dup = true; }
+    }
+    for (const g of good){
+      if (g.dup) continue;
+      const hit = (had.get(g.key) || []).find(x => !x.used);
+      if (hit){ hit.used = true; g.dup = true; }
+    }
+    for (const g of good){ if (g.dup) skipped.push({ i: g.i, why: 'already in the logbook' }); else add.push(g); }
+    skipped.sort((x, y) => x.i - y.i);
     if (body.dry) return json({ dry: true, would: add.length, skipped });
     if (!add.length) return json({ ...(await snapshot(db, wall)), imported: 0, skipped });
     add.sort((x, y) => x.t < y.t ? -1 : x.t > y.t ? 1 : x.i - y.i);

@@ -586,7 +586,24 @@ export class Lists {
        history, not taps) and tagged src:"moonboard". A send already logged for
        the same problem on the same day is skipped, so a re-run or an ascent
        logged in both apps can't double up. Projects go onto the person's list.
-       dry:true reports what would happen and writes nothing. */
+       dry:true reports what would happen and writes nothing.
+
+       repeats:true is the page's Import CSV, for a climber who sends a route
+       several times in a day and wants every one kept (Will, 2026-10-12: "I
+       often climb a route on repeat and want to log multiple sends on the same
+       day"). Then the rule is a count and not "one each": for each problem and
+       day the logbook ends up with as many tries and as many sends as the file
+       lists. What the logbook has that day already is taken off the file's
+       count first - a go at that very minute with that result before any other
+       - so a file brought in twice adds nothing the second time, and an ascent
+       logged here and written in the file is not doubled. tz is how far the
+       climber's clock is ahead of UTC, in minutes, so that "that day" is the
+       climber's day: a row logged in the app is stamped in UTC, and a row
+       brought in carries the day and time as they were written. The answer
+       says repeats:true back, which is how the page knows this relay counts.
+       The count is made within a call, so a problem's goes of one day must
+       come in one call: the page, which sends a very long file in pieces,
+       never parts them. */
     if (path === "/lists/log/import") {
       const person = clean(body.person);
       const people = (await this.state.storage.get("people")) || [];
@@ -594,38 +611,73 @@ export class Lists {
       const entries = Array.isArray(body.entries) ? body.entries.slice(0, 3000) : [];
       const day = (iso) => String(iso).slice(0, 10);
 
-      // "id|YYYY-MM-DD|send" or "...|try" already in the log - one of each per problem per day
       const kind = (result) => result === "try" ? "try" : "send";
-      const have = new Set();
-      for (const [, row] of await this.state.storage.list({ prefix: "log:" }))
-        if (row && row.person === person) have.add(row.id + "|" + day(row.t) + "|" + kind(row.result));
+      const repeats = body.repeats === true;
+      const tz = Math.max(-840, Math.min(840, Number(body.tz) || 0));
+      // "YYYY-MM-DDTHH:MM" as the climber's own clock had it
+      const clock = (row) => row.src === "moonboard" ? String(row.t).slice(0, 16)
+        : new Date(Date.parse(row.t) + tz * 60000).toISOString().slice(0, 16);
 
-      const add = [], skipped = [];
-      for (const e of entries) {
+      const mine = [];
+      for (const [, row] of await this.state.storage.list({ prefix: "log:" }))
+        if (row && row.person === person) mine.push(row);
+
+      const add = [], skipped = [], good = [];
+      entries.forEach((e, i) => {
         const id = Number(e && e.id);
         const result = clean(e && e.result);
         const t = e && typeof e.t === "string" && /^\d{4}-\d{2}-\d{2}/.test(e.t) ? new Date(e.t) : null;
         if (!Number.isFinite(id) || !RESULTS.includes(result) || !t || isNaN(t)) {
-          skipped.push({ id: e && e.id, t: e && e.t, why: "bad row" });
-          continue;
+          skipped.push({ i, id: e && e.id, t: e && e.t, why: "bad row" });
+          return;
         }
-        const k = id + "|" + day(t.toISOString()) + "|" + kind(result);
-        if (have.has(k)) { skipped.push({ id, t: e.t, why: "already logged" }); continue; }
-        have.add(k);
-        add.push({ t: t.toISOString(), person, id, result, src: "moonboard", lock: true });
+        good.push({ i, id, result, raw: e.t, t: t.toISOString() });
+      });
+      const row = (g) => ({ t: g.t, person, id: g.id, result: g.result, src: "moonboard", lock: true });
+      const twice = (g) => skipped.push({ i: g.i, id: g.id, t: g.raw, why: "already logged" });
+
+      if (repeats) {
+        const had = new Map();           // "id|day|kind" -> the goes the logbook has for it
+        for (const r of mine) {
+          const c = clock(r), k = r.id + "|" + c.slice(0, 10) + "|" + kind(r.result);
+          if (!had.has(k)) had.set(k, []);
+          had.get(k).push({ at: c.slice(11), result: r.result, used: false });
+        }
+        const there = (g) => had.get(g.id + "|" + day(g.t) + "|" + kind(g.result)) || [];
+        // first the goes the logbook has at that very minute with that result, then any other of that day
+        for (const g of good) {
+          const hit = there(g).find((x) => !x.used && x.at === g.t.slice(11, 16) && x.result === g.result);
+          if (hit) { hit.used = true; g.dup = true; }
+        }
+        for (const g of good) {
+          if (g.dup) continue;
+          const hit = there(g).find((x) => !x.used);
+          if (hit) { hit.used = true; g.dup = true; }
+        }
+        for (const g of good) { if (g.dup) twice(g); else add.push(row(g)); }
+      } else {
+        // "id|YYYY-MM-DD|send" or "...|try" already in the log - one of each per problem per day
+        const have = new Set(mine.map((r) => r.id + "|" + day(r.t) + "|" + kind(r.result)));
+        for (const g of good) {
+          const k = g.id + "|" + day(g.t) + "|" + kind(g.result);
+          if (have.has(k)) { twice(g); continue; }
+          have.add(k);
+          add.push(row(g));
+        }
       }
+      skipped.sort((a, b) => a.i - b.i);
       const listKey = "list:" + person;
       const listed = (await this.state.storage.get(listKey)) || [];
       const projects = (Array.isArray(body.projects) ? body.projects : [])
         .map(Number).filter((id) => Number.isFinite(id) && !listed.includes(id));
       const newProjects = [...new Set(projects)];
 
-      if (body.dry) return json({ dry: true, would: add.length, skipped, projects: newProjects.length });
+      if (body.dry) return json({ dry: true, would: add.length, skipped, projects: newProjects.length, repeats });
 
       for (const row of add) await this.state.storage.put(logKey(row.t), row);
       if (newProjects.length) await this.state.storage.put(listKey, [...listed, ...newProjects]);
       await this.rebuild();
-      return json({ ...(await this.snapshot()), imported: add.length, skipped, projects: newProjects.length });
+      return json({ ...(await this.snapshot()), imported: add.length, skipped, projects: newProjects.length, repeats });
     }
 
     if (path === "/lists/log/lock") {

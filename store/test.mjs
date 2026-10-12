@@ -264,35 +264,54 @@ console.log('a logbook brought in from a file');
     { route: slab, result: 'try', t: 'last week' },                                  // no time
     { route: slab, result: 'try', t: '2031-01-01T00:00:00.000Z' },                   // still to come
     { route: nums, result: 'try', t: '2026-03-04T09:00:00.000Z', n: 5 },             // half a go against the clock
-    { route: slab, result: 'flash', t: '2026-03-01T09:00:30.000Z' },                 // the first line again, half a minute on
+    { route: slab, result: 'flash', t: '2026-03-01T09:00:30.000Z' },                 // the route flashed again, half a minute on: a second send of that day
   ];
   check('a stranger cannot import', (await call('POST', W + '/log/import', { person: 'Nobody', entries: file })).status === 404);
   check('and it wants a list', (await call('POST', W + '/log/import', { person: 'Ida' })).status === 400);
   d = await call('POST', W + '/log/import', { person: 'Ida', entries: file, dry: true });
-  check('asked first, it says what would go in and what would not, and writes nothing', d.status === 200 && d.dry === true && d.would === 4 && d.skipped.length === 6 &&
-    d.skipped.map(x => x.i).join() === '4,5,6,7,8,9' && (await call('GET', W + '/log?person=Ida')).entries.length === 2, d);
+  check('asked first, it says what would go in and what would not, and writes nothing', d.status === 200 && d.dry === true && d.would === 5 && d.skipped.length === 5 &&
+    d.skipped.map(x => x.i).join() === '4,5,6,7,8' && (await call('GET', W + '/log?person=Ida')).entries.length === 2, d);
   check('each line left out says why', d.skipped.map(x => x.why).join(' | ') ===
-    'no such route | not a try or a send | no time that can be read | a time still to come | a go against the clock says both how far and how long | already in the logbook', d.skipped);
+    'no such route | not a try or a send | no time that can be read | a time still to come | a go against the clock says both how far and how long', d.skipped);
   d = await call('POST', W + '/log/import', { person: 'Ida', entries: file });
-  check('then the four goes are in, each with the time it happened', d.status === 200 && d.imported === 4 && d.skipped.length === 6, d);
+  check('then the five goes are in, each with the time it happened: two sends of one route within a minute are two sends', d.status === 200 && d.imported === 5 && d.skipped.length === 5, d);
   let l = await call('GET', W + '/log?person=Ida');
-  check('the logbook gives the latest to have happened first, though the old ones were written last', l.entries.length === 6 &&
-    l.entries.map(e => e.t.slice(0, 10)).join() === '2026-10-09,2026-10-09,2026-03-03,2026-03-02,2026-03-02,2026-03-01' && l.entries[0].result === '2nd', l.entries.map(e => e.t + ' ' + e.result));
-  check('the tally is counted in the order the goes happened: the old flash is her first send, and no try has come since her last',
-    d.stats.Ida[slab].s.join() === 'flash,2nd' && d.stats.Ida[slab].a === 0 && d.stats.Ida[slab].r === '2nd' && d.stats.Ida[slab].d.startsWith('2026-10-09'), d.stats.Ida[slab]);
+  check('the logbook gives the latest to have happened first, though the old ones were written last', l.entries.length === 7 &&
+    l.entries.map(e => e.t.slice(0, 10)).join() === '2026-10-09,2026-10-09,2026-03-03,2026-03-02,2026-03-02,2026-03-01,2026-03-01' && l.entries[0].result === '2nd', l.entries.map(e => e.t + ' ' + e.result));
+  check('the tally is counted in the order the goes happened: the old flashes are her first sends, and no try has come since her last',
+    d.stats.Ida[slab].s.join() === 'flash,flash,2nd' && d.stats.Ida[slab].a === 0 && d.stats.Ida[slab].r === '2nd' && d.stats.Ida[slab].d.startsWith('2026-10-09'), d.stats.Ida[slab]);
   check('a go against the clock keeps how far and how long, and the best of them is in the tally',
     d.stats.Ida[nums].s.join() === '3rd' && JSON.stringify(d.stats.Ida[nums].g) === '[12,200]' && l.entries.some(e => e.route === nums && e.n === 7 && e.secs === 61), d.stats.Ida[nums]);
   d = await call('POST', W + '/log/import', { person: 'Ida', entries: file });
-  check('the same file again adds nothing', d.imported === 0 && d.skipped.filter(x => x.why === 'already in the logbook').length === 5 && (await call('GET', W + '/log?person=Ida')).entries.length === 6, d);
+  check('the same file again adds nothing', d.imported === 0 && d.skipped.filter(x => x.why === 'already in the logbook').length === 5 && (await call('GET', W + '/log?person=Ida')).entries.length === 7, d);
   check('nobody else has gained anything', !d.stats.Jo && (await call('GET', W + '/log?person=Jo')).entries.length === 0);
   // a go logged with an earlier time, the ordinary way, is counted where it belongs too
   d = await call('POST', W + '/log', { person: 'Jo', route: slab, result: '3rd' });
   d = await call('POST', W + '/log', { person: 'Jo', route: slab, result: 'flash', t: '2026-02-01T10:00:00Z' });
   check('an earlier go written later is her first send all the same', d.stats.Jo[slab].s.join() === 'flash,3rd' && d.stats.Jo[slab].r === '3rd', d.stats.Jo[slab]);
+  // a route climbed on repeat: every send of the day is kept, with a time or without
+  const laps = [
+    { route: slab, result: 'flash', t: '2026-04-01T15:00:00.000Z' }, { route: slab, result: 'flash', t: '2026-04-01T15:10:00.000Z' }, { route: slab, result: '2nd', t: '2026-04-01T15:20:00.000Z' },
+    { route: slab, result: 'try', t: '2026-04-01T15:05:00.000Z' }, { route: slab, result: 'try', t: '2026-04-01T15:05:00.000Z' },      // two tries in one minute
+    { route: slab, result: '4+', t: '2026-04-02T09:00:00.000Z' }, { route: slab, result: '4+', t: '2026-04-02T09:00:00.000Z' },         // a day and no time, twice
+  ];
+  d = await call('POST', W + '/log/import', { person: 'Ida', entries: laps, tz: 180 });
+  check('seven goes of one route in two days all go in: three sends and two tries on the first, two sends with no time on the second', d.imported === 7 && d.skipped.length === 0 &&
+    d.stats.Ida[slab].s.join() === 'flash,flash,flash,flash,2nd,4+,4+,2nd', d.stats.Ida[slab]);
+  d = await call('POST', W + '/log/import', { person: 'Ida', entries: laps, tz: 180 });
+  check('and again adds nothing', d.imported === 0 && d.skipped.length === 7, d);
+  d = await call('POST', W + '/log/import', { person: 'Ida', entries: laps.concat([{ route: slab, result: 'flash', t: '2026-04-01T16:00:00.000Z' }, { route: slab, result: '4+', t: '2026-04-02T09:00:00.000Z' }]), tz: 180, dry: true });
+  check('a file with one more send on each day would add just those two', d.would === 2 && d.skipped.length === 7, d);
+  // the climber's own day: a go logged at half past one at night, by a clock three hours ahead, is stamped the evening before in UTC
+  await call('POST', W + '/log', { person: 'Jo', route: nums, result: '2nd', t: '2026-05-01T22:30:00.000Z' });
+  d = await call('POST', W + '/log/import', { person: 'Jo', entries: [{ route: nums, result: 'flash', t: '2026-05-01T20:30:00.000Z' }], tz: 180, dry: true });
+  const d0 = await call('POST', W + '/log/import', { person: 'Jo', entries: [{ route: nums, result: 'flash', t: '2026-05-01T20:30:00.000Z' }], dry: true });
+  check('told the clock is three hours ahead, a send at half past eleven at night by that clock is the day before\'s and would be added; not told, the two are taken for one day\'s and it would not',
+    d.would === 1 && d0.would === 0 && d0.skipped[0].why === 'already in the logbook', [d, d0]);
   // many at once
   const many = Array.from({ length: 500 }, (_, i) => ({ route: i % 2 ? slab : nums, result: 'try', t: new Date(Date.parse('2026-01-01T08:00:00Z') + i * 3600e3).toISOString() }));
   d = await call('POST', W + '/log/import', { person: 'Jo', entries: many.concat([{ route: slab, result: 'try', t: '2026-09-09T09:09:00Z' }]) });
-  check('five hundred goes go in at one call, and no more than that', d.imported === 500 && (await call('GET', W + '/log?person=Jo&limit=3000')).entries.length === 502, [d.imported, d.error]);
+  check('five hundred goes go in at one call, and no more than that', d.imported === 500 && (await call('GET', W + '/log?person=Jo&limit=3000')).entries.length === 503, [d.imported, d.error]);
   await call('POST', W + '/reset', {});
 }
 check('a body that is not JSON is refused',
