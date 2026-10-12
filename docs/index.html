@@ -1756,7 +1756,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-12 12:23';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-12 22:00';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3638,8 +3638,9 @@ function fillWho(){
   const me = $('me'), keepMe = me.value;
   me.innerHTML = '';
   me.appendChild(new Option('Climber?', ''));
-  people.forEach(p => me.appendChild(new Option(p, p)));
+  // first under the heading (Will, 2026-10-12: at the foot of a long list of names it was out of sight)
   me.appendChild(new Option('+ New climber\u2026', NEW_CLIMBER));
+  people.forEach(p => me.appendChild(new Option(p, p)));
   me.value = people.includes(keepMe) ? keepMe : '';
   meMirror();
   try{
@@ -3657,7 +3658,7 @@ function meMirror(){
   [...a.options].forEach(o => b.appendChild(new Option(o.textContent, o.value)));     // (not by copying the HTML: the value of "+ New climber" does not survive it)
   b.value = a.value;
 }
-/* Reached from the last option of the name picker, or from Add a name in Settings, so a new name means
+/* Reached from the first option of the name picker, or from Add a name in Settings, so a new name means
    "this is me" - select it. Pick someone else from the list to switch back. */
 async function addPerson(previous){
   const name = (prompt('Your name?') || '').trim();

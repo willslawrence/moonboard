@@ -1092,7 +1092,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-12 18:30';
+const BUILD = '2026-10-12 22:00';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -1221,11 +1221,12 @@ function paintMe(){
     if (sel.dataset.key === key){ sel.value = me; continue; }
     sel.dataset.key = key;
     sel.innerHTML = '<option value="">Who are you?</option>' + names.map(n => '<option>' + esc(n) + '</option>').join('');
-    sel.appendChild(new Option('+ New climber\u2026', NEW_CLIMBER));       // the last line of the list, as on the MoonBoard page
+    // first under the heading, as on the MoonBoard page (Will, 2026-10-12: at the foot of a long list of names it was out of sight)
+    sel.insertBefore(new Option('+ New climber\u2026', NEW_CLIMBER), sel.options[1] || null);
     sel.value = me;
   }
 }
-/* A new name is added from the name picker itself, by its last line, as on the MoonBoard page (Will, 2026-10-11: "can
+/* A new name is added from the name picker itself, by its first line under the heading, as on the MoonBoard page (Will, 2026-10-11: "can
    you add a climber on the sun board just as easy as the moon board?"). It was only in Settings. A new name means
    "this is me", so it is picked; with no name given the picker goes back to whoever it was. */
 const NEW_CLIMBER = '\u0000new';
