@@ -518,6 +518,31 @@ export class Lists {
       return json(await this.snapshot());
     }
 
+    /* Take a name off the list of climbers, with what hangs on the name itself: their tick list, their tallies,
+       their ticks on problems, their snake score and their wins. The lines they logged stay in the log, so a
+       name added again by mistake loses nothing that /lists/rebuild cannot bring back. (Will, 2026-10-12:
+       "Remove the climber Sara from the list". There is no button for it in the page.) */
+    if (path === "/lists/person/remove") {
+      const name = clean(body.name);
+      if (!name) return json({ error: "name required" }, 400);
+      const people = (await this.state.storage.get("people")) || [];
+      if (!people.includes(name)) return json({ error: "unknown person" }, 404);
+      await this.state.storage.put("people", people.filter((p) => p !== name));
+      await this.state.storage.delete("list:" + name);
+      await this.state.storage.delete("stats:" + name);
+      for (const [k, who] of await this.state.storage.list({ prefix: "done:" })) {
+        if (!who || !who.includes(name)) continue;
+        const left = who.filter((x) => x !== name);
+        if (left.length) await this.state.storage.put(k, left);
+        else await this.state.storage.delete(k);
+      }
+      for (const key of ["snake", "wins"]) {
+        const m = (await this.state.storage.get(key)) || {};
+        if (name in m) { delete m[name]; await this.state.storage.put(key, m); }
+      }
+      return json(await this.snapshot());
+    }
+
     if (path === "/lists/tick") {
       const person = clean(body.person);
       const id = Number(body.id);
