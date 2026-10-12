@@ -258,6 +258,19 @@ MoonBoard app names them. Nothing is stored differently. The log keeps flash, 2n
 and 4+, and which of a climber's sends came first is worked out when rows are shown, so
 old entries read correctly and points do not move.
 
+A route that was tried on another day and never sent cannot be flashed either (Will,
+2026-10-12: "I'll mark it down as a flash. Which is fine. If it's been a year or even
+three weeks, it is a session flash, but it's not a flash for the scoring sake. It's just
+a send for the scoring sake."). The line over the bubbles then says how many tries there
+were before and asks which go it was *today*, and the tries from before are added to the
+answer. Five tries in March and the first go today is the sixth go: it is stored as 4+,
+and said back as "Session flash · go 6". Nor can a send be logged as an earlier go than
+the tries logged today allow: with two tries logged, Flash tapped by mistake is stored as
+the third go. So what is stored is the go it was in all, and that is what scores. With
+the climber's own log to hand the page knows which tries were today's; without it, every
+try counts as today's if the route was touched in the last four hours and as earlier if
+not, and either way they all count. The Sun board's page does the same.
+
 ### Two routes at once
 
 Two people on different problems, without relighting between goes. The button for it is
@@ -535,8 +548,9 @@ of setters: the search box finds a setter by name.
 the board or from the log page. Quick log is the MoonBoard's (see *Quick log* above), with
 the same words: a press swings out **Try** and **Send**, a tap on one or a slide on to it
 and a let-go logs it, a send asks which go it was in four bubbles with the likely answer
-ringed, a route sent before is a session send, and a short line over the button says what
-was logged or that it was not saved.
+ringed, a route sent before is a session send, a route tried on another day is never
+logged as a flash (the tries from before are added to the answer), and a short line over
+the button says what was logged or that it was not saved.
 A route scores once, the first time it is sent: its V number plus one, and one more for a
 flash. Tries score nothing. The points are the Sun board's own.
 

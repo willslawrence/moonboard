@@ -1092,7 +1092,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-12 11:25';
+const BUILD = '2026-10-12 12:23';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -2424,6 +2424,27 @@ const myTries = id => { const st = me && statOf(me, id); return (st && st.a) || 
 const sentBefore = id => { const st = me && statOf(me, id); return !!(st && st.s && st.s.length); };
 const sessionTries = id => { const st = me && statOf(me, id); return st && st.a && st.d && Date.now() - Date.parse(st.d) < 4 * 3600e3 ? st.a : 0; };
 const derivedResult = id => ['flash', '2nd', '3rd', '4+'][Math.min(sentBefore(id) ? sessionTries(id) : myTries(id), 3)];
+const SEND_ORDER = ['flash', '2nd', '3rd', '4+'];
+/* Of a route never sent: the tries logged before today's session (before), and those logged in it (today). Every
+   try counts as today's if the route was touched in the last four hours, and as earlier if it was not. The two
+   add up to every try there is, so a first send is never counted as an earlier go than its tries allow. */
+function triesSplit(id){
+  const a = myTries(id);
+  if (!a || sentBefore(id)) return { before: 0, today: 0 };
+  const today = Math.min(a, sessionTries(id));
+  return { before: a - today, today };
+}
+/* Which go a first send was, from the bubble that was tapped, as on the MoonBoard page. The bubble says which go
+   it was TODAY. The tries the logbook has from before today are added to it, and it cannot be an earlier go than
+   the tries logged today allow. So a route that was tried on another day, three weeks ago or a year, is never a
+   flash, whatever is tapped: it is a session flash, and it scores as the send it was (Will, 2026-10-12: "I'll
+   mark it down as a flash. Which is fine. If it's been a year or even three weeks, it is a session flash, but
+   it's not a flash for the scoring sake. It's just a send for the scoring sake."). */
+function firstSendAs(id, tapped){
+  const split = triesSplit(id);
+  const goes = Math.max(SEND_ORDER.indexOf(tapped) + 1, split.today + 1), n = split.before + goes;
+  return { result: SEND_ORDER[Math.min(n, 4) - 1], before: split.before, goes, n };
+}
 async function doTry(){
   const r = openRoute();
   if (!r) return toast('Open a route first.', true);
@@ -2435,7 +2456,9 @@ async function doTry(){
    Asked in bubbles, as on the MoonBoard page. Four of them swing out in an arc from the button that was pressed
    (Flash, 2nd, 3rd, 4+, left to right), away from the nearer edge of the screen: under Log send, which is near the
    top of its page, and over Quick log, which is near the foot of its. The one the tries point to has a white ring.
-   For a route sent before they are session sends, and a small line says so.
+   For a route sent before they are session sends, and a small line says so. For a route never sent that has tries
+   from before today, the line says how many and asks which go it was today: those tries are added to the answer
+   (see firstSendAs), so it is never logged as a flash.
 
    The layer the bubbles sit on is the dimming, and covers everything: a tap on it, or on the cross where the button
    was, puts them away. It closes on the click and not on the touch going down, because a layer that went on the
@@ -2444,7 +2467,9 @@ let sendOpen = false;
 function openSend(from){
   const fan = $('sendFan'), a = from.getBoundingClientRect(), r = openRoute();
   if (!r || !a.width) return;
-  const again = sentBefore(r.id), pick = derivedResult(r.id);
+  const again = sentBefore(r.id), split = triesSplit(r.id);
+  // (with tries from before today the bubbles ask about today, and the ring is on what today's tries point to)
+  const pick = split.before ? SEND_ORDER[Math.min(split.today, 3)] : derivedResult(r.id);
   const R = 26, edge = 6 + R + 84.5;                   // half a bubble, and how near the side the arc's middle may come
   const up = a.top + a.height / 2 > innerHeight / 2;
   const cx = Math.min(innerWidth - edge, Math.max(edge, a.left + a.width / 2)), cy = a.top + a.height / 2;
@@ -2456,7 +2481,8 @@ function openSend(from){
     b.style.setProperty('--fx', (-dx) + 'px');         // it grows out of the button
     b.style.setProperty('--fy', (-dy) + 'px');
     b.classList.toggle('pick', b.dataset.r === pick);
-    b.setAttribute('aria-label', (again ? SESSION_WORDS : SEND_LABELS)[b.dataset.r]);
+    b.setAttribute('aria-label', again ? SESSION_WORDS[b.dataset.r] : !split.before ? SEND_LABELS[b.dataset.r]
+      : b.dataset.r === 'flash' ? 'First go today' : SEND_LABELS[b.dataset.r] + ' today');
   });
   // An arm to each bubble, from the middle of the button itself: near the side of the screen the arc has had to
   // shift over, and the arms should still leave the button.
@@ -2472,7 +2498,7 @@ function openSend(from){
     arm.style.transform = 'rotate(' + (up ? -deg : deg) + 'deg)';
   });
   const cap = fan.querySelector('.cap');
-  cap.textContent = again ? 'Session send \u00b7 which go?' : 'Which go?';
+  cap.textContent = again ? 'Session send \u00b7 which go?' : split.before ? plural(split.before, 'try', 'tries') + ' before \u00b7 which go today?' : 'Which go?';
   cap.style.left = cx + 'px';
   cap.style.top = (up ? cy - 156 : cy + 130) + 'px';
   const x = fan.querySelector('.x');
@@ -2491,9 +2517,16 @@ function closeSend(){
 async function logSend(result){
   const r = openRoute();
   if (!r || !me) return closeSend();
-  const said = (sentBefore(r.id) ? SESSION_WORDS : SEND_LABELS)[result] + ' logged \u00b7 ' + r.name;
+  let final = result, said;
+  if (sentBefore(r.id)) said = SESSION_WORDS[result];
+  else {
+    const f = firstSendAs(r.id, result);
+    final = f.result;                          // what is stored, and so what scores
+    said = !f.before ? SEND_LABELS[final] : result === '4+' ? SEND_LABELS['4+'] : (f.goes === 1 ? 'Session flash · go ' : 'Go ') + f.n;
+  }
+  said += ' logged · ' + r.name;
   closeSend();
-  const ok = await logGo(result);
+  const ok = await logGo(final);
   quickSay(ok ? said : 'Not saved', ok ? 'sent' : 'bad');
 }
 $('sendFan').addEventListener('click', e => {

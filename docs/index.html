@@ -1756,7 +1756,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-12 11:25';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-12 12:23';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3704,6 +3704,28 @@ function sessionTries(id){
   return st.d && Date.now() - Date.parse(st.d) < 4 * 3600e3 ? st.a : 0;
 }
 const derivedResult = id => RESULTS[Math.min(sentBefore(id) ? sessionTries(id) : myTries(id), 3)];
+/* Of a route never sent: the tries logged before today's session (before), and those logged in it (today). With
+   the climber's own log to hand, and up to date, today's are counted from it. Without, every try counts as today's
+   if the route was touched in the last four hours and as earlier if it was not. Either way the two add up to
+   every try there is, so a first send is never counted as an earlier go than its tries allow. */
+function triesSplit(id){
+  const me = meNow(), st = me && stats[me] && stats[me][id], a = (st && st.a) || 0;
+  if (!a || sentBefore(id)) return { before: 0, today: 0 };
+  const fresh = !!logCache && logCache.me === me && logCache.entries.some(e => Number(e.id) === id && e.t === st.d);
+  const today = Math.min(a, fresh ? sessionTries(id) : (st.d && Date.now() - Date.parse(st.d) < 4 * 3600e3 ? a : 0));
+  return { before: a - today, today };
+}
+/* Which go a first send was, from the bubble that was tapped. The bubble says which go it was TODAY. The tries the
+   logbook has from before today are added to it, and it cannot be an earlier go than the tries logged today allow.
+   So a route that was tried on another day, three weeks ago or a year, is never a flash, whatever is tapped: it is
+   a session flash, and it scores as the send it was (Will, 2026-10-12: "I'll forget that I ever climbed a route
+   before... and I'll mark it down as a flash. Which is fine. If it's been a year or even three weeks, it is a
+   session flash, but it's not a flash for the scoring sake. It's just a send for the scoring sake."). */
+function firstSendAs(id, tapped){
+  const split = triesSplit(id);
+  const goes = Math.max(RESULTS.indexOf(tapped) + 1, split.today + 1), n = split.before + goes;
+  return { result: RESULTS[Math.min(n, 4) - 1], before: split.before, goes, n };
+}
 
 /* Log try and Log send, on the log page, act as whoever is picked in the header. */
 function paintBar(){
@@ -3780,7 +3802,10 @@ function doDone(){
    left to right - away from the nearer edge of the screen: under Log send, which is
    near the top of its page, and over Quick log, which is near the foot of its. The one
    the tries point to has a white ring. For a route sent before they are session
-   sends, and a small line says so; the words on the bubbles stay short.
+   sends, and a small line says so; the words on the bubbles stay short. For a route
+   never sent that has tries from before today, the line says how many and asks which
+   go it was today: those tries are added to the answer (see firstSendAs), so it is
+   never logged as a flash.
 
    The layer the bubbles sit on is the dimming, and covers everything, so nothing under
    it can be touched: a tap on it, on the cross where the button was, or Back, puts
@@ -3791,7 +3816,9 @@ let sendOpen = false;
 function openSend(from){
   const fan = $('sendFan'), a = from.getBoundingClientRect();
   if (!current || !a.width) return;
-  const again = sentBefore(current.id), pick = derivedResult(current.id);
+  const again = sentBefore(current.id), split = triesSplit(current.id);
+  // (with tries from before today the bubbles ask about today, and the ring is on what today's tries point to)
+  const pick = split.before ? RESULTS[Math.min(split.today, 3)] : derivedResult(current.id);
   const R = 26, edge = 6 + R + 84.5;                   // half a bubble, and how near the side the arc's middle may come
   const up = a.top + a.height / 2 > innerHeight / 2;
   const cx = Math.min(innerWidth - edge, Math.max(edge, a.left + a.width / 2)), cy = a.top + a.height / 2;
@@ -3803,7 +3830,8 @@ function openSend(from){
     b.style.setProperty('--fx', (-dx) + 'px');         // it grows out of the button
     b.style.setProperty('--fy', (-dy) + 'px');
     b.classList.toggle('pick', b.dataset.r === pick);
-    b.setAttribute('aria-label', again ? RESULT_WORDS['s' + b.dataset.r] : SEND_LABELS[b.dataset.r]);
+    b.setAttribute('aria-label', again ? RESULT_WORDS['s' + b.dataset.r] : !split.before ? SEND_LABELS[b.dataset.r]
+      : b.dataset.r === 'flash' ? 'First go today' : SEND_LABELS[b.dataset.r] + ' today');
   });
   // An arm to each bubble, from the middle of the button itself: near the side of the
   // screen the arc has had to shift over, and the arms should still leave the button.
@@ -3819,7 +3847,7 @@ function openSend(from){
     arm.style.transform = 'rotate(' + (up ? -deg : deg) + 'deg)';
   });
   const cap = fan.querySelector('.cap');
-  cap.textContent = again ? 'Session send \u00b7 which go?' : 'Which go?';
+  cap.textContent = again ? 'Session send \u00b7 which go?' : split.before ? plural(split.before, 'try', 'tries') + ' before \u00b7 which go today?' : 'Which go?';
   cap.style.left = cx + 'px';
   cap.style.top = (up ? cy - 156 : cy + 130) + 'px';
   const x = fan.querySelector('.x');
@@ -3840,10 +3868,17 @@ function closeSend(fromBack){
 
 function logSend(result){
   const me = meNow(); if (!me || !current) return;
-  const said = (sentBefore(current.id) ? RESULT_WORDS['s' + result] : SEND_LABELS[result]) + ' logged \u00b7 ' + current.name;
+  const id = current.id, name = current.name;
+  let final = result, said;
+  if (sentBefore(id)) said = RESULT_WORDS['s' + result];
+  else {
+    const f = firstSendAs(id, result);
+    final = f.result;                          // what is stored, and so what scores
+    said = !f.before ? SEND_LABELS[final] : result === '4+' ? SEND_LABELS['4+'] : (f.goes === 1 ? 'Session flash · go ' : 'Go ') + f.n;
+  }
   closeSend();
-  listsCall('/lists/log', { person: me, id: current.id, result })
-    .then(ok => quickSay(ok ? said : 'Not saved', ok ? 'sent' : 'bad'));
+  listsCall('/lists/log', { person: me, id, result: final })
+    .then(ok => quickSay(ok ? said + ' logged · ' + name : 'Not saved', ok ? 'sent' : 'bad'));
 }
 function runPending(){
   const a = pending; pending = null;
