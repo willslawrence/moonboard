@@ -857,11 +857,12 @@
   #story .py .bar i{display:block;height:100%;min-width:3px;border-radius:3px}
   #story .py .n{flex:none;width:112px;text-align:right;white-space:nowrap;color:var(--dim);font-weight:600}
   #story .sg{display:flex;gap:8px;margin:10px 0 2px}
-  #story .sg div{flex:1 1 0;min-width:0;padding:9px 4px 10px;border-radius:9px;background:var(--panel);border:1px solid var(--edge);text-align:center}
+  #story .sg > *{flex:1 1 0;min-width:0;width:auto;padding:9px 4px 10px;border-radius:9px;background:var(--panel);border:1px solid var(--edge);text-align:center;font-weight:400}
   #story .sg b{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--dimmer);margin-bottom:6px}
   #story .sg span{display:inline-block;padding:3px 8px;border-radius:6px;font:700 13px ui-monospace,Menlo,monospace;white-space:nowrap}
   #story .sg span.no{color:var(--dimmer)}
-  #storyPick{margin:8px 0 4px;font-size:14px;font-weight:600}
+  #story .sg button:active{background:var(--press)}
+  #story .sgNote{margin:7px 2px 4px;font-size:12px;color:var(--dim);line-height:1.4}
   #story .more{margin:9px 0 0;font-size:12px;color:var(--dim);line-height:1.45}
   #ptsRank .r{display:flex;align-items:center;gap:9px;padding:7px 2px;
               border-bottom:1px solid var(--line);font-size:13px}
@@ -1669,7 +1670,7 @@
   </div>
   <div class="rankHead"><button type="button" id="rankTog" class="rankTog" aria-expanded="false" aria-controls="ptsRank">Ranking<i></i></button><button type="button" class="tipBtn" aria-label="About: the points" aria-expanded="false">i</button><span class="tipTxt">MoonBoard scoring: 350 at 5+, 50 more for each grade above it, by the setter's grade; then 53 more for a flash, 2 for a second go, 1 for a third. Benchmarks only, and only the first time you send a route.</span></div>
   <div id="ptsRank" hidden></div>
-  <div class="rankHead" id="storyHead" hidden><button type="button" id="storyTog" class="rankTog" aria-expanded="false" aria-controls="story"><span id="storyLbl">Your story</span><i></i></button><button type="button" class="tipBtn" aria-label="About: the story" aria-expanded="false">i</button><span class="tipTxt">Worked out from the goes in the logbook that is showing: the grades you have sent, how often first go, the route that took longest, the ones that got away, your days and your holds. <b>Flash grade</b>: the hardest grade at which half or more of the routes you have tried went first go. <b>Edge grade</b>: the hardest at which half or more went in the end, however many goes it took. <b>Average send</b>: the middle of all your sends. <b>Pick me a route</b> opens one you have not sent, between your flash grade and your edge grade, on the hold set now on the wall. The more of your logbook is in here, the more it can tell. <b>Import CSV</b> brings an old logbook over.</span></div>
+  <div class="rankHead" id="storyHead" hidden><button type="button" id="storyTog" class="rankTog" aria-expanded="false" aria-controls="story"><span id="storyLbl">Your story</span><i></i></button><button type="button" class="tipBtn" aria-label="About: the story" aria-expanded="false">i</button><span class="tipTxt">Worked out from the goes in the logbook that is showing: the grades you have sent, how often first go, the route that took longest, the ones that got away, your days and your holds. <b>Flash grade</b>: the hardest grade at which three in four, or more, of the routes you have tried went first go. <b>Edge grade</b>: the hardest at which half or more went in the end, however many goes it took. <b>Average send</b>: the middle of all your sends. On your own logbook, a tap on any of the three opens a route of that grade you have not sent, on the hold set now on the wall. The more of your logbook is in here, the more it can tell. <b>Import CSV</b> brings an old logbook over.</span></div>
   <div id="story" hidden></div>
   <input type="file" id="logFile" accept=".csv,text/csv,text/comma-separated-values,text/plain" tabindex="-1" aria-hidden="true">
   <p id="logHint"></p>
@@ -1787,7 +1788,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-13 22:14';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-13 23:00';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -8400,9 +8401,11 @@ function storyFacts(entries){
 }
 /* The three grades at the head of the story (Will, 2026-10-13: "Your Flash grade and Your edge grade (the grade I can
    get after a few attempts normally) .... and grade average. of all my sends the average"). Grade by grade from the
-   easiest tried: the flash grade is the hardest at which half or more of the routes tried went first go, the edge
-   grade the hardest at which half or more went in the end; the count stops at the first grade that falls short, so a
-   lucky pair far above does not carry it. A grade with fewer than three routes tried says nothing either way. */
+   easiest tried: the flash grade is the hardest at which three quarters or more of the routes tried went first go
+   (Will, the same day: "how about 75 percent or more for flash grade"; it was half), the edge grade the hardest at
+   which half or more went in the end; the count stops at the first grade that falls short, so a lucky pair far above
+   does not carry it. A grade with fewer than three routes tried says nothing either way. Where even the easiest grade
+   falls short, that grade is the answer: it is as low as this logbook goes. */
 function storyGrades(entries){
   const all = entries.filter(e => byId[e.id]).sort((a, b) => logTime(a) - logTime(b));
   const tried = new Map(), first = new Map();
@@ -8410,20 +8413,18 @@ function storyGrades(entries){
   const sends = all.filter(e => e.result !== 'try');
   if (!sends.length) return null;
   const share = (g, ok) => [...tried.get(g)].filter(id => first.has(id) && ok(first.get(id))).length / tried.get(g).size;
-  const climb = ok => { let at = null; for (const g of [...tried.keys()].sort((a, b) => a - b)){ if (tried.get(g).size < 3) continue; if (share(g, ok) < 0.5) break; at = g; } return at; };
-  return { flash: climb(e => e.result === 'flash'), edge: climb(() => true), avg: Math.round(sends.reduce((n, e) => n + byId[e.id].grade, 0) / sends.length), sent: new Set(first.keys()) };
+  const climb = (ok, need) => { let at = null, floor = null; for (const g of [...tried.keys()].sort((a, b) => a - b)){ if (tried.get(g).size < 3) continue; if (floor == null) floor = g; if (share(g, ok) < need) break; at = g; } return at != null ? at : floor; };
+  return { flash: climb(e => e.result === 'flash', 0.75), edge: climb(() => true, 0.5), avg: Math.round(sends.reduce((n, e) => n + byId[e.id].grade, 0) / sends.length), sent: new Set(first.keys()) };
 }
 const storyPill = g => { if (g == null) return '<span class="no">not yet</span>'; const band = GRADE_BANDS.find(b => VGRADE[g] <= b.max);
   return '<span style="background:' + band.bg + ';color:' + band.fg + '">' + GRADES[g] + ' · V' + VGRADE[g] + '</span>'; };
-const storyTiles = (f, e, a) => '<div class="sg"><div><b>Flash grade</b>' + storyPill(f) + '</div><div><b>Edge grade</b>' + storyPill(e) + '</div><div><b>Average send</b>' + storyPill(a) + '</div></div>';
-/* "Can there be a button that picks a route that is inside those grades but not done yet. The button takes you to
-   that route." One of the routes on the hold set now on the wall, from the flash grade to the edge grade, that this
-   climber has not sent; opened as a tap in the list opens it. */
-function storyPickList(G){
-  if (!G) return [];
-  const lo = G.flash != null ? G.flash : G.edge != null ? G.edge : G.avg, hi = Math.max(lo, G.edge != null ? G.edge : lo);
-  return (BY_BOARD[boardKey] || []).filter(r => r.grade >= lo && r.grade <= hi && !G.sent.has(r.id));
-}
+/* "Pick a route button for each of those categories. maybe the cards themselves are the buttons. a note tell to tap
+   them." (Will, 2026-10-13; one button for the span between the two grades came first.) On a logbook of your own each
+   card is a button: it opens a route of that grade, on the hold set now on the wall, that you have not sent, as a tap
+   in the list opens it. A card with no such route left, and anybody else's cards, are not buttons. */
+const storyPickList = (G, g) => !G || g == null ? [] : (BY_BOARD[boardKey] || []).filter(r => r.grade === g && !G.sent.has(r.id));
+const storyTiles = (cards, G) => '<div class="sg">' + cards.map(([k, g]) => { const on = storyPickList(G, g).length > 0;
+  return (on ? '<button type="button" data-g="' + g + '" aria-label="' + k + ', ' + GRADES[g] + ': open a route of this grade that you have not sent">' : '<div>') + '<b>' + k + '</b>' + storyPill(g) + (on ? '</button>' : '</div>'); }).join('') + '</div>';
 /* What an empty logbook shows: made up, and said to be. */
 const STORY_SAMPLE = [
   { ic: '🏔️', k: 'Your pyramid', v: '87 routes sent<div class="py"><span class="g">7A</span><span class="bar"><i style="width:13%;background:#2563eb"></i></span><span class="n">5 · 1 flashed</span></div><div class="py"><span class="g">6C+</span><span class="bar"><i style="width:37%;background:#22c55e"></i></span><span class="n">14 · 6 flashed</span></div><div class="py"><span class="g">6C</span><span class="bar"><i style="width:71%;background:#22c55e"></i></span><span class="n">27 · 15 flashed</span></div><div class="py"><span class="g">6B+</span><span class="bar"><i style="width:100%;background:#22c55e"></i></span><span class="n">38 · 29 flashed</span></div>' },
@@ -8444,19 +8445,18 @@ function paintStory(){
   $('storyLbl').textContent = own ? 'Your story' : logShown.who + '’s story';
   $('storyTog').setAttribute('aria-expanded', open ? 'true' : 'false');
   const sends = logShown.entries.filter(e => e.result !== 'try').length;
-  const G = sample ? null : storyGrades(logShown.entries), picks = own ? storyPickList(G) : [];
-  const lo = G && (G.flash != null ? G.flash : G.edge != null ? G.edge : G.avg), hi = G && Math.max(lo, G.edge != null ? G.edge : lo);
-  const tiles = sample ? storyTiles(5, 7, 5) : G ? storyTiles(G.flash, G.edge, G.avg) +
-    (own ? '<button type="button" id="storyPick"' + (picks.length ? '' : ' disabled') + '>' + (picks.length ? 'Pick me a route · ' + (lo === hi ? GRADES[lo] : GRADES[lo] + ' to ' + GRADES[hi])
-      : 'Nothing left to send from ' + GRADES[lo] + ' to ' + GRADES[hi] + ' on this hold set') + '</button>' : '') : '';
-  box.innerHTML = (sample ? '<div class="smp"><b>A sample.</b> This is what your logbook can tell you once your climbs are in it. Bring your MoonBoard logbook over with <b>Import CSV</b>, above, and these become yours.</div>' : '') + tiles +
+  const G = sample ? null : storyGrades(logShown.entries);
+  const tiles = sample ? storyTiles([['Flash grade', 4], ['Edge grade', 7], ['Average send', 5]], null)
+    : G ? storyTiles([['Flash grade', G.flash], ['Edge grade', G.edge], ['Average send', G.avg]], own ? G : null) : '';
+  const note = tiles.includes('<button') ? '<p class="sgNote">Tap a grade for a route of that grade you have not sent.</p>' : '';
+  box.innerHTML = (sample ? '<div class="smp"><b>A sample.</b> This is what your logbook can tell you once your climbs are in it. Bring your MoonBoard logbook over with <b>Import CSV</b>, above, and these become yours.</div>' : '') + tiles + note +
     (sample ? STORY_SAMPLE : facts).map(f => '<div class="st"><span class="ic">' + f.ic + '</span><div class="tx"><b>' + f.k + '</b>' + f.v + '</div></div>').join('') +
     (!sample && own && sends < 20 ? '<p class="more">The more of your logbook is in here, the more this can tell. <b>Import CSV</b>, above, brings an old logbook over.</p>' : '');
-  if ($('storyPick')) $('storyPick').onclick = () => {          // not one sent, between the two grades: opened as the list opens one
-    const r = picks[Math.floor(Math.random() * picks.length)];
+  box.querySelectorAll('.sg button').forEach(b => b.onclick = () => {
+    const list = storyPickList(G, +b.dataset.g), r = list[Math.floor(Math.random() * list.length)];
     if (!r) return;
     showPanel(null); loadRoute(r);
-  };
+  });
 }
 $('storyTog').onclick = () => { storyOpen = $('story').hidden; paintStory(); };
 $('logBtn').onclick = () => ($('logPanel').hidden ? openLog() : showPanel(null));
