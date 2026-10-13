@@ -1670,7 +1670,7 @@
   </div>
   <div class="rankHead"><button type="button" id="rankTog" class="rankTog" aria-expanded="false" aria-controls="ptsRank">Ranking<i></i></button><button type="button" class="tipBtn" aria-label="About: the points" aria-expanded="false">i</button><span class="tipTxt">MoonBoard scoring: 350 at 5+, 50 more for each grade above it, by the setter's grade; then 53 more for a flash, 2 for a second go, 1 for a third. Benchmarks only, and only the first time you send a route.</span></div>
   <div id="ptsRank" hidden></div>
-  <div class="rankHead" id="storyHead" hidden><button type="button" id="storyTog" class="rankTog" aria-expanded="false" aria-controls="story"><span id="storyLbl">Your story</span><i></i></button><button type="button" class="tipBtn" aria-label="About: the story" aria-expanded="false">i</button><span class="tipTxt">Worked out from the goes in the logbook that is showing: the grades you have sent, how often first go, the route that took longest, the ones that got away, your days and your holds. <b>Flash grade</b>: the hardest grade at which three in four, or more, of the routes you have tried went first go. <b>Edge grade</b>: the hardest at which half or more went in the end, however many goes it took. <b>Average send</b>: the middle of all your sends. On your own logbook, a tap on any of the three opens a route of that grade you have not sent, on the hold set now on the wall. The more of your logbook is in here, the more it can tell. <b>Import CSV</b> brings an old logbook over.</span></div>
+  <div class="rankHead" id="storyHead" hidden><button type="button" id="storyTog" class="rankTog" aria-expanded="false" aria-controls="story"><span id="storyLbl">Your story</span><i></i></button><button type="button" class="tipBtn" aria-label="About: the story" aria-expanded="false">i</button><span class="tipTxt">Worked out from the goes in the logbook that is showing: the grades you have sent, how often first go, the route that took longest, the ones that got away, your days and your holds. <b>Flash grade</b>: the hardest grade at which half or more of the routes you have tried went first go. <b>Edge grade</b>: the hardest at which half or more went in the end, however many goes it took. <b>Average send</b>: the middle of all your sends. On your own logbook, a tap on any of the three opens a route of that grade you have not sent, on the hold set now on the wall. The more of your logbook is in here, the more it can tell. <b>Import CSV</b> brings an old logbook over.</span></div>
   <div id="story" hidden></div>
   <input type="file" id="logFile" accept=".csv,text/csv,text/comma-separated-values,text/plain" tabindex="-1" aria-hidden="true">
   <p id="logHint"></p>
@@ -1788,7 +1788,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-13 23:00';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-13 23:06';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -8401,8 +8401,8 @@ function storyFacts(entries){
 }
 /* The three grades at the head of the story (Will, 2026-10-13: "Your Flash grade and Your edge grade (the grade I can
    get after a few attempts normally) .... and grade average. of all my sends the average"). Grade by grade from the
-   easiest tried: the flash grade is the hardest at which three quarters or more of the routes tried went first go
-   (Will, the same day: "how about 75 percent or more for flash grade"; it was half), the edge grade the hardest at
+   easiest tried: the flash grade is the hardest at which half or more of the routes tried went first go
+   (three quarters was tried the same day and left him with no flash grade at all: "Go back to 50%"), the edge grade the hardest at
    which half or more went in the end; the count stops at the first grade that falls short, so a lucky pair far above
    does not carry it. A grade with fewer than three routes tried says nothing either way. Where even the easiest grade
    falls short, that grade is the answer: it is as low as this logbook goes. */
@@ -8414,7 +8414,7 @@ function storyGrades(entries){
   if (!sends.length) return null;
   const share = (g, ok) => [...tried.get(g)].filter(id => first.has(id) && ok(first.get(id))).length / tried.get(g).size;
   const climb = (ok, need) => { let at = null, floor = null; for (const g of [...tried.keys()].sort((a, b) => a - b)){ if (tried.get(g).size < 3) continue; if (floor == null) floor = g; if (share(g, ok) < need) break; at = g; } return at != null ? at : floor; };
-  return { flash: climb(e => e.result === 'flash', 0.75), edge: climb(() => true, 0.5), avg: Math.round(sends.reduce((n, e) => n + byId[e.id].grade, 0) / sends.length), sent: new Set(first.keys()) };
+  return { flash: climb(e => e.result === 'flash', 0.5), edge: climb(() => true, 0.5), avg: Math.round(sends.reduce((n, e) => n + byId[e.id].grade, 0) / sends.length), sent: new Set(first.keys()) };
 }
 const storyPill = g => { if (g == null) return '<span class="no">not yet</span>'; const band = GRADE_BANDS.find(b => VGRADE[g] <= b.max);
   return '<span style="background:' + band.bg + ';color:' + band.fg + '">' + GRADES[g] + ' · V' + VGRADE[g] + '</span>'; };
