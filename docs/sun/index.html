@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#c6cbd0">
+<meta name="theme-color" content="#c3b6a9">
 <!-- The Sun board is the same app as the MoonBoard page one folder up, so it shares that
      page's manifest and icon: an icon on the Home Screen opens whichever wall this phone
      was last on (see "which wall" in the first lines of ../index.html). -->
@@ -17,9 +17,9 @@
 <script>
   // The app left this address on 2026-10-09 (see "moved" in ../index.html). The Sun board was never here; send anyone who lands on it across.
   if (location.hostname === 'willslawrence.github.io') location.replace('https://wills-wall.pages.dev/sun/');
-  // the background this phone chose on either wall (light foggy grey until it chooses), on before the first paint
+  // the background this phone chose on either wall (light taupe until it chooses; the foggy grey until 2026-10-13), on before the first paint
   // There are two since 2026-10-11, the grey and the taupe: Black was taken away, and a phone that had chosen it is on the grey.
-  var mbBg = 'fog'; try{ if (localStorage.getItem('mb-bg2') === 'taupe') mbBg = 'taupe'; }catch(e){}
+  var mbBg = 'taupe'; try{ if (localStorage.getItem('mb-bg2') === 'fog') mbBg = 'fog'; }catch(e){}
   document.documentElement.setAttribute('data-bg', mbBg);
 </script>
 <style>
@@ -463,6 +463,15 @@
   /* what an import did, and what it left out */
   #bookNote{margin:8px 0 0;padding:8px 10px;border:1px solid var(--edge);border-radius:9px;background:var(--panel);font-size:12.5px;line-height:1.45}
   #bookNote.bad{border-color:#ef4444}
+  /* The ranking: at the head of the logbook, shut until it is tapped (Will, 2026-10-13: "at the top of the logbook...
+     by default, it's collapsed. You can click to expand it and it'll show the climbers and their points"). */
+  .rankHead{display:flex;align-items:center;margin-top:10px}
+  button.rankTog{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;
+                 background:var(--panel);font-size:14px;font-weight:600;text-align:left}
+  button.rankTog i{flex:none;width:7px;height:7px;margin:-3px 3px 0 0;border:solid var(--dim);border-width:0 2px 2px 0;transform:rotate(45deg)}
+  button.rankTog[aria-expanded="true"] i{margin-top:4px;transform:rotate(225deg)}
+  .rankHead button.tipBtn{margin-left:9px}
+  #lpPoints[hidden]{display:none}
   /* everyone's points, listed as the MoonBoard page lists them: place, name, sends, points */
   #lpPoints .r{display:flex;align-items:center;gap:9px;padding:7px 2px;border-bottom:1px solid var(--line);font-size:13px}
   #lpPoints .r .pos{flex:none;width:20px;color:var(--dimmer);font:700 11px ui-monospace,Menlo,monospace}
@@ -921,9 +930,9 @@
 
   <div class="lbl">How it looks on this phone</div>
   <div class="card">
-    <div class="opt"><label for="bgSel">Background</label><button type="button" class="tipBtn" aria-label="About: the background" aria-expanded="false">i</button><span class="tipTxt">For this phone only, and for both walls. Light foggy grey is what everyone starts on.</span><select id="bgSel">
-      <option value="fog">Light foggy grey</option>
+    <div class="opt"><label for="bgSel">Background</label><button type="button" class="tipBtn" aria-label="About: the background" aria-expanded="false">i</button><span class="tipTxt">For this phone only, and for both walls. Light taupe is what everyone starts on.</span><select id="bgSel">
       <option value="taupe">Light taupe</option>
+      <option value="fog">Light foggy grey</option>
     </select></div>
   </div>
 
@@ -1022,13 +1031,13 @@
     <button id="bookImp" class="ghost mini" disabled>Import CSV</button>
     <button type="button" class="tipBtn" aria-label="About: the file" aria-expanded="false">i</button><span class="tipTxt"><b>Export CSV</b> makes a file of the logbook that is showing, a line a go. <b>Import CSV</b> reads a file laid out the same way and adds its goes to your own logbook. To bring a logbook in: export first (an empty logbook gives a sample, the headings and a few example lines), put a line for each go under them, and import the file. The example lines are left out. A line needs a date (2026-10-12), the route's name as the list has it, and how it went: try, flash, 2nd go, 3rd go or 4+ goes. The time and the other columns may be left empty; Hold reached and Seconds on the wall are for a go against the clock. Several sends of a route in a day are all kept, and a go the logbook already has is not added again.</span>
   </div>
+  <div class="rankHead"><button type="button" id="rankTog" class="rankTog" aria-expanded="false" aria-controls="lpPoints">Ranking<i></i></button><button type="button" class="tipBtn" aria-label="About: the points" aria-expanded="false">i</button><span class="tipTxt">A route scores once, the first time you send it: its V number plus one (V0 is 1, V4 is 5), and one more for a flash. Tries score nothing. These are the Sun board's own points and are not added to MoonBoard points.</span></div>
+  <div id="lpPoints" hidden></div>
   <input type="file" id="bookFile" accept=".csv,text/csv,text/comma-separated-values,text/plain" tabindex="-1" aria-hidden="true">
   <p class="hint" id="bookHint"></p>
   <div id="bookNote" role="status" hidden></div>
   <div id="bookSum"></div>
   <div id="bookRows"></div>
-  <div class="lbl tipLbl">Points on the Sun board<button type="button" class="tipBtn" aria-label="About: the points" aria-expanded="false">i</button><span class="tipTxt">A route scores once, the first time you send it: its V number plus one (V0 is 1, V4 is 5), and one more for a flash. Tries score nothing. These are the Sun board's own points and are not added to MoonBoard points.</span></div>
-  <div id="lpPoints"></div>
 </div>
 <div id="entrySheet" hidden role="dialog" aria-label="Log entry">
   <div class="card">
@@ -1092,7 +1101,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-12 22:00';
+const BUILD = '2026-10-13 19:35';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -3447,6 +3456,11 @@ function openEntry(e){
   showSheet('entrySheet');
 }
 $('logBtn').onclick = openBook;
+$('rankTog').onclick = () => {              // the ranking at the head of the logbook: shut until it is tapped
+  const open = $('lpPoints').hidden;
+  $('lpPoints').hidden = !open;
+  $('rankTog').setAttribute('aria-expanded', open ? 'true' : 'false');
+};
 $('bookShut').onclick = () => showSheet(null);
 $('bookWho').onchange = () => { bookOpen = new Set([0]); bookNote(''); loadBook(); };
 $('enCancel').onclick = () => { bookEntry = null; showSheet('bookSheet'); };
@@ -3877,7 +3891,7 @@ function paintAll(){
 $('toMoon').onclick = $('setMoon').onclick = () => { ls.set('mb-wall', 'moon'); location.href = '../'; };
 
 /* ---------- settings ---------- */
-$('bgSel').value = ls.get('mb-bg2') === 'taupe' ? 'taupe' : 'fog';         // (Black was a third until 2026-10-11)
+$('bgSel').value = ls.get('mb-bg2') === 'fog' ? 'fog' : 'taupe';         // (Black was a third until 2026-10-11)
 $('bgSel').onchange = () => {
   const v = $('bgSel').value; ls.set('mb-bg2', v);
   if (v) document.documentElement.setAttribute('data-bg', v); else document.documentElement.removeAttribute('data-bg');
