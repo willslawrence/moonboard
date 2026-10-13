@@ -1794,7 +1794,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-13 23:16';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-13 23:19';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -8453,7 +8453,6 @@ function storyMore(who, entries, G, own){
   if (nx.flash && nx.flash.k <= 25) lines.push('<em>' + plural(nx.flash.k, 'more flash', 'more flashes') + '</em> at ' + GRADES[nx.flash.g] + ' and ' + you + ' flash grade ' + (nx.flash.g === G.flash ? 'is safe' : 'moves up to ' + GRADES[nx.flash.g]) + '.');
   const rank = people.map(n => ({ n, p: scoreFor(n).total })).filter(r => r.p > 0).sort((a, b) => b.p - a.p), at = rank.findIndex(r => r.n === who);
   if (at > 0) lines.push('<em>' + (rank[at - 1].p - rank[at].p + 1).toLocaleString() + ' points</em> to pass ' + esc(rank[at - 1].n) + ' in the ranking.');
-  else if (at === 0 && rank.length > 1) lines.push('Top of the ranking, <em>' + (rank[0].p - rank[1].p).toLocaleString() + ' points</em> clear of ' + esc(rank[1].n) + '.');
   if (lines.length) F.push({ ic: '🚀', k: 'Next up', v: lines.map(l => '<span class="ln">' + l + '</span>').join('') });
   // this year beside the last
   const yearOf = e => new Date(logTime(e)).getFullYear(), now = new Date().getFullYear(), seen = new Set();
