@@ -863,6 +863,12 @@
   #story .sg span.no{color:var(--dimmer)}
   #story .sg button:active{background:var(--press)}
   #story .sgNote{margin:7px 2px 4px;font-size:12px;color:var(--dim);line-height:1.4}
+  #story .st .ln{display:block;margin-top:3px}
+  #story .st select{width:auto;max-width:100%;height:32px;margin:2px 0 6px;padding:0 8px;font-size:14px}
+  #story .st button.mini{width:auto;margin-top:7px;padding:7px 10px;font-size:12.5px;white-space:normal;text-align:left}
+  #story .yr{display:grid;grid-template-columns:auto repeat(4,1fr);gap:3px 10px;margin-top:4px;font-size:12.5px}
+  #story .yr span{color:var(--dim)} #story .yr i{font-style:normal;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--dimmer)}
+  #storyShare{margin:12px 0 4px;font-size:14px;font-weight:600}
   #story .more{margin:9px 0 0;font-size:12px;color:var(--dim);line-height:1.45}
   #ptsRank .r{display:flex;align-items:center;gap:9px;padding:7px 2px;
               border-bottom:1px solid var(--line);font-size:13px}
@@ -1670,7 +1676,7 @@
   </div>
   <div class="rankHead"><button type="button" id="rankTog" class="rankTog" aria-expanded="false" aria-controls="ptsRank">Ranking<i></i></button><button type="button" class="tipBtn" aria-label="About: the points" aria-expanded="false">i</button><span class="tipTxt">MoonBoard scoring: 350 at 5+, 50 more for each grade above it, by the setter's grade; then 53 more for a flash, 2 for a second go, 1 for a third. Benchmarks only, and only the first time you send a route.</span></div>
   <div id="ptsRank" hidden></div>
-  <div class="rankHead" id="storyHead" hidden><button type="button" id="storyTog" class="rankTog" aria-expanded="false" aria-controls="story"><span id="storyLbl">Your story</span><i></i></button><button type="button" class="tipBtn" aria-label="About: the story" aria-expanded="false">i</button><span class="tipTxt">Worked out from the goes in the logbook that is showing: the grades you have sent, how often first go, the route that took longest, the ones that got away, your days and your holds. <b>Flash grade</b>: the hardest grade at which half or more of the routes you have tried went first go. <b>Edge grade</b>: the hardest at which half or more went in the end, however many goes it took. <b>Average send</b>: the middle of all your sends. On your own logbook, a tap on any of the three opens a route of that grade you have not sent, on the hold set now on the wall. The more of your logbook is in here, the more it can tell. <b>Import CSV</b> brings an old logbook over.</span></div>
+  <div class="rankHead" id="storyHead" hidden><button type="button" id="storyTog" class="rankTog" aria-expanded="false" aria-controls="story"><span id="storyLbl">Your story</span><i></i></button><button type="button" class="tipBtn" aria-label="About: the story" aria-expanded="false">i</button><span class="tipTxt">Worked out from the goes in the logbook that is showing: the grades you have sent, how often first go, the route that took longest, the ones that got away, your days and your holds. <b>Flash grade</b>: the hardest grade at which half or more of the routes you have tried went first go. <b>Edge grade</b>: the hardest at which half or more went in the end, however many goes it took. <b>Average send</b>: the middle of all your sends. On your own logbook, a tap on any of the three opens a route of that grade you have not sent, on the hold set now on the wall. <b>Next up</b> counts what the next grade would take. <b>Head to head</b> puts you beside another climber. <b>Share my story as a picture</b> makes one picture of it all to send on. The more of your logbook is in here, the more it can tell. <b>Import CSV</b> brings an old logbook over.</span></div>
   <div id="story" hidden></div>
   <input type="file" id="logFile" accept=".csv,text/csv,text/comma-separated-values,text/plain" tabindex="-1" aria-hidden="true">
   <p id="logHint"></p>
@@ -1788,7 +1794,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-13 23:07';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-13 23:16';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -8351,6 +8357,7 @@ function storyFacts(entries){
     const by = new Map(), fl = new Map();
     firsts.forEach(e => { const g = byId[e.id].grade; bump(by, g); if (e.result === 'flash') bump(fl, g); });
     const most = Math.max(...by.values());
+    F.pyr = [...by.keys()].sort((a, b) => b - a).map(g => [g, by.get(g), fl.get(g) || 0]); F.N = N;
     F.push({ ic: '🏔️', k: 'Your pyramid', v: plural(N, 'route', 'routes') + ' sent' + [...by.keys()].sort((a, b) => b - a).map(g => {
       const band = GRADE_BANDS.find(b => VGRADE[g] <= b.max);
       return '<div class="py"><span class="g">' + GRADES[g] + '</span><span class="bar"><i style="width:' + Math.round(100 * by.get(g) / most) + '%;background:' + band.bg + '"></i></span><span class="n">' +
@@ -8414,7 +8421,15 @@ function storyGrades(entries){
   if (!sends.length) return null;
   const share = (g, ok) => [...tried.get(g)].filter(id => first.has(id) && ok(first.get(id))).length / tried.get(g).size;
   const climb = (ok, need) => { let at = null, floor = null; for (const g of [...tried.keys()].sort((a, b) => a - b)){ if (tried.get(g).size < 3) continue; if (floor == null) floor = g; if (share(g, ok) < need) break; at = g; } return at != null ? at : floor; };
-  return { flash: climb(e => e.result === 'flash', 0.5), edge: climb(() => true, 0.5), avg: Math.round(sends.reduce((n, e) => n + byId[e.id].grade, 0) / sends.length), sent: new Set(first.keys()) };
+  // what the next step up would take: sends go first to routes tried and not sent, then to new ones; a flash is always a new route
+  const isF = e => e.result === 'flash', any = () => true;
+  const cnt = (g, ok) => tried.has(g) ? [tried.get(g).size, [...tried.get(g)].filter(id => first.has(id) && ok(first.get(id))).length] : [0, 0];
+  const step = (at, ok, fresh) => { if (at == null) return null; const g = share(at, ok) < 0.5 ? at : at + 1; if (g >= GRADES.length) return null;
+    const [t, n] = cnt(g, ok), [, sentN] = cnt(g, any);
+    for (let k = 1; k < 200; k++){ const t2 = fresh ? t + k : t + Math.max(0, k - (t - sentN)); if (t2 >= 3 && (n + k) / t2 >= 0.5) return { g, k }; }
+    return null; };
+  const flash0 = climb(isF, 0.5), edge0 = climb(any, 0.5);
+  return { next: { flash: step(flash0, isF, true), edge: step(edge0, any, false) }, top: Math.max(...tried.keys()), flash: flash0, edge: edge0, avg: Math.round(sends.reduce((n, e) => n + byId[e.id].grade, 0) / sends.length), sent: new Set(first.keys()) };
 }
 const storyPill = g => { if (g == null) return '<span class="no">not yet</span>'; const band = GRADE_BANDS.find(b => VGRADE[g] <= b.max);
   return '<span style="background:' + band.bg + ';color:' + band.fg + '">' + GRADES[g] + ' · V' + VGRADE[g] + '</span>'; };
@@ -8425,6 +8440,114 @@ const storyPill = g => { if (g == null) return '<span class="no">not yet</span>'
 const storyPickList = (G, g) => !G || g == null ? [] : (BY_BOARD[boardKey] || []).filter(r => r.grade === g && !G.sent.has(r.id));
 const storyTiles = (cards, G) => '<div class="sg">' + cards.map(([k, g]) => { const on = storyPickList(G, g).length > 0;
   return (on ? '<button type="button" data-g="' + g + '" aria-label="' + k + ', ' + GRADES[g] + ': open a route of this grade that you have not sent">' : '<div>') + '<b>' + k + '</b>' + storyPill(g) + (on ? '</button>' : '</div>'); }).join('') + '</div>';
+/* Further rows (Will, 2026-10-13, of six offered: "All but not 1"): what the next step up would take and where the
+   climber stands in the ranking; this year beside the last; how much of the hold set on the wall is sent; one climber
+   beside another, from the crew's tallies; and the story as a picture to send on. */
+let storyRival = null;                    // who the climber is put beside, once picked
+const storySent = who => new Set(Object.keys(stats[who] || {}).filter(id => firstSend(stats[who][id]) && byId[id]).map(Number));
+function storyMore(who, entries, G, own){
+  const F = [], you = own ? 'your' : 'the', lines = [];
+  // next up
+  const nx = G.next;
+  if (nx.edge) lines.push('<em>' + plural(nx.edge.k, 'more send', 'more sends') + '</em> at ' + GRADES[nx.edge.g] + ' and ' + you + ' edge grade ' + (nx.edge.g === G.edge ? 'is safe' : 'moves up to ' + GRADES[nx.edge.g]) + '.');
+  if (nx.flash && nx.flash.k <= 25) lines.push('<em>' + plural(nx.flash.k, 'more flash', 'more flashes') + '</em> at ' + GRADES[nx.flash.g] + ' and ' + you + ' flash grade ' + (nx.flash.g === G.flash ? 'is safe' : 'moves up to ' + GRADES[nx.flash.g]) + '.');
+  const rank = people.map(n => ({ n, p: scoreFor(n).total })).filter(r => r.p > 0).sort((a, b) => b.p - a.p), at = rank.findIndex(r => r.n === who);
+  if (at > 0) lines.push('<em>' + (rank[at - 1].p - rank[at].p + 1).toLocaleString() + ' points</em> to pass ' + esc(rank[at - 1].n) + ' in the ranking.');
+  else if (at === 0 && rank.length > 1) lines.push('Top of the ranking, <em>' + (rank[0].p - rank[1].p).toLocaleString() + ' points</em> clear of ' + esc(rank[1].n) + '.');
+  if (lines.length) F.push({ ic: '🚀', k: 'Next up', v: lines.map(l => '<span class="ln">' + l + '</span>').join('') });
+  // this year beside the last
+  const yearOf = e => new Date(logTime(e)).getFullYear(), now = new Date().getFullYear(), seen = new Set();
+  const all = entries.filter(e => byId[e.id]).sort((a, b) => logTime(a) - logTime(b));
+  const yr = y => ({ y, days: new Set(), sends: 0, fresh: 0, hard: null }), Y = { [now]: yr(now), [now - 1]: yr(now - 1) };
+  all.forEach(e => { const y = Y[yearOf(e)], sent = e.result !== 'try', isNew = sent && !seen.has(e.id); if (sent) seen.add(e.id); if (!y) return;
+    y.days.add(new Date(logTime(e)).toDateString()); if (sent){ y.sends++; if (isNew) y.fresh++; const g = byId[e.id].grade; if (y.hard == null || g > y.hard) y.hard = g; } });
+  const rows = [Y[now], Y[now - 1]].filter(y => y.days.size);
+  if (rows.length) F.push({ ic: '📈', k: rows.length > 1 ? 'This year and last' : 'This year', plain: rows.map(y => y.y + ': ' + plural(y.sends, 'send', 'sends') + ', ' + y.fresh + ' new, ' + plural(y.days.size, 'day', 'days') + (y.hard != null ? ', hardest ' + GRADES[y.hard] : '')).join('. ') + '.',
+    v: '<div class="yr"><i></i><i>Sends</i><i>New routes</i><i>Days</i><i>Hardest</i>' + rows.map(y => '<em>' + y.y + '</em><span>' + y.sends + '</span><span>' + y.fresh + '</span><span>' + y.days.size + '</span><span>' + (y.hard != null ? GRADES[y.hard] : '–') + '</span>').join('') + '</div>' });
+  // how much of the hold set on the wall is sent
+  const set = BOARDS.find(b => b.key === boardKey), here = BY_BOARD[boardKey] || [], got = here.filter(r => G.sent.has(r.id));
+  if (here.length && got.length){
+    const tot = new Map(), have = new Map();
+    here.forEach(r => tot.set(r.grade, (tot.get(r.grade) || 0) + 1)); got.forEach(r => have.set(r.grade, (have.get(r.grade) || 0) + 1));
+    const pct = Math.round(100 * got.length / here.length);
+    F.push({ ic: '✅', k: 'Benchmarks sent', plain: got.length + ' of the ' + here.length + ' on ' + set.label + ' (' + (pct || '<1') + '%).',
+      v: '<em>' + got.length + '</em> of the ' + here.length + ' on ' + esc(set.label) + ' (' + (pct || '&lt;1') + '%)' + [...tot.keys()].filter(g => g <= G.top + 1).sort((a, b) => b - a).map(g => {
+        const band = GRADE_BANDS.find(b => VGRADE[g] <= b.max), n = have.get(g) || 0;
+        return '<div class="py"><span class="g">' + GRADES[g] + '</span><span class="bar" style="background:var(--soft);border-radius:3px"><i style="width:' + Math.round(100 * n / tot.get(g)) + '%;background:' + band.bg + (n ? '' : ';min-width:0') + '"></i></span><span class="n">' + n + ' of ' + tot.get(g) + '</span></div>'; }).join('') });
+  }
+  // beside another climber
+  const others = rank.filter(r => r.n !== who && storySent(r.n).size);
+  if (others.length){
+    const pick = others.some(r => r.n === storyRival) ? storyRival : (at > 0 && others.some(r => r.n === rank[at - 1].n) ? rank[at - 1].n : others[0].n);
+    const theirs = storySent(pick), both = [...G.sent].filter(id => theirs.has(id)).length, onlyThem = [...theirs].filter(id => !G.sent.has(id));
+    const hard = set0 => [...set0].reduce((m, id) => byId[id] && byId[id].grade > m ? byId[id].grade : m, -1);
+    const open = onlyThem.filter(id => byId[id].board === boardKey);
+    F.push({ ic: '🤝', k: 'Head to head', noShare: true, v: '<select id="storyRivalSel" aria-label="Beside which climber">' + others.map(r => '<option' + (r.n === pick ? ' selected' : '') + '>' + esc(r.n) + '</option>').join('') + '</select>' +
+      '<span class="ln"><em>' + both + '</em> ' + (both === 1 ? 'route' : 'routes') + ' you have both sent.</span><span class="ln"><em>' + (G.sent.size - both) + '</em> only ' + (own ? 'you' : esc(who)) + ' · <em>' + onlyThem.length + '</em> only ' + esc(pick) + '.</span>' +
+      '<span class="ln">Hardest: ' + (own ? 'you' : esc(who)) + ' ' + GRADES[hard(G.sent)] + ', ' + esc(pick) + ' ' + GRADES[hard(theirs)] + '.</span>' +
+      (own && open.length ? '<button type="button" id="storyRivalPick" class="mini">Open one of ' + esc(pick) + '’s that you have not sent</button>' : ''), open });
+  }
+  return F;
+}
+/* The story as a picture, for sending on: the name, the three grades, the pyramid and the lines of the story, in the
+   colours this phone is on. Drawn and handed over on the tap itself, since a phone opens its share sheet at no other
+   time. On a phone it goes to the share sheet; anywhere else it is downloaded. */
+function storyPicture(who, facts, G){
+  const W = 1080, P = 64, c = document.createElement('canvas'); c.width = W; c.height = 4200;
+  const x = c.getContext('2d'), css = getComputedStyle(document.documentElement), col = n => css.getPropertyValue(n).trim();
+  const SANS = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif', MONO = 'ui-monospace,Menlo,monospace';
+  const box = (l, t, w, h, r, fill) => { x.beginPath(); if (x.roundRect) x.roundRect(l, t, w, h, r); else x.rect(l, t, w, h); x.fillStyle = fill; x.fill(); };
+  const text = (s, l, t, font, fill, align) => { x.font = font; x.fillStyle = fill; x.textAlign = align || 'left'; x.fillText(s, l, t); };
+  const wrap = (s, l, t, w, font, fill, lh) => { x.font = font; let line = ''; s.split(' ').forEach(word => { const tryIt = line ? line + ' ' + word : word;
+    if (x.measureText(tryIt).width > w && line){ text(line, l, t, font, fill); t += lh; line = word; } else line = tryIt; }); if (line){ text(line, l, t, font, fill); t += lh; } return t; };
+  box(0, 0, W, c.height, 0, col('--bg'));
+  let y = 110;
+  text('W I L L ’ S   W A L L', P, y, '700 26px ' + SANS, col('--dim')); y += 92;
+  text(who + '’s story', P, y, '800 78px ' + SANS, col('--ink')); y += 60;
+  // the three grades
+  const tw = (W - 2 * P - 40) / 3;
+  [['FLASH GRADE', G.flash], ['EDGE GRADE', G.edge], ['AVERAGE SEND', G.avg]].forEach(([k, g], i) => {
+    const l = P + i * (tw + 20); box(l, y, tw, 168, 20, col('--panel'));
+    text(k, l + tw / 2, y + 52, '700 22px ' + SANS, col('--dimmer'), 'center');
+    if (g == null) return text('not yet', l + tw / 2, y + 122, '700 34px ' + MONO, col('--dimmer'), 'center');
+    const band = GRADE_BANDS.find(b => VGRADE[g] <= b.max), s = GRADES[g] + ' · V' + VGRADE[g];
+    x.font = '700 38px ' + MONO; const pw = x.measureText(s).width + 44;
+    box(l + tw / 2 - pw / 2, y + 80, pw, 60, 14, band.bg); text(s, l + tw / 2, y + 123, '700 38px ' + MONO, band.fg, 'center');
+  });
+  y += 168 + 76;
+  // the pyramid
+  if (facts.pyr){
+    text('PYRAMID  ·  ' + plural(facts.N, 'ROUTE', 'ROUTES') + ' SENT', P, y, '700 22px ' + SANS, col('--dimmer')); y += 30;
+    const most = Math.max(...facts.pyr.map(r => r[1])), bl = P + 110, bw = W - 2 * P - 110 - 300;
+    facts.pyr.forEach(([g, n, f]) => { const band = GRADE_BANDS.find(b => VGRADE[g] <= b.max);
+      text(GRADES[g], P, y + 36, '700 32px ' + MONO, col('--ink'));
+      box(bl, y + 8, Math.max(10, bw * n / most), 34, 8, band.bg);
+      text(n + (f ? ' · ' + f + ' flashed' : ''), W - P, y + 36, '600 28px ' + MONO, col('--dim'), 'right'); y += 56; });
+    y += 40;
+  }
+  // the lines
+  const KEEP = ['First go', 'Hardest send', 'Biggest fight', 'Got away', 'Your habits', 'Favourite hold', 'Benchmarks sent'];      // a phone's screen of it, not all of it
+  facts.filter(f => KEEP.includes(f.k)).forEach(f => {
+    text(f.ic, P, y + 44, '40px ' + SANS, col('--ink'));
+    text(f.k.toUpperCase(), P + 76, y, '700 22px ' + SANS, col('--dimmer'));
+    y = wrap(f.plain || f.v.replace(/<\/span>/g, ' ').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').trim(), P + 76, y + 46, W - 2 * P - 76, '500 36px ' + SANS, col('--ink'), 48) + 26;
+  });
+  y += 20; text('wills-wall.pages.dev', W / 2, y, '600 28px ' + SANS, col('--dim'), 'center'); y += 60;
+  const out = document.createElement('canvas'); out.width = W; out.height = y;
+  out.getContext('2d').drawImage(c, 0, 0);
+  const bin = atob(out.toDataURL('image/png').split(',')[1]), buf = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+  return new Blob([buf], { type: 'image/png' });
+}
+function storyShare(who, facts, G){
+  const name = 'wills-wall-' + fileSlug(who) + '.png', blob = storyPicture(who, facts, G);
+  let file = null, phone = false;
+  try{ file = new File([blob], name, { type: 'image/png' }); }catch(e){}
+  try{ phone = matchMedia('(pointer:coarse)').matches; }catch(e){}
+  if (phone && file && navigator.canShare && navigator.share && navigator.canShare({ files: [file] }))
+    return navigator.share({ files: [file] }).then(() => 'shared', err => err && err.name === 'AbortError' ? 'cancelled' : fileDown(name, blob));
+  return Promise.resolve(fileDown(name, blob));
+}
 /* What an empty logbook shows: made up, and said to be. */
 const STORY_SAMPLE = [
   { ic: '🏔️', k: 'Your pyramid', v: '87 routes sent<div class="py"><span class="g">7A</span><span class="bar"><i style="width:13%;background:#2563eb"></i></span><span class="n">5 · 1 flashed</span></div><div class="py"><span class="g">6C+</span><span class="bar"><i style="width:37%;background:#22c55e"></i></span><span class="n">14 · 6 flashed</span></div><div class="py"><span class="g">6C</span><span class="bar"><i style="width:71%;background:#22c55e"></i></span><span class="n">27 · 15 flashed</span></div><div class="py"><span class="g">6B+</span><span class="bar"><i style="width:100%;background:#22c55e"></i></span><span class="n">38 · 29 flashed</span></div>' },
@@ -8448,10 +8571,23 @@ function paintStory(){
   const G = sample ? null : storyGrades(logShown.entries);
   const tiles = sample ? storyTiles([['Flash grade', 4], ['Edge grade', 7], ['Average send', 5]], null)
     : G ? storyTiles([['Flash grade', G.flash], ['Edge grade', G.edge], ['Average send', G.avg]], own ? G : null) : '';
+  const more = G ? storyMore(logShown.who, logShown.entries, G, own) : [];
+  const rowsAll = sample ? STORY_SAMPLE : more.filter(f => f.k === 'Next up').concat(facts, more.filter(f => f.k !== 'Next up'));
   const note = tiles.includes('<button') ? '<p class="sgNote">Tap a grade for a route of that grade you have not sent.</p>' : '';
   box.innerHTML = (sample ? '<div class="smp"><b>A sample.</b> This is what your logbook can tell you once your climbs are in it. Bring your MoonBoard logbook over with <b>Import CSV</b>, above, and these become yours.</div>' : '') + tiles + note +
-    (sample ? STORY_SAMPLE : facts).map(f => '<div class="st"><span class="ic">' + f.ic + '</span><div class="tx"><b>' + f.k + '</b>' + f.v + '</div></div>').join('') +
-    (!sample && own && sends < 20 ? '<p class="more">The more of your logbook is in here, the more this can tell. <b>Import CSV</b>, above, brings an old logbook over.</p>' : '');
+    rowsAll.map(f => '<div class="st"><span class="ic">' + f.ic + '</span><div class="tx"><b>' + f.k + '</b>' + f.v + '</div></div>').join('') +
+    (!sample && own && sends < 20 ? '<p class="more">The more of your logbook is in here, the more this can tell. <b>Import CSV</b>, above, brings an old logbook over.</p>' : '') +
+    (!sample && own && G ? '<button type="button" id="storyShare" class="ghost">Share my story as a picture</button>' : '');
+  if ($('storyRivalSel')) $('storyRivalSel').onchange = () => { storyRival = $('storyRivalSel').value; paintStory(); };
+  if ($('storyRivalPick')) $('storyRivalPick').onclick = () => {
+    const open = more.find(f => f.open).open, r = byId[open[Math.floor(Math.random() * open.length)]];
+    if (!r) return;
+    showPanel(null); loadRoute(r); showPage('board');
+  };
+  if ($('storyShare')) $('storyShare').onclick = () => {
+    const facts2 = rowsAll.slice(); facts2.pyr = facts.pyr; facts2.N = facts.N;
+    storyShare(logShown.who, facts2, G);
+  };
   box.querySelectorAll('.sg button').forEach(b => b.onclick = () => {
     const list = storyPickList(G, +b.dataset.g), r = list[Math.floor(Math.random() * list.length)];
     if (!r) return;
