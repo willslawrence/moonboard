@@ -842,6 +842,21 @@
   button.rankTog[aria-expanded="true"] i{margin-top:4px;transform:rotate(225deg)}
   .rankHead button.tipBtn{margin-left:9px}
   #ptsRank[hidden]{display:none}
+  /* The story: facts worked out from the logbook that is showing, under the ranking (Will, 2026-10-13: "I want to entice
+     them with cool facts from their logbook"). Shut for a logbook with goes in it; an empty one of your own shows a sample. */
+  #story{padding:2px 2px 4px}
+  #story .smp{margin:9px 0 2px;padding:9px 11px;border-radius:9px;background:var(--soft);font-size:12.5px;line-height:1.45;color:var(--ink)}
+  #story .st{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;line-height:1.4}
+  #story .st .ic{flex:none;width:22px;text-align:center;font-size:16px}
+  #story .st .tx{flex:1;min-width:0}
+  #story .st b{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--dimmer);margin-bottom:2px}
+  #story .st em{font-style:normal;font-weight:700}
+  #story .py{display:flex;align-items:center;gap:8px;margin-top:4px;font:700 11px ui-monospace,Menlo,monospace}
+  #story .py .g{flex:none;width:30px}
+  #story .py .bar{flex:1;height:11px}
+  #story .py .bar i{display:block;height:100%;min-width:3px;border-radius:3px}
+  #story .py .n{flex:none;width:112px;text-align:right;white-space:nowrap;color:var(--dim);font-weight:600}
+  #story .more{margin:9px 0 0;font-size:12px;color:var(--dim);line-height:1.45}
   #ptsRank .r{display:flex;align-items:center;gap:9px;padding:7px 2px;
               border-bottom:1px solid var(--line);font-size:13px}
   #ptsRank .r .pos{flex:none;width:20px;color:var(--dimmer);
@@ -1648,6 +1663,8 @@
   </div>
   <div class="rankHead"><button type="button" id="rankTog" class="rankTog" aria-expanded="false" aria-controls="ptsRank">Ranking<i></i></button><button type="button" class="tipBtn" aria-label="About: the points" aria-expanded="false">i</button><span class="tipTxt">MoonBoard scoring: 350 at 5+, 50 more for each grade above it, by the setter's grade; then 53 more for a flash, 2 for a second go, 1 for a third. Benchmarks only, and only the first time you send a route.</span></div>
   <div id="ptsRank" hidden></div>
+  <div class="rankHead" id="storyHead" hidden><button type="button" id="storyTog" class="rankTog" aria-expanded="false" aria-controls="story"><span id="storyLbl">Your story</span><i></i></button><button type="button" class="tipBtn" aria-label="About: the story" aria-expanded="false">i</button><span class="tipTxt">Worked out from the goes in the logbook that is showing: the grades you have sent, how often first go, the route that took longest, the ones that got away, your days and your holds. The more of your logbook is in here, the more it can tell. <b>Import CSV</b> brings an old logbook over.</span></div>
+  <div id="story" hidden></div>
   <input type="file" id="logFile" accept=".csv,text/csv,text/comma-separated-values,text/plain" tabindex="-1" aria-hidden="true">
   <p id="logHint"></p>
   <div id="logNote" role="status" hidden></div>
@@ -1764,7 +1781,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-13 19:35';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-13 21:58';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -5204,7 +5221,7 @@ async function openLog(){
   people.forEach(p => sel.appendChild(new Option(p, p)));
   sel.value = people.includes(keep) ? keep : (people[0] || '');
   sel.hidden = !people.length;
-  logOpen = new Set([0]); logNote('');
+  logOpen = new Set([0]); storyOpen = null; logNote('');
   showPanel('log');
   ptsRank();
   loadLog();
@@ -5565,7 +5582,7 @@ function paintLogBtns(){
 }
 async function loadLog(){
   const who = $('logWho').value, mine = ++logLoad;
-  logShown = null; paintLogBtns();
+  logShown = null; paintLogBtns(); paintStory();
   $('logRows').innerHTML = ''; $('logHint').textContent = '';
   $('logSum').textContent = who ? 'Loading…' : 'Pick your name at the top of the page to keep a logbook.';
   if (!who) return;
@@ -5626,6 +5643,7 @@ function paintLogRows(){
     if (logOpen.has(i)) show(true);
     box.appendChild(el);
   });
+  paintStory();
 }
 
 /* ---------- beta ----------
@@ -8305,6 +8323,101 @@ $('rankTog').onclick = () => {              // the ranking at the head of the lo
   $('ptsRank').hidden = !open;
   $('rankTog').setAttribute('aria-expanded', open ? 'true' : 'false');
 };
+/* ---------- the story ----------
+   Will, 2026-10-13: "I want to encourage people to add their logbook into this app... I want to entice them with cool
+   facts from their logbook." Facts worked out from the goes the Logbook has fetched, for whoever is showing; each is
+   left out where the logbook has nothing to say for it. A logbook of your own with nothing in it shows a sample, marked
+   as one, which is the enticement. The time of day is not used: a go brought in from a file has only its day. */
+let storyOpen = null;                     // null: shut for a logbook with goes in it, open on the sample
+function storyFacts(entries){
+  const all = entries.filter(e => byId[e.id]).sort((a, b) => logTime(a) - logTime(b));
+  const day = e => { const d = new Date(logTime(e)); return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); };
+  const date = t => new Date(t).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  const nm = r => '<em>' + esc(r.name) + '</em>, ' + GRADES[r.grade];
+  const top = m => [...m.entries()].sort((a, b) => b[1] - a[1])[0];
+  const bump = (m, k) => m.set(k, (m.get(k) || 0) + 1);
+  const sends = all.filter(e => e.result !== 'try'), first = new Map(), goes = new Map();
+  all.forEach(e => { (goes.get(e.id) || goes.set(e.id, []).get(e.id)).push(e); });
+  sends.forEach(e => { if (!first.has(e.id)) first.set(e.id, e); });
+  const F = [], N = first.size, firsts = [...first.values()];
+  if (N){
+    const by = new Map(), fl = new Map();
+    firsts.forEach(e => { const g = byId[e.id].grade; bump(by, g); if (e.result === 'flash') bump(fl, g); });
+    const most = Math.max(...by.values());
+    F.push({ ic: '🏔️', k: 'Your pyramid', v: plural(N, 'route', 'routes') + ' sent' + [...by.keys()].sort((a, b) => b - a).map(g => {
+      const band = GRADE_BANDS.find(b => VGRADE[g] <= b.max);
+      return '<div class="py"><span class="g">' + GRADES[g] + '</span><span class="bar"><i style="width:' + Math.round(100 * by.get(g) / most) + '%;background:' + band.bg + '"></i></span><span class="n">' +
+        by.get(g) + (fl.get(g) ? ' · ' + fl.get(g) + ' flashed' : '') + '</span></div>'; }).join('') });
+    const flashed = firsts.filter(e => e.result === 'flash');
+    if (N >= 3) F.push({ ic: '⚡', k: 'First go', v: '<em>' + Math.round(100 * flashed.length / N) + '%</em> of your routes went first go (' + flashed.length + ' of ' + N + ').' });
+    const hardest = list => list.reduce((a, e) => !a || byId[e.id].grade > byId[a.id].grade || (byId[e.id].grade === byId[a.id].grade && goes.get(e.id).length > goes.get(a.id).length) ? e : a, null);   // of two as hard, the one that took more goes
+    const h = hardest(firsts), hf = hardest(flashed);
+    F.push({ ic: '🥇', k: 'Hardest send', v: nm(byId[h.id]) + ', on ' + date(logTime(h)) + '.' });
+    if (hf && hf !== h) F.push({ ic: '🎯', k: 'Hardest flash', v: nm(byId[hf.id]) + ', on ' + date(logTime(hf)) + '.' });
+    // the route that took most goes, and the one that waited longest
+    const won = firsts.map(e => { const before = goes.get(e.id).filter(x => logTime(x) <= logTime(e));
+      return { e, tries: before.filter(x => x.result === 'try').length, days: new Set(before.map(day)).size, span: Math.round((day(e) - day(before[0])) / 864e5) }; });
+    const siege = won.reduce((a, w) => w.tries > a.tries ? w : a, { tries: 2 });
+    if (siege.e) F.push({ ic: '😤', k: 'Biggest fight', v: nm(byId[siege.e.id]) + ': <em>' + siege.tries + ' tries</em> before it went' +
+      (siege.days > 1 ? ', over ' + siege.days + ' days on the wall' + (siege.span > siege.days ? ' and ' + siege.span + ' days on the calendar' : '') : '') + '.' });
+    const grudge = won.reduce((a, w) => w !== siege && w.span > a.span ? w : a, { span: 29 });
+    if (grudge.e) F.push({ ic: '🕰️', k: 'Longest grudge', v: nm(byId[grudge.e.id]) + ': first tried on ' + date(logTime(goes.get(grudge.e.id)[0])) + ', sent <em>' + grudge.span + ' days later</em>.' });
+  }
+  const away = [...goes.entries()].filter(([id]) => !first.has(id)).map(([id, g]) => [id, g.length]).sort((a, b) => b[1] - a[1]);
+  if (away.length) F.push({ ic: '👻', k: 'Got away', v: '<em>' + plural(away.length, 'route', 'routes') + '</em> tried and not sent yet' + (away.length > 1 ? '. ' + nm(byId[away[0][0]]) + ' leads with ' + plural(away[0][1], 'try', 'tries') + '.' : ': ' + nm(byId[away[0][0]]) + '.') });
+  if (N){
+    const perDay = new Map(); sends.forEach(e => bump(perDay, day(e)));
+    const best = top(perDay);
+    if (best[1] >= 3) F.push({ ic: '🔥', k: 'Best day', v: '<em>' + best[1] + ' sends</em> on ' + date(best[0]) + '.' });
+    const again = new Map(); sends.forEach(e => bump(again, e.id));
+    const rep = top(again);
+    if (rep[1] >= 3) F.push({ ic: '🔁', k: 'Old favourite', v: nm(byId[rep[0]]) + ': sent <em>' + rep[1] + ' times</em>.' });
+  }
+  const days = [...new Set(all.map(day))];
+  if (days.length >= 5){
+    const wd = new Map(), mo = new Map(), yr = new Map();
+    days.forEach(t => { const d = new Date(t); bump(wd, d.toLocaleDateString(undefined, { weekday: 'long' })); bump(mo, d.toLocaleDateString(undefined, { month: 'long' })); });
+    firsts.forEach(e => bump(yr, new Date(logTime(e)).getFullYear()));
+    const w = top(wd), m = top(mo), y = yr.size > 1 ? top(yr) : null;
+    F.push({ ic: '📅', k: 'Your habits', v: '<em>' + days.length + ' days</em> on the wall since ' + date(days[0]) + '. ' + w[0] + ' is your day (' + w[1] + ' of them) and ' + m[0] + ' your month.' +
+      (y ? ' Your biggest year was ' + y[0] + ', with ' + y[1] + ' new routes.' : '') });
+  }
+  if (N >= 5){
+    const hold = new Map(), fin = new Map(), setr = new Map();
+    firsts.forEach(e => { const r = byId[e.id]; new Set([r.s, r.m, r.e].join(',').split(',').filter(Boolean)).forEach(h => bump(hold, h)); r.e.split(',').filter(Boolean).forEach(h => bump(fin, h)); bump(setr, r.setter); });
+    const hd = top(hold), fn = top(fin), se = top(setr);
+    F.push({ ic: '🖐️', k: 'Favourite hold', v: '<em>' + hd[0] + '</em> is on ' + hd[1] + ' of your ' + N + ' routes' + (fn[0] !== hd[0] ? ', and you have finished on ' + fn[0] + ' ' + fn[1] + ' times' : '') + '. ' + hold.size + ' different holds in all.' });
+    const known = firsts.map(e => byId[e.id]).filter(r => r.repeats > 0).sort((a, b) => a.repeats - b.repeats);
+    if (known.length >= 2) F.push({ ic: '💎', k: 'Rarest send', v: nm(known[0]) + ': logged about ' + known[0].repeats.toLocaleString() + ' times by everybody on MoonBoard. Your most climbed, ' + esc(known[known.length - 1].name) + ', ' + known[known.length - 1].repeats.toLocaleString() + '.' });
+    F.push({ ic: '🧗', k: 'Setters', v: 'Routes by <em>' + plural(setr.size, 'setter', 'setters') + '</em>.' + (se[1] >= 2 ? ' Most from ' + esc(se[0]) + ' (' + se[1] + ').' : '') });
+  }
+  return F;
+}
+/* What an empty logbook shows: made up, and said to be. */
+const STORY_SAMPLE = [
+  { ic: '🏔️', k: 'Your pyramid', v: '87 routes sent<div class="py"><span class="g">7A</span><span class="bar"><i style="width:13%;background:#2563eb"></i></span><span class="n">5 · 1 flashed</span></div><div class="py"><span class="g">6C+</span><span class="bar"><i style="width:37%;background:#22c55e"></i></span><span class="n">14 · 6 flashed</span></div><div class="py"><span class="g">6C</span><span class="bar"><i style="width:71%;background:#22c55e"></i></span><span class="n">27 · 15 flashed</span></div><div class="py"><span class="g">6B+</span><span class="bar"><i style="width:100%;background:#22c55e"></i></span><span class="n">38 · 29 flashed</span></div>' },
+  { ic: '⚡', k: 'First go', v: '<em>59%</em> of your routes went first go (51 of 87).' },
+  { ic: '😤', k: 'Biggest fight', v: '<em>A route of yours</em>, 7A: <em>14 tries</em> before it went, over 5 days on the wall.' },
+  { ic: '👻', k: 'Got away', v: '<em>23 routes</em> tried and not sent yet.' },
+  { ic: '📅', k: 'Your habits', v: '<em>41 days</em> on the wall. Thursday is your day and March your month.' },
+  { ic: '🖐️', k: 'Favourite hold', v: '<em>F5</em> is on 31 of your 87 routes.' },
+];
+function paintStory(){
+  const head = $('storyHead'), box = $('story');
+  if (!logShown){ head.hidden = box.hidden = true; return; }
+  const me = meNow(), own = !!me && logShown.who === me;
+  const facts = storyFacts(logShown.entries), sample = !facts.length;
+  if (sample && !own){ head.hidden = box.hidden = true; return; }       // somebody else's, with nothing in it: nothing to tell
+  const open = storyOpen === null ? sample : storyOpen;
+  head.hidden = false; box.hidden = !open;
+  $('storyLbl').textContent = own ? 'Your story' : logShown.who + '’s story';
+  $('storyTog').setAttribute('aria-expanded', open ? 'true' : 'false');
+  const sends = logShown.entries.filter(e => e.result !== 'try').length;
+  box.innerHTML = (sample ? '<div class="smp"><b>A sample.</b> This is what your logbook can tell you once your climbs are in it. Bring your MoonBoard logbook over with <b>Import CSV</b>, above, and these become yours.</div>' : '') +
+    (sample ? STORY_SAMPLE : facts).map(f => '<div class="st"><span class="ic">' + f.ic + '</span><div class="tx"><b>' + f.k + '</b>' + f.v + '</div></div>').join('') +
+    (!sample && own && sends < 20 ? '<p class="more">The more of your logbook is in here, the more this can tell. <b>Import CSV</b>, above, brings an old logbook over.</p>' : '');
+}
+$('storyTog').onclick = () => { storyOpen = $('story').hidden; paintStory(); };
 $('logBtn').onclick = () => ($('logPanel').hidden ? openLog() : showPanel(null));
 $('logClose').onclick = $('logScrim').onclick = () => showPanel(null);
 $('entryPanel').onclick = e => { if (e.target === $('entryPanel')) $('enClose').onclick(); };      // a tap on the dark round the card
@@ -8346,7 +8459,7 @@ $('snRankBtn').onclick = () => {
                                        : (dy < 0 ? 'up' : 'down'));
   });
 })();
-$('logWho').onchange = () => { logOpen = new Set([0]); logNote(''); loadLog(); };
+$('logWho').onchange = () => { logOpen = new Set([0]); storyOpen = null; logNote(''); loadLog(); };
 $('c4new').onclick = c4New;
 $('c4off').onclick = c4Stop;
 $('c4pg').onchange = $('c4pb').onchange = () => c4Draw();
