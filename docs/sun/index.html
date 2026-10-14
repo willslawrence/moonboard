@@ -342,6 +342,12 @@
   .rside{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
   .rside .who{font-size:11px;color:var(--dim)}
   .rside .who.sent{color:var(--green-ink);font-weight:700}
+  /* what the list shows beside a route, the choice in Settings (see listGoes): the letters of who has sent it, as the
+     MoonBoard page's list has them, or a circle for each of your own goes */
+  .rside .who.crew,.rside .who.goes{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:3px;max-width:150px}
+  .rside .who.crew b{display:grid;place-items:center;width:19px;height:19px;border-radius:50%;font-size:10px;font-weight:700;color:#0e0e0f}
+  .rside .who.goes .more{font:700 10px ui-monospace,Menlo,monospace;color:var(--dimmer);margin-right:1px}
+  .rside .bw{font-size:11px;color:var(--dim)}
   .chev{flex:none;color:var(--dimmer);font-size:18px}
   .empty{padding:22px 10px;text-align:center;color:var(--dim);font-size:14px;line-height:1.5}
   #holdChip{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:6px 6px 6px 10px;
@@ -934,6 +940,10 @@
       <option value="taupe">Light taupe</option>
       <option value="fog">Light foggy grey</option>
     </select></div>
+    <div class="opt"><label for="listSel">Route list</label><button type="button" class="tipBtn" aria-label="About: what the route list shows" aria-expanded="false">i</button><span class="tipTxt">For this phone only, and for both walls. <b>Community sends</b>, what everyone starts on: beside each route, a coloured letter for each climber who has sent it. <b>My goes</b>: a circle for each of your own goes on it, oldest first; an empty circle is a try, yellow a flash, green a send. It needs your name picked.</span><select id="listSel">
+      <option value="crew">Community sends</option>
+      <option value="goes">My goes</option>
+    </select></div>
   </div>
 
   <div class="lbl tipLbl">The map of holds<button type="button" class="tipBtn" aria-label="About: the map of holds" aria-expanded="false">i</button><span class="tipTxt">The outlines were drawn from photos by a program, and it gets some wrong. Stand at the wall and tap a hold it missed, an outline that is only tape, or one that is the wrong shape. Everyone has your fixes straight away, and the outlines are then redrawn properly from them. While you fix, the picture is a photo of one wall at a time: a hold the map has missed is only in the photo.</span></div>
@@ -1101,7 +1111,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-13 19:35';
+const BUILD = '2026-10-14 08:36';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -2329,7 +2339,7 @@ async function logGo(result){             // true once it is saved
     await knowMe();
     take(await call('/log', { person: me, route: r.id, result }));
     mine.push({ route: r.id, result });
-    logAt = 0; paintAll(); if (page === 'log') loadLog();
+    logAt = 0; paintAll(); if (page === 'log' || $('listSel').value === 'goes') loadLog();
     return true;
   }catch(e){ return false; }
 }
@@ -2418,7 +2428,7 @@ $('goSave').onclick = async () => {
     mine.push({ route: r.id, result, n, secs });
     const better = !!was && (n > was[0] || (n === was[0] && secs < was[1]));
     dropClock();
-    logAt = 0; paintAll(); if (page === 'log') loadLog();
+    logAt = 0; paintAll(); if (page === 'log' || $('listSel').value === 'goes') loadLog();
     quickSay((n >= top ? (again ? SESSION_WORDS : SEND_LABELS)[result] + ' in ' + clock(secs) : 'To hold ' + n + ' in ' + clock(secs)) + (better ? ' · your best yet' : '') + ' · ' + r.name, n >= top ? 'sent' : 'tried');
   }catch(e){ $('goErr').textContent = 'Not saved. ' + (e && e.message ? e.message : 'Try again.'); }
   $('goSave').disabled = false;
@@ -2768,8 +2778,9 @@ async function loadLog(){
   try{
     const [a, b] = await Promise.all([me ? call('/log?limit=1000&person=' + encodeURIComponent(me)) : { entries: [] }, call('/log?limit=40')]);
     if (who !== me) return;                 // the name was changed while it was on its way: that one's log has been asked for since
-    myLog = a.entries; crewLog = b.entries;
+    myLog = a.entries; crewLog = b.entries; myLogFor = who;
     if (page === 'log') paintLog();
+    if ($('listSel').value === 'goes') paintList();
   }catch(e){}
 }
 /* ---------- your own logbook: sessions ----------
@@ -3480,6 +3491,23 @@ $('enDelete').onclick = async () => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && sheetUp()) sheetUp() === 'entrySheet' ? $('enCancel').onclick() : showSheet(null); });
 
 /* ---------- the list of routes ---------- */
+/* What the list shows beside each route (Will, 2026-10-14, of the MoonBoard page's new choice: "So this for the sun board
+   as well"): Community sends, a letter for each climber who has sent it, or My goes, a circle for each of your own goes
+   on it, oldest first, the last dozen with a count of the ones before. One choice for both walls, kept on this phone
+   ('mb-goes'). Until 2026-10-14 this list said your own result in words. Your goes come from your log (loadLog), asked
+   for here when the list needs it. */
+const GOES_MAX = 12;
+let myLogFor = null, logAskFor = null;
+function listGoes(){
+  if (!me || $('listSel').value !== 'goes') return null;
+  if (myLogFor !== me){
+    if (logAskFor !== me){ logAskFor = me; logAt = 0; loadLog().finally(() => { logAskFor = null; }); }
+    return new Map();                       // somebody else's goes are never shown while yours load
+  }
+  const map = new Map();
+  tagRepeats(myLog.filter(e => e.person === me)).sort((a, b) => logTime(a) - logTime(b)).forEach(e => (map.get(e.route) || map.set(e.route, []).get(e.route)).push(e));
+  return map;
+}
 function paintList(){
   const list = shown(), live = snap.routes.filter(r => !r.retired).length;
   $('listN').textContent = list.length + ' shown' + (list.length !== live && FILTERS.mine !== 'gone' ? ' of ' + live : '');
@@ -3497,13 +3525,16 @@ function paintList(){
       : 'No routes yet.<br>To make one: two taps on the picture, tap its holds, and save them as a route.') + '</div>';
     return;
   }
+  const goes = listGoes();
   box.innerHTML = list.map(r => {
-    const n = senders(r.id).length, st = me ? statOf(me, r.id) : null, f = me ? firstSend(me, r.id) : null;
+    const who = senders(r.id), n = who.length, st = me ? statOf(me, r.id) : null, f = me ? firstSend(me, r.id) : null;
     const bw = me && byNumber(r) ? bestWords(me, r) : '';              // a climb by number: my best go against the clock
-    const mineTxt = f ? '✓ ' + RESULT[f] + (bw && st.g[0] >= topOf(r) ? ' · ' + bw : '') : bw ? bw : st ? st.a + (st.a === 1 ? ' try' : ' tries') : '';
+    const g = goes && goes.get(r.id);
+    const side = goes ? '<div class="who goes">' + (g ? (g.length > GOES_MAX ? '<span class="more">+' + (g.length - GOES_MAX) + '</span>' : '') + goDots(g.slice(-GOES_MAX)) : '') + '</div>' + (bw ? '<div class="bw">' + esc(bw) + '</div>' : '')
+      : '<div class="who crew">' + who.map(p => '<b style="background:' + personColor(p) + '" title="' + esc(p) + '">' + esc(chipFor(p)) + '</b>').join('') + '</div>';
     return '<div class="rt' + (r.id === openId ? ' sel' : '') + (r.retired ? ' gone' : '') + '" data-id="' + r.id + '"><div class="nm"><b>' + esc(r.name) + '</b><span>' + esc(r.setter) +
       ' · ' + (byNumber(r) ? 'by number · ' : '') + FEET[r.feet] + rulesSay(r, true) + (n ? ' · ' + n + ' sent' : '') + (r.tape ? ' · ' + esc(r.tape) : '') + '</span></div>' +
-      '<div class="rside"><div class="gd" data-g="' + r.grade + '"></div><div class="who' + (f ? ' sent' : '') + '">' + mineTxt + '</div></div><div class="chev">›</div></div>';
+      '<div class="rside"><div class="gd" data-g="' + r.grade + '"></div>' + side + '</div><div class="chev">›</div></div>';
   }).join('');
   box.querySelectorAll('.gd').forEach(p => paintPill(p, +p.dataset.g));
 }
@@ -3891,6 +3922,8 @@ function paintAll(){
 $('toMoon').onclick = $('setMoon').onclick = () => { ls.set('mb-wall', 'moon'); location.href = '../'; };
 
 /* ---------- settings ---------- */
+$('listSel').value = ls.get('mb-goes') === '1' ? 'goes' : 'crew';
+$('listSel').onchange = () => { ls.set('mb-goes', $('listSel').value === 'goes' ? '1' : ''); paintList(); };
 $('bgSel').value = ls.get('mb-bg2') === 'fog' ? 'fog' : 'taupe';         // (Black was a third until 2026-10-11)
 $('bgSel').onchange = () => {
   const v = $('bgSel').value; ls.set('mb-bg2', v);

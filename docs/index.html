@@ -696,7 +696,7 @@
   .rside{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px;
          max-width:58%}
   .who{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:3px}
-  /* or, with "Show my goes" on, a circle for each of your own goes, oldest first (see goesMap) */
+  /* or, with the route list on My goes, a circle for each of your own goes, oldest first (see goesMap) */
   .who.goes{align-items:center;gap:3px}
   .who.goes .more{font:700 10px ui-monospace,Menlo,monospace;color:var(--dimmer);margin-right:1px}
   .who b{display:grid;place-items:center;width:19px;height:19px;border-radius:50%;
@@ -1561,8 +1561,11 @@
       <option value="taupe">Light taupe</option>
       <option value="fog">Light foggy grey</option>
     </select></div>
-    <div class="opt"><label for="plyChk">Show the board on plywood</label><button type="button" class="tipBtn" aria-label="About: the board on plywood" aria-expanded="false">i</button><span class="tipTxt">For this phone only. Off, the picture is Moon's own board. Plywood is drawn for the 2016 and 2024 hold sets: on the 2016 set a phone starts on Moon's yellow board, on the 2024 set it starts on plywood. Masters 2019 keeps its own picture.</span><span class="sw"><input type="checkbox" role="switch" id="plyChk"><i></i></span></div>
-    <div class="opt"><label for="goesChk">Show my goes on the routes</label><button type="button" class="tipBtn" aria-label="About: your goes on the routes" aria-expanded="false">i</button><span class="tipTxt">For this phone only, and off to begin with. On, each route in the list, on the board page and the routes page, shows a circle for every go you have logged on it, oldest first: an empty circle is a try, yellow a flash, green a send. Off, it shows who has sent it, a coloured letter for each climber. It needs your name picked at the top of the page.</span><span class="sw"><input type="checkbox" role="switch" id="goesChk"><i></i></span></div>
+    <div class="opt"><label for="plyChk">Plywood board</label><button type="button" class="tipBtn" aria-label="About: the board on plywood" aria-expanded="false">i</button><span class="tipTxt">For this phone only. Off, the picture is Moon's own board. Plywood is drawn for the 2016 and 2024 hold sets: on the 2016 set a phone starts on Moon's yellow board, on the 2024 set it starts on plywood. Masters 2019 keeps its own picture.</span><span class="sw"><input type="checkbox" role="switch" id="plyChk"><i></i></span></div>
+    <div class="opt"><label for="listSel">Route list</label><button type="button" class="tipBtn" aria-label="About: what the route list shows" aria-expanded="false">i</button><span class="tipTxt">For this phone only, and for both walls. <b>Community sends</b>, what everyone starts on: beside each route, a coloured letter for each climber who has sent it. <b>My goes</b>: a circle for each of your own goes on it, oldest first; an empty circle is a try, yellow a flash, green a send. It needs your name picked.</span><select id="listSel">
+      <option value="crew">Community sends</option>
+      <option value="goes">My goes</option>
+    </select></div>
   </div>
 
   <div class="lbl">Games on the wall</div>
@@ -1798,7 +1801,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-14 08:16';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-14 08:36';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -4009,9 +4012,9 @@ const PAGE = 80;
 let limit = PAGE, limitKey = '';
 function showMore(){ limit += PAGE; renderResults(); }
 
-/* "Show my goes on the routes" (Will, 2026-10-14: "show the circles which represent attempts and sends on the board
-   and routes pages instead of the other climbers sends circles with the letter in them. It's an either or"). A switch
-   in Settings, for this phone. On, the list (under the board and on the routes page, the same list) shows a circle for
+/* "Route list: my goes or community sends" (Will, 2026-10-14: "show the circles which represent attempts and sends on the board
+   and routes pages instead of the other climbers sends circles with the letter in them. It's an either or"). A choice
+   in Settings, for this phone and both walls (it was a switch for a morning; he named the two). On My goes, the list (under the board and on the routes page, the same list) shows a circle for
    each of the climber's own goes on a route, oldest first, as the log page draws them; the last dozen, with a count of
    the ones before. The goes come from the climber's log (myLog, kept a minute and dropped when a go is logged); until
    it has come the rows are left empty, and the list is drawn again when it does. */
@@ -4019,7 +4022,7 @@ const GOES_MAX = 12;
 let myGoes = { me: null, gen: -1, map: null, busy: false };
 function goesMap(){
   const me = meNow();
-  if (!me || !$('goesChk').checked) return null;
+  if (!me || $('listSel').value !== 'goes') return null;
   if (myGoes.me === me && myGoes.gen === logGen) return myGoes.map;
   if (!myGoes.busy){
     myGoes.busy = true;
@@ -8776,8 +8779,8 @@ BOARDS.forEach(b => $('boardSel').appendChild(new Option(b.label + ' — ' + BY_
 $('boardSel').value = boardKey;
 try{ const b = localStorage.getItem('mb-board'); if (b) setBoard(b); }catch(e){}
 paintBoardPic();
-$('goesChk').onchange = () => {
-  try{ localStorage.setItem('mb-goes', $('goesChk').checked ? '1' : ''); }catch(e){}
+$('listSel').onchange = () => {
+  try{ localStorage.setItem('mb-goes', $('listSel').value === 'goes' ? '1' : ''); }catch(e){}
   renderResults();
 };
 $('plyChk').onchange = () => {
@@ -8823,7 +8826,7 @@ try{
   // What the wall shows on connect is WW for everyone now; a choice saved before
   // that setting was hidden is left alone and ignored.
   $('auto').checked = localStorage.getItem('mb-auto') === '1';
-  $('goesChk').checked = localStorage.getItem('mb-goes') === '1';
+  $('listSel').value = localStorage.getItem('mb-goes') === '1' ? 'goes' : 'crew';
   const bgKept = localStorage.getItem('mb-bg2'), bg = bgKept === 'fog' ? 'fog' : 'taupe';   // nothing chosen yet: the taupe (Will, 2026-10-13: "for default color, let's do the light taupe")
   if ($('bgSel').querySelector('option[value="' + bg + '"]')){ $('bgSel').value = bg; setBg(bg); }
   const m = localStorage.getItem('mb-me') || w;
