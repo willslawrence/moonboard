@@ -1111,7 +1111,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-14 09:14';
+const BUILD = '2026-10-14 12:47';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -3325,7 +3325,7 @@ function csvRead(text){
       if (!/^\d{1,3}$/.test(n) || !/^\d{1,5}$/.test(secs) || !+n || !+secs) return out('a go against the clock needs both the hold reached and the seconds, as numbers');
       go.n = +n; go.secs = +secs;
     }
-    ready.push({ line, go });
+    ready.push({ line, go, session: /^session /.test(csvWord(cell(r, C.result))) });
   });
   return { ready, left, lines: lines.length, other, examples };
 }
@@ -3343,6 +3343,35 @@ function paintBookBtns(){
   $('bookCsv').disabled = !shown;
   $('bookImp').disabled = !shown || !me || who !== me || importBusy;
 }
+/* A first send from a file follows the rule a send logged on this page follows (firstSendAs): the tries on earlier
+   days are added to the go the file gives, so a route tried on another day is never a flash. Until 2026-10-14 a file's
+   results went in as written, and an import from the MoonBoard app's logbook, where each session counts its own goes,
+   came in with its session flashes as flashes (Abdullah, that day: 19 of them, 989 points over). A line that says
+   "Session flash" (or session 2nd...) had goes before it even if the file has none of them: with no earlier try to
+   count it comes in as 4+ goes, a send without a bonus, as Will chose for his own on 2026-10-12. Only a route whose
+   first send is in the file is changed; one the logbook has sent already is left as it is. Says how many it changed.
+   (A file this page exported and imported again into another logbook would have its first sends counted twice:
+   the export writes the go in all, not the go of the session.) Days are this phone's days. */
+function csvFirstSends(ready, existing){
+  const RES = ['flash', '2nd', '3rd', '4+'];
+  const day = at => { const t = new Date(at); return t.getFullYear() * 1e4 + (t.getMonth() + 1) * 100 + t.getDate(); };
+  const rows = existing.map(e => ({ id: e.route, result: e.result, at: Date.parse(e.t), x: null }))
+    .concat(ready.map(x => ({ id: x.go.route, result: x.go.result, at: Date.parse(x.go.t), x })));
+  const by = new Map();
+  rows.forEach(r => (by.get(r.id) || by.set(r.id, []).get(r.id)).push(r));
+  let changed = 0;
+  by.forEach(list => {
+    list.sort((a, b) => a.at - b.at || (a.x ? 1 : 0) - (b.x ? 1 : 0));      // at the same moment, the logbook's own go first
+    const first = list.find(r => r.result !== 'try');
+    if (!first || !first.x) return;
+    const d = day(first.at);
+    const before = list.filter(r => r.result === 'try' && day(r.at) < d).length;
+    const today = list.filter(r => r.result === 'try' && day(r.at) === d && r.at <= first.at).length;
+    const to = first.x.session && !before ? '4+' : RES[Math.min(before + Math.max(RES.indexOf(first.result) + 1, today + 1), 4) - 1];
+    if (to !== first.result){ first.x.go.result = to; changed++; }
+  });
+  return changed;
+}
 async function importCsv(text){
   if (importBusy || !me || bookLoaded !== me || $('bookWho').value !== me) return;
   const got = csvRead(text);
@@ -3351,6 +3380,7 @@ async function importCsv(text){
   if (got.lines && got.examples === got.lines) return bookNote('That file has only the example lines in it. Put lines of your own under them, with your name or nothing under Climber, and import it again.');
   if (!got.ready.length) return bookNote(got.lines ? 'Nothing was imported. Left out: ' + csvLeft(got.left) + '.' : 'That file has the headings and no goes under them: nothing to import.', !!got.lines);
   importBusy = true; paintBookBtns();
+  const later = csvFirstSends(got.ready, bookRows.filter(e => e.person === me));
   const tz = -new Date().getTimezoneOffset();          // how far this phone's clock is ahead of UTC, in minutes, so that a day is the climber's day
   /* A long file goes in pieces. The store counts a route's goes of a day together (as many tries and sends as the
      file lists), so those must reach it together: the lines are put in the order of route and day (the day as the
@@ -3379,9 +3409,10 @@ async function importCsv(text){
   };
   try{
     const dry = await send(true), all = got.left.concat(dry.left).sort((a, b) => a.line - b.line);
-    const said = all.length ? ' Left out: ' + csvLeft(all) + '.' : '';
+    const said = (later ? ' ' + plural(later, 'first send', 'first sends') + ' after earlier goes ' + (later === 1 ? 'comes' : 'come') + ' in as a later go, not a flash' + '.' : '') + (all.length ? ' Left out: ' + csvLeft(all) + '.' : '');
     if (!dry.n){ bookNote('Nothing was imported.' + said); return; }
     if (!confirm('Import ' + plural(dry.n, 'go', 'goes') + ' into ' + me + '’s logbook?' +
+                 (later ? String.fromCharCode(10, 10) + plural(later, 'first send', 'first sends') + ' after earlier goes ' + (later === 1 ? 'comes' : 'come') + ' in as a later go, not a flash' + ', as a send logged here would.' : '') +
                  (all.length ? String.fromCharCode(10, 10) + plural(all.length, 'line', 'lines') + ' of the file ' + (all.length === 1 ? 'is' : 'are') + ' left out.' : ''))) return void bookNote('');
     const done = await send(false);
     mine = []; logAt = 0;                    // Undo on the log page takes off the last go written, which is now one of these

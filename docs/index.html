@@ -1801,7 +1801,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-14 09:14';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-14 12:47';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -5513,7 +5513,7 @@ function csvRead(text, me){
     const set = csvBoard(cell(r, C.set));
     const route = csvRoute(cell(r, C.route), set, +cell(r, C.id) || 0);
     if (!route) return out(cell(r, C.route) ? 'no route is called “' + cell(r, C.route) + '”' + (set ? ' on that hold set' : '') : 'it names no route');
-    ready.push({ line, go: { id: route.id, result, t: when.key + 'T' + pad2(when.hh) + ':' + pad2(when.mm) + ':00.000Z' } });
+    ready.push({ line, go: { id: route.id, result, t: when.key + 'T' + pad2(when.hh) + ':' + pad2(when.mm) + ':00.000Z' }, session: /^session /.test(csvWord(cell(r, C.result))) });
   });
   return { ready, left, lines: lines.length, other, examples };
 }
@@ -5553,6 +5553,35 @@ function csvPieces(ready){
   return pieces;
 }
 let importBusy = false;
+/* A first send from a file follows the rule a send logged on this page follows (firstSendAs): the tries on earlier
+   days are added to the go the file gives, so a route tried on another day is never a flash. Until 2026-10-14 a file's
+   results went in as written, and an import from the MoonBoard app's logbook, where each session counts its own goes,
+   came in with its session flashes as flashes (Abdullah, that day: 19 of them, 989 points over). A line that says
+   "Session flash" (or session 2nd...) had goes before it even if the file has none of them: with no earlier try to
+   count it comes in as 4+ goes, a send without a bonus, as Will chose for his own on 2026-10-12. Only a route whose
+   first send is in the file is changed; one the logbook has sent already is left as it is. Says how many it changed.
+   (A file this page exported and imported again into another logbook would have its first sends counted twice:
+   the export writes the go in all, not the go of the session.) Times here are clock times written as if at Greenwich, as a file's are (see logTime). */
+function csvFirstSends(ready, existing){
+  const RES = ['flash', '2nd', '3rd', '4+'];
+  const day = at => new Date(at).toISOString().slice(0, 10);
+  const rows = existing.map(e => ({ id: e.id, result: e.result, at: e.src === 'moonboard' ? Date.parse(e.t) : Date.parse(e.t) - new Date(e.t).getTimezoneOffset() * 60000, x: null }))
+    .concat(ready.map(x => ({ id: x.go.id, result: x.go.result, at: Date.parse(x.go.t), x })));
+  const by = new Map();
+  rows.forEach(r => (by.get(r.id) || by.set(r.id, []).get(r.id)).push(r));
+  let changed = 0;
+  by.forEach(list => {
+    list.sort((a, b) => a.at - b.at || (a.x ? 1 : 0) - (b.x ? 1 : 0));      // at the same moment, the logbook's own go first
+    const first = list.find(r => r.result !== 'try');
+    if (!first || !first.x) return;
+    const d = day(first.at);
+    const before = list.filter(r => r.result === 'try' && day(r.at) < d).length;
+    const today = list.filter(r => r.result === 'try' && day(r.at) === d && r.at <= first.at).length;
+    const to = first.x.session && !before ? '4+' : RES[Math.min(before + Math.max(RES.indexOf(first.result) + 1, today + 1), 4) - 1];
+    if (to !== first.result){ first.x.go.result = to; changed++; }
+  });
+  return changed;
+}
 async function importCsv(text){
   const me = meNow();
   if (importBusy || !me || !logShown || logShown.who !== me) return;
@@ -5584,6 +5613,7 @@ async function importCsv(text){
        that keeps repeats says so in its answer (repeats): for each route and day the logbook ends up with as many
        tries and sends as the file lists. A relay from before that keeps a try and a send at most for each route
        each day; for that one the page applies its rule first, by this phone's own days, and asks again. */
+    const later = csvFirstSends(got.ready, logShown.entries);
     let send = got.ready, left = got.left.slice();
     let dry = await put(send, true, true);
     const counts = dry.counts;
@@ -5593,10 +5623,10 @@ async function importCsv(text){
       dry = send.length ? await put(send, true, false) : { n: 0, twice: [] };
     }
     left = left.concat(dry.twice).sort((a, b) => a.line - b.line);
-    const said = left.length ? ' Left out: ' + csvLeft(left) + '.' : '';
+    const said = (later ? ' ' + plural(later, 'first send', 'first sends') + ' after earlier goes ' + (later === 1 ? 'comes' : 'come') + ' in as a later go, not a flash' + '.' : '') + (left.length ? ' Left out: ' + csvLeft(left) + '.' : '');
     if (!dry.n){ logNote('Nothing was imported.' + said); return; }
     if (!confirm('Import ' + plural(dry.n, 'go', 'goes') + ' into ' + me + '’s logbook?' + String.fromCharCode(10, 10) +
-                 'They come in locked, like any logbook brought in from elsewhere.' +
+                 'They come in locked, like any logbook brought in from elsewhere.' + (later ? ' ' + plural(later, 'first send', 'first sends') + ' after earlier goes ' + (later === 1 ? 'comes' : 'come') + ' in as a later go, not a flash' + ', as a send logged here would.' : '') +
                  (left.length ? ' ' + plural(left.length, 'line', 'lines') + ' of the file ' + (left.length === 1 ? 'is' : 'are') + ' left out.' : ''))) return void logNote('');
     const done = await put(send, false, counts);
     applyLists(done.last); logStale();
