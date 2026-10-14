@@ -940,9 +940,9 @@
       <option value="taupe">Light taupe</option>
       <option value="fog">Light foggy grey</option>
     </select></div>
-    <div class="opt"><label for="listSel">Route list</label><button type="button" class="tipBtn" aria-label="About: what the route list shows" aria-expanded="false">i</button><span class="tipTxt">For this phone only, and for both walls. <b>Community sends</b>, what everyone starts on: beside each route, a coloured letter for each climber who has sent it. <b>My goes</b>: a circle for each of your own goes on it, oldest first; an empty circle is a try, yellow a flash, green a send. It needs your name picked.</span><select id="listSel">
-      <option value="crew">Community sends</option>
+    <div class="opt"><label for="listSel">Route list</label><button type="button" class="tipBtn" aria-label="About: what the route list shows" aria-expanded="false">i</button><span class="tipTxt">For this phone only, and for both walls. <b>My goes</b>, what everyone starts on: beside each route, a circle for each of your own goes on it, oldest first; an empty circle is a try, yellow a flash, green a send. It needs your name picked. <b>Community sends</b>: a coloured letter for each climber who has sent it.</span><select id="listSel">
       <option value="goes">My goes</option>
+      <option value="crew">Community sends</option>
     </select></div>
   </div>
 
@@ -1111,7 +1111,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-14 08:36';
+const BUILD = '2026-10-14 09:14';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -3494,7 +3494,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && sheetUp())
 /* What the list shows beside each route (Will, 2026-10-14, of the MoonBoard page's new choice: "So this for the sun board
    as well"): Community sends, a letter for each climber who has sent it, or My goes, a circle for each of your own goes
    on it, oldest first, the last dozen with a count of the ones before. One choice for both walls, kept on this phone
-   ('mb-goes'). Until 2026-10-14 this list said your own result in words. Your goes come from your log (loadLog), asked
+   ('mb-list'), and My goes until it is changed. Until 2026-10-14 this list said your own result in words. Your goes come from your log (loadLog), asked
    for here when the list needs it. */
 const GOES_MAX = 12;
 let myLogFor = null, logAskFor = null;
@@ -3922,8 +3922,8 @@ function paintAll(){
 $('toMoon').onclick = $('setMoon').onclick = () => { ls.set('mb-wall', 'moon'); location.href = '../'; };
 
 /* ---------- settings ---------- */
-$('listSel').value = ls.get('mb-goes') === '1' ? 'goes' : 'crew';
-$('listSel').onchange = () => { ls.set('mb-goes', $('listSel').value === 'goes' ? '1' : ''); paintList(); };
+$('listSel').value = ls.get('mb-list') === 'crew' ? 'crew' : 'goes';         // My goes until a phone picks (2026-10-14; 'mb-goes' before it, not read)
+$('listSel').onchange = () => { ls.set('mb-list', $('listSel').value); paintList(); };
 $('bgSel').value = ls.get('mb-bg2') === 'fog' ? 'fog' : 'taupe';         // (Black was a third until 2026-10-11)
 $('bgSel').onchange = () => {
   const v = $('bgSel').value; ls.set('mb-bg2', v);

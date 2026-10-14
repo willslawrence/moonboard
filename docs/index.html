@@ -1551,7 +1551,7 @@
   <div class="lbl">Lighting the wall</div>
   <div class="card">
     <div class="opt"><label for="auto">Light a route as soon as I open it</label><button type="button" class="tipBtn" aria-label="About: lighting a route as soon as it is opened" aria-expanded="false">i</button><span class="tipTxt">Off to begin with. On, a route goes up on the wall the moment you open it, with no need to press Light up Route. With several phones on one wall that can change what somebody else is half way up, so it is only for a phone that asks. For this phone only.</span><span class="sw"><input type="checkbox" role="switch" id="auto"><i></i></span></div>
-    <div class="opt"><label for="gbar">Show the grade on the bottom row</label><button type="button" class="tipBtn" aria-label="About: the grade on the bottom row" aria-expanded="false">i</button><span class="tipTxt">Row 1, the bottom row, carries no holds on any benchmark, so it reads out the grade: from A1 onward, one light for each V-grade. Five green up to V5, two blue for V6 and V7, red from V8, and eleven at most. On the 2019 and 2024 sets a few routes use row 1, and the grade is left off for those.</span><span class="sw"><input type="checkbox" role="switch" id="gbar" checked><i></i></span></div>
+    <div class="opt"><label for="gbar">Show the grade on the bottom row</label><button type="button" class="tipBtn" aria-label="About: the grade on the bottom row" aria-expanded="false">i</button><span class="tipTxt">Row 1, the bottom row, reads out the grade: from A1 onward, one light for each V-grade, eleven at most. On the 2016 set, where row 1 has no holds, five are green up to V5, two blue for V6 and V7, red from V8. The Masters 2019 and 2024 sets have holds all along row 1, so there the lights are all red, and a hold of the route's own on row 1 keeps its green or blue.</span><span class="sw"><input type="checkbox" role="switch" id="gbar" checked><i></i></span></div>
     <div class="opt"><label for="pairChk">Show the &ldquo;Show 2nd route&rdquo; button</label><button type="button" class="tipBtn" aria-label="About: the second route" aria-expanded="false">i</button><span class="tipTxt">For this phone only, and off to begin with. The button stands beside Light up Route and puts the open route up next to the one already on the wall, in a second colour. Two routes that somebody else puts up are shown as two either way.</span><span class="sw"><input type="checkbox" role="switch" id="pairChk"><i></i></span></div>
   </div>
 
@@ -1562,9 +1562,9 @@
       <option value="fog">Light foggy grey</option>
     </select></div>
     <div class="opt"><label for="plyChk">Plywood board</label><button type="button" class="tipBtn" aria-label="About: the board on plywood" aria-expanded="false">i</button><span class="tipTxt">For this phone only. Off, the picture is Moon's own board. Plywood is drawn for the 2016 and 2024 hold sets: on the 2016 set a phone starts on Moon's yellow board, on the 2024 set it starts on plywood. Masters 2019 keeps its own picture.</span><span class="sw"><input type="checkbox" role="switch" id="plyChk"><i></i></span></div>
-    <div class="opt"><label for="listSel">Route list</label><button type="button" class="tipBtn" aria-label="About: what the route list shows" aria-expanded="false">i</button><span class="tipTxt">For this phone only, and for both walls. <b>Community sends</b>, what everyone starts on: beside each route, a coloured letter for each climber who has sent it. <b>My goes</b>: a circle for each of your own goes on it, oldest first; an empty circle is a try, yellow a flash, green a send. It needs your name picked.</span><select id="listSel">
-      <option value="crew">Community sends</option>
+    <div class="opt"><label for="listSel">Route list</label><button type="button" class="tipBtn" aria-label="About: what the route list shows" aria-expanded="false">i</button><span class="tipTxt">For this phone only, and for both walls. <b>My goes</b>, what everyone starts on: beside each route, a circle for each of your own goes on it, oldest first; an empty circle is a try, yellow a flash, green a send. It needs your name picked. <b>Community sends</b>: a coloured letter for each climber who has sent it.</span><select id="listSel">
       <option value="goes">My goes</option>
+      <option value="crew">Community sends</option>
     </select></div>
   </div>
 
@@ -1801,7 +1801,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-14 08:36';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-14 09:14';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -4023,6 +4023,7 @@ let myGoes = { me: null, gen: -1, map: null, busy: false };
 function goesMap(){
   const me = meNow();
   if (!me || $('listSel').value !== 'goes') return null;
+  try{ logGen; }catch(e){ return null; }                // asked before the log's own lines have run
   if (myGoes.me === me && myGoes.gen === logGen) return myGoes.map;
   if (!myGoes.busy){
     myGoes.busy = true;
@@ -4105,16 +4106,21 @@ function gradeBarFor(r){
 }
 function rsOwnsRow(){ try{ return RS.on && rsWallWant; }catch(e){ return false; } }      // (asked before the session's own lines have run: no)
 function rsRowCells(n){ const c = {}; for (let i = 1; i <= n; i++) c[i + ',1'] = RS_WALL_TAG; return c; }
+/* Row 1 is free on every 2016 benchmark. The Masters 2019 and 2024 sets have a hold at every spot of it, and their
+   routes use them (45 of the 2024 set's at 40 degrees), so there a green or blue light on row 1 would read as a start
+   or a hold of the route. On those sets the meter is all red (Will, 2026-10-14: "for those sets make the grade light
+   red only... if the route uses one of those holds that the grade light also then the blue or green light wins"): a
+   hold of the route's own on row 1 keeps its colour, since the route is laid over the meter (paint, buildPayload).
+   Until that day the meter was left off for a route that used row 1. */
+const GRADE_ROW_FREE = { '2016-40': true };
 function gradeBarOf(r){                // the grade's own lights, whatever a session is doing
   const cells = {};
   if (!r || !$('gbar').checked) return cells;
-  // Row 1 is free on every 2016 benchmark, but the other sets use it now and then.
-  if (/(^|,)[A-K]1(,|$)/.test(r.s + ',' + r.m + ',' + r.e)) return cells;
   // A1 lights now that its LED has been reseated, so the bar runs the full A1..K1.
-  // One light per V-grade: five green takes you to V5, two blue to V7, red above.
-  const lights = Math.min(VGRADE[r.grade], COLS);   // columns 1..11
+  // One light per V-grade: five green takes you to V5, two blue to V7, red above; all red where row 1 has holds.
+  const free = GRADE_ROW_FREE[r.board], lights = Math.min(VGRADE[r.grade], COLS);   // columns 1..11
   for (let i = 0; i < lights; i++)
-    cells[(i + 1) + ',1'] = i < 5 ? 'S' : (i < 7 ? 'P' : 'E');
+    cells[(i + 1) + ',1'] = !free ? 'E' : i < 5 ? 'S' : (i < 7 ? 'P' : 'E');
   return cells;
 }
 function applyGradeBar(){
@@ -8780,7 +8786,7 @@ $('boardSel').value = boardKey;
 try{ const b = localStorage.getItem('mb-board'); if (b) setBoard(b); }catch(e){}
 paintBoardPic();
 $('listSel').onchange = () => {
-  try{ localStorage.setItem('mb-goes', $('listSel').value === 'goes' ? '1' : ''); }catch(e){}
+  try{ localStorage.setItem('mb-list', $('listSel').value); }catch(e){}
   renderResults();
 };
 $('plyChk').onchange = () => {
@@ -8826,7 +8832,7 @@ try{
   // What the wall shows on connect is WW for everyone now; a choice saved before
   // that setting was hidden is left alone and ignored.
   $('auto').checked = localStorage.getItem('mb-auto') === '1';
-  $('listSel').value = localStorage.getItem('mb-goes') === '1' ? 'goes' : 'crew';
+  $('listSel').value = localStorage.getItem('mb-list') === 'crew' ? 'crew' : 'goes';     // My goes until a phone picks (Will, 2026-10-14: "Set My goes as default for everyone the first time"; 'mb-goes' before it, not read)
   const bgKept = localStorage.getItem('mb-bg2'), bg = bgKept === 'fog' ? 'fog' : 'taupe';   // nothing chosen yet: the taupe (Will, 2026-10-13: "for default color, let's do the light taupe")
   if ($('bgSel').querySelector('option[value="' + bg + '"]')){ $('bgSel').value = bg; setBg(bg); }
   const m = localStorage.getItem('mb-me') || w;
