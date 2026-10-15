@@ -72,7 +72,10 @@
   try{
     // (never from a page that is already under sun/: where a page is missing the host serves this one in its place,
     //  and it would send itself on for ever)
-    if (!MB_MOVED && !location.hash && !/\/sun\//.test(location.pathname) && localStorage.getItem('mb-wall') === 'sun' &&
+    // (nor when this page is come back to with Back: a phone's history from before 2026-10-15 can still have this page
+    //  under the Sun board's, and sending it on again would make Back bounce)
+    const nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+    if (!MB_MOVED && !location.hash && !(nav && nav.type === 'back_forward') && !/\/sun\//.test(location.pathname) && localStorage.getItem('mb-wall') === 'sun' &&
         (localStorage.getItem('mb-room') || 'moonwall-crew') === 'moonwall-crew') location.replace('sun/');
   }catch(e){}
 </script>
@@ -1442,6 +1445,7 @@
       <div class="fPick" id="fSent"><div class="lbl">Sent</div><div class="chip"><b id="hideSay">Show</b><select id="hideDone" aria-label="Routes you have sent">
         <option value="">Show</option>
         <option value="1">Hide</option>
+        <option value="2">Only</option>
       </select></div></div>
       <div class="fPick" id="fSort"><div class="lbl">Sort</div><div class="chip"><b id="sortSay">Popular</b><select id="sort" aria-label="Sort the routes">
         <option value="repeats">Popular</option>
@@ -1681,7 +1685,7 @@
     <button id="logLock" class="ghost mini" disabled>Lock my entries</button>
     <button type="button" class="tipBtn" aria-label="About: the file, and the lock" aria-expanded="false">i</button><span class="tipTxt"><b>Export CSV</b> makes a file of the logbook that is showing, a line a go. <b>Import CSV</b> reads a file laid out the same way and adds its goes to your own logbook. To bring an old logbook in: export first (an empty logbook gives a sample, the headings and a few example lines), put a line for each go under them, and import the file. The example lines are left out. A line needs a date (2026-10-12), the route's name as the list has it, and how it went: try, flash, 2nd go, 3rd go or 4+ goes. The time and the other columns may be left empty; the hold set, if empty, is the one on the wall. Goes come in locked. Several sends of a route in a day are all kept, and a go the logbook already has is not added again. <b>Lock my entries</b> locks every go of yours, so that none can be deleted by a slip.</span>
   </div>
-  <div class="rankHead"><button type="button" id="rankTog" class="rankTog" aria-expanded="false" aria-controls="ptsRank">Ranking<i></i></button><button type="button" class="tipBtn" aria-label="About: the points" aria-expanded="false">i</button><span class="tipTxt">MoonBoard scoring: 350 at 5+, 50 more for each grade above it, by the setter's grade; then 53 more for a flash, 2 for a second go, 1 for a third. Benchmarks only, and only the first time you send a route.</span></div>
+  <div class="rankHead"><button type="button" id="rankTog" class="rankTog" aria-expanded="false" aria-controls="ptsRank">Ranking<i></i></button><button type="button" class="tipBtn" aria-label="About: the points" aria-expanded="false">i</button><span class="tipTxt">MoonBoard scoring: 350 at 5+, 50 more for each grade above it, by the grade the climbers voted for (as the routes show it); then 53 more for a flash, 2 for a second go, 1 for a third. Benchmarks only, and only the first time you send a route.</span></div>
   <div id="ptsRank" hidden></div>
   <div class="rankHead" id="storyHead" hidden><button type="button" id="storyTog" class="rankTog" aria-expanded="false" aria-controls="story"><span id="storyLbl">Your story</span><i></i></button><button type="button" class="tipBtn" aria-label="About: the story" aria-expanded="false">i</button><span class="tipTxt">Worked out from the goes in the logbook that is showing: the grades you have sent, how often first go, the route that took longest, the ones that got away, your days and your holds. <b>Flash grade</b>: the hardest grade at which half or more of the routes you have tried went first go. <b>Edge grade</b>: the hardest at which half or more went in the end, however many goes it took. <b>Average send</b>: the middle of all your sends. On your own logbook, a tap on any of the three opens a route of that grade you have not sent, on the hold set now on the wall. <b>Next up</b> counts what the next grade would take. <b>Head to head</b> puts you beside another climber. <b>Share my story as a picture</b> makes one picture of it all to send on. The more of your logbook is in here, the more it can tell. <b>Import CSV</b> brings an old logbook over.</span></div>
   <div id="story" hidden></div>
@@ -1801,7 +1805,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-14 12:47';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-15 17:17';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3527,6 +3531,21 @@ const BENCH_BY_BOARD={
 [5333235903285,"DAVID TAKE THE WHEEL","Sam Prior",14,4,5,"B3,F4","B1,B8,H8,F9,B13,G13,B17","E18"]
 ]
 };
+/* The grade the climbers voted for. A benchmark is set at one grade, and then everyone who climbs it says what
+   they think it is; Moon's app keeps that as the user grade, and where the two part it is the voted one that stands
+   (Will, 2026-10-15, at Abdullah's word: "use the voted grade, not the setter's grade... the setter sets it initially,
+   but then the community votes"). Only the routes where the two differ are here, as route id: grade index, one list
+   per hold set and angle: 64 of the 1,578, nearly all a grade easier. Read from Moon's own app data of June 2026
+   (the copies shared in the spookykat/MoonBoard repository's issue 6 on GitHub). The setter's grade is kept beside
+   it as setGrade, and is now used for nothing; the voted grade is the one shown, filtered, sorted, lit on the wall
+   and scored. */
+const VOTED={
+"2016-40":{28514:6,62575:15,96879:4,305598:9,307353:10,314510:10,335294:12,380649:8,394584:10,411950:9,452912:9,3962062793793:14,14471575164555:13},
+"2019-40":{2526350142396:14,9571624476276:13,12429117820408:9,13541342761193:11},
+"2019-25":{5246552252776:9,7559620233886:9,8286379615267:10,13684002975259:2,14636332738728:7,14757413293013:10},
+"2024-40":{829829402657:12,1800015095348:4,3096708075631:8,3710335709215:13,3793828425378:13,3922468054982:5,4485237620049:8,5234193511480:10,6000358451429:11,6293638709645:4,6632123575238:5,7713192275137:5,8332262762319:13,9044034244063:13,9961383959202:4,10260213905282:7,10372952430895:12,10751502811783:6,11104189875399:9,11684641762776:10,11686041409929:12,11761103886348:7,12179505138501:11,12620550926608:11,12698132814468:10,13001261423946:11,13705827622232:9,14054189372049:12,14092707714759:13,14143172083640:12,14471547410184:4,15667188071598:11,15710778189074:13,16494983087962:7,16725382168656:11},
+"2024-25":{1444024326474:3,2846450423626:3,3985453772636:3,10631426654245:6,13010541951011:4,13626164806661:3}
+};
 // Benchmarks Moon has since retired - kept only so old logbook rows still show a name.
 const RETIRED=[[190906,"SUNNY SIDE","Klaus Klein",5,12014,4.3,"B6,C5","E8,E10,E15,F14,H12","B18"]];
 
@@ -3540,8 +3559,9 @@ const BOARDS = [
   { key: '2024-25', label: 'MoonBoard 2024 · 25°',     img: 'board-2024.png', geo: 'art', ply: 'board-2024-ply.jpg', plyFirst: true },
 ];
 const DEFAULT_BOARD = '2016-40';
+const votedOf = (r, board) => { const v = (VOTED[board] || {})[r[0]]; return v === undefined ? r[3] : v; };
 const toProblem = (r, board) => ({
-  id: r[0], name: r[1], setter: r[2], grade: r[3],
+  id: r[0], name: r[1], setter: r[2], grade: votedOf(r, board), setGrade: r[3],
   repeats: r[4], stars: r[5], s: r[6], m: r[7], e: r[8], board,
 });
 const BY_BOARD = {};
@@ -3987,12 +4007,15 @@ function filtered(){
   const who = whoNow();
   const mine = who ? new Set(lists[who] || []) : null;
   const me = meNow();
-  const hide = me && $('hideDone').value === '1';   // needs a name to know what's yours
+  // Sent: Hide leaves out the routes you have sent, Only shows nothing else (Abdullah, 2026-10-15: "my sends",
+  // "exclude my sends"). Both need a name, to know what is yours.
+  const hide = me && $('hideDone').value === '1', only = me && $('hideDone').value === '2';
   const need = holdFilter;
   let out = PROBLEMS.filter(r => r.grade >= lo && r.grade <= hi &&
     (!need.length || need.every(k => holdSet(r).has(k))) &&
     (!mine || mine.has(r.id)) &&
     !(hide && (done[r.id] || []).includes(me)) &&
+    !(only && !(done[r.id] || []).includes(me)) &&
     (!q || r.name.toLowerCase().includes(q) || r.setter.toLowerCase().includes(q)));
   const k = $('sort').value;
   if      (k === 'stars')     out.sort((a,b) => b.stars - a.stars || b.repeats - a.repeats);
@@ -4090,7 +4113,8 @@ function renderResults(){
   $('count').textContent = hits.length ? ''
     : (holdFilter.length ? (holdFilter.length > 1 ? 'No route here uses all ' + holdFilter.length + ' of those holds' : 'No route here uses that hold')
        : view ? 'Nothing saved here yet'
-            : hidden ? "You've climbed everything that matches" : 'Nothing matches');
+            : hidden ? "You've climbed everything that matches"
+            : me && $('hideDone').value === '2' ? "You haven't sent any route that matches" : 'Nothing matches');
   markFilters();
   const cap = $('listCap');
   if (cap) cap.querySelector('span').textContent = hits.length + ' shown';
@@ -8084,11 +8108,38 @@ function setCompact(on){
    puts one step in the browser's history, so Back closes that and nothing more;
    with only the board's page showing it leaves, as it should. Closing something
    with its own button takes its step back out. On an iPhone the same steps are what
-   the swipe from the screen's edge walks through. */
+   the swipe from the screen's edge walks through.
+
+   On Android there is one step more, under all of them (Abdullah, 2026-10-15: "it is better to have it closing the
+   app only when double clicking the back button"). Back with nothing open lands on it and says "Press Back again to
+   close", and the next Back leaves. Chrome passes over a step a page put down before anyone touched it, so it waits
+   for a tap, and after a Back has used it, for the next tap. An iPhone has no Back button and is left as it was.
+   Going across to the Sun board first walks back over this page's own steps and then puts that page in its place,
+   so Back never leads from one wall to the other (it used to, and could bounce straight back). */
+const ANDROID = /Android/i.test(navigator.userAgent);
+let baseSet = false;       // Android: the step under everything is down
+let wallTo = '';           // the other wall's page, once this page's steps are walked back
+function baseDown(){
+  if (!ANDROID || baseSet || layers.length) return;
+  if (navigator.userActivation && !navigator.userActivation.isActive) return;       // nobody has touched it: Chrome would pass it over
+  const st = history.state;
+  if (st && st.mb != null) return;               // already on a step of this page's
+  try{ history.pushState({ mb: 0, base: 1 }, ''); baseSet = true; }catch(e){}
+}
+['click', 'touchend', 'keydown'].forEach(t => document.addEventListener(t, () => setTimeout(baseDown, 0), true));
+const stepsUp = () => { const st = history.state; return st && st.mb != null ? st.mb + (st.b || st.base ? 1 : 0) : 0; };     // this page's steps over its first
+function goWall(url){
+  const up = stepsUp();
+  if (up < 1) return location.replace(url);
+  wallTo = url;
+  try{ history.go(-up); }catch(e){ location.replace(url); }
+  setTimeout(() => location.replace(url), 1500);                  // should the step back never be heard
+}
 function layerOpen(name){
   if (layers.includes(name)) return;
+  baseDown();
   layers.push(name);
-  try{ history.pushState({ mb: layers.length }, ''); }catch(e){}
+  try{ history.pushState({ mb: layers.length, b: baseSet ? 1 : 0 }, ''); }catch(e){}
 }
 function layerShut(name){
   const i = layers.lastIndexOf(name);
@@ -8100,13 +8151,20 @@ function layerShut(name){
   try{ history.back(); }catch(e){ backSkip--; }
 }
 window.addEventListener('popstate', () => {
+  if (wallTo) return location.replace(wallTo);         // walked back to this page's first step: across to the other wall
   if (backSkip > 0){ backSkip--; return; }             // our own tidying up, not the button
+  const st = history.state;
+  if (!st || st.mb == null) baseSet = false;           // under the step under everything: the next Back leaves
   const name = layers.pop();
   if (name === 'panel') showPanel(null, true);
   else if (name === 'fan'){ closeSend(true); quickShow(false, true); }
   else if (name === 'focus') focusBoard(false, true);
   else if (name === 'list' || name === 'log' || name === 'set') showPage('board', true);
+  else if (!name && ANDROID && !baseSet) quickSay('Press Back again to close');
 });
+// A page opened again (a reload, or a phone that put the app away and brought it back) can find itself on a step it
+// put down before: walk back to its first, so that what Back does is the same as on any other day.
+if (stepsUp() > 0){ backSkip++; try{ history.go(-stepsUp()); }catch(e){ backSkip--; } }
 
 /* ---------- search keyboard (phones only) ----------
    The search field never takes focus on a touch screen, so iOS never raises
@@ -8324,7 +8382,7 @@ function paintGradeSlide(held){
    bug rather than a setting. */
 function markFilters(){
   const narrowed = +$('gmin').value > gradeLo || +$('gmax').value < gradeHi;
-  const on = narrowed || whoNow() || (meNow() && $('hideDone').value === '1') || holdFilter.length;
+  const on = narrowed || whoNow() || (meNow() && $('hideDone').value !== '') || holdFilter.length;
   $('filtBtn').classList.toggle('active', !!on);
 }
 function showFilters(on){
@@ -8767,7 +8825,7 @@ function paintLoc(){
 }
 /* Across to the Sun board. That page, once it is up, leaves the note that brings this phone
    back to it the next time the app is opened (see "which wall" in the first lines of the page). */
-$('toSun').onclick = $('sunBtn').onclick = () => { location.href = 'sun/'; };
+$('toSun').onclick = $('sunBtn').onclick = () => goWall('sun/');
 $('room').oninput = () => {
   const v = $('room').value.trim();
   try{

@@ -55,7 +55,13 @@ in both the script and the page.
 Four pages side by side, named in a bar along the foot of the screen: **Routes**,
 **Board**, **Log**, and a cog at the right-hand end for **Settings**. Tap one, or swipe
 sideways anywhere but on the picture. Android's Back button comes back to the board, after
-closing whatever is open on top of it.
+closing whatever is open on top of it, on both walls. With nothing open it says *Press Back
+again to close*, and only the next Back leaves the app (Abdullah, 2026-10-15). That takes a
+step in the history under everything else, which is put down on the first tap (Chrome passes
+over a step a page puts down before anyone has touched it) and again on the first tap after a
+Back has used it. An iPhone has no Back button and has no such step. Going from one wall to
+the other walks back over the page's own steps and puts the other page in their place, so
+Back never leads from one wall to the other.
 
 ### Board
 
@@ -130,7 +136,7 @@ quickly are two picks. Thirty holds can be picked at most.
 Nothing but the list. The search box has a small keyboard of its own on a phone, so the
 phone's keyboard does not cover half the routes. Under it are the filters, on one line: a
 line with two dots to drag for the easiest and hardest grade wanted, each dot with its
-grade over it, then **Sent** to show or hide what you have climbed and **Sort** (popular,
+grade over it, then **Sent** to show, hide, or show only what you have climbed, and **Sort** (popular,
 best, easiest, hardest, A–Z), both small so that the line has the room. (There were
 **From** and **To** pickers under the line until 2026-10-11. They are still in the page,
 out of sight, and still hold the choice.) With a keyboard, an arrow key moves the dot that
@@ -478,7 +484,10 @@ opened. With a route open there is a small bulb at the left end of the name's li
 the MoonBoard's page has the bulb that lights the wall. This wall has no lights, so it
 lights the route on the picture: the wall goes dim behind the route, as it is on the
 board's page, and the outlines of all the other holds are put away. Another tap brings
-them back, and the phone remembers which it was (`sb-lit`). In focus a tap on a hold picks it, and with a hold picked two
+them back, and the phone remembers which it was (`sb-lit`). With nothing picked, focus has
+two buttons under the picture: **+ Add a route**, which goes straight to marking one, as the
+**+** in the header does from anywhere, and **Holds changed?** (see *Putting the map right*);
+they make way for the number slider of a long climb. In focus a tap on a hold picks it, and with a hold picked two
 buttons come up where the MoonBoard has *Light up taps* and *Search routes*: **Save as a
 route** and **Search routes**. There is no lighting a wall with no lights, so what is done
 with picked holds here is to keep them. *Save as a route* asks first, then goes on to
@@ -588,7 +597,7 @@ accounts.
 
 **Settings.** As on the MoonBoard page since 2026-10-12: which wall, who is climbing, then
 **The picture** (two switches: dim the wall behind an open route, and always outline
-every hold), **How it looks on this phone** (the background), and **The map of holds**.
+every hold), **How it looks on this phone** (the background), and **Holds changed?**.
 What each does is behind the i beside it. The header is as tall as the MoonBoard page's,
 so the two walls in it are the same thing in the same place on both pages.
 
@@ -616,10 +625,12 @@ The clock is kept in the phone's storage, so it runs through a locked screen or 
 and the screen is kept awake where the phone allows.
 
 **Putting the map right.** The outlines are drawn from photos by a program, and it gets
-some wrong, so anyone at the wall can fix it (Settings, "Fix the map of holds"). That
+some wrong, and holds go up and come off, so anyone at the wall can change it (Settings,
+**Holds changed?**, *Add or remove a hold*; or *Holds changed?* in focus). That
 opens a photograph of the wall being looked at in focus, with a switch to the other wall
-and three brushes: tap a hold that has no outline, an outline that is only tape, or an outline of
-the wrong shape. It is a photograph and not the model because a hold the map lacks is not
+and three brushes: **Add a hold** (a new one, or one with no outline), **Remove a hold** (one
+that has come off, or an outline that is only tape), and **Wrong shape**. A hold that routes
+use is not taken off without a word: it names them first, since they will want changing. It is a photograph and not the model because a hold the map lacks is not
 in the model at all; each wall has one (`photo` in `wall.json`), of the size and shape of
 its drawing, so the map fits it. A fix is kept by the store and reaches every phone at
 once: a dropped outline can no longer be picked, and a missed hold is a ring that can,
@@ -897,8 +908,8 @@ one try for each problem each day. With `repeats: true` in the request it counts
 
 ## Points
 
-MoonBoard's own scheme: base 350 at 5+ climbing 50 a grade to 1200 at 8C, off the **setter**
-grade, plus a bonus for a quick ascent - flash +53, second try +2, third try +1, nothing
+MoonBoard's own scheme: base 350 at 5+ climbing 50 a grade to 1200 at 8C, off the **voted**
+grade (the one the routes show, below; until 2026-10-15 the setter's), plus a bonus for a quick ascent - flash +53, second try +2, third try +1, nothing
 beyond. Benchmarks only, and only the **first** successful ascent counts, so sending something
 second go and flashing it later still scores the second go. That's why `stats` keeps the sends
 in order rather than just the latest one. Ticks that predate the logbook have no recorded
@@ -992,6 +1003,17 @@ inlined into the page so it works with no network at the wall:
 They come from the boardsesh catalog by way of boardhang's `catalog-data` (MIT). The 2016
 rows keep the ids they have always had, because the crew's logbook points at them, and a
 benchmark Moon has since retired is kept by name so an old logbook row still reads.
+
+**The grade is the one the climbers voted for.** A benchmark is set at a grade, and everyone
+who climbs it then says what they think it is; Moon's app keeps that as the user grade, and
+where the two part it is the voted one that counts. The catalog above carries only the
+setter's, so `VOTED` in the page lists the routes where the vote differs, by route id and
+hold set: 64 of the 1,578, nearly all a grade easier (2016 at 40°: 13, Masters 2019: 10,
+2024: 41). They were read from Moon's own app data of June 2026, from the copies shared in
+GitHub's spookykat/MoonBoard issue 6 (`benchcmp.py` beside the vault's note of 2026-10-15
+makes the list from one of them). The route shows, filters, sorts, lights on the wall and
+scores by the voted grade; the setter's is kept as `setGrade` (Abdullah and Will,
+2026-10-15).
 
 Holds arrive as `E6`-style grid refs and go through the same `holdNum()` as everything else
 the page lights.

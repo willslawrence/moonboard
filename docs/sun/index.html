@@ -84,6 +84,7 @@
   #walls{flex:none;display:flex;padding:2px;border-radius:9px;background:var(--panel);border:1px solid var(--edge)}
   #walls button{width:34px;height:26px;padding:0;border:0;border-radius:7px;background:transparent;font-size:14px;line-height:1}
   #walls button.on{background:var(--ink);opacity:1}
+  header #addRoute{flex:none;width:38px;height:38px;padding:0 0 2px;border-radius:9px;background:var(--panel);font-size:24px;font-weight:500;line-height:1}
   header #me{flex:none;width:136px;height:38px;padding:2px 8px;font-size:16px;text-overflow:ellipsis;border-radius:8px}
   header #me.ask{outline:2px solid var(--blue-ink);outline-offset:1px}
 
@@ -174,9 +175,14 @@
        pointer-events:none;opacity:0;z-index:3}
   body.focus #focusHint.show{animation:fhint 2.8s ease-out}
   @keyframes fhint{0%,70%{opacity:.95}100%{opacity:0}}
-  /* with a hold picked, the two buttons the MoonBoard has there too: one to do something with the holds, one to find routes on them */
-  body.focus #pickBar{display:flex;flex:none;gap:8px;height:46px;margin-top:8px;visibility:hidden}
-  body.focus.picking #pickBar{visibility:visible}
+  /* with a hold picked, the two buttons the MoonBoard has there too: one to do something with the holds, one to find routes on them;
+     with none, a new route and a change of holds (Abdullah, 2026-10-15: an "Add Route" button in focus, "this way it is easier to
+     know how to add a route"), except where the numbers' slider of a long climb lies in the same place */
+  body.focus #pickBar{display:flex;flex:none;gap:8px;height:46px;margin-top:8px}
+  #pickBar #pickNew,#pickBar #pickFix{display:none}
+  body.focus:not(.picking) #pickBar #pickGo,body.focus:not(.picking) #pickBar #pickFind,body.focus:not(.picking) #pickBar #pickClear{display:none}
+  body.focus:not(.picking) #pickBar #pickNew,body.focus:not(.picking) #pickBar #pickFix{display:block}
+  body.focus:not(.picking) #boardCol:has(#numBarF:not([hidden])) #pickBar{visibility:hidden}
   body.focus.setting #pickBar,body.focus.fixing #pickBar{display:none}
   #pickBar button{height:46px;padding:0 10px;font-size:14px;font-weight:700;border-radius:11px;white-space:nowrap}
   #pickBar #pickClear{flex:none;width:46px;padding:0;font-size:15px}
@@ -741,6 +747,7 @@
     <button class="on" aria-label="Sun board" title="Sun board" disabled>&#9728;&#65039;</button>
   </div>
   <h1>Sun board</h1>
+  <button id="addRoute" aria-label="Add a route" title="Add a route">+</button>
   <select id="me" aria-label="Climbing as"></select>
 </header>
 
@@ -755,6 +762,8 @@
       <div id="turnBar" hidden></div>
     </div>
     <div id="pickBar">
+      <button id="pickNew" class="mini solid">+ Add a route</button>
+      <button id="pickFix" class="mini">Holds changed?</button>
       <button id="pickGo" class="mini solid">Save as a route</button>
       <button id="pickFind" class="mini">Search routes</button>
       <button id="pickClear" class="mini ghost" aria-label="Let them go">&#10005;</button>
@@ -777,8 +786,8 @@
     <div id="fixBar">
       <div id="fixWall"></div>
       <div id="fixBrush">
-        <button data-k="add"><i style="background:#22c55e"></i>Missed hold</button>
-        <button data-k="drop"><i style="background:#ef4444"></i>Not a hold</button>
+        <button data-k="add"><i style="background:#22c55e"></i>Add a hold</button>
+        <button data-k="drop"><i style="background:#ef4444"></i>Remove a hold</button>
         <button data-k="redo"><i style="background:#f59e0b"></i>Wrong shape</button>
       </div>
       <div id="fixSize"><span>How big:</span><button data-s="s">Small</button><button data-s="m">Medium</button><button data-s="l">Large</button></div>
@@ -946,8 +955,8 @@
     </select></div>
   </div>
 
-  <div class="lbl tipLbl">The map of holds<button type="button" class="tipBtn" aria-label="About: the map of holds" aria-expanded="false">i</button><span class="tipTxt">The outlines were drawn from photos by a program, and it gets some wrong. Stand at the wall and tap a hold it missed, an outline that is only tape, or one that is the wrong shape. Everyone has your fixes straight away, and the outlines are then redrawn properly from them. While you fix, the picture is a photo of one wall at a time: a hold the map has missed is only in the photo.</span></div>
-  <button id="fixBtn">Fix the map of holds</button>
+  <div class="lbl tipLbl">Holds changed?<button type="button" class="tipBtn" aria-label="About: changing the holds" aria-expanded="false">i</button><span class="tipTxt">A hold put up or taken off, or one the map has wrong: say so here and every phone has it straight away, with nothing to rebuild. <b>Add a hold</b> puts a ring where you tap, the size you say, and routes can use it at once. <b>Remove a hold</b> takes one off the map, and says first if a route uses it. <b>Wrong shape</b> is for an outline that does not fit its hold. The picture shows a new hold once a photo of it is sent and the map is next made. While you change them, the picture is a photo of one wall at a time.</span></div>
+  <button id="fixBtn">Add or remove a hold</button>
 
   <div class="lbl">Help</div>
   <div class="two" id="helpBtns">
@@ -1111,7 +1120,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-14 12:47';
+const BUILD = '2026-10-15 17:17';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -2038,7 +2047,7 @@ function focusOn(){
   focus = true; Z.user = false; CAM.out = 0;              // the picture grows, and the wall with it (homeAt)
   paintAll(); requestAnimationFrame(fit);
   const kept = picks.filter(id => HOLD[id]).length;
-  hint(draft ? 'Tap a hold to mark it' : fixing ? 'Tap what is wrong'
+  hint(draft ? 'Tap a hold to mark it' : fixing ? 'Tap what has changed'
      : kept ? kept + (kept === 1 ? ' hold' : ' holds') + ' still picked · Swipe up or down to go back' : 'Tap a hold to pick it · Swipe up or down to go back');
 }
 /* Out of focus. The holds picked there are kept (they show only in focus): shut by a slip of the finger, the picture
@@ -2131,7 +2140,7 @@ function paintBars(){
   // a different bar under the picture leaves it a different height: fit it again, or its foot is under the bar
   const now = [focus, focus && !!draft, focus && fixing, fixing && fixKind, paintNum()].join();
   if (now !== shape){ shape = now; requestAnimationFrame(fit); }
-  $('fcName').textContent = fixing ? 'Fixing the map of holds' : draft ? (draft.id ? 'Changing “' + draft.name + '”' : 'A new route') : r ? r.name : 'Sun board';
+  $('fcName').textContent = fixing ? 'Changing the holds' : draft ? (draft.id ? 'Changing “' + draft.name + '”' : 'A new route') : r ? r.name : 'Sun board';
   $('fcGd').hidden = !(r && !draft && !fixing);
   if (r && !draft && !fixing) paintPill($('fcGd'), r.grade);
   const canLight = !!r && !draft && !fixing;           // the bulb: there with a route open, and not while one is being made or the map fixed
@@ -2161,10 +2170,10 @@ function paintBars(){
     $('fixSize').hidden = fixKind !== 'add';
     $('fixWall').innerHTML = wall.views.filter(w => !w.faces).map(w => '<button data-v="' + w.key + '"' + (w.key === view ? ' class="on"' : '') + '>' + esc(w.label) + '</button>').join('');
     const n = (snap.fixes || []).length;
-    $('fixSay').textContent = ({ add: 'Tap the middle of a hold that has no outline. Tap a green ring to take it back.',
-      drop: 'Tap an outline that is tape, paint, or not a hold at all. Tap it again to take that back.',
+    $('fixSay').textContent = ({ add: 'Tap the middle of a new hold, or one with no outline. Tap a green ring to take it back.',
+      drop: 'Tap a hold that has come off, or an outline that is tape, paint or not a hold. Tap it again to take that back.',
       redo: 'Tap an outline that is on a hold but is the wrong shape. Tap it again to take that back.' })[fixKind] +
-      (n ? '  ' + n + (n === 1 ? ' fix' : ' fixes') + ' so far.' : '');
+      (n ? '  ' + n + (n === 1 ? ' change' : ' changes') + ' so far.' : '');
   }
 }
 
@@ -2584,7 +2593,7 @@ function quickShow(on){
   quickOpen = on;
   $('quickFan').hidden = !on;
   $('quickScrim').hidden = !on;
-  if (on){ quickShut = setTimeout(() => quickShow(false), 6000); $('quickToast').hidden = true; }
+  if (on){ quickShut = setTimeout(() => { quickShow(false); syncBack(); }, 6000); $('quickToast').hidden = true; }
   paintQuick();
 }
 /* Where the line goes: just over the row with the name on the board's page, just under the two big buttons on the
@@ -3710,6 +3719,11 @@ $('pickGo').onclick = () => {
   startDraft(null, picks.slice());
 };
 
+/* A route without picking its holds first: the + at the top and "+ Add a route" in focus (Abdullah, 2026-10-15) go
+   straight to marking one, the brush on Start. "Holds changed?" beside it is the map's own fixing, from Settings. */
+$('addRoute').onclick = $('pickNew').onclick = () => { if (wall && !draft) startDraft(null); };
+$('pickFix').onclick = () => $('fixBtn').onclick();
+
 /* ---------- making a route ---------- */
 function startDraft(route, fromPicks){
   if (!needMe()) return;
@@ -3878,9 +3892,14 @@ async function fixTap(h, vkey, x, y){
     // an outline already said not to be a hold is no longer under the finger, so it is looked for here
     const gone = fixes.find(f => f.kind === 'drop' && HOLD[f.h] && HOLD[f.h].v === vkey && inPoly(HOLD[f.h].p, x, y));
     if (gone && (fixKind === 'drop' || !h)) return take(await call('/fix/undo', { k: gone.k }));
-    if (!h) return toast(fixKind === 'drop' ? 'Tap an outline that is not a hold.' : 'Tap the outline that is the wrong shape.');
+    if (!h) return toast(fixKind === 'drop' ? 'Tap the outline of the hold that has gone.' : 'Tap the outline that is the wrong shape.');
     const had = fixes.find(f => f.kind === fixKind && f.h === h.id);
     if (had) return take(await call('/fix/undo', { k: had.k }));
+    if (fixKind === 'drop'){            // a hold that routes use: say which before it goes (they will want changing)
+      const on = snap.routes.filter(r => !r.retired && r.marks.some(m => m.h && (m.h === h.id || H(m.h) === h)));
+      if (on.length && !confirm('This hold is on ' + plural(on.length, 'route', 'routes') + ': ' + on.slice(0, 5).map(r => r.name).join(', ') +
+          (on.length > 5 ? ' and ' + (on.length - 5) + ' more' : '') + '. Take it off the map anyway? Those routes will need changing.')) return;
+    }
     take(await call('/fix', { by: me, kind: fixKind, v: vkey, x: h.c[0], y: h.c[1], h: h.id }));
   }catch(e){ toast(e.message, true); }
 }
@@ -3893,12 +3912,12 @@ $('fixBtn').onclick = async () => {
     setView(F ? F.wall : (wall.views.find(v => !v.faces) || tv).key);
   }
   showPage('board'); focus = true; paintAll(); requestAnimationFrame(fit);
-  hint('Tap what is wrong');
+  hint('Tap what has changed');
 };
 $('fixBrush').onclick = e => { const b = e.target.closest('button[data-k]'); if (b){ fixKind = b.dataset.k; paintBars(); } };
 $('fixSize').onclick = e => { const b = e.target.closest('button[data-s]'); if (b){ fixSize = b.dataset.s; paintBars(); } };
 $('fixWall').onclick = e => { const b = e.target.closest('button[data-v]'); if (b) setView(b.dataset.v); };
-$('fixDone').onclick = () => { const n = (snap.fixes || []).length; focusOff(); if (n) toast(n + (n === 1 ? ' fix is' : ' fixes are') + ' in. Thank you.'); };
+$('fixDone').onclick = () => { const n = (snap.fixes || []).length; focusOff(); if (n) toast(n + (n === 1 ? ' change is' : ' changes are') + ' in. Thank you.'); };
 
 /* ---------- pages ---------- */
 const PAGES = ['list', 'board', 'log', 'set'];
@@ -3946,11 +3965,96 @@ function paintAll(){
   if (page === 'log') paintLog();
 }
 
+/* ---------- Back ----------
+   Android's Back button closed the app here whatever was open (Abdullah, 2026-10-15), because this page put nothing
+   in the browser's history. Now, as on the MoonBoard page, each thing that opens over the board's page has a step
+   there, so Back shuts the one on top and nothing more: a bubble or a card, a sheet, the bubbles of a send, Quick log,
+   focus (asking first about a route half made, as the cross does), then the Routes, Log or Settings page. Under them
+   all, on Android, one step more: Back with nothing open says "Press Back again to close", and the next Back leaves
+   (his words: "closing the app only when double clicking the back button"). An iPhone's swipe from the edge walks the
+   same steps, and has no step under them.
+   Rather than every opener asking for a step, what is open is read off the page (openNow) and the steps are made to
+   match it after every tap (syncBack), so a thing added later has only to be named in openNow and shutOne. Chrome
+   passes over a step that a page put down when nobody had just touched it, so steps are only added while a touch is
+   fresh; taking them away is always allowed. Going across to the MoonBoard walks back over this page's steps first and
+   puts that page in their place, so Back never leads from one wall to the other. */
+const ANDROID = /Android/i.test(navigator.userAgent);
+let backSteps = 0;         // this page's steps over the one under everything (or over its first, where there is none)
+let baseSet = false;       // Android: the step under everything is down
+let backSkip = 0;          // steps back this page asked for itself, not the button
+let wallTo = '';           // the other wall's page, once this page's steps are walked back
+function openNow(){        // what is open, the one underneath first
+  const o = [];
+  if (page !== 'board') o.push('page');
+  if (focus) o.push('focus');
+  if (quickOpen) o.push('quick');
+  if (sendOpen) o.push('send');
+  if (!$('sheet').hidden) o.push('sheet');
+  if (!$('goSheet').hidden) o.push('go');
+  if (!$('rsSheet').hidden) o.push('rs');
+  if (!$('bookSheet').hidden) o.push('book');
+  if (!$('entrySheet').hidden) o.push('entry');
+  if (!$('a2hsHow').hidden) o.push('a2hs');
+  if (!$('gestHow').hidden) o.push('gest');
+  if (tipFor) o.push('tip');
+  return o;
+}
+function shutOne(k){       // what Back does to the one on top: what its own button does
+  if (k === 'tip') tipShut();
+  else if (k === 'gest') $('gestOk').click();
+  else if (k === 'a2hs') $('a2hsOk').click();
+  else if (k === 'entry') showSheet('bookSheet');
+  else if (k === 'book' || k === 'rs') showSheet(null);
+  else if (k === 'go') $('goDrop').onclick();              // asks first
+  else if (k === 'sheet') $('shBack').onclick();           // back to the route being marked, as its own button
+  else if (k === 'send') closeSend();
+  else if (k === 'quick') quickShow(false);
+  else if (k === 'focus') $('focusX').onclick();           // asks first about a route half made
+  else if (k === 'page') showPage('board');
+}
+const stepsUp = () => { const st = history.state; return st && st.sb != null ? st.sb + (st.b || st.base ? 1 : 0) : 0; };     // this page's steps over its first
+function syncBack(grow){
+  if (wallTo) return;
+  const n = openNow().length;
+  if (n < backSteps){ const k = backSteps - n; backSteps = n; backSkip++; try{ history.go(-k); }catch(e){ backSkip--; } return; }
+  if (grow === false || (navigator.userActivation && !navigator.userActivation.isActive)) return;
+  const st = history.state;
+  if (ANDROID && !baseSet && !backSteps && !(st && st.sb != null)){
+    try{ history.pushState({ sb: 0, base: 1 }, ''); baseSet = true; }catch(e){}
+  }
+  while (backSteps < n){
+    backSteps++;
+    try{ history.pushState({ sb: backSteps, b: baseSet ? 1 : 0 }, ''); }catch(e){ backSteps--; break; }
+  }
+}
+['click', 'touchend', 'keydown'].forEach(t => document.addEventListener(t, () => setTimeout(syncBack, 0), true));
+document.addEventListener('scroll', () => setTimeout(syncBack, 0), { capture: true, passive: true });     // a scroll shuts a bubble
+window.addEventListener('popstate', () => {
+  if (wallTo) return location.replace(wallTo);         // walked back to this page's first step: across to the other wall
+  if (backSkip > 0){ backSkip--; return; }             // our own tidying up, not the button
+  const st = history.state, ours = !!(st && st.sb != null);
+  if (!ours) baseSet = false;                          // under the step under everything: the next Back leaves
+  backSteps = ours ? st.sb : 0;
+  const o = openNow();
+  if (o.length > backSteps){ shutOne(o[o.length - 1]); syncBack(false); }      // (if it asked and was told no, the next tap puts its step back)
+  else if (!ours && ANDROID && !o.length) toast('Press Back again to close');
+});
+function goWall(url){
+  const up = stepsUp();
+  if (up < 1) return location.replace(url);
+  wallTo = url;
+  try{ history.go(-up); }catch(e){ location.replace(url); }
+  setTimeout(() => location.replace(url), 1500);                  // should the step back never be heard
+}
+// A page opened again (a reload, or a phone that put the app away and brought it back) can find itself on a step it
+// put down before: walk back to its first, so that what Back does is the same as on any other day.
+if (stepsUp() > 0){ backSkip++; try{ history.go(-stepsUp()); }catch(e){ backSkip--; } }
+
 /* ---------- which wall ---------- */
 /* This phone is on the Sun board until it says otherwise: the MoonBoard page one folder up
    reads the same note (mb-wall) and sends a Home Screen icon here. The note is only left
    once the wall has loaded (see "start"), so a phone is never sent to a page that is not working. */
-$('toMoon').onclick = $('setMoon').onclick = () => { ls.set('mb-wall', 'moon'); location.href = '../'; };
+$('toMoon').onclick = $('setMoon').onclick = () => { ls.set('mb-wall', 'moon'); goWall('../'); };
 
 /* ---------- settings ---------- */
 $('listSel').value = ls.get('mb-list') === 'crew' ? 'crew' : 'goes';         // My goes until a phone picks (2026-10-14; 'mb-goes' before it, not read)
@@ -4035,7 +4139,7 @@ setInterval(() => { tick++; if (document.visibilityState === 'visible' && wall &
     if (seen() || !how.hidden) return;
     clearTimeout(due);
     due = setTimeout(() => {
-      if (!seen() && openId !== null && page === 'board' && !focus && !draft && !fixing && !sheetUp() && $('sheet').hidden && $('goSheet').hidden && $('a2hsHow').hidden) window.gestShow();
+      if (!seen() && openId !== null && page === 'board' && !focus && !draft && !fixing && !sheetUp() && $('sheet').hidden && $('goSheet').hidden && $('a2hsHow').hidden){ window.gestShow(); syncBack(); }
     }, 900);
   };
   $('gestBtn').onclick = () => window.gestShow();
