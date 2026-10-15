@@ -909,7 +909,7 @@ one try for each problem each day. With `repeats: true` in the request it counts
 ## Points
 
 MoonBoard's own scheme: base 350 at 5+ climbing 50 a grade to 1200 at 8C, off the **voted**
-grade (the one the routes show, below; until 2026-10-15 the setter's), plus a bonus for a quick ascent - flash +53, second try +2, third try +1, nothing
+grade (the community's, below, whichever grade a phone shows; until 2026-10-15 the setter's), plus a bonus for a quick ascent - flash +53, second try +2, third try +1, nothing
 beyond. Benchmarks only, and only the **first** successful ascent counts, so sending something
 second go and flashing it later still scores the second go. That's why `stats` keeps the sends
 in order rather than just the latest one. Ticks that predate the logbook have no recorded
@@ -1013,7 +1013,9 @@ hold set: 64 of the 1,578, nearly all a grade easier (2016 at 40°: 13, Masters 
 GitHub's spookykat/MoonBoard issue 6 (`benchcmp.py` beside the vault's note of 2026-10-15
 makes the list from one of them). The route shows, filters, sorts, lights on the wall and
 scores by the voted grade; the setter's is kept as `setGrade` (Abdullah and Will,
-2026-10-15).
+2026-10-15). **Settings → Grades** lets a phone show the setter's instead (Community is
+what everyone starts on, `mb-grade` on the phone); points go by the community grade
+either way, so the ranking is one ranking.
 
 Holds arrive as `E6`-style grid refs and go through the same `holdNum()` as everything else
 the page lights.

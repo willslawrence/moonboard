@@ -1570,6 +1570,10 @@
       <option value="goes">My goes</option>
       <option value="crew">Community sends</option>
     </select></div>
+    <div class="opt"><label for="gradeSel">Grades</label><button type="button" class="tipBtn" aria-label="About: which grade is shown" aria-expanded="false">i</button><span class="tipTxt">For this phone only. <b>Community</b>, what everyone starts on: the grade the climbers voted for in Moon's app. On most routes it is the setter's grade; on 64 benchmarks the vote moved it, nearly always a grade easier. <b>Setter</b>: the grade the route was set at. Points go by the community grade either way, so the ranking is the same for everyone.</span><select id="gradeSel">
+      <option value="vote">Community</option>
+      <option value="set">Setter</option>
+    </select></div>
   </div>
 
   <div class="lbl">Games on the wall</div>
@@ -1685,7 +1689,7 @@
     <button id="logLock" class="ghost mini" disabled>Lock my entries</button>
     <button type="button" class="tipBtn" aria-label="About: the file, and the lock" aria-expanded="false">i</button><span class="tipTxt"><b>Export CSV</b> makes a file of the logbook that is showing, a line a go. <b>Import CSV</b> reads a file laid out the same way and adds its goes to your own logbook. To bring an old logbook in: export first (an empty logbook gives a sample, the headings and a few example lines), put a line for each go under them, and import the file. The example lines are left out. A line needs a date (2026-10-12), the route's name as the list has it, and how it went: try, flash, 2nd go, 3rd go or 4+ goes. The time and the other columns may be left empty; the hold set, if empty, is the one on the wall. Goes come in locked. Several sends of a route in a day are all kept, and a go the logbook already has is not added again. <b>Lock my entries</b> locks every go of yours, so that none can be deleted by a slip.</span>
   </div>
-  <div class="rankHead"><button type="button" id="rankTog" class="rankTog" aria-expanded="false" aria-controls="ptsRank">Ranking<i></i></button><button type="button" class="tipBtn" aria-label="About: the points" aria-expanded="false">i</button><span class="tipTxt">MoonBoard scoring: 350 at 5+, 50 more for each grade above it, by the grade the climbers voted for (as the routes show it); then 53 more for a flash, 2 for a second go, 1 for a third. Benchmarks only, and only the first time you send a route.</span></div>
+  <div class="rankHead"><button type="button" id="rankTog" class="rankTog" aria-expanded="false" aria-controls="ptsRank">Ranking<i></i></button><button type="button" class="tipBtn" aria-label="About: the points" aria-expanded="false">i</button><span class="tipTxt">MoonBoard scoring: 350 at 5+, 50 more for each grade above it, by the community grade (the one the climbers voted for), whichever grade this phone shows; then 53 more for a flash, 2 for a second go, 1 for a third. Benchmarks only, and only the first time you send a route.</span></div>
   <div id="ptsRank" hidden></div>
   <div class="rankHead" id="storyHead" hidden><button type="button" id="storyTog" class="rankTog" aria-expanded="false" aria-controls="story"><span id="storyLbl">Your story</span><i></i></button><button type="button" class="tipBtn" aria-label="About: the story" aria-expanded="false">i</button><span class="tipTxt">Worked out from the goes in the logbook that is showing: the grades you have sent, how often first go, the route that took longest, the ones that got away, your days and your holds. <b>Flash grade</b>: the hardest grade at which half or more of the routes you have tried went first go. <b>Edge grade</b>: the hardest at which half or more went in the end, however many goes it took. <b>Average send</b>: the middle of all your sends. On your own logbook, a tap on any of the three opens a route of that grade you have not sent, on the hold set now on the wall. <b>Next up</b> counts what the next grade would take. <b>Head to head</b> puts you beside another climber. <b>Share my story as a picture</b> makes one picture of it all to send on. The more of your logbook is in here, the more it can tell. <b>Import CSV</b> brings an old logbook over.</span></div>
   <div id="story" hidden></div>
@@ -1805,7 +1809,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-15 17:17';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-15 19:04';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3537,8 +3541,8 @@ const BENCH_BY_BOARD={
    but then the community votes"). Only the routes where the two differ are here, as route id: grade index, one list
    per hold set and angle: 64 of the 1,578, nearly all a grade easier. Read from Moon's own app data of June 2026
    (the copies shared in the spookykat/MoonBoard repository's issue 6 on GitHub). The setter's grade is kept beside
-   it as setGrade, and is now used for nothing; the voted grade is the one shown, filtered, sorted, lit on the wall
-   and scored. */
+   it as setGrade: a phone can ask for it instead in Settings (Grades, see gradeBy), and the community's is what
+   everyone starts on and what points always go by. */
 const VOTED={
 "2016-40":{28514:6,62575:15,96879:4,305598:9,307353:10,314510:10,335294:12,380649:8,394584:10,411950:9,452912:9,3962062793793:14,14471575164555:13},
 "2019-40":{2526350142396:14,9571624476276:13,12429117820408:9,13541342761193:11},
@@ -3561,7 +3565,7 @@ const BOARDS = [
 const DEFAULT_BOARD = '2016-40';
 const votedOf = (r, board) => { const v = (VOTED[board] || {})[r[0]]; return v === undefined ? r[3] : v; };
 const toProblem = (r, board) => ({
-  id: r[0], name: r[1], setter: r[2], grade: votedOf(r, board), setGrade: r[3],
+  id: r[0], name: r[1], setter: r[2], grade: votedOf(r, board), voteGrade: votedOf(r, board), setGrade: r[3],
   repeats: r[4], stars: r[5], s: r[6], m: r[7], e: r[8], board,
 });
 const BY_BOARD = {};
@@ -3571,6 +3575,19 @@ BOARDS.forEach(b => {
   BY_BOARD[b.key].forEach(p => { byId[p.id] = p; });
 });
 RETIRED.forEach(r => { byId[r[0]] = toProblem(r, '2016-40'); });
+/* Which grade this phone shows (Will, 2026-10-15: "a toggle in the settings for the person to choose which grade they
+   want to see... the default can be the community grade"): the community's, voted for in Moon's app (voteGrade), or
+   the setter's (setGrade). It is everything on this phone that goes by a grade: the pill, the list, the grade slider and
+   the sort, the grade lit on the wall, the logbook and the story. Points are not a phone's to choose: they go by the
+   community grade for everyone (scoreFor), so that the ranking is one ranking. */
+let gradeBy = 'vote';
+try{ if (localStorage.getItem('mb-grade') === 'set') gradeBy = 'set'; }catch(e){}
+function applyGradeBy(){
+  const set = p => { p.grade = gradeBy === 'set' ? p.setGrade : p.voteGrade; };
+  Object.values(BY_BOARD).forEach(list => list.forEach(set));
+  Object.values(byId).forEach(set);
+}
+applyGradeBy();
 let boardKey = DEFAULT_BOARD;
 /* Which picture of the board. A phone can ask in Settings for the holds on plywood
    (Will, 2026-10-09). The plywood picture is in the same frame as the set's own, so the
@@ -5025,7 +5042,7 @@ function scoreFor(person){
     const first = firstSend(st[id]);
     if (!p || !first) continue;
     seen.add(+id);
-    total += ptsBase(p.grade) + (PTS_BONUS[first] || 0);
+    total += ptsBase(p.voteGrade) + (PTS_BONUS[first] || 0);      // the community grade, whichever this phone shows
     if (first === 'flash') flashes++;
     sends++;
   }
@@ -5033,7 +5050,7 @@ function scoreFor(person){
     if (seen.has(+id) || !done[id].includes(person)) continue;
     const p = byId[id];
     if (!p) continue;
-    total += ptsBase(p.grade);
+    total += ptsBase(p.voteGrade);
     sends++;
   }
   return { total, sends, flashes };
@@ -8876,6 +8893,12 @@ paintBoardPic();
 $('listSel').onchange = () => {
   try{ localStorage.setItem('mb-list', $('listSel').value); }catch(e){}
   renderResults();
+};
+$('gradeSel').value = gradeBy;
+$('gradeSel').onchange = () => {
+  gradeBy = $('gradeSel').value === 'set' ? 'set' : 'vote';
+  try{ localStorage.setItem('mb-grade', gradeBy === 'set' ? 'set' : ''); }catch(e){}
+  applyGradeBy(); fillGradeSelects(); paint(); renderResults();
 };
 $('plyChk').onchange = () => {
   plyPick = $('plyChk').checked ? '1' : '';
