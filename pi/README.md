@@ -21,10 +21,23 @@ The relay side is in `relay/src/index.js` (`/pi`, `/pi/wake`, `/pi/sleep`, `pi` 
 `/status`); the page side is the Connect button. A new card is Imager with the
 settings in the vault note *Raspberry Pi Setup Day*, then `pi/from-mac.sh`.
 
-On the Pi: `journalctl -u moonbridge -f` shows what it is doing. `~/moonbridge/env` pins the wall
-(`MOONBRIDGE_ADDRESS=C2:EF:46:4E:88:99`, confirmed 2026-10-19); clear it if the controller is replaced.
-The box gives Linux no name, only its Nordic UART service, which is how the bridge finds it.
+On the Pi: `journalctl -u moonbridge -f` shows what it is doing. `~/moonbridge/env` (hand-made, never
+copied over by `from-mac.sh`) pins the wall (`MOONBRIDGE_ADDRESS=C2:EF:46:4E:88:99`, confirmed 2026-10-19;
+clear it if the controller is replaced) and the Bluetooth stick (`MOONBRIDGE_ADAPTER=50:3D:D1:BC:16:AE`).
+Through the onboard radio the box gave Linux no name, only its Nordic UART service, which is how the
+bridge finds it; through the stick it shows as "MoonBoard A".
+
+**Bluetooth:** the wall goes through a USB stick, a TP-Link UB500 Plus in a black (USB 2) port, picked
+by its address so a second stick can never take its place. The Pi's own Bluetooth is off
+(`dtoverlay=disable-bt` in `/boot/firmware/config.txt`). On 2026-10-19 the stick connected 10 times out
+of 10 at about 5 seconds each; the onboard radio, shared with the Wi-Fi, managed 4 of 10 at 17-31 s.
+From a tap on Connect to the page saying Connected takes 8-20 seconds: longest when the wall has sat
+idle (its first connect then takes about 11 s), and about 6 s of every one is the Pi opening its bridge
+line to the relay. BlueZ's LE connection settings in `/etc/bluetooth/main.conf` were raised during the
+onboard-radio trouble (intervals 40-80, supervision timeout 6 s; the original is `main.conf.orig`) and
+kept, since every test with the stick ran on them. `node pi-real.mjs` in the vault's test rig checks
+the whole path on the crew's room: Connect, the hello through the Pi, Clear, Let go, the wall left dark.
 
 **Wi-Fi:** the Pi must use the modem's **2.4 GHz** network (`Lawrencestc_4G`). Linux does not allow the
-modem's 5 GHz channel 149 under Saudi rules and drops it a minute after start-up. On 2.4 GHz the
-Bluetooth shares the radio, so a connect to the wall takes about 30 seconds (allowed 60).
+modem's 5 GHz channel 149 under Saudi rules and drops it a minute after start-up. Both bands are one
+network, so phones on 5 GHz reach the Pi as usual.
