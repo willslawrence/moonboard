@@ -47,12 +47,13 @@ import json
 import os
 import re
 import signal
+import socket
 import subprocess
 import sys
 import time
 from contextlib import suppress
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 
 from websockets.asyncio.client import connect as ws_connect
 from websockets.exceptions import InvalidStatus
@@ -161,6 +162,29 @@ class Wall:
                     or NUS_SERVICE in [u.lower() for u in adv.service_uuids])
         return await BleakScanner.find_device_by_filter(match, timeout=seconds, bluez=self.bluez)
 
+    async def known(self):
+        """The box as BlueZ already has it, to connect to at once: a scan first waits for one of
+        its slow adverts (1-4 s), and the connect then waits for another. BlueZ keeps it, with
+        its services cached, because it is marked trusted (`bluetoothctl trust <address>`,
+        2026-10-19). None when there is no address to go by or BlueZ has never seen it."""
+        if not self.address:
+            return None
+        try:
+            from bleak.backends.bluezdbus.manager import get_global_bluez_manager
+            from bleak.backends.device import BLEDevice
+            self.pick_adapter()
+            manager = await get_global_bluez_manager()
+            adapter = self.bluez.get("adapter") or manager.get_default_adapter().rsplit("/", 1)[-1]
+            path = f"/org/bluez/{adapter}/dev_{self.address.replace(':', '_')}"
+            manager.get_device_address(path)        # raises if BlueZ does not know the box
+        except Exception:
+            return None
+        try:
+            name = manager.get_device_name(path)
+        except Exception:
+            name = None
+        return BLEDevice(self.address, name, {"path": path, "props": None})
+
     async def connect(self, dev):
         from bleak import BleakClient
         loop = asyncio.get_running_loop()
@@ -169,7 +193,8 @@ class Wall:
             # Also called when we let go ourselves; by then self.client is no longer c.
             if c is self.client:
                 loop.call_soon_threadsafe(self.lost.set)
-        # 32s on the first real connect (2026-10-19): Bluetooth shares the Pi's radio with 2.4 GHz Wi-Fi
+        # 32s on the first real connect (2026-10-19), when Bluetooth shared the Pi's radio with the
+        # 2.4 GHz Wi-Fi; about 3 s on the USB stick with the box trusted and its services cached
         client = BleakClient(dev, disconnected_callback=gone, timeout=CONNECT_S, bluez=self.bluez)
         await client.connect()
         ch = client.services.get_characteristic(NUS_RX)
@@ -216,6 +241,9 @@ class FakeWall:
         await asyncio.sleep(1.0)
         return "fake"
 
+    async def known(self):
+        return None                              # a pretend wall is always found by looking
+
     async def connect(self, dev):
         self.lost.clear()
         self.held = True
@@ -245,6 +273,8 @@ class Bridge:
         self.heard = time.monotonic()       # the last word from the relay on it
         self.seen_at = time.monotonic()     # when a page last looked, as the relay last said
         self.job = None                     # the task holding (or looking for) the wall
+        self.lookup = None                  # the relay's address being asked for, from the wake
+        self.relay_ip = None                # its answer, for the bridge line's first try
         self.release = None                 # why the job is being stopped from outside
         self.last = None                    # (payload, meta) last written: repeated when the bridge reconnects
         self.lock = asyncio.Lock()          # one write at a time; a payload goes in pieces
@@ -328,7 +358,18 @@ class Bridge:
     def wake(self):
         if self.job and not self.job.done():
             return                          # already looking, or already holding it
+        self.lookup = asyncio.create_task(self.look_up_relay())
         self.job = asyncio.create_task(self.hold())
+
+    async def look_up_relay(self):
+        """The relay's address, asked for at the wake so the bridge line has it waiting. The modem
+        sometimes drops a lookup and the Pi waits 5 s to ask again (seen 2026-10-19); beside the
+        Bluetooth connect, which takes longer, that wait costs nothing."""
+        self.relay_ip = None
+        with suppress(Exception):
+            infos = await asyncio.get_running_loop().getaddrinfo(
+                urlparse(self.cfg.relay).hostname, None, family=socket.AF_INET, type=socket.SOCK_STREAM)
+            self.relay_ip = infos[0][4][0]
 
     async def let_go(self, why):
         job = self.job
@@ -341,13 +382,18 @@ class Bridge:
     async def find(self):
         """Look for the wall until it is found or the hunt runs out. Its name, or None."""
         end = time.monotonic() + self.cfg.hunt
+        first = True
         while True:
             left = end - time.monotonic()
             if left <= 0:
                 log(f"the wall was not found in {spell(self.cfg.hunt)} - switched off, or the Moon app has it")
                 return None
             try:
-                dev = await self.wall.find(min(10.0, max(1.0, left)))
+                # The box BlueZ already knows is tried at once; after a miss, scans as before.
+                dev = await self.wall.known() if first else None
+                first = False
+                if dev is None:
+                    dev = await self.wall.find(min(10.0, max(1.0, left)))
                 if dev is None:
                     continue
                 name = await self.wall.connect(dev)
@@ -414,10 +460,16 @@ class Bridge:
     async def bridge(self):
         """Sit in the room as a bridge on /ws, as the phone at the wall does."""
         wait = 1
+        if self.lookup is not None:             # the address asked for at the wake, if it is in
+            with suppress(Exception):
+                await asyncio.wait_for(asyncio.shield(self.lookup), timeout=6)
+        ip, self.relay_ip = self.relay_ip, None  # first try only: a retry looks it up afresh
         while True:
             try:
+                to = {"host": ip} if ip else {}   # the name still goes in the TLS handshake and Host
+                ip = None
                 async with ws_connect(self.cfg.url("/ws"), ping_interval=None, open_timeout=20,
-                                      close_timeout=5, max_size=2 ** 16) as ws:
+                                      close_timeout=5, max_size=2 ** 16, **to) as ws:
                     wait = 1
                     await ws.send(json.dumps({"type": "hello", "v": 2, "pi": 1}))
                     if self.last:

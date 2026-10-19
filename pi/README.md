@@ -31,12 +31,22 @@ bridge finds it; through the stick it shows as "MoonBoard A".
 by its address so a second stick can never take its place. The Pi's own Bluetooth is off
 (`dtoverlay=disable-bt` in `/boot/firmware/config.txt`). On 2026-10-19 the stick connected 10 times out
 of 10 at about 5 seconds each; the onboard radio, shared with the Wi-Fi, managed 4 of 10 at 17-31 s.
-From a tap on Connect to the page saying Connected takes 8-20 seconds: longest when the wall has sat
-idle (its first connect then takes about 11 s), and about 6 s of every one is the Pi opening its bridge
-line to the relay. BlueZ's LE connection settings in `/etc/bluetooth/main.conf` were raised during the
-onboard-radio trouble (intervals 40-80, supervision timeout 6 s; the original is `main.conf.orig`) and
-kept, since every test with the stick ran on them. `node pi-real.mjs` in the vault's test rig checks
-the whole path on the crew's room: Connect, the hello through the Pi, Clear, Let go, the wall left dark.
+**From a tap on Connect to the page saying Connected: about 5 seconds** (2026-10-19, was 8-20). Three
+things make it so, and the first one lives outside this folder:
+- **The box is trusted in BlueZ** (`bluetoothctl trust C2:EF:46:4E:88:99`, once, on the stick). An
+  untrusted box is forgotten 30 s after each visit and its services read afresh, about 8 s at the
+  box's own slow rhythm (it asks for 20-100 ms; the stick takes 97.5). Trusted, they stay cached, on
+  disk too. A new stick or a wiped `/var/lib/bluetooth` needs the trust again.
+- **The program connects to the box BlueZ already knows** (`Wall.known`) instead of scanning first,
+  which waited for one more of its slow adverts. A miss falls back to scanning.
+- **The relay's address is looked up at the wake**, beside the Bluetooth. The modem sometimes drops a
+  lookup, and the Pi used to wait 5 s to ask again on every bridge line. NetworkManager's `home-4G`
+  also has `dns-options timeout:1,attempts:3`, so a dropped lookup anywhere costs 1 s.
+
+`/etc/bluetooth/main.conf` asks for 15-30 ms (`MinConnectionInterval = 12`, `MaxConnectionInterval = 24`)
+and a 6 s supervision timeout, but the box's own wish decides its rhythm. The original is
+`main.conf.orig`. `node pi-real.mjs` in the vault's test rig checks the whole path on the crew's room:
+Connect, the hello through the Pi, Clear, Let go, the wall left dark.
 
 **Wi-Fi:** the Pi must use the modem's **2.4 GHz** network (`Lawrencestc_4G`). Linux does not allow the
 modem's 5 GHz channel 149 under Saudi rules and drops it a minute after start-up. Both bands are one
