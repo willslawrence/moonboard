@@ -33,6 +33,7 @@ Settings come from the environment (the service reads ~/moonbridge/env):
     MOONBRIDGE_NAME     MoonBoard  the wall's Bluetooth name starts with this (Linux is told no name;
                                    then the Nordic UART service it advertises is what finds it)
     MOONBRIDGE_ADDRESS             the wall's Bluetooth address, once known: then only that box will do
+    MOONBRIDGE_ADAPTER             which Bluetooth adapter, e.g. hci1 (default: BlueZ's own choice)
     MOONBRIDGE_CONNECT  60         seconds one Bluetooth connect may take
     MOONBRIDGE_HUNT     180        seconds to look for the wall before giving up
     MOONBRIDGE_IDLE     900        seconds with no page open before letting go
@@ -102,6 +103,7 @@ class Settings:
         self.room = room
         self.name = e.get("MOONBRIDGE_NAME", "MoonBoard")
         self.address = e.get("MOONBRIDGE_ADDRESS", "").strip()
+        self.adapter = e.get("MOONBRIDGE_ADAPTER", "").strip()     # e.g. hci1; empty = BlueZ's default
         self.hunt = float(e.get("MOONBRIDGE_HUNT", 180))
         self.idle = float(e.get("MOONBRIDGE_IDLE", 900))
         self.offline = float(e.get("MOONBRIDGE_OFFLINE", 120))
@@ -113,9 +115,10 @@ class Settings:
 class Wall:
     """The controller, over Bluetooth."""
 
-    def __init__(self, prefix, address=""):
+    def __init__(self, prefix, address="", adapter=""):
         self.prefix = prefix.lower()
         self.address = address.upper()     # once known, only this box will do
+        self.bluez = {"adapter": adapter} if adapter else {}
         self.client = None
         self.lost = asyncio.Event()     # set when the link drops by itself
 
@@ -133,7 +136,7 @@ class Wall:
             # is how the page and Moon's app find it too.
             return ((adv.local_name or dev.name or "").lower().startswith(self.prefix)
                     or NUS_SERVICE in [u.lower() for u in adv.service_uuids])
-        return await BleakScanner.find_device_by_filter(match, timeout=seconds)
+        return await BleakScanner.find_device_by_filter(match, timeout=seconds, bluez=self.bluez)
 
     async def connect(self, dev):
         from bleak import BleakClient
@@ -144,7 +147,7 @@ class Wall:
             if c is self.client:
                 loop.call_soon_threadsafe(self.lost.set)
         # 32s on the first real connect (2026-10-19): Bluetooth shares the Pi's radio with 2.4 GHz Wi-Fi
-        client = BleakClient(dev, disconnected_callback=gone, timeout=CONNECT_S)
+        client = BleakClient(dev, disconnected_callback=gone, timeout=CONNECT_S, bluez=self.bluez)
         await client.connect()
         ch = client.services.get_characteristic(NUS_RX)
         if ch is None or any(m in ch.uuid.lower() for m in DFU_MARKERS):
@@ -469,7 +472,7 @@ async def probe(cfg, wall):
         sys.exit("nothing found - is the wall switched on, and the Moon app closed?")
     from bleak import BleakClient
     log(f"found {dev.address} ({dev.name or 'no name'}) - connecting, reading only")
-    async with BleakClient(dev, timeout=CONNECT_S) as client:
+    async with BleakClient(dev, timeout=CONNECT_S, bluez=wall.bluez) as client:
         for svc in client.services:
             chars = ", ".join(sorted(c.uuid[:8] + "[" + ",".join(c.properties) + "]" for c in svc.characteristics))
             print(f"  service {svc.uuid}: {chars}")
@@ -501,7 +504,7 @@ def main():
                     help="a pretend wall instead of Bluetooth")
     a = ap.parse_args()
     cfg = Settings()
-    wall = FakeWall(a.fake_wall == "on") if a.fake_wall else Wall(cfg.name, cfg.address)
+    wall = FakeWall(a.fake_wall == "on") if a.fake_wall else Wall(cfg.name, cfg.address, cfg.adapter)
     if a.scan:
         asyncio.run(scan())
     elif a.probe:
