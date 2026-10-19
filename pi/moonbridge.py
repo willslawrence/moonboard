@@ -33,7 +33,8 @@ Settings come from the environment (the service reads ~/moonbridge/env):
     MOONBRIDGE_NAME     MoonBoard  the wall's Bluetooth name starts with this (Linux is told no name;
                                    then the Nordic UART service it advertises is what finds it)
     MOONBRIDGE_ADDRESS             the wall's Bluetooth address, once known: then only that box will do
-    MOONBRIDGE_ADAPTER             which Bluetooth adapter, e.g. hci1 (default: BlueZ's own choice)
+    MOONBRIDGE_ADAPTER             which Bluetooth adapter: its address (survives restarts) or hciN
+                                   (default: BlueZ's own choice)
     MOONBRIDGE_CONNECT  60         seconds one Bluetooth connect may take
     MOONBRIDGE_HUNT     180        seconds to look for the wall before giving up
     MOONBRIDGE_IDLE     900        seconds with no page open before letting go
@@ -46,6 +47,7 @@ import json
 import os
 import re
 import signal
+import subprocess
 import sys
 import time
 from contextlib import suppress
@@ -118,7 +120,8 @@ class Wall:
     def __init__(self, prefix, address="", adapter=""):
         self.prefix = prefix.lower()
         self.address = address.upper()     # once known, only this box will do
-        self.bluez = {"adapter": adapter} if adapter else {}
+        self.adapter = adapter              # hciN, or the adapter's own address so two sticks can never swap
+        self.bluez = {}
         self.client = None
         self.lost = asyncio.Event()     # set when the link drops by itself
 
@@ -126,8 +129,28 @@ class Wall:
     def connected(self):
         return bool(self.client and self.client.is_connected)
 
+    def pick_adapter(self):
+        """hciN as BlueZ numbers it today. An address is looked up each time: with two USB
+        sticks the numbers can change between restarts, their addresses never do."""
+        a = self.adapter
+        if not a:
+            self.bluez = {}
+        elif re.fullmatch(r"hci\d+", a):
+            self.bluez = {"adapter": a}
+        else:
+            for d in sorted(Path("/sys/class/bluetooth").glob("hci*")):
+                # the kernel gives no address in sysfs; BlueZ has it on the bus
+                r = subprocess.run(["busctl", "get-property", "org.bluez", f"/org/bluez/{d.name}",
+                                    "org.bluez.Adapter1", "Address"], capture_output=True, text=True)
+                if a.upper() in r.stdout.upper():
+                    self.bluez = {"adapter": d.name}
+                    break
+            else:
+                raise RuntimeError(f"no Bluetooth adapter with address {a} - is the stick plugged in?")
+
     async def find(self, seconds):
         from bleak import BleakScanner
+        self.pick_adapter()
 
         def match(dev, adv):
             if self.address:
