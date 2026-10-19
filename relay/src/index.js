@@ -11,6 +11,9 @@
  * And it keeps the line: who is waiting to go next and with which problem
  * (/line?room=<code>), plus the problems that have been up this session.
  *
+ * And it can call on the Pi: a small computer in the house that takes the seat
+ * of the phone at the wall (/pi?room=<code>, see below).
+ *
  * The room code IS the secret - it is never in the (public) page source.
  */
 
@@ -45,9 +48,30 @@ const HIST_MAX = 80;                        // problems in one session
 const LINE_TTL = 3 * 60 * 60 * 1000;        // an unused spot this old belongs to someone who went home
 const NIGHT_GAP = 4 * 60 * 60 * 1000;       // this long with nothing lit and it is a new session
 
+/* The Pi. It sits on the majlis ceiling, keeps one line open to its room day and
+   night, and stays off the wall until a phone asks: the wall takes one Bluetooth
+   connection, and the official Moon app needs it free. Asked (/pi/wake), it finds
+   the wall, holds it and joins the room on /ws as a bridge, exactly as a phone at
+   the wall does - so nothing about bridging changes. It lets go when asked
+   (/pi/sleep), when nobody has looked at the page for a while (it asks us, with
+   "seen"), or when the wall goes away.
+
+   Its line is the hibernating kind. While the Pi is asleep nothing else is open,
+   and this object leaves memory without dropping it: that costs nothing, where a
+   line of the other kind would bill every second of the day against the free
+   allowance all of Will's sites share. Its pings are answered without waking us.
+   Being forgotten that way is also why what the Pi last said is kept on the
+   socket itself and nowhere in memory. */
+const PI_STATES = ["asleep", "waking", "holding"];
+
 export class Relay {
   constructor(state) {
     this.state = state;
+    this.state.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
+    /* When a page last looked (or lit something, or asked the Pi to wake). The Pi
+       lets go once this is old. Starting from now means an object that has just
+       come back into memory gives the Pi the whole wait again rather than none. */
+    this.seen = Date.now();
     this.sockets = new Set();
     this.pending = new Map();      // command id -> resolver waiting on the bridge
     /* What is on the wall right now: {payload, t, id?, by?, board?}, or null.
@@ -137,6 +161,55 @@ export class Relay {
     if (this.sockets.size === 0) this.now = null;  // nobody at the wall, nothing to say
   }
 
+  /* The Pi's line, if it has one open: the newest, should an old one still be
+     closing after it came back. */
+  piSocket() {
+    let best = null, bestAt = -1;
+    for (const ws of this.state.getWebSockets("pi")) {
+      if (ws.readyState !== 1) continue;
+      const a = ws.deserializeAttachment() || {};
+      if ((a.at || 0) > bestAt) { best = ws; bestAt = a.at || 0; }
+    }
+    return best;
+  }
+
+  /* What /status says about it: null when there is no Pi on this room. state is
+     asleep, waking or holding; t is when it got there; why is the reason it gave,
+     for the page to put into words ("not found" means the wall is off or the
+     Moon app has it). */
+  piInfo() {
+    const ws = this.piSocket();
+    if (!ws) return null;
+    const a = ws.deserializeAttachment() || {};
+    return { state: a.state || "asleep", t: a.t || a.at || null, why: a.why || "" };
+  }
+
+  // Messages on the Pi's line. Nothing else here hibernates, so nothing else comes this way.
+  async webSocketMessage(ws, data) {
+    let m = null;
+    try { m = JSON.parse(typeof data === "string" ? data : ""); } catch { return; }
+    if (!m || typeof m !== "object") return;
+    // {type:"state", state, why}: what it is doing now
+    if (m.type === "state" && PI_STATES.includes(m.state)) {
+      const a = ws.deserializeAttachment() || {};
+      ws.serializeAttachment({ at: a.at || Date.now(), state: m.state, t: Date.now(),
+                               why: typeof m.why === "string" ? m.why.slice(0, 40) : "" });
+      return;
+    }
+    // {type:"seen"}: while it holds the wall - how long since a page last looked?
+    if (m.type === "seen") {
+      try { ws.send(JSON.stringify({ type: "seen", ago: Date.now() - this.seen })); } catch {}
+    }
+  }
+
+  async webSocketClose(ws, code, reason) {
+    try { ws.close(code === 1005 || code === 1006 ? 1000 : code, reason || ""); } catch {}
+  }
+
+  async webSocketError(ws) {
+    try { ws.close(1011, "error"); } catch {}
+  }
+
   async fetch(request) {
     const url = new URL(request.url);
     await this.load();
@@ -172,14 +245,43 @@ export class Relay {
       return new Response(null, { status: 101, webSocket: client });
     }
 
+    // The Pi's line (see PI_STATES). One Pi per room: a new line means the old one is dead and has not noticed.
+    if (url.pathname === "/pi") {
+      if (request.headers.get("Upgrade") !== "websocket") {
+        return new Response("expected websocket", { status: 426 });
+      }
+      const [client, server] = Object.values(new WebSocketPair());
+      for (const old of this.state.getWebSockets("pi")) { try { old.close(1000, "replaced"); } catch {} }
+      this.state.acceptWebSocket(server, ["pi"]);
+      const t = Date.now();
+      server.serializeAttachment({ at: t, state: "asleep", t, why: "" });
+      server.send(JSON.stringify({ type: "hello", pi: 1 }));
+      return new Response(null, { status: 101, webSocket: client });
+    }
+
+    /* A phone asks the Pi to take the wall, or to let it go. Letting go drops the
+       wall for everyone, so the page keeps that in Settings. Asking to wake is a
+       page being here, as much as looking is. */
+    if ((url.pathname === "/pi/wake" || url.pathname === "/pi/sleep") && request.method === "POST") {
+      const wake = url.pathname === "/pi/wake";
+      const ws = this.piSocket();
+      if (!ws) return json({ error: "no pi on this room", pi: null }, 409);
+      try { ws.send(JSON.stringify({ type: wake ? "wake" : "sleep" })); }
+      catch { return json({ error: "no pi on this room", pi: null }, 409); }
+      if (wake) this.seen = Date.now();
+      return json({ ok: true, pi: this.piInfo(), bridges: this.sockets.size });
+    }
+
     if (url.pathname === "/send" && request.method === "POST") {
       const body = await request.json().catch(() => null);
       const payload = body && body.payload;
       if (typeof payload !== "string" || !PAYLOAD.test(payload)) {
         return json({ error: "payload must match l#...#" }, 400);
       }
+      this.seen = Date.now();
       if (this.sockets.size === 0) {
-        return json({ error: "no bridge connected", bridges: 0 }, 409);
+        // pi: so a phone can wake it and try again, rather than be told to find someone at the wall
+        return json({ error: "no bridge connected", bridges: 0, pi: this.piInfo() }, 409);
       }
       const id = crypto.randomUUID();
       const meta = cleanMeta(body.now);        // which problem and whose phone, if it said
@@ -237,12 +339,16 @@ export class Relay {
       return json({ ok: true, line: this.line, hist: this.hist });
     }
 
+    /* Pages look here every few seconds while they are on screen, and never while
+       they are hidden (a phone in a pocket, a tab behind another). So the last look
+       is the last time anybody had the app open, which is what the Pi goes by. */
     if (url.pathname === "/status") {
+      this.seen = Date.now();
       const sure = this.sockets.size > 0 &&
         [...this.sockets].every((ws) => this.tells.has(ws));
       this.prune();
       return json({ bridges: this.sockets.size, now: sure ? this.now : null,
-                    line: this.line, hist: this.hist });
+                    line: this.line, hist: this.hist, pi: this.piInfo() });
     }
 
     return json({ error: "not found" }, 404);
@@ -779,7 +885,7 @@ export default {
 
     const url = new URL(request.url);
     if (url.pathname === "/") {
-      return json({ service: "moonboard-relay", routes: ["/ws?room=", "/send?room=", "/status?room=", "/line?room=", "/lists", "/lists/log"] });
+      return json({ service: "moonboard-relay", routes: ["/ws?room=", "/send?room=", "/status?room=", "/line?room=", "/pi?room=", "/pi/wake?room=", "/pi/sleep?room=", "/lists", "/lists/log"] });
     }
 
     if (url.pathname === "/lists" || url.pathname.startsWith("/lists/")) {
