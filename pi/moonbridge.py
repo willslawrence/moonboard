@@ -48,6 +48,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from websockets.asyncio.client import connect as ws_connect
+from websockets.exceptions import InvalidStatus
 
 NUS_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
 NUS_RX      = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"   # written with response: the box has no other kind
@@ -58,6 +59,7 @@ DFU_MARKERS = ("fe59", "00001530-1212-efde-1523-785feabcd123",
 PAYLOAD = re.compile(r"^l#[SPE0-9,]*#$")
 CHUNK, GAP = 20, 0.03      # the page's pieces and pause; the box garbles bigger or faster
 PING = 30                  # seconds between pings on the relay line (answered without waking it)
+OLD_RELAY_WAIT = 600       # a relay from before the Pi has no /pi: ask again this seldom until it is deployed
 SEEN_EVERY = float(os.environ.get("MOONBRIDGE_SEEN", 60))   # while holding: how often to ask when a page last looked
 REPLACED_WAIT = 300        # another copy of this program took the room's line: do not fight it for it
 
@@ -252,6 +254,12 @@ class Bridge:
                     replaced = ws.close_reason == "replaced"
             except asyncio.CancelledError:
                 raise
+            except InvalidStatus as e:
+                if getattr(e.response, "status_code", None) == 404:
+                    log(f"the relay has no /pi yet - it needs the new deploy; asking again in {spell(OLD_RELAY_WAIT)}")
+                    await asyncio.sleep(OLD_RELAY_WAIT)
+                    continue
+                log("relay line:", short(e))
             except Exception as e:
                 log("relay line:", short(e))
             if replaced:
