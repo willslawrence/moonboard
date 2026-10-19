@@ -1863,7 +1863,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-19 21:22';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-19 21:36';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -5127,9 +5127,19 @@ let relayWS = null, relayWant = false, relayTries = 0, wakeLock = null;
 
 function relayState(msg){ $('relayState').textContent = msg; }
 
+/* The screen stays on while this phone bridges the wall. The phone lets go of that whenever the page leaves the
+   screen for a moment (another app, the notification shade), so a let-go lock is forgotten and asked for again when
+   the page is back. Until 2026-10-19 the let-go one was kept, so after one trip away it was never asked for again
+   and the screen slept on its own timer, taking the wall's Bluetooth with it (Will: "the phone screen went to sleep
+   even though it's charging... it was fine for two hours"). */
 async function keepAwake(){
-  try{ if (!wakeLock && navigator.wakeLock) wakeLock = await navigator.wakeLock.request('screen'); }
-  catch(e){ /* Bluefy may not support it; the page still works while visible */ }
+  try{
+    if ((!wakeLock || wakeLock.released) && navigator.wakeLock && document.visibilityState === 'visible'){
+      const lock = await navigator.wakeLock.request('screen');
+      wakeLock = lock;
+      lock.addEventListener('release', () => { if (wakeLock === lock) wakeLock = null; });
+    }
+  }catch(e){ /* Bluefy may not support it; the page still works while visible */ }
 }
 
 function relayConnect(){
