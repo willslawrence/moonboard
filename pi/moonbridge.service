@@ -1,0 +1,17 @@
+[Unit]
+Description=Will's Wall: the Pi's seat at the MoonBoard (asleep until a phone taps Connect)
+After=network-online.target bluetooth.target
+Wants=network-online.target bluetooth.target
+
+[Service]
+User=will
+WorkingDirectory=/home/will/moonbridge
+EnvironmentFile=-/home/will/moonbridge/env
+ExecStart=/home/will/moonbridge/venv/bin/python -u /home/will/moonbridge/moonbridge.py
+Restart=always
+RestartSec=10
+# A stop lets go of the wall first (see run() in moonbridge.py); give it time to.
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target
