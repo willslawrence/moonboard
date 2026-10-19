@@ -17,6 +17,7 @@ minutes, when the relay has been out of reach for 2, or when the wall goes away
 
     moonbridge.py                   run (the moonbridge service does this)
     moonbridge.py --scan            list what Bluetooth can see for 10 seconds
+    moonbridge.py --probe           find the wall, connect, list its services, let go (writes nothing)
     moonbridge.py --light 'l#S36,P37,E38#'
                                     find the wall, light that, let go
     moonbridge.py --fake-wall       no Bluetooth: a pretend wall that logs what it is sent
@@ -29,7 +30,10 @@ it cannot be found) and `kill -USR2` switches it back on - for trying the
 Settings come from the environment (the service reads ~/moonbridge/env):
     MOONBRIDGE_RELAY    wss://moonboard-relay.willslawrence.workers.dev
     MOONBRIDGE_ROOM     the room code (otherwise the file `room` beside this one)
-    MOONBRIDGE_NAME     MoonBoard  the wall's Bluetooth name starts with this
+    MOONBRIDGE_NAME     MoonBoard  the wall's Bluetooth name starts with this (Linux is told no name;
+                                   then the Nordic UART service it advertises is what finds it)
+    MOONBRIDGE_ADDRESS             the wall's Bluetooth address, once known: then only that box will do
+    MOONBRIDGE_CONNECT  60         seconds one Bluetooth connect may take
     MOONBRIDGE_HUNT     180        seconds to look for the wall before giving up
     MOONBRIDGE_IDLE     900        seconds with no page open before letting go
     MOONBRIDGE_OFFLINE  120        seconds without the relay before letting go
@@ -61,6 +65,7 @@ CHUNK, GAP = 20, 0.03      # the page's pieces and pause; the box garbles bigger
 PING = 30                  # seconds between pings on the relay line (answered without waking it)
 OLD_RELAY_WAIT = 600       # a relay from before the Pi has no /pi: ask again this seldom until it is deployed
 SEEN_EVERY = float(os.environ.get("MOONBRIDGE_SEEN", 60))   # while holding: how often to ask when a page last looked
+CONNECT_S = float(os.environ.get("MOONBRIDGE_CONNECT", 60))   # seconds a Bluetooth connect may take
 REPLACED_WAIT = 300        # another copy of this program took the room's line: do not fight it for it
 
 
@@ -96,6 +101,7 @@ class Settings:
             room = f.read_text().strip() if f.exists() else ""
         self.room = room
         self.name = e.get("MOONBRIDGE_NAME", "MoonBoard")
+        self.address = e.get("MOONBRIDGE_ADDRESS", "").strip()
         self.hunt = float(e.get("MOONBRIDGE_HUNT", 180))
         self.idle = float(e.get("MOONBRIDGE_IDLE", 900))
         self.offline = float(e.get("MOONBRIDGE_OFFLINE", 120))
@@ -107,8 +113,9 @@ class Settings:
 class Wall:
     """The controller, over Bluetooth."""
 
-    def __init__(self, prefix):
+    def __init__(self, prefix, address=""):
         self.prefix = prefix.lower()
+        self.address = address.upper()     # once known, only this box will do
         self.client = None
         self.lost = asyncio.Event()     # set when the link drops by itself
 
@@ -120,7 +127,12 @@ class Wall:
         from bleak import BleakScanner
 
         def match(dev, adv):
-            return (adv.local_name or dev.name or "").lower().startswith(self.prefix)
+            if self.address:
+                return dev.address.upper() == self.address
+            # By name where it gives one; the box gives Linux none, only its service - which
+            # is how the page and Moon's app find it too.
+            return ((adv.local_name or dev.name or "").lower().startswith(self.prefix)
+                    or NUS_SERVICE in [u.lower() for u in adv.service_uuids])
         return await BleakScanner.find_device_by_filter(match, timeout=seconds)
 
     async def connect(self, dev):
@@ -131,7 +143,8 @@ class Wall:
             # Also called when we let go ourselves; by then self.client is no longer c.
             if c is self.client:
                 loop.call_soon_threadsafe(self.lost.set)
-        client = BleakClient(dev, disconnected_callback=gone, timeout=20.0)
+        # 32s on the first real connect (2026-10-19): Bluetooth shares the Pi's radio with 2.4 GHz Wi-Fi
+        client = BleakClient(dev, disconnected_callback=gone, timeout=CONNECT_S)
         await client.connect()
         ch = client.services.get_characteristic(NUS_RX)
         if ch is None or any(m in ch.uuid.lower() for m in DFU_MARKERS):
@@ -450,6 +463,19 @@ async def scan():
     print(f"{len(rows)} seen")
 
 
+async def probe(cfg, wall):
+    dev = await wall.find(20)
+    if dev is None:
+        sys.exit("nothing found - is the wall switched on, and the Moon app closed?")
+    from bleak import BleakClient
+    log(f"found {dev.address} ({dev.name or 'no name'}) - connecting, reading only")
+    async with BleakClient(dev, timeout=CONNECT_S) as client:
+        for svc in client.services:
+            chars = ", ".join(sorted(c.uuid[:8] + "[" + ",".join(c.properties) + "]" for c in svc.characteristics))
+            print(f"  service {svc.uuid}: {chars}")
+    log("let go")
+
+
 async def light_once(cfg, wall, payload):
     if not PAYLOAD.match(payload):
         sys.exit("refusing: a payload looks like l#S36,P37,E38#")
@@ -470,13 +496,16 @@ def main():
     ap = argparse.ArgumentParser(description="The Pi's seat at the MoonBoard.")
     ap.add_argument("--scan", action="store_true", help="list what Bluetooth can see")
     ap.add_argument("--light", metavar="PAYLOAD", help="find the wall, light this, let go")
+    ap.add_argument("--probe", action="store_true", help="find the wall, list its services, let go")
     ap.add_argument("--fake-wall", nargs="?", const="on", choices=["on", "off"],
                     help="a pretend wall instead of Bluetooth")
     a = ap.parse_args()
     cfg = Settings()
-    wall = FakeWall(a.fake_wall == "on") if a.fake_wall else Wall(cfg.name)
+    wall = FakeWall(a.fake_wall == "on") if a.fake_wall else Wall(cfg.name, cfg.address)
     if a.scan:
         asyncio.run(scan())
+    elif a.probe:
+        asyncio.run(probe(cfg, wall))
     elif a.light:
         asyncio.run(light_once(cfg, wall, a.light))
     else:

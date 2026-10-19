@@ -21,4 +21,10 @@ The relay side is in `relay/src/index.js` (`/pi`, `/pi/wake`, `/pi/sleep`, `pi` 
 `/status`); the page side is the Connect button. A new card is Imager with the
 settings in the vault note *Raspberry Pi Setup Day*, then `pi/from-mac.sh`.
 
-On the Pi: `journalctl -u moonbridge -f` shows what it is doing.
+On the Pi: `journalctl -u moonbridge -f` shows what it is doing. `~/moonbridge/env` pins the wall
+(`MOONBRIDGE_ADDRESS=C2:EF:46:4E:88:99`, confirmed 2026-10-19); clear it if the controller is replaced.
+The box gives Linux no name, only its Nordic UART service, which is how the bridge finds it.
+
+**Wi-Fi:** the Pi must use the modem's **2.4 GHz** network (`Lawrencestc_4G`). Linux does not allow the
+modem's 5 GHz channel 149 under Saudi rules and drops it a minute after start-up. On 2.4 GHz the
+Bluetooth shares the radio, so a connect to the wall takes about 30 seconds (allowed 60).
