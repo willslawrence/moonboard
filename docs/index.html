@@ -1790,7 +1790,8 @@
     <h2>Add it to your Home Screen</h2>
     <p>Opened from its own icon the app fills the whole screen, with no browser bars round it.</p>
     <h3>iPhone or iPad</h3>
-    <ol><li>Open this page in Safari.</li><li>Tap the Share button, the square with an arrow pointing up.</li><li>Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</li></ol>
+    <ol><li>Open this page in Safari, not Chrome.</li><li>Tap the Share button, the square with an arrow pointing up. On a newer iPhone it can be under the three dots.</li><li>Scroll down and tap <b>Add to Home Screen</b>.</li><li>If you see <b>Open as Web App</b>, leave it switched on. Then tap <b>Add</b>.</li></ol>
+    <p style="margin-top:8px">Your icon opens in the browser? Delete it and add it again this way.</p>
     <h3>Android</h3>
     <ol><li>Open this page in Chrome.</li><li>Tap the three dots at the top right.</li><li>Tap <b>Add to Home screen</b> (on some phones <b>Install app</b>), then <b>Add</b>.</li></ol>
     <button id="a2hsOk" class="solid">Got it</button>
@@ -1818,7 +1819,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-19 13:59';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-19 19:28';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
