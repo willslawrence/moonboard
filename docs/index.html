@@ -1854,7 +1854,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-19 20:50';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-19 21:18';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -5681,14 +5681,16 @@ function fileDown(name, blob){
   setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 4000);
   return 'saved';
 }
-// to the share sheet on a phone, to the downloads anywhere else; says which it was ('shared', 'saved', or 'cancelled')
+// to the share sheet on a phone, to the downloads anywhere else; says which it was ('shared', 'saved', or 'cancelled').
+// The file goes alone: with a title beside it, an app that takes text kept the title and dropped the file (Will,
+// 2026-10-19: "I tried to export my logbook in the app and it just export a text file" holding only the file's name).
 function fileOut(name, text, type){
   const blob = new Blob([text], { type: type + ';charset=utf-8' });
   let file = null, phone = false;
   try{ file = new File([blob], name, { type }); }catch(e){}
   try{ phone = matchMedia('(pointer:coarse)').matches; }catch(e){}
   if (phone && file && navigator.canShare && navigator.share && navigator.canShare({ files: [file] }))
-    return navigator.share({ files: [file], title: name }).then(() => 'shared', err => err && err.name === 'AbortError' ? 'cancelled' : fileDown(name, blob));
+    return navigator.share({ files: [file] }).then(() => 'shared', err => err && err.name === 'AbortError' ? 'cancelled' : fileDown(name, blob));
   return Promise.resolve(fileDown(name, blob));
 }
 let csvBusy = false;                      // one at a time: a second tap while the share sheet is coming up starts nothing behind it
@@ -6000,7 +6002,7 @@ async function loadLog(){
   if (!who) return;
   let entries = [];
   try{
-    const r = await fetch(LISTS_API + '/lists/log?limit=2000&person=' + encodeURIComponent(who));
+    const r = await fetch(LISTS_API + '/lists/log?limit=3000&person=' + encodeURIComponent(who));      // as many as the relay gives: Export CSV is the whole logbook
     entries = (await r.json()).entries || [];
   }catch(e){ if (mine === logLoad) $('logSum').textContent = 'The logbook cannot be reached just now. Try again in a moment.'; return; }
   if (mine !== logLoad) return;

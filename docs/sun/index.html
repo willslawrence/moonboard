@@ -1154,7 +1154,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-19 20:50';
+const BUILD = '2026-10-19 21:18';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -3316,14 +3316,16 @@ function fileDown(name, blob){
   setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 4000);
   return 'saved';
 }
-// to the share sheet on a phone, to the downloads anywhere else; says which it was ('shared', 'saved', or 'cancelled')
+// to the share sheet on a phone, to the downloads anywhere else; says which it was ('shared', 'saved', or 'cancelled').
+// The file goes alone: with a title beside it, an app that takes text kept the title and dropped the file (Will,
+// 2026-10-19: "I tried to export my logbook in the app and it just export a text file" holding only the file's name).
 function fileOut(name, text, type){
   const blob = new Blob([text], { type: type + ';charset=utf-8' });
   let file = null, phone = false;
   try{ file = new File([blob], name, { type }); }catch(e){}
   try{ phone = matchMedia('(pointer:coarse)').matches; }catch(e){}
   if (phone && file && navigator.canShare && navigator.share && navigator.canShare({ files: [file] }))
-    return navigator.share({ files: [file], title: name }).then(() => 'shared', err => err && err.name === 'AbortError' ? 'cancelled' : fileDown(name, blob));
+    return navigator.share({ files: [file] }).then(() => 'shared', err => err && err.name === 'AbortError' ? 'cancelled' : fileDown(name, blob));
   return Promise.resolve(fileDown(name, blob));
 }
 let csvBusy = false;                      // one at a time: a second tap while the share sheet is coming up starts nothing behind it
