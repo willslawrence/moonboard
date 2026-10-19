@@ -1601,6 +1601,15 @@
       </div>
       <div class="hint" id="relayState">relay off</div>
     </div>
+    <!-- Shown once the relay says this room has a Pi (see piSet). -->
+    <div class="optCol" id="piRow" hidden>
+      <div class="opt"><label>The Pi in the majlis</label><button type="button" class="tipBtn" aria-label="About: the Pi" aria-expanded="false">i</button><span class="tipTxt">A small computer on the majlis ceiling holds the wall's Bluetooth, so nobody has to leave a phone awake by the wall and every phone lights it in plain Safari. Connect wakes it. It lets go by itself once nobody has had the app open for 15 minutes, or when the wall is switched off, and then the Moon app works again. Letting go here drops the wall for every phone. This phone's Bluetooth is for when the Pi or the internet is down.</span></div>
+      <div class="hint" id="piState"></div>
+      <div class="two" style="margin-top:8px">
+        <button id="piSleep" class="ghost" type="button">Let go of the wall</button>
+        <button id="bleBtn" class="ghost" type="button">This phone's Bluetooth</button>
+      </div>
+    </div>
   </div>
 
   <!-- What the wall shows on connect is WW for everyone now. The choice is hidden,
@@ -1809,7 +1818,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-15 19:04';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-19 13:35';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -1852,7 +1861,7 @@ function setLive(on, busy){
   if (busy) $('dot').className = 'busy'; else wallState();
   paintRelayBtn();
   $('send').disabled = !canSend() || !current;
-  $('connect').textContent = on ? 'Disconnect' : 'Connect';
+  paintPi();                             // Connect says Disconnect while this phone holds the wall
 }
 
 /* ---------- hold numbering ---------- */
@@ -4466,14 +4475,18 @@ let bridgeLive = null;
 function wallState(){
   const el = $('noWall');
   const lost = !rx && bridgeSeen === false;
-  el.hidden = !lost;
-  document.body.classList.toggle('noWall', lost);      // the picture gives it its room (see the styles)
+  // Why the Pi gave up, for a minute after it did: the wall is off, or the Moon app has it.
+  const note = !rx && piNote && Date.now() < piNote.until ? piNote.text : '';
+  el.hidden = !lost && !note;
+  document.body.classList.toggle('noWall', lost || !!note);      // the picture gives it its room (see the styles)
   // The usual reason for nobody bridging is a phone on a different room code.
   const off = relayRoom() && relayRoom() !== DEFAULT_ROOM;
-  el.textContent = off ? 'Not reaching the board \u2014 this phone is set to another wall. Tap to check'
-                       : 'Not reaching the board \u2014 tap Connect';
+  el.textContent = note || (off ? 'Not reaching the board \u2014 this phone is set to another wall. Tap to check'
+                                : 'Not reaching the board \u2014 tap Connect');
   const live = bridgeLive !== null ? bridgeLive : bridgeSeen;
-  $('dot').className = rx ? 'on' : (lost ? 'dead' : (live ? 'relay' : ''));
+  const piWaking = !rx && !!piNow && piNow.state === 'waking';
+  const piHolds = !rx && !!piNow && piNow.state === 'holding' && !!live;
+  $('dot').className = rx ? 'on' : (lost ? 'dead' : (piWaking ? 'busy' : (live ? 'relay' : '')));
   /* Say it in words. With only the dot, people assumed their phone had a relay
      switch of its own to turn on - it doesn't, only the Bluetooth phone shares. */
   const sharing = rx && relayWS && relayWS.readyState === 1;
@@ -4481,11 +4494,15 @@ function wallState(){
       rx    ? (!sharing ? ['Connected', '']
              : relayRoom() === DEFAULT_ROOM ? ['Sharing wall', ''] : ['Other wall', ''])
     : lost  ? ['Not reaching', 'bad']
+    : piWaking ? ['Connecting\u2026', '']
+    : piHolds ? ['Connected', '']                  // the Pi has it, for everyone: no different from a phone's own
     : live  ? ['Via relay', '']
+    : piNow ? ["Will's Wall", '']                  // the Pi is asleep: nothing is wrong, Connect wakes it
     : live === false ? ['Wall offline', 'off']
     : ["Will's Wall", ''];
   $('wallTxt').textContent = txt;
   $('wallTxt').className = cls;
+  paintPi();
 }
 
 let peekAt = 0;
@@ -4504,20 +4521,25 @@ async function relayPeek(){
     // The line and tonight's routes are everyone's, the phone at the wall included.
     setLine(d);
     // That phone holds the Bluetooth, so what is on the wall it knows first hand.
-    if (rx) return;
+    if (rx){ piSet(d.pi || null, false); return; }
     bridgeLive = d.bridges > 0;
     if (bridgeLive && bridgeSeen === false) bridgeSeen = null;   // someone's back - stop shouting
     // A relay that predates this never sends `now`, and the button simply stays away.
     wallKnown = 'now' in d;
     if (!rx && room === relayRoom()) setWallNow(bridgeLive && d.now ? d.now : null);
+    // The Pi, if this room has one (a relay that predates it says nothing, and null hides it all).
+    piSet(d.pi || null, bridgeLive);
     wallState();
   }catch(e){}
 }
 /* Every 20 seconds is enough to know whether the wall is reachable. Seeing what
    someone just lit wants to be quicker than that, so while a phone is bridging -
-   which is to say while people are actually climbing - look every five. */
+   which is to say while people are actually climbing - look every five. While the
+   Pi is waking for this phone, every one and a half: the wall should light the
+   moment it is there. */
 function peekTick(){
-  if (Date.now() - peekAt >= ((bridgeLive || rx) ? 4500 : 19500)) relayPeek();
+  const waking = !rx && (piAsked || (piNow && piNow.state === 'waking'));
+  if (Date.now() - peekAt >= (waking ? 1400 : (bridgeLive || rx) ? 4500 : 19500)) relayPeek();
 }
 const peekSoon = () => setTimeout(relayPeek, 350);
 
@@ -4543,6 +4565,13 @@ async function relaySend(str, quiet, meta, again){
       body: JSON.stringify({ payload: str, now: meta || null }),
     });
     const d = await r.json();
+    /* Nobody at the wall, but the Pi can be: wake it, and light this the moment it
+       has the wall. A climber who taps Light up Route wants the wall lit, not to be
+       told to tap Connect first. Not for a game's frames, or for clearing the wall. */
+    if (d.error && d.bridges === 0 && d.pi && !quiet && str !== 'l##'){
+      piSet(d.pi, false);
+      if (piNow && piNow.state !== 'holding'){ piWake({ str, meta, again }); return; }
+    }
     bridgeSeen = !d.error && d.bridges > 0;
     if (typeof d.bridges === 'number') bridgeLive = d.bridges > 0;
     // It is up there now, so this phone need not wait for the next look to say so.
@@ -5012,6 +5041,115 @@ function relayDisconnect(){
   paintRelayBtn();
   wallState();
   if (wakeLock){ try{ wakeLock.release(); }catch(e){} wakeLock = null; }
+}
+
+/* ---------- the Pi ----------
+   A small computer on the majlis ceiling can hold the wall's Bluetooth in place of a
+   phone left awake by the wall (pi/ in the repository, PI_STATES in the relay). It is
+   asleep until a phone taps Connect, which asks it through the relay to take the
+   wall; then it is a bridge like any phone, and every phone lights the wall through
+   the relay as it always has. It lets go by itself once nobody has had the app open
+   for 15 minutes, or when the wall is switched off, so the Moon app is free again.
+   Letting it go by hand drops the wall for every phone, so that is in Settings, with
+   this phone's own Bluetooth for when the Pi or the internet is down. A relay that
+   predates the Pi says nothing about one, and none of this shows. */
+let piNow = null;            // {state: asleep | waking | holding, t, why}, or null: no Pi on this room
+let piAsked = 0;             // when this phone asked it to wake, until it has the wall or gives up
+let piHeard = false;         // since then it has been seen waking or holding
+let piThen = null;           // what to light once it has the wall: {str, meta, again}
+let piNote = null;           // {text, until}: why it gave up, in the banner for a minute
+
+const piCan = () => !rx && !!piNow && piNow.state === 'asleep' && !!relayRoom();
+const PI_WHY = { 'not found': 'last time it could not find the wall (off, or the Moon app had it)',
+                 idle: 'it let go when nobody had the app open', lost: 'the wall was switched off',
+                 asked: 'someone let it go', offline: 'the internet dropped' };
+
+function piSet(p, bridging){
+  if (p && piAsked && !piHeard){
+    if (p.state !== 'asleep') piHeard = true;
+    // A look that left before the Pi heard the ask: it is on its way, whatever this says.
+    else if (Date.now() - piAsked < 10000) p = Object.assign({}, p, { state: 'waking' });
+    else { piAsked = 0; piThen = null; log('the Pi did not answer.'); }
+  }
+  piNow = p || null;
+  if (piAsked && piHeard){
+    if (!piNow){ piAsked = 0; piHeard = false; piThen = null; }            // its line has gone
+    else if (piNow.state === 'holding' && bridging) piTook();
+    else if (piNow.state === 'asleep') piGaveUp(piNow.why);
+  }
+  paintPi();
+}
+
+async function piWake(then){
+  const room = relayRoom();
+  if (!room || !piNow) return;
+  if (then) piThen = then;
+  if (piAsked) return;                    // asked already: it is on its way
+  piAsked = Date.now(); piHeard = false; piNote = null;
+  bridgeSeen = null;                      // not lost - on its way
+  piNow = Object.assign({}, piNow, { state: 'waking' });
+  wallState();
+  log('asking the Pi to take the wall …');
+  try{
+    const d = await (await fetch('https://' + RELAY_HOST + '/pi/wake?room=' + encodeURIComponent(room), {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).json();
+    if (d.error){ log('Pi: ' + d.error); piAsked = 0; piThen = null; piNow = d.pi || null; }
+  }catch(e){ log('Pi unreachable: ' + e.message); piAsked = 0; piThen = null; }
+  wallState();
+  peekSoon();
+}
+
+/* It has the wall for this phone: light what this phone wanted, as Connect always
+   has - the route that is open, or WW. */
+function piTook(){
+  piAsked = 0; piHeard = false;
+  bridgeLive = true; bridgeSeen = null;
+  log('the Pi has the wall.');
+  const then = piThen; piThen = null;
+  if (then) write(then.str, false, then.meta, false, then.again);
+  else if (current) sendProblem();
+  else standby();
+}
+
+function piGaveUp(why){
+  piAsked = 0; piHeard = false; piThen = null;
+  // not found, or found and gone again: either way the wall is switched off or Moon's app has it
+  const text = why === 'not found' || why === 'lost' ? 'The wall is off, or the Moon app is using it'
+                                                     : 'The Pi could not get the wall';
+  log('Pi: ' + text + (why ? ' (' + why + ')' : '') + '.');
+  piNote = { text: text + ' — tap Connect to try again', until: Date.now() + 60000 };
+}
+
+async function piSleep(){
+  const room = relayRoom();
+  if (!room || !piNow) return;
+  try{
+    const d = await (await fetch('https://' + RELAY_HOST + '/pi/sleep?room=' + encodeURIComponent(room), {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).json();
+    log(d.error ? 'Pi: ' + d.error : 'asked the Pi to let go of the wall.');
+  }catch(e){ log('Pi unreachable: ' + e.message); }
+  peekSoon();
+}
+
+/* Connect while the Pi holds the wall would only fight it for the Bluetooth, so it
+   stands aside; Settings says what the Pi is doing. */
+function paintPi(){
+  const c = $('connect');
+  const waking = !rx && !!piNow && piNow.state === 'waking';
+  c.textContent = rx ? 'Disconnect' : 'Connect';
+  c.disabled = waking;
+  c.hidden = !rx && !!piNow && piNow.state === 'holding' && bridgeLive === true;
+  const row = $('piRow');
+  if (!row) return;
+  row.hidden = !piNow;
+  if (!piNow) return;
+  const at = piNow.t ? new Date(piNow.t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
+  $('piState').textContent =
+      piNow.state === 'holding' ? 'Holding the wall' + (at ? ' since ' + at : '') + '.'
+    : piNow.state === 'waking' ? 'Looking for the wall …'
+    : 'Asleep, off the wall' + (PI_WHY[piNow.why] ? ': ' + PI_WHY[piNow.why] : '') + '. Connect wakes it.';
+  $('piSleep').disabled = piNow.state === 'asleep';
+  $('bleBtn').disabled = !!rx || piNow.state !== 'asleep';
 }
 
 /* ---------- logbook ----------
@@ -7345,7 +7483,14 @@ function c4Stop(){
 
 /* ---------- wiring ---------- */
 $('connect').onclick = () => {
-  if (device && device.gatt.connected) device.gatt.disconnect(); else connect();
+  if (device && device.gatt.connected) device.gatt.disconnect();
+  else if (piCan()) piWake();            // the Pi first; this phone's own Bluetooth is in Settings
+  else connect();
+};
+$('piSleep').onclick = piSleep;
+$('bleBtn').onclick = () => {
+  if (!navigator.bluetooth){ $('piState').textContent = noBluetoothAdvice(); return; }
+  connect();
 };
 $('send').onclick  = sendProblem;
 $('nowBtn').onclick = gotoWall;
@@ -7440,6 +7585,7 @@ function showPage(which, fromBack, ghost){
   b.classList.toggle('listPage', which === 'list');
   b.classList.toggle('logPage', which === 'log');
   b.classList.toggle('setPage', which === 'set');
+  if (which === 'set' && piNow) relayPeek();          // what the Pi is doing now, not at the last look
   b.classList.remove('slideL', 'slideR');
   void b.offsetWidth;                                  // so the slide plays again
   b.classList.add(PAGES.indexOf(which) < PAGES.indexOf(was) ? 'slideL' : 'slideR');
