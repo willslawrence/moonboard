@@ -810,7 +810,9 @@ the list on screen is always the benchmarks for the hold set that is up.
 A climber is drawn as a circle in their own colour (worked out from the name, the same on
 both walls) beside the routes they have sent, on the cards of the line and the wall, and
 on the log page. In it is the emoji they chose in Settings, else an emoji in their name,
-else their first letter (`chipFor` on both pages). The chosen ones are not on the relay:
+else their first letter (`chipFor` on both pages). An emoji stands on its own, with no colour behind
+it, a little larger to fill the circle's room; a letter keeps its coloured circle (`chipPaint`; Will, 2026-10-19:
+"Can you remove the circle behind the emoji"). The chosen ones are not on the relay:
 they are kept by the site, in the Sun board's store (`store/store.js`, `GET` and `POST
 /api/faces`, a table `faces` keyed by name), so they go out with a push and are the same on
 both walls. The MoonBoard page asks for them when it opens, when it comes back into sight

@@ -352,6 +352,13 @@
      MoonBoard page's list has them, or a circle for each of your own goes */
   .rside .who.crew,.rside .who.goes{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:3px;max-width:150px}
   .rside .who.crew b{display:grid;place-items:center;width:19px;height:19px;border-radius:50%;font-size:10px;font-weight:700;color:#0e0e0f}
+  /* an emoji stands alone in a climber's place, with no colour behind it, and fills the circle's room (chipPaint) */
+  .rside .who.crew b.em,.whoRows .p i.em,.lprow .n em i.em,#faceBtn i.em,#faceNow.em{background:none}
+  .rside .who.crew b.em{font-size:16px}
+  .whoRows .p i.em{font-size:19px}
+  .lprow .n em i.em{font-size:14px}
+  #faceBtn i.em{font-size:25px}
+  #faceNow.em{font-size:30px}
   .rside .who.goes .more{font:700 10px ui-monospace,Menlo,monospace;color:var(--dimmer);margin-right:1px}
   .rside .bw{font-size:11px;color:var(--dim)}
   .chev{flex:none;color:var(--dimmer);font-size:18px}
@@ -1154,7 +1161,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-19 21:18';
+const BUILD = '2026-10-19 21:22';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -1329,7 +1336,7 @@ function faceRow(){
   const b = $('faceBtn'), chip = b.querySelector('i');
   b.disabled = !me;
   chip.hidden = !me;
-  if (me){ chip.textContent = chipFor(me); chip.style.background = personColor(me); }
+  if (me) chipPaint(chip, me);
   b.querySelector('span').textContent = !me ? 'Pick your name first' : (snap.faces || {})[me] ? 'Change' : 'Choose';
 }
 function faceSays(txt, bad){
@@ -1338,8 +1345,7 @@ function faceSays(txt, bad){
 }
 function faceGrid(){
   const grid = $('faceGrid'), mineNow = (snap.faces || {})[me] || '';
-  $('faceNow').textContent = me ? chipFor(me) : '';
-  $('faceNow').style.background = me ? personColor(me) : '';
+  if (me) chipPaint($('faceNow'), me); else $('faceNow').textContent = '';
   grid.innerHTML = '';
   FACE_PICKS.forEach(g => {
     const b = document.createElement('button');
@@ -3045,6 +3051,18 @@ function chipFor(name){
   if (!memo.has(name)) memo.set(name, faceIn(name) || name[0].toUpperCase());
   return memo.get(name);
 }
+/* A climber's circle on the page, as on the MoonBoard page: their first letter on their colour, or their emoji with nothing behind it (Will,
+   2026-10-19: "Can you remove the circle behind the emoji"), drawn larger to fill the circle's room. */
+function chipPaint(el, name){
+  const t = chipFor(name), em = t !== name[0].toUpperCase();
+  el.textContent = t;
+  el.style.background = em ? '' : personColor(name);
+  el.classList.toggle('em', em);
+}
+function chipHtml(name){                   // the same, as markup
+  const t = chipFor(name), em = t !== name[0].toUpperCase();
+  return '<b' + (em ? ' class="em"' : ' style="background:' + personColor(name) + '"') + ' title="' + esc(name) + '">' + esc(t) + '</b>';
+}
 function personColor(name){                // the same colour for a name as on the MoonBoard page
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360;
@@ -3108,7 +3126,7 @@ function whoFill(r){
     row.className = 'p' + (n === me ? ' me' : '');
     row.innerHTML = '<i></i><div class="n"></div><div class="rs"></div>';
     const chip = row.querySelector('i'), nm = row.querySelector('.n'), rs = row.querySelector('.rs'), sub = document.createElement('span');
-    chip.textContent = chipFor(n); chip.style.background = personColor(n);
+    chipPaint(chip, n);
     nm.textContent = n;
     sub.textContent = [sends > 1 ? sends + ' sends' : '',
       first && best ? (st.g[0] >= topOf(r) ? 'the top in ' : '') + best.replace(/^to /, 'to hold ').replace(' \u00b7 ', ' in ') : '',
@@ -3162,7 +3180,7 @@ function paintLog(){
   $('lpCrew').innerHTML = '';
   groups.slice(0, CREW_SHOWN).forEach(x => {
     const row = lpRow(x, false), em = row.querySelector('em'), chip = document.createElement('i');
-    chip.textContent = chipFor(x.who); chip.style.background = personColor(x.who);
+    chipPaint(chip, x.who);
     em.textContent = x.who + ' \u00b7 ' + when(x.iso);
     em.prepend(chip);
     row.classList.add('crew'); if (x.who === me) row.classList.add('me');
@@ -3702,7 +3720,7 @@ function paintList(){
     const bw = me && byNumber(r) ? bestWords(me, r) : '';              // a climb by number: my best go against the clock
     const g = goes && goes.get(r.id);
     const side = goes ? '<div class="who goes">' + (g ? (g.length > GOES_MAX ? '<span class="more">+' + (g.length - GOES_MAX) + '</span>' : '') + goDots(g.slice(-GOES_MAX)) : '') + '</div>' + (bw ? '<div class="bw">' + esc(bw) + '</div>' : '')
-      : '<div class="who crew">' + who.map(p => '<b style="background:' + personColor(p) + '" title="' + esc(p) + '">' + esc(chipFor(p)) + '</b>').join('') + '</div>';
+      : '<div class="who crew">' + who.map(chipHtml).join('') + '</div>';
     return '<div class="rt' + (r.id === openId ? ' sel' : '') + (r.retired ? ' gone' : '') + '" data-id="' + r.id + '"><div class="nm"><b>' + esc(r.name) + '</b><span>' + esc(r.setter) +
       ' · ' + (byNumber(r) ? 'by number · ' : '') + FEET[r.feet] + rulesSay(r, true) + (n ? ' · ' + n + ' sent' : '') + (r.tape ? ' · ' + esc(r.tape) : '') + '</span></div>' +
       '<div class="rside"><div class="gd" data-g="' + r.grade + '"></div>' + side + '</div><div class="chev">›</div></div>';

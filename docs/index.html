@@ -704,6 +704,15 @@
   .who.goes .more{font:700 10px ui-monospace,Menlo,monospace;color:var(--dimmer);margin-right:1px}
   .who b{display:grid;place-items:center;width:19px;height:19px;border-radius:50%;
          font-size:10px;font-weight:700;color:#0e0e0f}
+  /* an emoji stands alone in a climber's place, with no colour behind it, and fills the circle's room (chipPaint) */
+  .who b.em,.whoRows .p i.em,.lprow .n em i.em,#nowBtn .by i.em,.nrow .by i.em,#faceBtn i.em,#faceNow.em{background:none}
+  .who b.em{font-size:16px}
+  .whoRows .p i.em{font-size:19px}
+  .lprow .n em i.em{font-size:14px}
+  #nowBtn .by i.em{font-size:12px}
+  .nrow .by i.em{font-size:11px}
+  #faceBtn i.em{font-size:25px}
+  #faceNow.em{font-size:30px}
 
   /* connect four - a full screen sheet, not a strip inside the scroller */
   #gamePanel{position:fixed;inset:0;z-index:60;background:var(--bg);
@@ -1854,7 +1863,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-19 21:18';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-19 21:22';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3697,6 +3706,14 @@ function chipFor(name){
   if (!memo.has(name)) memo.set(name, faceIn(name) || name[0].toUpperCase());
   return memo.get(name);
 }
+/* A climber's circle on the page: their first letter on their colour, or their emoji with nothing behind it (Will,
+   2026-10-19: "Can you remove the circle behind the emoji"), drawn larger to fill the circle's room. */
+function chipPaint(el, name){
+  const t = chipFor(name), em = t !== name[0].toUpperCase();
+  el.textContent = t;
+  el.style.background = em ? '' : personColor(name);
+  el.classList.toggle('em', em);
+}
 
 function personColor(name){
   let h = 0;
@@ -3836,7 +3853,7 @@ function faceRow(){
   const me = meNow(), chip = b.querySelector('i');
   b.disabled = !me;
   chip.hidden = !me;
-  if (me){ chip.textContent = chipFor(me); chip.style.background = personColor(me); }
+  if (me) chipPaint(chip, me);
   b.querySelector('span').textContent = !me ? 'Pick your name first' : faces[me] ? 'Change' : 'Choose';
 }
 function faceSays(txt, bad){
@@ -3845,8 +3862,7 @@ function faceSays(txt, bad){
 }
 function faceGrid(){
   const me = meNow(), grid = $('faceGrid');
-  $('faceNow').textContent = me ? chipFor(me) : '';
-  $('faceNow').style.background = me ? personColor(me) : '';
+  if (me) chipPaint($('faceNow'), me); else $('faceNow').textContent = '';
   grid.innerHTML = '';
   FACE_PICKS.forEach(g => {
     const b = document.createElement('button');
@@ -4264,9 +4280,8 @@ function renderResults(){
       if (g){ whoBox.classList.add('goes'); whoBox.innerHTML = (g.length > GOES_MAX ? '<span class="more">+' + (g.length - GOES_MAX) + '</span>' : '') + goDots(g.slice(-GOES_MAX)); }
     } else (done[r.id] || []).forEach(n => {          // who has sent it
       const chip = document.createElement('b');
-      chip.textContent = chipFor(n);
+      chipPaint(chip, n);
       chip.title = n;
-      chip.style.background = personColor(n);
       whoBox.appendChild(chip);
     });
     row.addEventListener('click', () => loadRoute(r));
@@ -4893,8 +4908,7 @@ function paintNow(){
     who.textContent = '';
     if (by){
       const chip = document.createElement('i');
-      chip.textContent = chipFor(by);
-      chip.style.background = personColor(by);
+      chipPaint(chip, by);
       const nm = document.createElement('span');
       nm.textContent = by;
       who.append(chip, nm);
@@ -4916,8 +4930,7 @@ function paintNow(){
   who.textContent = '';
   if (by){
     const chip = document.createElement('i');
-    chip.textContent = chipFor(by);
-    chip.style.background = personColor(by);
+    chipPaint(chip, by);
     const nm = document.createElement('span');
     nm.textContent = by;
     who.append(chip, nm);
@@ -5051,8 +5064,7 @@ function paintStack(){
     row.innerHTML = '<span class="cap"></span><span class="by"><i></i><span></span></span><b></b><span class="gd"></span>';
     row.querySelector('.cap').textContent = i ? 'Up next ' + (i + 1) : 'Up next';      // said on the card itself, as "On wall" is on the wall's
     const chip = row.querySelector('i');
-    chip.textContent = chipFor(e.by);
-    chip.style.background = personColor(e.by);
+    chipPaint(chip, e.by);
     row.querySelector('.by span').textContent = e.by;
     row.querySelector('b').textContent = r.name;
     paintPill(row.querySelector('.gd'), r.grade);
@@ -5574,8 +5586,7 @@ function whoFill(box){
     const row = document.createElement('div');
     row.className = 'p';
     const chip = document.createElement('i');
-    chip.textContent = chipFor(n);
-    chip.style.background = personColor(n);
+    chipPaint(chip, n);
     const nm = document.createElement('div');
     nm.className = 'n';
     nm.textContent = n;
@@ -7936,8 +7947,7 @@ async function crewFeed(me, mine){
     const row = lpRow(x, true);
     const em = row.querySelector('em');
     const chip = document.createElement('i');
-    chip.textContent = chipFor(x.who);
-    chip.style.background = personColor(x.who);
+    chipPaint(chip, x.who);
     em.textContent = x.who + (em.textContent ? ' \u00b7 ' + em.textContent : '');
     em.prepend(chip);
     box.appendChild(row);
