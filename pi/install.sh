@@ -11,8 +11,9 @@ DIR=$PWD
 chmod 600 room
 
 echo "== packages (and security updates that install themselves)"
-sudo apt-get update -qq
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-venv bluez iw unattended-upgrades
+APT='sudo DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=300'   # waits out an update already running
+$APT update -qq
+$APT install -y -qq python3-venv bluez iw unattended-upgrades
 printf 'APT::Periodic::Update-Package-Lists "1";\nAPT::Periodic::Unattended-Upgrade "1";\n' |
   sudo tee /etc/apt/apt.conf.d/20auto-upgrades >/dev/null
 
