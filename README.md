@@ -355,6 +355,15 @@ Top to bottom (the order is of 2026-10-12):
 - **Climbing as**: the name picker at the top of the page, here as well, with **Add a
   name** beside it, as on the Sun board's page. Whichever of the two pickers is changed,
   the other follows.
+  - **Your emoji** (since 2026-10-19), under it: the emoji in your circle wherever your
+    name is drawn, where your first letter was. A tap opens a sheet at the foot of the
+    screen with 56 to tap, and a box for any other from the phone's own emoji keys; **Use
+    my letter** goes back. Will: "Instead of the circles with letters for your name. Can
+    it be a custom emoji... that the climber can change in settings?" An emoji in a name
+    (Abdulla 🍓) was already the circle and still is, until that climber chooses another.
+    Everybody sees it, on both walls: see *The crew*. One climber to an emoji, so a circle
+    still says who: one somebody here has, chosen or in their name, is faded in the sheet
+    and a tap on it says whose.
 - **Lighting the wall**
   - **Light a route as soon as I open it**, off unless a phone turns it on.
   - **Show the grade on the bottom row**. Row 1 carries no holds on any 2016 benchmark, so
@@ -577,7 +586,7 @@ two pages log pages"): its own top line with the way back to the board; the rout
 where **Log try** carries the tries since the last send and **Log send** is filled once
 the route has been sent (they were red and green); **Your history on this route**, a line
 that sums it up and a row a session with a dot for every go; and **Community**, who has
-climbed it, a row a climber with their initial in their colour and how their first send
+climbed it, a row a climber with their circle (their emoji, or their initial) and how their first send
 went, then **Lately on the Sun board**, a few of the crew's latest goes in rows of the
 same kind, where a tap on a row goes to the board with that route up. What the MoonBoard
 page has and this one has not is the beta, so the setter's two buttons, **Change it** and
@@ -657,6 +666,8 @@ keeps and how to ask. It runs as a Pages Function (`functions/api/[[path]].js`) 
 database (`wrangler.toml`), at `/api/w/sun` on the site's own address, so it goes out with
 a push like the pages do. The relay and the crew's MoonBoard logbook are not involved,
 except once: the first time anyone opens the Sun board it copies the crew's names across.
+It also keeps the climbers' emoji for both walls, at `/api/faces` (see *The crew*); a check
+keeps its own with `?crew=test-...`, and a test wall's `/reset` clears that wall's.
 
 A logbook brought in from a file goes to `POST /api/w/sun/log/import`: many goes of one
 climber in a call, each with when it happened. For each route and day the logbook ends up
@@ -795,6 +806,16 @@ can write; that's the point.
 Each climber also has a saved list of projects from the app's earlier days. Those lists are
 still kept on the relay, but the page no longer offers a way to add to one or to look at one:
 the list on screen is always the benchmarks for the hold set that is up.
+
+A climber is drawn as a circle in their own colour (worked out from the name, the same on
+both walls) beside the routes they have sent, on the cards of the line and the wall, and
+on the log page. In it is the emoji they chose in Settings, else an emoji in their name,
+else their first letter (`chipFor` on both pages). The chosen ones are not on the relay:
+they are kept by the site, in the Sun board's store (`store/store.js`, `GET` and `POST
+/api/faces`, a table `faces` keyed by name), so they go out with a push and are the same on
+both walls. The MoonBoard page asks for them when it opens, when it comes back into sight
+after a minute or more, and when the sheet opens; the Sun board's snapshot carries them. A
+page not on the site (a copy opened from a file) cannot reach them and draws letters.
 
 ## Logbook
 

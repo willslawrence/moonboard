@@ -722,12 +722,31 @@
      it, as on the Sun board's page. It filled the screen until 2026-10-12 (Will: "the time session pop up on the sun
      board is good but on the moon board it take up the whole acreen. I like the sun board one better"). A tap on the
      dimmed board shuts it, as Close does. */
-  #rsScrim,#logScrim{position:fixed;left:0;top:0;right:0;bottom:0;z-index:60;background:rgba(0,0,0,.45)}
-  #rsScrim[hidden],#logScrim[hidden]{display:none}
-  #rsPanel{position:fixed;left:0;right:0;bottom:0;z-index:61;max-height:92vh;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;
+  #rsScrim,#logScrim,#faceScrim{position:fixed;left:0;top:0;right:0;bottom:0;z-index:60;background:rgba(0,0,0,.45)}
+  #rsScrim[hidden],#logScrim[hidden],#faceScrim[hidden]{display:none}
+  #rsPanel,#facePanel{position:fixed;left:0;right:0;bottom:0;z-index:61;max-height:92vh;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;
            background:var(--bg);border-radius:16px 16px 0 0;border-top:1px solid var(--edge);
            padding:14px var(--pad) calc(env(safe-area-inset-bottom) + 14px)}
-  #rsPanel[hidden]{display:none}
+  #rsPanel[hidden],#facePanel[hidden]{display:none}
+  /* your emoji: the row under Climbing as in Settings, and its sheet, an emoji a key, eight to a row */
+  #faceCard{margin-top:8px}
+  #faceBtn{margin-left:auto;flex:none;width:auto;display:flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;font-size:13.5px}
+  #faceBtn i,#faceNow{flex:none;display:grid;place-items:center;border-radius:50%;font-style:normal;font-weight:700;color:#0e0e0f}
+  #faceBtn i{width:28px;height:28px;font-size:15px}
+  #faceBtn i[hidden]{display:none}
+  #faceBtn:disabled{opacity:1;color:var(--dimmer)}
+  #faceNow{width:34px;height:34px;font-size:19px}
+  #faceNow:empty{display:none}
+  #faceSay{font-size:13px;color:var(--dim);line-height:1.4;margin:0 2px 8px}
+  #faceSay.bad{color:#ef4444}
+  #faceGrid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px;margin:0 0 12px}
+  #faceGrid .fc{width:100%;aspect-ratio:1;padding:0;border-radius:10px;border:1px solid transparent;background:transparent;
+                font-size:24px;line-height:1;display:grid;place-items:center}
+  #faceGrid .fc.on{border-color:var(--ink);background:var(--panel2)}
+  #faceGrid .fc.taken{opacity:.25}
+  #faceMore{display:flex;gap:8px}
+  #faceMore input{flex:1 1 0;min-width:0}
+  #faceMore button{flex:none;width:auto;padding:10px 12px}
   .shHead{display:flex;align-items:center;gap:10px;margin:0 0 8px}
   .shHead h2{flex:1 1 auto;min-width:0;margin:0;font-size:18px}
   .shHead button{flex:none;width:auto;padding:6px 12px;font-size:13px}
@@ -1551,6 +1570,10 @@
     <select id="me2" aria-label="Climbing as"></select>
     <button id="addMe" type="button">Add a name</button>
   </div>
+  <!-- Your emoji, in your circle where your first letter was (Will, 2026-10-19): the sheet it opens is #facePanel. -->
+  <div class="card" id="faceCard">
+    <div class="opt"><label for="faceBtn">Your emoji</label><button type="button" class="tipBtn" aria-label="About: your emoji" aria-expanded="false">i</button><span class="tipTxt">It goes in your circle wherever your name is: beside the routes you have sent, in the line, on the wall&rsquo;s card and on the log page. Everyone sees it, on the Sun board too. One climber to an emoji. With none, your circle has your first letter.</span><button type="button" id="faceBtn"><i></i><span>Choose</span></button></div>
+  </div>
 
   <div class="lbl">Lighting the wall</div>
   <div class="card">
@@ -1725,6 +1748,18 @@
   </div>
 </div>
 
+<!-- Your emoji: a sheet at the foot of the screen, opened from Settings, under Climbing as. -->
+<div id="faceScrim" hidden></div>
+<div id="facePanel" hidden role="dialog" aria-label="Your emoji">
+  <div class="shHead"><i id="faceNow"></i><h2>Your emoji</h2><button id="faceShut" class="ghost">Close</button></div>
+  <div id="faceSay"></div>
+  <div id="faceGrid"></div>
+  <div id="faceMore">
+    <input id="faceType" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Or any emoji from the keyboard" aria-label="Any emoji">
+    <button id="faceLetter" type="button" class="ghost">Use my letter</button>
+  </div>
+</div>
+
 <div id="snakePanel" hidden>
   <div id="gameHead">
     <b>Snake</b>
@@ -1819,7 +1854,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-19 19:28';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-19 20:50';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3644,10 +3679,23 @@ const meNow  = () => {                       // who a save or a tick belongs to
 };
 let pending = null;                          // action waiting on a name
 
-// Two people can share an initial (both Abdullahs), so an emoji in the name wins.
+/* A climber's circle: the emoji they chose in Settings (see "your emoji"); else an emoji in the name, since two people
+   can share an initial (both Abdullahs); else the initial. Chosen ones are the site's, the same on both walls. */
+const FACES_API = '/api/faces';
+let faces = {}, facesAt = 0;                 // name -> emoji, and when they were last asked for
+// an emoji in a piece of text, whole (its skin tone, joiners and the like with it): the first, or with last the last.
+// (Its splitter is kept on itself, made the first time, so that it can be asked before the script has run this far.)
+function faceIn(text, last){
+  if (faceIn.seg === undefined) faceIn.seg = window.Intl && Intl.Segmenter ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
+  const hit = (faceIn.seg ? [...faceIn.seg.segment(text)].map(x => x.segment) : [...text])
+    .filter(g => /\p{Extended_Pictographic}|\p{Regional_Indicator}|\u{20E3}/u.test(g));
+  return hit.length ? hit[last ? hit.length - 1 : 0] : '';
+}
 function chipFor(name){
-  const m = name.match(/\p{Extended_Pictographic}/u);
-  return m ? m[0] : name[0].toUpperCase();
+  if (faces[name]) return faces[name];
+  const memo = chipFor.memo || (chipFor.memo = new Map());      // what a name gives, worked out once: a long list draws hundreds
+  if (!memo.has(name)) memo.set(name, faceIn(name) || name[0].toUpperCase());
+  return memo.get(name);
 }
 
 function personColor(name){
@@ -3749,7 +3797,104 @@ function meMirror(){
   b.innerHTML = '';
   [...a.options].forEach(o => b.appendChild(new Option(o.textContent, o.value)));     // (not by copying the HTML: the value of "+ New climber" does not survive it)
   b.value = a.value;
+  faceRow();
 }
+
+/* ---------- your emoji ----------
+   Will, 2026-10-19: "Instead of the circles with letters for your name. Can it be a custom emoji. Instead that the
+   climber can change in settings?", and "Abdulla 🍓 works like this": an emoji in a name was already put in the
+   circle. Chosen in a sheet from Settings, under Climbing as, for whoever is climbing. Everybody sees it, on both walls,
+   so the site keeps it (store/store.js, /api/faces), not the relay; asked for when the page opens, when it comes back
+   into sight after a minute or more, and when the sheet opens. One climber to an emoji, so that a circle still says
+   who: one somebody here has (chosen, or in their name) is faded in the sheet and says whose it is. */
+const FACE_PICKS = ('🧗 💪 🔥 ⚡ 🚀 🏔️ 🪨 🌙 🦎 🐒 🦍 🐐 🦅 🦊 🐻 🐼 🦁 🐯 🐸 🐙 🦈 🐢 🦉 🐝 ' +
+                    '🕷️ 🦖 🐉 🦄 🐧 🐨 🐺 🦋 🍓 🍕 🍩 🌮 ☕ 🌵 🍀 🌊 ⭐ ☀️ ❄️ 🌈 💎 👑 🏆 🎯 😎 🤠 🥷 🤖 👽 👻 ♟️ 🎸').split(' ');
+async function facesPull(){
+  facesAt = Date.now();
+  try{
+    const d = await (await fetch(FACES_API, { cache: 'no-store' })).json();
+    if (d && d.faces) facesTake(d.faces);
+  }catch(e){}                                  // off the site (a copy of the page): letters, as before
+}
+function facesTake(f){
+  const was = JSON.stringify(faces);
+  faces = f && typeof f === 'object' ? f : {};
+  if (JSON.stringify(faces) === was) return;
+  stackSig = '';                               // the line's cards are drawn again only when what is on them changes
+  renderResults(); paintBar(); paintWall(); faceRow();
+  if (page === 'log') paintLogPage();
+  if (!$('facePanel').hidden) faceGrid();
+}
+// who else has this emoji in their circle: chosen, or in their name with none chosen
+function faceOwner(g, me){
+  return [...new Set([...people, ...Object.keys(faces)])]
+    .find(n => n !== me && (faces[n] || faceIn(n)) === g) || '';
+}
+function faceRow(){
+  const b = $('faceBtn');
+  if (!b) return;
+  const me = meNow(), chip = b.querySelector('i');
+  b.disabled = !me;
+  chip.hidden = !me;
+  if (me){ chip.textContent = chipFor(me); chip.style.background = personColor(me); }
+  b.querySelector('span').textContent = !me ? 'Pick your name first' : faces[me] ? 'Change' : 'Choose';
+}
+function faceSays(txt, bad){
+  $('faceSay').textContent = txt;
+  $('faceSay').classList.toggle('bad', !!bad);
+}
+function faceGrid(){
+  const me = meNow(), grid = $('faceGrid');
+  $('faceNow').textContent = me ? chipFor(me) : '';
+  $('faceNow').style.background = me ? personColor(me) : '';
+  grid.innerHTML = '';
+  FACE_PICKS.forEach(g => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'fc'; b.textContent = g;
+    const who = faceOwner(g, me);
+    if (who){ b.classList.add('taken'); b.title = who; }
+    if (me && faces[me] === g) b.classList.add('on');
+    b.onclick = () => facePick(g);
+    grid.appendChild(b);
+  });
+  $('faceLetter').disabled = !me || !faces[me];
+}
+function faceOpen(){
+  const me = meNow();
+  if (!me) return;
+  faceSays('For ' + me + '. Everyone sees it, on both walls.');
+  $('faceType').value = '';
+  faceGrid();
+  showPanel('face');
+  facesPull();                                 // what the others have chosen since the page opened
+}
+async function facePick(g){                    // '' for the letter again
+  const me = meNow();
+  if (!me) return;
+  const who = g && faceOwner(g, me);
+  if (who){ faceSays(g + ' is ' + who + '’s. Pick another.', true); return; }
+  if (g === (faces[me] || '')){ showPanel(null); return; }
+  faceSays('Saving…');
+  try{
+    const r = await fetch(FACES_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: me, face: g }) });
+    const d = await r.json();
+    if (!r.ok || d.error) throw new Error(d.error || 'the site said ' + r.status);
+    facesTake(d.faces);
+    showPanel(null);
+    quickSay(g ? 'Your emoji is ' + g : 'Your circle has your letter again');
+  }catch(e){
+    faceSays('Not saved: ' + (e.message || e) + '. Try again in a moment.', true);
+    log('emoji: ' + (e.message || e));
+  }
+}
+$('faceBtn').onclick = faceOpen;
+$('faceShut').onclick = $('faceScrim').onclick = () => showPanel(null);
+$('faceLetter').onclick = () => facePick('');
+$('faceType').oninput = () => {                // any emoji, from the phone's own emoji keys
+  const t = $('faceType'), g = faceIn(t.value, true);
+  if (g){ t.value = g; t.blur(); facePick(g); }
+  else if (t.value.trim()) faceSays('Only an emoji: the smiley key on the keyboard has them all.', true);
+};
 /* Reached from the first option of the name picker, or from Add a name in Settings, so a new name means
    "this is me" - select it. Pick someone else from the list to switch back. */
 async function addPerson(previous){
@@ -7628,7 +7773,7 @@ document.body.addEventListener('animationend', e => {
 
 (function pageSwipe(){
   let x0 = null, y0 = null;
-  const off = '#board, #kb, select, #quick, #gSlide, #sendFan, #setPanel input, #log, #logPanel, #pairPanel, #snakePanel, #entryPanel, #gamePanel, #rsPanel, #rsScrim, #logScrim, #tipBox, #a2hs, #a2hsHow, #gestHow';
+  const off = '#board, #kb, select, #quick, #gSlide, #sendFan, #setPanel input, #log, #logPanel, #pairPanel, #snakePanel, #entryPanel, #gamePanel, #rsPanel, #rsScrim, #facePanel, #faceScrim, #logScrim, #tipBox, #a2hs, #a2hsHow, #gestHow';
   document.addEventListener('pointerdown', e => {
     x0 = null;
     if (betaDraft || panelOpen || focusOn) return;
@@ -8602,7 +8747,7 @@ window.addEventListener('resize', tipShut);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') tipShut(); });
 
 const PANELS = { game: 'gamePanel', log: 'logPanel', ig: 'igPanel',
-                 snake: 'snakePanel', entry: 'entryPanel', pair: 'pairPanel', rs: 'rsPanel' };
+                 snake: 'snakePanel', entry: 'entryPanel', pair: 'pairPanel', rs: 'rsPanel', face: 'facePanel' };
 
 function showPanel(which, fromBack){  // a key of PANELS, or null for none
   const back = which === 'log' && !$('entryPanel').hidden;           // from an entry's card back to the logbook under it
@@ -8613,6 +8758,7 @@ function showPanel(which, fromBack){  // a key of PANELS, or null for none
   $('snakePanel').hidden = which !== 'snake';
   $('entryPanel').hidden = which !== 'entry';
   $('rsPanel').hidden = $('rsScrim').hidden = which !== 'rs';
+  $('facePanel').hidden = $('faceScrim').hidden = which !== 'face';
   if (which !== 'snake' && which !== 'entry' && sn) snStop();          // don't leave it running unseen, or a finished one on the wall
   if (PANELS[which] && !back) $(PANELS[which]).scrollTop = 0;   // open at the top, always (but the logbook as it was left, back from an entry)
   // One step in the history for "a sheet is open", however many are swapped through.
@@ -9020,6 +9166,7 @@ $('noWall').onclick = () => {
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && relayWant) keepAwake();
   if (document.visibilityState === 'visible') relayPeek();
+  if (document.visibilityState === 'visible' && Date.now() - facesAt > 60000) facesPull();
 });
 setInterval(peekTick, 1500);
 $('copy').onclick = async () => {
@@ -9099,6 +9246,7 @@ try{
 meMirror();
 renderResults();
 listsCall('/lists');
+facesPull();
 setLive(false);
 relayPeek();
 if (!navigator.bluetooth) log(noBluetoothAdvice());

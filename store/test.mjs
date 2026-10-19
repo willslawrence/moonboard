@@ -314,6 +314,45 @@ console.log('a logbook brought in from a file');
   check('five hundred goes go in at one call, and no more than that', d.imported === 500 && (await call('GET', W + '/log?person=Jo&limit=3000')).entries.length === 503, [d.imported, d.error]);
   await call('POST', W + '/reset', {});
 }
+console.log('a climber\'s emoji, the same on both walls');
+{
+  let f = await call('GET', '/api/faces');
+  check('nobody has one to begin with', f.status === 200 && Object.keys(f.faces).length === 0, f);
+  f = await call('POST', '/api/faces', { name: 'Will', face: '\u{1F98E}' });
+  check('one is chosen and answered with', f.status === 200 && f.faces.Will === '\u{1F98E}' && f.face === '\u{1F98E}', f);
+  f = await call('POST', '/api/faces', { name: 'Abdulla \u{1F353}', face: '\u{1F98A}' });
+  check('a name with an emoji in it is a name like any other', f.faces['Abdulla \u{1F353}'] === '\u{1F98A}' && Object.keys(f.faces).length === 2, f);
+  f = await call('POST', '/api/faces', { name: 'Will', face: '\u{1F9D7}\u{1F3FD}\u200D\u2640\uFE0F' });
+  check('choosing again changes it, and one with a skin tone and a joiner is one emoji', f.faces.Will === '\u{1F9D7}\u{1F3FD}\u200D\u2640\uFE0F' && Object.keys(f.faces).length === 2, f);
+  for (const [face, what] of [['\u{1F1EC}\u{1F1E7}', 'a flag'], ['7\uFE0F\u20E3', 'a keycap'], ['\u265F\uFE0F', 'a chess piece'], ['\u{1F468}\u200D\u{1F469}\u200D\u{1F467}\u200D\u{1F466}', 'a family']])
+    check(what + ' is one emoji', (await call('POST', '/api/faces', { name: 'Kit', face })).faces.Kit === face);
+  for (const [face, what] of [['W', 'a letter'], ['\u{1F98E}\u{1F98A}', 'two emoji'], ['ab\u{1F98E}', 'words and an emoji'], ['<\u{1F98E}>', 'markup'], [42, 'a number'], ['\u{1F98E}'.repeat(20), 'a long run']])
+    check(what + ' is refused', (await call('POST', '/api/faces', { name: 'Will', face })).status === 400);
+  check('a name is needed', (await call('POST', '/api/faces', { name: '  ', face: '\u{1F98E}' })).status === 400 &&
+    (await call('POST', '/api/faces', { name: '<b>', face: '\u{1F98E}' })).status === 400);
+  f = await call('POST', '/api/faces', { name: 'Kit', face: '' });
+  check('an empty one goes back to the letter', !('Kit' in f.faces) && f.faces.Will, f);
+  f = await call('POST', '/api/faces', { name: 'Kit' });
+  check('and so does none at all, twice over', f.status === 200 && !('Kit' in f.faces), f);
+  s = await call('GET', '/api/w/sun');
+  check('the Sun board\'s snapshot carries them', s.faces && s.faces.Will === '\u{1F9D7}\u{1F3FD}\u200D\u2640\uFE0F' && Object.keys(s.faces).length === 2, s.faces);
+  s = await call('POST', '/api/w/sun/person', { name: 'Ann' });
+  check('and so does every answer to a write', s.faces && Object.keys(s.faces).length === 2, s.faces);
+  // a check's own crew, apart from everyone's
+  f = await call('POST', '/api/faces?crew=test-faces', { name: 'Will', face: '\u{1F680}' });
+  check('a check\'s crew is its own', f.faces.Will === '\u{1F680}' && (await call('GET', '/api/faces')).faces.Will !== '\u{1F680}', f);
+  check('and a test wall\'s snapshot carries that crew\'s', (await call('GET', '/api/w/test-faces')).faces.Will === '\u{1F680}');
+  check('a crew that is not a check\'s is refused', (await call('GET', '/api/faces?crew=moon')).status === 404 &&
+    (await call('POST', '/api/faces?crew=wills-wall', { name: 'Will', face: '\u{1F680}' })).status === 404);
+  check('everyone\'s cannot be emptied', (await call('POST', '/api/faces/reset', {})).status === 404 && (await call('GET', '/api/faces')).faces.Will);
+  await call('POST', '/api/w/test-faces/reset', {});
+  check('a test wall\'s reset clears its crew', Object.keys((await call('GET', '/api/faces?crew=test-faces')).faces).length === 0);
+  await call('POST', '/api/faces?crew=test-faces', { name: 'Bo', face: '\u{1F680}' });
+  f = await call('POST', '/api/faces/reset?crew=test-faces', {});
+  check('and so does its own reset', Object.keys(f.faces).length === 0 && Object.keys((await call('GET', '/api/faces?crew=test-faces')).faces).length === 0);
+  check('other methods are refused', (await handle(new Request('https://x.test/api/faces', { method: 'DELETE' }), db)).status === 405);
+  check('a body that is not JSON is refused', (await handle(new Request('https://x.test/api/faces', { method: 'POST', body: 'face=x' }), db)).status === 400);
+}
 check('a body that is not JSON is refused',
   (await handle(new Request('https://x.test/api/w/sun/person', { method: 'POST', body: 'name=Will' }), db)).status === 400);
 check('other methods are refused', (await handle(new Request('https://x.test/api/w/sun', { method: 'DELETE' }), db)).status === 405);

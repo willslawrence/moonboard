@@ -649,8 +649,27 @@
   #rsBtn.on{background:#22c55e;border-color:#22c55e;color:#06240e}
   body:not(.listPage):not(.logPage):not(.setPage) #rsBtn{box-shadow:0 0 0 1px rgba(255,255,255,.3)}
   body.listPage #rsBtn{display:none}
-  #rsSheet,#bookSheet{position:fixed;left:0;right:0;bottom:0;z-index:71;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;background:var(--bg);
+  #rsSheet,#bookSheet,#faceSheet{position:fixed;left:0;right:0;bottom:0;z-index:71;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;background:var(--bg);
          border-radius:16px 16px 0 0;border-top:1px solid var(--edge);padding:14px var(--pad) calc(env(safe-area-inset-bottom) + 14px)}
+  /* your emoji: the row under Climbing as in Settings, and its sheet, an emoji a key, eight to a row (as on the MoonBoard page) */
+  #faceCard{margin-top:8px}
+  #faceBtn{margin-left:auto;flex:none;width:auto;display:flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;font-size:13.5px}
+  #faceBtn i,#faceNow{flex:none;display:grid;place-items:center;border-radius:50%;font-style:normal;font-weight:700;color:#0e0e0f}
+  #faceBtn i{width:28px;height:28px;font-size:15px}
+  #faceBtn i[hidden]{display:none}
+  #faceBtn:disabled{opacity:1;color:var(--dimmer)}
+  #faceNow{width:34px;height:34px;font-size:19px}
+  #faceNow:empty{display:none}
+  #faceSay{font-size:13px;color:var(--dim);line-height:1.4;margin:0 2px 8px}
+  #faceSay.bad{color:#ef4444}
+  #faceGrid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px;margin:0 0 12px}
+  #faceGrid .fc{width:100%;aspect-ratio:1;padding:0;border-radius:10px;border:1px solid transparent;background:transparent;
+                font-size:24px;line-height:1;display:grid;place-items:center}
+  #faceGrid .fc.on{border-color:var(--ink);background:var(--panel2)}
+  #faceGrid .fc.taken{opacity:.25}
+  #faceMore{display:flex;gap:8px}
+  #faceMore input{flex:1 1 0;min-width:0}
+  #faceMore button{flex:none;width:auto;padding:10px 12px}
   .shHead{display:flex;align-items:center;gap:10px;margin:0 0 8px}
   .shHead h2{flex:1 1 auto;min-width:0;margin:0;font-size:18px}
   .shHead button{flex:none;width:auto;padding:6px 12px;font-size:13px}
@@ -936,6 +955,10 @@
     <select id="me2" aria-label="Climbing as"></select>
     <button id="addMe" style="flex:none;width:auto">Add a name</button>
   </div>
+  <!-- Your emoji, in your circle where your first letter was (Will, 2026-10-19): the sheet it opens is #faceSheet. -->
+  <div class="card" id="faceCard">
+    <div class="opt"><label for="faceBtn">Your emoji</label><button type="button" class="tipBtn" aria-label="About: your emoji" aria-expanded="false">i</button><span class="tipTxt">It goes in your circle wherever your name is: beside the routes you have sent and on the log page. Everyone sees it, on the MoonBoard too. One climber to an emoji. With none, your circle has your first letter.</span><button type="button" id="faceBtn"><i></i><span>Choose</span></button></div>
+  </div>
 
   <div class="lbl tipLbl">The picture<button type="button" class="tipBtn" aria-label="About: the picture" aria-expanded="false">i</button><span class="tipTxt">A finger across the picture turns your head, from the flat wall round to the overhang, and it stays where you leave it. Flat and Overhang in the picture's corners go back to those two views. Two taps, or a short stroke down, and the picture fills the screen; there a tap picks a hold, and a stroke up or down, or the cross, goes back. Two fingers zoom: apart for closer, together for further off, until the whole wall is in sight. A hold that has no outline can still go in a route: tap it while marking the route and a ring goes where you tapped.</span></div>
   <div class="card">
@@ -1040,6 +1063,16 @@
     <div class="hint">On the board, tap a circle after each go. After the last one the rest counts down beside the wall. When it is up the phone pings and the screen flashes white. Tap the time to skip a rest.</div>
   </div>
 </div>
+<!-- Your emoji: opened from Settings, under Climbing as. -->
+<div id="faceSheet" hidden role="dialog" aria-label="Your emoji">
+  <div class="shHead"><i id="faceNow"></i><h2>Your emoji</h2><button id="faceShut" class="ghost">Close</button></div>
+  <div id="faceSay"></div>
+  <div id="faceGrid"></div>
+  <div id="faceMore">
+    <input id="faceType" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Or any emoji from the keyboard" aria-label="Any emoji">
+    <button id="faceLetter" type="button" class="ghost">Use my letter</button>
+  </div>
+</div>
 <!-- The logbook: every go of one climber, by session, newest first; then everyone's points. Opened by the Logbook
      button on the log page. An entry of your own is taken out by tapping it. -->
 <div id="bookSheet" hidden role="dialog" aria-label="Logbook">
@@ -1121,7 +1154,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-19 19:28';
+const BUILD = '2026-10-19 20:50';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -1146,7 +1179,7 @@ const ls = { get: k => { try{ return localStorage.getItem(k); }catch(e){ return 
 
 let wall = null;                 // wall.json
 let HOLD = {};                   // id -> hold, with what a tap needs worked out once
-let snap = { people: [], routes: [], stats: {}, fixes: [] };
+let snap = { people: [], routes: [], stats: {}, fixes: [], faces: {} };     // faces: name -> the emoji in that climber's circle
 let me = ls.get('mb-me') || '';
 let page = 'board', view = 'turn';
 let openId = null;               // the route on the picture
@@ -1170,7 +1203,7 @@ async function call(path, body){
 }
 function take(d){
   if (!d || !Array.isArray(d.routes)) return;
-  snap = { people: d.people || [], routes: d.routes, stats: d.stats || {}, fixes: d.fixes || [] };
+  snap = { people: d.people || [], routes: d.routes, stats: d.stats || {}, fixes: d.fixes || [], faces: d.faces || snap.faces || {} };
   relive();
   ls.set('sb-snap-' + WALL, JSON.stringify(snap));
   paintAll();
@@ -1254,6 +1287,7 @@ function paintMe(){
     sel.insertBefore(new Option('+ New climber\u2026', NEW_CLIMBER), sel.options[1] || null);
     sel.value = me;
   }
+  faceRow();
 }
 /* A new name is added from the name picker itself, by its first line under the heading, as on the MoonBoard page (Will, 2026-10-11: "can
    you add a climber on the sun board just as easy as the moon board?"). It was only in Settings. A new name means
@@ -1269,6 +1303,86 @@ async function addPerson(){
 $('me').onchange = () => $('me').value === NEW_CLIMBER ? addPerson() : setMe($('me').value);
 $('me2').onchange = () => $('me2').value === NEW_CLIMBER ? addPerson() : setMe($('me2').value);
 $('addMe').onclick = addPerson;
+
+/* ---------- your emoji ----------
+   As on the MoonBoard page (Will, 2026-10-19: "Instead of the circles with letters for your name. Can it be a custom
+   emoji. Instead that the climber can change in settings?"). One a climber, the same on both walls: the site keeps them
+   (store/store.js, /api/faces) and this wall's snapshot carries them, so they come with every refresh. Chosen in a sheet
+   from Settings, under Climbing as, for whoever is climbing. One climber to an emoji: one somebody here has (chosen, or
+   in their name) is faded in the sheet and says whose it is. */
+const FACES = '/api/faces' + (/^test-/.test(WALL) ? '?crew=' + WALL : '');
+const FACE_PICKS = ('🧗 💪 🔥 ⚡ 🚀 🏔️ 🪨 🌙 🦎 🐒 🦍 🐐 🦅 🦊 🐻 🐼 🦁 🐯 🐸 🐙 🦈 🐢 🦉 🐝 ' +
+                    '🕷️ 🦖 🐉 🦄 🐧 🐨 🐺 🦋 🍓 🍕 🍩 🌮 ☕ 🌵 🍀 🌊 ⭐ ☀️ ❄️ 🌈 💎 👑 🏆 🎯 😎 🤠 🥷 🤖 👽 👻 ♟️ 🎸').split(' ');
+function facesTake(f){
+  if (!f || typeof f !== 'object' || JSON.stringify(f) === JSON.stringify(snap.faces || {})) return;
+  snap.faces = f;
+  ls.set('sb-snap-' + WALL, JSON.stringify(snap));
+  paintAll();
+  if (!$('faceSheet').hidden) faceGrid();
+}
+// who else has this emoji in their circle: chosen, or in their name with none chosen
+function faceOwner(g, who){
+  const f = snap.faces || {};
+  return [...new Set([...snap.people, ...Object.keys(f)])].find(n => n !== who && (f[n] || faceIn(n)) === g) || '';
+}
+function faceRow(){
+  const b = $('faceBtn'), chip = b.querySelector('i');
+  b.disabled = !me;
+  chip.hidden = !me;
+  if (me){ chip.textContent = chipFor(me); chip.style.background = personColor(me); }
+  b.querySelector('span').textContent = !me ? 'Pick your name first' : (snap.faces || {})[me] ? 'Change' : 'Choose';
+}
+function faceSays(txt, bad){
+  $('faceSay').textContent = txt;
+  $('faceSay').classList.toggle('bad', !!bad);
+}
+function faceGrid(){
+  const grid = $('faceGrid'), mineNow = (snap.faces || {})[me] || '';
+  $('faceNow').textContent = me ? chipFor(me) : '';
+  $('faceNow').style.background = me ? personColor(me) : '';
+  grid.innerHTML = '';
+  FACE_PICKS.forEach(g => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'fc'; b.textContent = g;
+    const who = faceOwner(g, me);
+    if (who){ b.classList.add('taken'); b.title = who; }
+    if (me && mineNow === g) b.classList.add('on');
+    b.onclick = () => facePick(g);
+    grid.appendChild(b);
+  });
+  $('faceLetter').disabled = !me || !mineNow;
+}
+async function faceOpen(){
+  if (!me) return;
+  faceSays('For ' + me + '. Everyone sees it, on both walls.');
+  $('faceType').value = '';
+  faceGrid();
+  showSheet('faceSheet');
+  try{ const d = await (await fetch(FACES, { cache: 'no-store' })).json(); if (d && d.faces) facesTake(d.faces); }catch(e){}     // what the others have chosen since the last refresh
+}
+async function facePick(g){                    // '' for the letter again
+  if (!me) return;
+  const who = g && faceOwner(g, me);
+  if (who){ faceSays(g + ' is ' + who + '’s. Pick another.', true); return; }
+  if (g === ((snap.faces || {})[me] || '')){ showSheet(null); return; }
+  faceSays('Saving…');
+  try{
+    const r = await fetch(FACES, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: me, face: g }) });
+    const d = await r.json();
+    if (!r.ok || d.error) throw new Error(d.error || 'the store said ' + r.status);
+    facesTake(d.faces);
+    showSheet(null);
+    toast(g ? 'Your emoji is ' + g : 'Your circle has your letter again');
+  }catch(e){ faceSays('Not saved: ' + (e.message || e) + '. Try again in a moment.', true); }
+}
+$('faceBtn').onclick = faceOpen;
+$('faceShut').onclick = () => showSheet(null);
+$('faceLetter').onclick = () => facePick('');
+$('faceType').oninput = () => {                // any emoji, from the phone's own emoji keys
+  const t = $('faceType'), g = faceIn(t.value, true);
+  if (g){ t.value = g; t.blur(); facePick(g); }
+  else if (t.value.trim()) faceSays('Only an emoji: the smiley key on the keyboard has them all.', true);
+};
 
 /* ---------- the map of holds ---------- */
 function index(h){
@@ -2914,9 +3028,22 @@ function paintBook(){
    your best go against the clock), then a row a session with a dot for every go: the four latest, and a button for
    the rest. Who has climbed it is a row a climber: their initial in their colour, how often and when last, and how
    the first send went. On a climb by number those who have not sent it follow, with how far they have got. */
+/* A climber's circle, as on the MoonBoard page: the emoji they chose in Settings (see "your emoji"), else an emoji in
+   the name, else the initial. */
+// an emoji in a piece of text, whole (its skin tone, joiners and the like with it): the first, or with last the last.
+// (Its splitter is kept on itself, made the first time, so that it can be asked before the script has run this far.)
+function faceIn(text, last){
+  if (faceIn.seg === undefined) faceIn.seg = window.Intl && Intl.Segmenter ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
+  const hit = (faceIn.seg ? [...faceIn.seg.segment(text)].map(x => x.segment) : [...text])
+    .filter(g => /\p{Extended_Pictographic}|\p{Regional_Indicator}|\u{20E3}/u.test(g));
+  return hit.length ? hit[last ? hit.length - 1 : 0] : '';
+}
 function chipFor(name){
-  const m = name.match(/\p{Extended_Pictographic}/u);
-  return m ? m[0] : name[0].toUpperCase();
+  const f = (snap.faces || {})[name];
+  if (f) return f;
+  const memo = chipFor.memo || (chipFor.memo = new Map());      // what a name gives, worked out once: a long list draws hundreds
+  if (!memo.has(name)) memo.set(name, faceIn(name) || name[0].toUpperCase());
+  return memo.get(name);
 }
 function personColor(name){                // the same colour for a name as on the MoonBoard page
   let h = 0;
@@ -3096,9 +3223,10 @@ function showSheet(id){
   $('rsSheet').hidden = id !== 'rsSheet';
   $('bookSheet').hidden = id !== 'bookSheet' && id !== 'entrySheet';        // an entry is shown over the logbook, which stays where it was
   $('entrySheet').hidden = id !== 'entrySheet';
+  $('faceSheet').hidden = id !== 'faceSheet';
   $('scrim').hidden = !id && $('sheet').hidden && $('goSheet').hidden;
 }
-const sheetUp = () => ['entrySheet', 'rsSheet', 'bookSheet'].find(x => !$(x).hidden) || null;       // the one on top
+const sheetUp = () => ['entrySheet', 'rsSheet', 'bookSheet', 'faceSheet'].find(x => !$(x).hidden) || null;       // the one on top
 
 /* ---------- the logbook ----------
    Every go of one climber, a session to a line, the newest open; then everyone's points. The log page is for the
@@ -3950,7 +4078,7 @@ $('pgDots').onclick = e => { const b = e.target.closest('button[data-go]'); if (
 let sw = null;
 document.addEventListener('touchstart', e => {
   const t = e.target;
-  sw = (focus || e.touches.length !== 1 || t.closest('#pic, #sheet, #goSheet, #rsSheet, #bookSheet, #entrySheet, #a2hs, #a2hsHow, #quick, #sendFan, select, input, #grades, #gSlide')) ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
+  sw = (focus || e.touches.length !== 1 || t.closest('#pic, #sheet, #goSheet, #rsSheet, #bookSheet, #entrySheet, #faceSheet, #a2hs, #a2hsHow, #quick, #sendFan, select, input, #grades, #gSlide')) ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
 }, { passive: true });
 document.addEventListener('touchend', e => {
   if (!sw) return;
@@ -3995,6 +4123,7 @@ function openNow(){        // what is open, the one underneath first
   if (!$('rsSheet').hidden) o.push('rs');
   if (!$('bookSheet').hidden) o.push('book');
   if (!$('entrySheet').hidden) o.push('entry');
+  if (!$('faceSheet').hidden) o.push('face');
   if (!$('a2hsHow').hidden) o.push('a2hs');
   if (!$('gestHow').hidden) o.push('gest');
   if (tipFor) o.push('tip');
@@ -4005,7 +4134,7 @@ function shutOne(k){       // what Back does to the one on top: what its own but
   else if (k === 'gest') $('gestOk').click();
   else if (k === 'a2hs') $('a2hsOk').click();
   else if (k === 'entry') showSheet('bookSheet');
-  else if (k === 'book' || k === 'rs') showSheet(null);
+  else if (k === 'book' || k === 'rs' || k === 'face') showSheet(null);
   else if (k === 'go') $('goDrop').onclick();              // asks first
   else if (k === 'sheet') $('shBack').onclick();           // back to the route being marked, as its own button
   else if (k === 'send') closeSend();

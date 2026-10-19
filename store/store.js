@@ -45,7 +45,19 @@
    "this outline is tape, not a hold" (drop), "this is a hold but the outline is the wrong
    shape" (redo). Those are kept here and go out with the wall, and the page acts on them at
    once: a dropped outline is gone, an added hold is a ring that can be picked, under the name
-   x<number>. When the map is next made they are worked into it properly and marked done. */
+   x<number>. When the map is next made they are worked into it properly and marked done.
+
+   A climber's emoji, in the circle where their first letter was (Will, 2026-10-19: "Instead of the circles with
+   letters for your name. Can it be a custom emoji... that the climber can change in settings?"). One a name, the same
+   on both walls, so it is kept here, on the site, rather than with either wall: the MoonBoard page asks /api/faces,
+   and a wall's snapshot carries them as faces. A name with none chosen keeps what it had, an emoji in the name itself
+   or its first letter. Which emoji are taken is the page's to say, since only the page knows who climbs its wall.
+
+     GET  /api/faces                  { faces: { name: emoji } }
+     POST /api/faces                  { name, face }                       choose one; an empty face goes back to the letter
+
+   A check keeps a crew of its own, ?crew=test-..., the name of the test wall it makes; /api/faces/reset?crew=test-...
+   and that wall's /reset clear it. */
 
 export const RESULTS = ['try', 'flash', '2nd', '3rd', '4+'];
 export const ROLES = ['s', 'h', 'f', 'e', 'n'];            // start, hold, foot only, finish, and a hold with its number in a climb by number
@@ -57,7 +69,8 @@ export const RULES = ['flatoff'];
 const rulesOf = v => RULES.filter(k => v.includes(k)).join(' ');
 export const GRADE_MIN = -1, GRADE_MAX = 17;                // VB is -1, then V0 to V17
 const WALLS = { sun: 'Sun board' };                         // the walls there are; "test-..." is any wall a check makes
-const MAX_ROUTES = 3000, MAX_PEOPLE = 300, MAX_MARKS = 250, MAX_FIXES = 2000;
+const MAX_ROUTES = 3000, MAX_PEOPLE = 300, MAX_MARKS = 250, MAX_FIXES = 2000, MAX_FACES = 300;
+const CREW = 'wills-wall';                                  // whose emoji: everyone who climbs at Will's, on either wall
 const FIX_KINDS = ['add', 'drop', 'redo'], FIX_SIZES = ['s', 'm', 'l'];
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
@@ -69,6 +82,19 @@ const clean = (v, max) => typeof v === 'string'
   ? v.replace(/[\x00-\x1f\x7f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max) : '';
 const unit = v => typeof v === 'number' && v >= 0 && v <= 1;
 const isTest = wall => /^test-[a-z0-9-]{1,24}$/.test(wall);
+const crewOf = wall => isTest(wall) ? wall : CREW;
+/* One emoji as a phone's keyboard gives it: one character on the screen, which may be several code points (a skin
+   tone, a flag, a family joined up, a keycap). '' for none, null for anything else. */
+const GRAPHEMES = typeof Intl === 'object' && Intl.Segmenter ? new Intl.Segmenter('en', { granularity: 'grapheme' }) : null;
+function cleanFace(v){
+  if (v === undefined || v === null) return '';
+  if (typeof v !== 'string') return null;
+  const s = v.trim();
+  if (!s) return '';
+  if (s.length > 32 || /[\x00-\x20\x7f<>&"'\\]/.test(s)) return null;
+  if (GRAPHEMES ? [...GRAPHEMES.segment(s)].length !== 1 : [...s].length > 12) return null;
+  return /\p{Extended_Pictographic}|\p{Regional_Indicator}|\u20e3/u.test(s) ? s : null;
+}
 
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS people (wall TEXT NOT NULL, name TEXT NOT NULL, t TEXT NOT NULL, PRIMARY KEY (wall, name))`,
@@ -85,6 +111,7 @@ const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS fixes (k INTEGER PRIMARY KEY AUTOINCREMENT, wall TEXT NOT NULL, t TEXT NOT NULL, who TEXT NOT NULL,
      kind TEXT NOT NULL, v TEXT NOT NULL, x REAL NOT NULL, y REAL NOT NULL, h TEXT, size TEXT, done INTEGER NOT NULL DEFAULT 0)`,
   `CREATE INDEX IF NOT EXISTS fixes_wall ON fixes (wall, done, k)`,
+  `CREATE TABLE IF NOT EXISTS faces (crew TEXT NOT NULL, name TEXT NOT NULL, face TEXT NOT NULL, t TEXT NOT NULL, PRIMARY KEY (crew, name))`,
 ];
 /* Columns added since the tables were first made. A go against the clock on a climb by number: on its row of the
    logbook, the number reached and the seconds it took; in the tally, the best such go. A route's further rules, as
@@ -131,12 +158,17 @@ function cleanMarks(v){
   return out.length >= 2 ? out : null;
 }
 
+const facesFrom = rows => Object.fromEntries(rows.map(x => [x.name, x.face]));
+const facesOf = async (db, crew) =>
+  facesFrom((await db.prepare('SELECT name, face FROM faces WHERE crew = ? ORDER BY name').bind(crew).all()).results);
+
 async function snapshot(db, wall){
-  const [p, r, s, f] = await db.batch([
+  const [p, r, s, f, e] = await db.batch([
     db.prepare('SELECT name FROM people WHERE wall = ? ORDER BY t, name').bind(wall),
     db.prepare('SELECT id, name, grade, setter, marks, feet, rules, tape, note, t, edited, retired FROM routes WHERE wall = ? ORDER BY id').bind(wall),
     db.prepare('SELECT person, route, a, r, s, d, gn, gs FROM stats WHERE wall = ?').bind(wall),
     db.prepare('SELECT k, who, kind, v, x, y, h, size FROM fixes WHERE wall = ? AND done = 0 ORDER BY k').bind(wall),
+    db.prepare('SELECT name, face FROM faces WHERE crew = ? ORDER BY name').bind(crewOf(wall)),
   ]);
   const stats = {};
   for (const row of s.results){
@@ -151,7 +183,40 @@ async function snapshot(db, wall){
     routes: r.results.map(x => { const o = { ...x, marks: JSON.parse(x.marks), retired: !!x.retired }; if (x.rules) o.rules = x.rules.split(' '); else delete o.rules; return o; }),
     stats,
     fixes: f.results.map(x => { const o = { k: x.k, by: x.who, kind: x.kind, v: x.v, x: x.x, y: x.y }; if (x.h) o.h = x.h; if (x.size) o.size = x.size; return o; }),
+    faces: facesFrom(e.results),
   };
+}
+
+/* /api/faces: see the top of this file. */
+async function faceCall(request, url, db, now){
+  const asked = url.searchParams.get('crew') || '';
+  if (asked && !isTest(asked)) return bad('no such crew', 404);
+  if (!db) return bad('the store has no database bound to it', 500);
+  await tables(db);
+  const crew = asked || CREW, reset = url.pathname === '/api/faces/reset';
+  if (request.method === 'GET' && !reset) return json({ faces: await facesOf(db, crew) });
+  if (request.method !== 'POST') return bad('GET or POST', 405);
+  if (reset){                                 // a check clears up after itself; the crew's own cannot be emptied this way
+    if (!asked) return bad('not found', 404);
+    await db.prepare('DELETE FROM faces WHERE crew = ?').bind(crew).run();
+    return json({ faces: {} });
+  }
+  let body;
+  try{ body = JSON.parse((await request.text()).slice(0, 2000)); }catch(e){ return bad('the body must be JSON'); }
+  if (!body || typeof body !== 'object') return bad('the body must be JSON');
+  // the name exactly as the page has it, since it is a key: the relay keeps MoonBoard names trimmed and nothing more
+  const name = typeof body.name === 'string' ? body.name.trim().slice(0, 40) : '', face = cleanFace(body.face);
+  if (!name || /[\x00-\x1f\x7f<>]/.test(name)) return bad('a name is needed');
+  if (face === null) return bad('one emoji, as the keyboard gives it');
+  if (!face) await db.prepare('DELETE FROM faces WHERE crew = ? AND name = ?').bind(crew, name).run();
+  else {
+    const have = await db.prepare('SELECT 1 AS ok FROM faces WHERE crew = ? AND name = ?').bind(crew, name).first();
+    if (!have && (await db.prepare('SELECT COUNT(*) AS n FROM faces WHERE crew = ?').bind(crew).first()).n >= MAX_FACES)
+      return bad('that is all the emoji this crew can hold', 409);
+    await db.prepare(`INSERT INTO faces (crew, name, face, t) VALUES (?, ?, ?, ?)
+        ON CONFLICT (crew, name) DO UPDATE SET face = excluded.face, t = excluded.t`).bind(crew, name, face, now()).run();
+  }
+  return json({ faces: await facesOf(db, crew), name, face });
 }
 
 /* One climber's tally on one route, from that pair's rows. */
@@ -182,6 +247,7 @@ const knows = async (db, wall, name) =>
 
 export async function handle(request, db, now = () => new Date().toISOString()){
   const url = new URL(request.url);
+  if (url.pathname === '/api/faces' || url.pathname === '/api/faces/reset') return faceCall(request, url, db, now);
   const m = url.pathname.match(/^\/api\/w\/([a-z0-9-]{1,32})(\/.*)?$/);
   if (!m) return bad('not found', 404);
   const wall = m[1], path = m[2] || '';
@@ -431,7 +497,8 @@ export async function handle(request, db, now = () => new Date().toISOString()){
 
   // a check clears up after itself; a real wall cannot be emptied this way
   if (path === '/reset' && isTest(wall)){
-    await db.batch(['people', 'routes', 'log', 'stats', 'fixes'].map(t => db.prepare('DELETE FROM ' + t + ' WHERE wall = ?').bind(wall)));
+    await db.batch(['people', 'routes', 'log', 'stats', 'fixes'].map(t => db.prepare('DELETE FROM ' + t + ' WHERE wall = ?').bind(wall))
+      .concat([db.prepare('DELETE FROM faces WHERE crew = ?').bind(wall)]));
     return json(await snapshot(db, wall));
   }
   return bad('not found', 404);
