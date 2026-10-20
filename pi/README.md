@@ -47,7 +47,8 @@ things make it so, and the first one lives outside this folder:
   box's own slow rhythm (it asks for 20-100 ms; the stick takes 97.5). Trusted, they stay cached, on
   disk too. A new stick or a wiped `/var/lib/bluetooth` needs the trust again.
 - **The program connects to the box BlueZ already knows** (`Wall.known`) instead of scanning first,
-  which waited for one more of its slow adverts. A miss falls back to scanning.
+  which waited for one more of its slow adverts. That quick try gets 10 s (`KNOWN_S`): once, on
+  2026-10-20, it hung a full minute while a scan then connected in 6 s. A miss searches at once.
 - **The relay's address is looked up at the wake**, beside the Bluetooth. The modem sometimes drops a
   lookup, and the Pi used to wait 5 s to ask again on every bridge line. NetworkManager's `home-4G`
   also has `dns-options timeout:1,attempts:3`, so a dropped lookup anywhere costs 1 s.

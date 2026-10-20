@@ -79,6 +79,8 @@ PING = 30                  # seconds between pings on the relay line (answered w
 OLD_RELAY_WAIT = 600       # a relay from before the Pi has no /pi: ask again this seldom until it is deployed
 SEEN_EVERY = float(os.environ.get("MOONBRIDGE_SEEN", 60))   # while holding: how often to ask when a page last looked
 CONNECT_S = float(os.environ.get("MOONBRIDGE_CONNECT", 60))   # seconds a Bluetooth connect may take
+KNOWN_S = 10               # ... the first try, straight to the box BlueZ knows (about 1-3 s when it works;
+                           # once, 2026-10-20 14:37, it hung the full 60 s while a scan then took 6 s)
 REPLACED_WAIT = 300        # another copy of this program took the room's line: do not fight it for it
 
 
@@ -195,7 +197,7 @@ class Wall:
             name = None
         return BLEDevice(self.address, name, {"path": path, "props": None})
 
-    async def connect(self, dev):
+    async def connect(self, dev, timeout=CONNECT_S):
         from bleak import BleakClient
         loop = asyncio.get_running_loop()
 
@@ -205,7 +207,7 @@ class Wall:
                 loop.call_soon_threadsafe(self.lost.set)
         # 32s on the first real connect (2026-10-19), when Bluetooth shared the Pi's radio with the
         # 2.4 GHz Wi-Fi; about 3 s on the USB stick with the box trusted and its services cached
-        client = BleakClient(dev, disconnected_callback=gone, timeout=CONNECT_S, bluez=self.bluez)
+        client = BleakClient(dev, disconnected_callback=gone, timeout=timeout, bluez=self.bluez)
         await client.connect()
         ch = client.services.get_characteristic(NUS_RX)
         if ch is None or any(m in ch.uuid.lower() for m in DFU_MARKERS):
@@ -254,7 +256,7 @@ class FakeWall:
     async def known(self):
         return None                              # a pretend wall is always found by looking
 
-    async def connect(self, dev):
+    async def connect(self, dev, timeout=None):
         self.lost.clear()
         self.held = True
         return "MoonBoard A (pretend)"
@@ -394,7 +396,7 @@ class Bridge:
     async def find(self):
         """Look for the wall until it is found or the hunt runs out. Its name, or None."""
         end = time.monotonic() + self.cfg.hunt
-        first = True
+        first, direct = True, False
         while True:
             left = end - time.monotonic()
             if left <= 0:
@@ -403,17 +405,21 @@ class Bridge:
             try:
                 # The box BlueZ already knows is tried at once; after a miss, scans as before.
                 dev = await self.wall.known() if first else None
-                first = False
+                first, direct = False, dev is not None
                 if dev is None:
                     dev = await self.wall.find(min(10.0, max(1.0, left)))
                 if dev is None:
                     continue
-                name = await self.wall.connect(dev)
+                name = await self.wall.connect(dev, timeout=KNOWN_S if direct else CONNECT_S)
                 log("holding", name)
                 return name
             except asyncio.CancelledError:
                 raise
             except Exception as e:
+                if direct:                  # the quick try missed: search now, no pause
+                    log("wall: the quick try missed -", short(e), "- searching")
+                    direct = False
+                    continue
                 log("wall:", short(e))
                 await asyncio.sleep(3)
 
