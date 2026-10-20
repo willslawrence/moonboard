@@ -15,6 +15,13 @@ go when asked (Settings on the page), when nobody has had the app open for 15
 minutes, when the relay has been out of reach for 2, or when the wall goes away
 (switched off at night) and is not back within 3.
 
+The wall may be left switched on, so the lights never stay on for nothing (Will,
+2026-10-20: "after a time of inactivity... clears all the lights off the LEDs so
+that they end up not being on all the time"). Before it lets go, for any reason
+but a wall that has gone, it puts every light out. While it holds the wall, once
+nothing new has been lit for 30 minutes, it puts every light out and tells the
+room, so no page shows a route on a dark wall; the next route lights as ever.
+
     moonbridge.py                   run (the moonbridge service does this)
     moonbridge.py --scan            list what Bluetooth can see for 10 seconds
     moonbridge.py --probe           find the wall, connect, list its services, let go (writes nothing)
@@ -39,6 +46,7 @@ Settings come from the environment (the service reads ~/moonbridge/env):
     MOONBRIDGE_HUNT     180        seconds to look for the wall before giving up
     MOONBRIDGE_IDLE     900        seconds with no page open before letting go
     MOONBRIDGE_OFFLINE  120        seconds without the relay before letting go
+    MOONBRIDGE_DARK     1800       seconds with nothing new lit before every light goes out
 """
 
 import argparse
@@ -65,6 +73,7 @@ DFU_MARKERS = ("fe59", "00001530-1212-efde-1523-785feabcd123",
                "00001531-1212-efde-1523-785feabcd123",
                "00001532-1212-efde-1523-785feabcd123")
 PAYLOAD = re.compile(r"^l#[SPE0-9,]*#$")
+DARK = "l##"               # every light out
 CHUNK, GAP = 20, 0.03      # the page's pieces and pause; the box garbles bigger or faster
 PING = 30                  # seconds between pings on the relay line (answered without waking it)
 OLD_RELAY_WAIT = 600       # a relay from before the Pi has no /pi: ask again this seldom until it is deployed
@@ -110,6 +119,7 @@ class Settings:
         self.hunt = float(e.get("MOONBRIDGE_HUNT", 180))
         self.idle = float(e.get("MOONBRIDGE_IDLE", 900))
         self.offline = float(e.get("MOONBRIDGE_OFFLINE", 120))
+        self.dark = float(e.get("MOONBRIDGE_DARK", 1800))
 
     def url(self, path):
         return f"{self.relay}{path}?room={quote(self.room)}"
@@ -277,6 +287,8 @@ class Bridge:
         self.relay_ip = None                # its answer, for the bridge line's first try
         self.release = None                 # why the job is being stopped from outside
         self.last = None                    # (payload, meta) last written: repeated when the bridge reconnects
+        self.lit_at = time.monotonic()      # when the wall was last given something to show
+        self.ws = None                      # the bridge line on /ws, while it is open
         self.lock = asyncio.Lock()          # one write at a time; a payload goes in pieces
 
     # ---------- the relay line ----------
@@ -413,6 +425,7 @@ class Bridge:
                 why = "not found"
                 return
             self.seen_at = time.monotonic()     # the phone that asked is there now
+            self.lit_at = time.monotonic()
             while True:
                 await self.set_state("holding")
                 bridge = asyncio.create_task(self.bridge())
@@ -433,6 +446,7 @@ class Bridge:
         except Exception as e:
             log("holding the wall went wrong:", short(e))
         finally:
+            await self.darken("letting go: " + why)    # nothing when the wall has gone: it cannot be written
             await self.wall.let_go()
             self.release = None
             await self.set_state("asleep", why)
@@ -451,6 +465,9 @@ class Bridge:
             if self.ctl is None and now - self.heard > self.cfg.offline:
                 log(f"no relay for {spell(self.cfg.offline)} - letting go so a phone can have the wall")
                 return "offline"
+            if not self.is_dark() and now - self.lit_at > self.cfg.dark:
+                if await self.darken(f"nothing new lit for {spell(self.cfg.dark)}"):
+                    await self.say_now()
             if now >= ask:
                 await self.tell({"type": "seen"})
                 ask = now + SEEN_EVERY
@@ -471,6 +488,7 @@ class Bridge:
                 async with ws_connect(self.cfg.url("/ws"), ping_interval=None, open_timeout=20,
                                       close_timeout=5, max_size=2 ** 16, **to) as ws:
                     wait = 1
+                    self.ws = ws
                     await ws.send(json.dumps({"type": "hello", "v": 2, "pi": 1}))
                     if self.last:
                         payload, meta = self.last
@@ -486,6 +504,8 @@ class Bridge:
                 raise
             except Exception as e:
                 log("bridge:", short(e))
+            finally:
+                self.ws = None
             await asyncio.sleep(wait)
             wait = min(30, wait * 2)
 
@@ -501,8 +521,33 @@ class Bridge:
                 log("write failed:", short(e))
                 return {"error": "the write to the wall failed"}
         self.last = (payload, meta if isinstance(meta, dict) else None)
+        self.lit_at = time.monotonic()
         log("lit", payload)
         return {"ok": True}
+
+    def is_dark(self):
+        return self.last is not None and self.last[0] == DARK
+
+    async def darken(self, why):
+        """Every light out, if the wall is held and not dark already. True when it went out."""
+        if self.is_dark() or not self.wall.connected:
+            return False
+        async with self.lock:
+            try:
+                await asyncio.wait_for(self.wall.write(DARK), timeout=6)
+            except Exception as e:
+                log("could not put the lights out:", short(e))
+                return False
+        self.last = (DARK, None)
+        log("lights out -", why)
+        return True
+
+    async def say_now(self):
+        """Tell the room what the wall shows, so no page shows a route on a dark wall."""
+        ws = self.ws
+        if ws is not None and self.last:
+            with suppress(Exception):
+                await ws.send(json.dumps({"type": "now", "payload": self.last[0], "now": self.last[1]}))
 
 
 async def run(cfg, wall):

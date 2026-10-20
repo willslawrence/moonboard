@@ -9,6 +9,14 @@ It is **asleep until a phone taps Connect**, and lets go of the wall when asked
 relay has been out of reach for 2, or when the wall is switched off and not back
 within 3. So the official Moon app still works whenever the crew is not climbing.
 
+**The lights go out when nobody is using the wall** (since 2026-10-20), so the wall can be left
+switched on. Will: "after a time of inactivity... clears all the lights off the LEDs so that they
+end up not being on all the time." Before the Pi lets go, for any reason but a wall that has gone,
+it writes `l##` (every light out). While it holds the wall, once nothing new has been lit for 30
+minutes (`MOONBRIDGE_DARK`, seconds), it does the same and tells the room, so no page shows a route
+on a dark wall; the next route lights as ever. A wall that a phone or the Moon app lit, with the Pi
+asleep, is theirs: the Pi cannot reach it without taking it from them.
+
 | File | What it is |
 |---|---|
 | `moonbridge.py` | The program. One quiet line to the relay (`/pi`), a bridge on `/ws` while it holds the wall. `--scan`, `--light`, `--fake-wall` for trying things. |
@@ -16,6 +24,7 @@ within 3. So the official Moon app still works whenever the crew is not climbing
 | `install.sh` | Run on the Pi: packages, security updates that install themselves, Python, Bluetooth, the service. Safe to run again. |
 | `from-mac.sh` | Run on the Mac: copies this folder and the room code to the Pi and runs `install.sh`. |
 | `check-card.py` | Run on the Mac after Imager writes the card: name, user, SSH key, Wi-Fi country, without printing a password. |
+| `check-dark.py` | Run on the Mac: the lights going out, against the pretend wall and a stand-in relay (13 checks, about 40 s; needs `websockets`). Not copied to the Pi. |
 
 The relay side is in `relay/src/index.js` (`/pi`, `/pi/wake`, `/pi/sleep`, `pi` in
 `/status`); the page side is the Connect button. A new card is Imager with the
