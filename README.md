@@ -423,9 +423,11 @@ climbing"):
     Everybody sees it, on both walls: see *The crew*. One climber to an emoji, so a circle
     still says who: one somebody here has, chosen or in their name, is faded in the sheet
     and a tap on it says whose.
-- **Where you're climbing**, straight under them (see below): Will's Wall, or Another
-  MoonBoard with its code; under it the relay's button and the line that says what the relay is
-  doing.
+- **Where you're climbing**, straight under them (see below): one line, the choice (Will's Wall
+  or Another MoonBoard) in its left half and, at another MoonBoard, that board's code in the
+  right half. No phone has a relay to switch on: the one that holds the wall's Bluetooth shares
+  it by itself, and its connection log says what the relay is doing. (A Connect relay button and
+  a line about the relay stood here until 2026-10-21.)
 - **Hold set on the wall**, under that: the holds up on the wall where you are climbing.
   At Will's Wall it is the crew's, kept with the tick lists as it always was; at another
   wall it is that wall's own (since 2026-10-21, see *Where you're climbing* below). It

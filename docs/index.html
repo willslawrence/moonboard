@@ -1266,7 +1266,9 @@
   #meRow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
   #meRow > div{min-width:0;display:flex;flex-direction:column}
   #meRow > div > :last-child{flex:1 1 auto}
-  #roomRow{margin-top:8px}
+  #locRow{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  @media (max-width:370px){ #locRow > *{padding-left:8px;padding-right:6px;font-size:15px} }   /* "Another MoonBoard" whole in half a small phone */
+  @media (max-width:340px){ #locRow > *{font-size:13px} }
   #piRow #piState{margin-top:0}
   #setPanel #log{margin-top:0}
   #c4clock .mins{flex:none;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--dim)}
@@ -1606,16 +1608,19 @@
        should ask you where you're climbing at. And then hold set below that"). Until then both were near the foot of
        the page, under "The wall, for everyone". -->
   <div class="lbl tipLbl">Where you're climbing<button type="button" class="tipBtn" aria-label="About: where you are climbing" aria-expanded="false">i</button><span class="tipTxt">Will's Wall is the MoonBoard at Will's. On a different MoonBoard? Pick Another MoonBoard and give it a code of its own, the same on every phone there, so the two boards never light each other's problems. The board takes one Bluetooth connection, so everyone at a board shares the phone that has it: whoever taps Connect becomes the bridge automatically, and every other phone sends what it lights through them.</span></div>
-  <select id="loc" aria-label="Where you're climbing">
-    <option value="home">Will's Wall</option>
-    <option value="other">Another MoonBoard</option>
-  </select>
-  <div class="two" id="roomRow">
-    <input type="text" id="room" placeholder="that MoonBoard's code" spellcheck="false"
+  <!-- The choice and, at another MoonBoard, its code share one line, half of it each (Will, 2026-10-21: "Another moon
+       board is single line. It only takes up about half the screen. Then the other wall could take up the other
+       half"); at Will's Wall the choice keeps its half alone, under the name. A Connect relay button stood beside the
+       code, with a line under it saying what the relay was doing, until the same day: neither was needed (see
+       relayState). -->
+  <div class="two" id="locRow">
+    <select id="loc" aria-label="Where you're climbing">
+      <option value="home">Will's Wall</option>
+      <option value="other">Another MoonBoard</option>
+    </select>
+    <input type="text" id="room" placeholder="that board's code" aria-label="That MoonBoard's code" spellcheck="false"
            autocapitalize="off" autocomplete="off">
-    <button id="relayBtn" class="ghost">Connect relay</button>
   </div>
-  <div class="hint" id="relayState">relay off</div>
 
   <div class="lbl tipLbl">Hold set on the wall<button type="button" class="tipBtn" aria-label="About: the hold set" aria-expanded="false">i</button><span class="tipTxt">The holds up on the wall where you&rsquo;re climbing. At Will&rsquo;s Wall it is the crew&rsquo;s; on another MoonBoard it is that board&rsquo;s own, kept under its code. Switching it changes the route list and the board picture for everyone climbing there, so only switch it when the holds on the wall actually change.</span></div>
   <select id="boardSel" aria-label="Hold set on the wall"></select>
@@ -1894,7 +1899,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-21 13:24';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-21 13:46';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -1937,7 +1942,6 @@ function log(msg){
 }
 function setLive(on, busy){
   if (busy) $('dot').className = 'busy'; else wallState();
-  paintRelayBtn();
   $('send').disabled = !canSend() || !current;
   paintPi();                             // Connect says Disconnect while this phone holds the wall
 }
@@ -4765,18 +4769,6 @@ function peekTick(){
 }
 const peekSoon = () => setTimeout(relayPeek, 350);
 
-/* Only the phone holding Bluetooth can bridge. Any other phone that joined as a
-   bridge would answer every request with "not connected" - and the relay takes
-   the first answer back, so the whole crew would see failures while the wall lit. */
-function paintRelayBtn(){
-  const b = $('relayBtn');
-  b.disabled = !rx && !relayWant;
-  b.textContent = relayWant ? 'Disconnect relay' : 'Connect relay';
-  if (!rx && !relayWant)
-    relayState('Not needed on this phone \u2014 it lights the wall through whoever is ' +
-               'connected by Bluetooth. Nothing to turn on.');
-}
-
 async function relaySend(str, quiet, meta, again){
   const room = relayRoom();
   if (!quiet) log('→ relay  ' + str);
@@ -5207,7 +5199,14 @@ const RELAY_HOST = 'moonboard-relay.willslawrence.workers.dev';
 const DEFAULT_ROOM = 'moonwall-crew';
 let relayWS = null, relayWant = false, relayTries = 0, wakeLock = null;
 
-function relayState(msg){ $('relayState').textContent = msg; }
+/* What the relay is doing, on the phone that holds the wall's Bluetooth: a line in the connection log each time it
+   changes. It stood in Settings, under a Connect relay button, until 2026-10-21 (Will: "is that ever needed
+   anymore"). Neither was: that phone joins the relay by itself when it connects, and when it is given a code after
+   connecting, and tries again by itself when the relay drops. No other phone may bridge: one that did would answer
+   every request with "not connected", and the relay takes the first answer back, so the whole crew would see
+   failures while the wall lit. */
+let relaySaid = '';
+function relayState(msg){ if (msg !== relaySaid) log(relaySaid = msg); }
 
 /* The screen stays on while this phone bridges the wall. The phone lets go of that whenever the page leaves the
    screen for a moment (another app, the notification shade), so a let-go lock is forgotten and asked for again when
@@ -5235,19 +5234,17 @@ function relayConnect(){
 
 function openRelay(room){
   if (relayWS) { try{ relayWS.close(); }catch(e){} }
-  relayState('connecting …');
+  relayState('relay connecting …');
   const ws = new WebSocket('wss://' + RELAY_HOST + '/ws?room=' + encodeURIComponent(room));
   relayWS = ws;
 
   ws.onopen = () => {
     relayTries = 0;
     relayState('relay connected — sharing the wall with the crew');
-    log('relay connected as bridge.');
     // This build tells the relay what it lights itself; then say what is up now.
     ws.send(JSON.stringify({ type: 'hello', v: 2 }));
     told = '';
     if (lastWrite){ told = tellKey(lastWrite.payload, lastWrite.meta); tellRelay(true); }
-    $('relayBtn').textContent = 'Disconnect relay';
     wallState();
   };
 
@@ -5272,7 +5269,6 @@ function openRelay(room){
 
   ws.onclose = () => {
     if (ws !== relayWS) return;          // one that was replaced or switched off: not this socket's to mend
-    $('relayBtn').textContent = 'Connect relay';
     wallState();
     if (!relayWant) return relayState('relay off');
     const wait = Math.min(30000, 1000 * Math.pow(2, relayTries++));
@@ -5288,7 +5284,6 @@ function relayDisconnect(){
   if (relayWS) { try{ relayWS.close(); }catch(e){} }
   relayWS = null;
   relayState('relay off');
-  paintRelayBtn();
   wallState();
   if (wakeLock){ try{ wakeLock.release(); }catch(e){} wakeLock = null; }
 }
@@ -9564,7 +9559,6 @@ $('standby').onchange = () => {
   try{ localStorage.setItem('mb-standby', $('standby').value); }catch(e){}
   if (!current && canSend() && !standby()) write('l##');
 };
-$('relayBtn').onclick = () => relayWant ? relayDisconnect() : (rx ? relayConnect() : null);
 $('wallTxt').onclick = () => showPage(page === 'set' ? 'board' : 'set');
 /* Where you are climbing is which room this phone talks to. Will's Wall is the
    crew's room and needs no code. Any other wall takes a code of its own, the same
@@ -9589,8 +9583,8 @@ $('room').oninput = () => {
   setLive(!!rx);                      // a code alone is enough to light the wall
   paintBar(); paintLoc(); relayPeek();
 };
-// Done typing the code: a phone that is already bridging moves to the new room.
-$('room').onchange = () => { if (relayWant && relayRoom()) relayConnect(); wallBoardFollow(); };
+// Done typing the code: the phone that holds the wall's Bluetooth moves to the new room, or joins it if it had none.
+$('room').onchange = () => { if ((relayWant || rx) && relayRoom()) relayConnect(); wallBoardFollow(); };
 $('loc').onchange = () => {
   const home = $('loc').value === 'home';
   let other = '';
@@ -9598,7 +9592,7 @@ $('loc').onchange = () => {
   $('room').value = home ? DEFAULT_ROOM : other;
   $('room').oninput();
   wallBoardFollow();
-  if (relayWant && relayRoom()) relayConnect();
+  if ((relayWant || rx) && relayRoom()) relayConnect();
   if (!home) $('room').focus();
   if (!home){ try{ localStorage.setItem('mb-wall', 'moon'); }catch(e){} }
   log(home ? 'climbing at Will\u2019s Wall.' : 'climbing on another MoonBoard \u2014 it needs a code of its own.');
