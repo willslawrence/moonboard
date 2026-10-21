@@ -471,20 +471,23 @@
   #listCap span{font-size:10px;letter-spacing:.06em;color:var(--dimmer)}
   @keyframes pgL{from{transform:translateX(-18%);opacity:.25}to{transform:none;opacity:1}}
   @keyframes pgR{from{transform:translateX(18%);opacity:.25}to{transform:none;opacity:1}}
-  body.slideL #top,body.slideL #scroll,body.slideL #logPage,body.slideL #setPanel{animation:pgL .17s ease-out}
-  body.slideR #top,body.slideR #scroll,body.slideR #logPage,body.slideR #setPanel{animation:pgR .17s ease-out}
+  body.slideL #top,body.slideL #scroll,body.slideL #logPage,body.slideL #setPanel,body.slideL #logPanel{animation:pgL .17s ease-out}
+  body.slideR #top,body.slideR #scroll,body.slideR #logPage,body.slideR #setPanel,body.slideR #logPanel{animation:pgR .17s ease-out}
   @media (prefers-reduced-motion:reduce){
-    body.slideL #top,body.slideL #scroll,body.slideL #logPage,body.slideL #setPanel,
-    body.slideR #top,body.slideR #scroll,body.slideR #logPage,body.slideR #setPanel{animation:none}
+    body.slideL #top,body.slideL #scroll,body.slideL #logPage,body.slideL #setPanel,body.slideL #logPanel,
+    body.slideR #top,body.slideR #scroll,body.slideR #logPage,body.slideR #setPanel,body.slideR #logPanel{animation:none}
   }
-  /* Three pages, named, at the foot of the screen; the one you are on is filled. (They
-     were three small dots until Will asked, on the design canvas, for it to be obvious.) */
+  /* The pages, named, at the foot of the screen; the one you are on is filled. (They
+     were three small dots until Will asked, on the design canvas, for it to be obvious.
+     Five since 2026-10-21: Routes, Board, History, Logbook, and Settings's cog.) */
   #pgDots{flex:none;display:flex;gap:4px;margin:4px 40px calc(env(safe-area-inset-bottom) + 8px);padding:3px;
           border-radius:12px;background:var(--panel);border:1px solid var(--edge)}
   #pgDots button{flex:1 1 0;min-width:0;height:30px;padding:0;border:0;border-radius:9px;background:transparent;
                  color:var(--dim);font-size:12px;font-weight:600}
   #pgDots[data-at="list"] button[data-go="list"],#pgDots[data-at="board"] button[data-go="board"],
-  #pgDots[data-at="log"] button[data-go="log"],#pgDots[data-at="set"] button[data-go="set"]{background:var(--ink);color:var(--onink);font-weight:700}
+  #pgDots[data-at="log"] button[data-go="log"],#pgDots[data-at="book"] button[data-go="book"],
+  #pgDots[data-at="set"] button[data-go="set"]{background:var(--ink);color:var(--onink);font-weight:700}
+  @media (max-width:360px){ #pgDots{margin-left:10px;margin-right:10px} }      /* five names have to fit on a small phone */
   /* Settings is the cog, the size of a button, at the right-hand end */
   #pgDots button[data-go="set"]{flex:none;width:38px;display:grid;place-items:center}
   #pgDots button[data-go="set"] svg{width:17px;height:17px;display:block}
@@ -548,7 +551,7 @@
   .sublbl[hidden],.sublbl:empty{display:none}
   .lprow .n em i{display:inline-grid;place-items:center;width:16px;height:16px;margin-right:5px;border-radius:50%;
                  font-size:9px;font-weight:700;font-style:normal;color:#0e0e0f;vertical-align:-3px}
-  /* the open route, and the two buttons this page is for */
+  /* the open route: its name, its grade and its beta on one line, and how it has gone for you under them */
   #lpNow{border:1px solid var(--edge);border-radius:14px;background:var(--panel);padding:13px 12px 10px}
   #lpNow .top{display:flex;align-items:center;gap:8px;min-width:0}
   #lpNow .top b{flex:0 1 auto;min-width:0;font-size:17px;font-weight:700;white-space:nowrap;overflow:hidden;
@@ -556,13 +559,7 @@
   #lpNow .top .gd{font-size:11px}
   #lpNow .top .gd[hidden]{display:none}
   #lpNow .sub{margin-top:3px;font-size:12px;color:var(--dim);line-height:1.4}
-  #lpNow .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px}
-  #lpNow .btns button{padding:7px 6px;font-size:16px;font-weight:700;border-radius:12px}
-  /* under them, smaller: the beta, and the whole logbook */
-  #lpNow .more3{display:flex;gap:8px;margin-top:8px}
-  #lpNow .more3 button{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;
-                       gap:6px;padding:9px 6px;font-size:13px;border-radius:10px}
-  #lpNow .more3 svg{width:16px;height:16px;flex:none}
+  #lpNow .top #betaBtn{flex:none;width:auto;margin-left:auto;padding:5px 11px;font-size:12px;border-radius:9px;white-space:nowrap}
   #lpUndo{display:block;width:auto;max-width:100%;margin:9px auto 0;padding:2px 8px;border:0;font-size:11px;
           overflow:hidden;text-overflow:ellipsis}
   #lpUndo[hidden]{display:none}
@@ -731,8 +728,8 @@
      it, as on the Sun board's page. It filled the screen until 2026-10-12 (Will: "the time session pop up on the sun
      board is good but on the moon board it take up the whole acreen. I like the sun board one better"). A tap on the
      dimmed board shuts it, as Close does. */
-  #rsScrim,#logScrim,#faceScrim{position:fixed;left:0;top:0;right:0;bottom:0;z-index:60;background:rgba(0,0,0,.45)}
-  #rsScrim[hidden],#logScrim[hidden],#faceScrim[hidden]{display:none}
+  #rsScrim,#faceScrim{position:fixed;left:0;top:0;right:0;bottom:0;z-index:60;background:rgba(0,0,0,.45)}
+  #rsScrim[hidden],#faceScrim[hidden]{display:none}
   #rsPanel,#facePanel{position:fixed;left:0;right:0;bottom:0;z-index:61;max-height:92vh;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;
            background:var(--bg);border-radius:16px 16px 0 0;border-top:1px solid var(--edge);
            padding:14px var(--pad) calc(env(safe-area-inset-bottom) + 14px)}
@@ -808,14 +805,14 @@
   #pairGo[hidden]{display:none}
   button.res{padding:15px;font-size:15px;font-weight:600;border-radius:9px}
   button.res.pick{background:var(--ink);border-color:var(--ink);color:var(--onink)}
-  /* ---- the Logbook: a sheet at the foot of the screen, laid out as the Sun board's is ----
-     Will, 2026-10-12, of matching the two walls' logbooks: "good idea". Whose it is, the buttons for the file and
-     the lock, a line that sums it up, every go by session with the newest open, then everyone's points. It is as
-     tall as a sheet goes, so that it reads as a place. (It took the whole screen, and listed a day to a line.) */
-  #logPanel{position:fixed;left:0;right:0;bottom:0;z-index:61;height:92vh;height:92dvh;overflow-y:auto;overscroll-behavior:contain;
-            background:var(--bg);border-radius:16px 16px 0 0;border-top:1px solid var(--edge);
-            padding:14px var(--pad) calc(env(safe-area-inset-bottom) + 14px)}
-  #logPanel[hidden]{display:none}
+  /* ---- the Logbook: the page between History and Settings (2026-10-21) ----
+     Will, 2026-10-21: "add the Logbook as its own page". It was a sheet over the page, laid out as the Sun board's is
+     (2026-10-12), and before that a whole screen. Whose it is, the buttons for the file and the lock, a line that sums
+     it up, every go by session with the newest open, then everyone's points. Laid out as Settings is, heading and all. */
+  #logPanel{display:none}
+  body.bookPage #top,body.bookPage #scroll,body.bookPage #kb{display:none !important}
+  body.bookPage #logPanel{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;
+                          padding:calc(env(safe-area-inset-top) + 16px) 9px calc(env(safe-area-inset-bottom) + 30px)}
   #logPanel .lbl{margin:20px 0 7px}
   #logWho{height:40px;padding:0 10px;font-size:16px}
   .bookBtns{display:flex;align-items:center;gap:8px;margin-top:8px}
@@ -1513,7 +1510,7 @@
      open, until Will moved it: "Move this card above the route card on the log page and
      when you click it it expanded the list of climbs you did this session".) -->
 <div id="logPage">
-  <div id="lpCap"><button id="lpBack" class="ghost" aria-label="Back to the board">&#8249; Board</button><b>Log</b><span></span></div>
+  <div id="lpCap"><button id="lpBack" class="ghost" aria-label="Back to the board">&#8249; Board</button><b>History</b><span></span></div>
   <div id="lpHero" hidden>
     <div id="lpHeroTop" role="button" tabindex="0" aria-expanded="false" aria-controls="lpSession">
       <div class="kick"><span id="lpKick"></span><em id="lpSesN"></em><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4.2l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
@@ -1527,16 +1524,11 @@
     <div id="lpSession" hidden></div>
   </div>
   <div id="lpNow">
-    <div class="top"><b></b><span class="gd"></span></div>
+    <!-- The route's name, its grade and its beta on one line (Will, 2026-10-21: "make the beta button smaller and inline
+         with the route name"). Log try and Log send have gone, since Quick log on the board does that ("people can do that
+         with the quick log on the board page"), and the Logbook is a page of its own. -->
+    <div class="top"><b></b><span class="gd"></span><button id="betaBtn" class="mini" disabled>+ Beta</button></div>
     <div class="sub"></div>
-    <div class="btns">
-      <button id="try" class="mini" disabled>Log try</button>
-      <button id="done" class="mini" disabled>Log send</button>
-    </div>
-    <div class="more3">
-      <button id="betaBtn" class="mini" disabled>+ Beta</button>
-      <button id="logBtn" class="mini" aria-label="Logbook"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 6.8C9.6 5.2 6.4 4.8 3 5.6v13c3.4-.8 6.6-.4 9 1.2 2.4-1.6 5.6-2 9-1.2v-13c-3.4-.8-6.6-.4-9 1.2zM12 6.8v13"/></svg> Logbook</button>
-    </div>
     <button id="lpUndo" class="ghost mini" hidden></button>
   </div>
 
@@ -1588,7 +1580,7 @@
       <select id="me2" aria-label="Climbing as"></select>
     </div>
     <div>
-      <div class="lbl tipLbl">Your emoji<button type="button" class="tipBtn" aria-label="About: your emoji" aria-expanded="false">i</button><span class="tipTxt">It goes in your circle wherever your name is: beside the routes you have sent, in the line, on the wall&rsquo;s card and on the log page. Everyone sees it, on the Sun board too. One climber to an emoji. With none, your circle has your first letter.</span></div>
+      <div class="lbl tipLbl">Your emoji<button type="button" class="tipBtn" aria-label="About: your emoji" aria-expanded="false">i</button><span class="tipTxt">It goes in your circle wherever your name is: beside the routes you have sent, in the line, on the wall&rsquo;s card and on the History page. Everyone sees it, on the Sun board too. One climber to an emoji. With none, your circle has your first letter.</span></div>
       <button type="button" id="faceBtn"><i></i><span>Choose</span></button>
     </div>
   </div>
@@ -1677,6 +1669,29 @@
   <div style="margin-top:10px"><button id="copy" class="ghost">Copy log</button></div>
   <div id="ver"></div>
 </div>
+<!-- The Logbook, the page between History and Settings (Will, 2026-10-21: "add the Logbook as its own page"). Until
+     then a sheet over the page, laid out as the Sun board's is; the rows are the same. Every go of one climber, by
+     session, newest first; then everyone's points. An entry of your own is opened by tapping it. -->
+<div id="logPanel" aria-label="Logbook">
+  <div id="gameHead"><b>Logbook</b></div>
+  <select id="logWho" aria-label="Whose logbook"></select>
+  <div class="bookBtns">
+    <button id="logCsv" class="ghost mini" disabled>Export CSV</button>
+    <button id="logImp" class="ghost mini" disabled>Import CSV</button>
+    <button id="logLock" class="ghost mini" disabled>Lock my entries</button>
+    <button type="button" class="tipBtn" aria-label="About: the file, and the lock" aria-expanded="false">i</button><span class="tipTxt"><b>Export CSV</b> makes a file of the logbook that is showing, a line a go. <b>Import CSV</b> reads a file laid out the same way and adds its goes to your own logbook. To bring an old logbook in: export first (an empty logbook gives a sample, the headings and a few example lines), put a line for each go under them, and import the file. The example lines are left out. A line needs a date (2026-10-12), the route's name as the list has it, and how it went: try, flash, 2nd go, 3rd go or 4+ goes. The time and the other columns may be left empty; the hold set, if empty, is the one on the wall. Goes come in locked. Several sends of a route in a day are all kept, and a go the logbook already has is not added again. <b>Lock my entries</b> locks every go of yours, so that none can be deleted by a slip.</span>
+  </div>
+  <div class="rankHead"><button type="button" id="rankTog" class="rankTog" aria-expanded="false" aria-controls="ptsRank">Ranking<i></i></button><button type="button" class="tipBtn" aria-label="About: the points" aria-expanded="false">i</button><span class="tipTxt">MoonBoard scoring: 350 at 5+, 50 more for each grade above it, by the community grade (the one the climbers voted for), whichever grade this phone shows; then 53 more for a flash, 2 for a second go, 1 for a third. Benchmarks only, and only the first time you send a route.</span></div>
+  <div id="ptsRank" hidden></div>
+  <div class="rankHead" id="storyHead" hidden><button type="button" id="storyTog" class="rankTog" aria-expanded="false" aria-controls="story"><span id="storyLbl">Your story</span><i></i></button><button type="button" class="tipBtn" aria-label="About: the story" aria-expanded="false">i</button><span class="tipTxt">Worked out from the goes in the logbook that is showing: the grades you have sent, how often first go, the route that took longest, the ones that got away, your days and your holds. <b>Flash grade</b>: the hardest grade at which half or more of the routes you have tried went first go. <b>Edge grade</b>: the hardest at which half or more went in the end, however many goes it took. <b>Average send</b>: the middle of all your sends. On your own logbook, a tap on any of the three opens a route of that grade you have not sent, on the hold set now on the wall. <b>Next up</b> counts what the next grade would take. <b>Head to head</b> puts you beside another climber. <b>Share my story as a picture</b> makes one picture of it all to send on. The more of your logbook is in here, the more it can tell. <b>Import CSV</b> brings an old logbook over.</span></div>
+  <div id="story" hidden></div>
+  <input type="file" id="logFile" accept=".csv,text/csv,text/comma-separated-values,text/plain" tabindex="-1" aria-hidden="true">
+  <p id="logHint"></p>
+  <div id="logNote" role="status" hidden></div>
+  <div id="logSum"></div>
+  <div id="logRows"></div>
+</div>
+
 <!-- the one bubble that an i opens (see tipShow), and the corner that points at the i -->
 <div id="tipBox" role="status" aria-live="polite" hidden></div>
 <div id="tipArrow" hidden></div>
@@ -1687,7 +1702,7 @@
 <div id="quickScrim" hidden></div>
 <div id="quickToast" hidden></div>
 <!-- How a send went, asked in bubbles and not on a sheet: four of them swing out in an
-     arc from the button that was pressed - under Log send, over Quick log. The layer
+     arc over Quick log (and under Log send, while there was one, until 2026-10-21). The layer
      itself is the dimming; the button with the cross sits where the pressed one is. -->
 <div id="sendFan" hidden>
   <span class="arm"></span><span class="arm"></span><span class="arm"></span><span class="arm"></span>
@@ -1698,7 +1713,7 @@
   <div class="cap"></div>
   <button class="x" aria-label="Close"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
 </div>
-<nav id="pgDots" data-at="board" aria-label="Pages"><button data-go="list">&#8249; Routes</button><button data-go="board">Board</button><button data-go="log">Log &#8250;</button><button data-go="set" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor"><circle cx="12" cy="12" r="5.6" stroke-width="2"/><circle cx="12" cy="12" r="2" stroke-width="1.8"/><path stroke-width="3" d="M12 2.6v3.2M12 18.2v3.2M2.6 12h3.2M18.2 12h3.2M5.35 5.35l2.26 2.26M16.39 16.39l2.26 2.26M5.35 18.65l2.26-2.26M16.39 7.61l2.26-2.26"/></g></svg></button></nav>
+<nav id="pgDots" data-at="board" aria-label="Pages"><button data-go="list">&#8249; Routes</button><button data-go="board">Board</button><button data-go="log">History</button><button data-go="book">Logbook</button><button data-go="set" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor"><circle cx="12" cy="12" r="5.6" stroke-width="2"/><circle cx="12" cy="12" r="2" stroke-width="1.8"/><path stroke-width="3" d="M12 2.6v3.2M12 18.2v3.2M2.6 12h3.2M18.2 12h3.2M5.35 5.35l2.26 2.26M16.39 16.39l2.26 2.26M5.35 18.65l2.26-2.26M16.39 7.61l2.26-2.26"/></g></svg></button></nav>
 
 <div id="pairPanel" hidden>
   <div id="gameHead">
@@ -1724,29 +1739,6 @@
     Instagram, so a new post takes a while to turn up.</div>
   <div id="igG"></div>
   <div id="igG2"></div>
-</div>
-
-<!-- The Logbook: a sheet at the foot of the screen, laid out as the Sun board's is. Every go of one climber, by
-     session, newest first; then everyone's points. An entry of your own is opened by tapping it. -->
-<div id="logScrim" hidden></div>
-<div id="logPanel" hidden role="dialog" aria-label="Logbook">
-  <div class="shHead"><h2>Logbook</h2><button id="logClose" class="ghost">Close</button></div>
-  <select id="logWho" aria-label="Whose logbook"></select>
-  <div class="bookBtns">
-    <button id="logCsv" class="ghost mini" disabled>Export CSV</button>
-    <button id="logImp" class="ghost mini" disabled>Import CSV</button>
-    <button id="logLock" class="ghost mini" disabled>Lock my entries</button>
-    <button type="button" class="tipBtn" aria-label="About: the file, and the lock" aria-expanded="false">i</button><span class="tipTxt"><b>Export CSV</b> makes a file of the logbook that is showing, a line a go. <b>Import CSV</b> reads a file laid out the same way and adds its goes to your own logbook. To bring an old logbook in: export first (an empty logbook gives a sample, the headings and a few example lines), put a line for each go under them, and import the file. The example lines are left out. A line needs a date (2026-10-12), the route's name as the list has it, and how it went: try, flash, 2nd go, 3rd go or 4+ goes. The time and the other columns may be left empty; the hold set, if empty, is the one on the wall. Goes come in locked. Several sends of a route in a day are all kept, and a go the logbook already has is not added again. <b>Lock my entries</b> locks every go of yours, so that none can be deleted by a slip.</span>
-  </div>
-  <div class="rankHead"><button type="button" id="rankTog" class="rankTog" aria-expanded="false" aria-controls="ptsRank">Ranking<i></i></button><button type="button" class="tipBtn" aria-label="About: the points" aria-expanded="false">i</button><span class="tipTxt">MoonBoard scoring: 350 at 5+, 50 more for each grade above it, by the community grade (the one the climbers voted for), whichever grade this phone shows; then 53 more for a flash, 2 for a second go, 1 for a third. Benchmarks only, and only the first time you send a route.</span></div>
-  <div id="ptsRank" hidden></div>
-  <div class="rankHead" id="storyHead" hidden><button type="button" id="storyTog" class="rankTog" aria-expanded="false" aria-controls="story"><span id="storyLbl">Your story</span><i></i></button><button type="button" class="tipBtn" aria-label="About: the story" aria-expanded="false">i</button><span class="tipTxt">Worked out from the goes in the logbook that is showing: the grades you have sent, how often first go, the route that took longest, the ones that got away, your days and your holds. <b>Flash grade</b>: the hardest grade at which half or more of the routes you have tried went first go. <b>Edge grade</b>: the hardest at which half or more went in the end, however many goes it took. <b>Average send</b>: the middle of all your sends. On your own logbook, a tap on any of the three opens a route of that grade you have not sent, on the hold set now on the wall. <b>Next up</b> counts what the next grade would take. <b>Head to head</b> puts you beside another climber. <b>Share my story as a picture</b> makes one picture of it all to send on. The more of your logbook is in here, the more it can tell. <b>Import CSV</b> brings an old logbook over.</span></div>
-  <div id="story" hidden></div>
-  <input type="file" id="logFile" accept=".csv,text/csv,text/comma-separated-values,text/plain" tabindex="-1" aria-hidden="true">
-  <p id="logHint"></p>
-  <div id="logNote" role="status" hidden></div>
-  <div id="logSum"></div>
-  <div id="logRows"></div>
 </div>
 
 <!-- The timed session's setting-up: a sheet at the foot of the screen, opened by the timer button on the board. -->
@@ -1871,7 +1863,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-21 09:30';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-21 10:57';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3804,7 +3796,7 @@ function applyLists(data){
   c4Fill();
   c4Rank();
   snRank();
-  if (!$('logPanel').hidden) ptsRank();
+  if (page === 'book') ptsRank();
   renderResults();
   paintBar();
 }
@@ -4024,19 +4016,9 @@ function firstSendAs(id, tapped){
   return { result: RESULTS[Math.min(n, 4) - 1], before: split.before, goes, n };
 }
 
-/* Log try and Log send, on the log page, act as whoever is picked in the header. */
+/* Whatever hangs on the open route and the climber picked in the header. (Log try and Log send, on the log page, were
+   painted here first, until Quick log on the board took their place: 2026-10-21.) */
 function paintBar(){
-  const who = meNow();
-  const on  = !!(current && who);
-  const sent   = on && (done[current.id] || []).includes(who);
-  $('done').disabled = !current;
-  $('try').disabled  = !current;
-  const t = current ? myTries(current.id) : 0;
-  $('try').textContent = t ? 'Log try \u00b7 ' + t : 'Log try';
-  $('try').className   = 'mini' + (t ? ' on' : '');
-  $('done').textContent = 'Log send';        // the filled state says whether it's ticked
-  $('done').className   = 'mini' + (sent ? ' on' : '');
-  $('done').title       = sent ? 'Log another send' : 'Log it as climbed';
   paintWho();
   paintBeta();
   paintNext();
@@ -4090,14 +4072,14 @@ function doTry(){
    happens in the logbook, where you can see what you're deleting. */
 function doDone(){
   const me = meNow(); if (!me || !current) return;
-  openSend(page === 'log' ? $('done') : $('quickBtn'));
+  openSend($('quickBtn'));
 }
 
 /* ---------- how did the send go? ----------
    Asked in bubbles, not on a sheet (Will, on the design canvas, 2026-10-08). Four of
    them swing out in an arc from the button that was pressed - Flash, 2nd, 3rd, 4+,
-   left to right - away from the nearer edge of the screen: under Log send, which is
-   near the top of its page, and over Quick log, which is near the foot of its. The one
+   left to right - away from the nearer edge of the screen: over Quick log, which is near the foot of its page (and
+   under Log send, near the top of the log page, until that went on 2026-10-21). The one
    the tries point to has a white ring. For a route sent before they are session
    sends, and a small line says so; the words on the bubbles stay short. For a route
    never sent that has tries from before today, the line says how many and asks which
@@ -5480,7 +5462,7 @@ async function entryAction(action){
   if (!heldEntry) return;
   await listsCall('/lists/log/entry', { key: heldEntry.k, action });
   heldEntry = null;
-  showPanel('log');
+  showPanel(null);
   loadLog();
 }
 
@@ -5553,7 +5535,7 @@ function histFill(entries, r, me, sum, rows){
     d.className = 'none';
     d.textContent = ticked
       ? 'Marked as climbed, from before the logbook kept dates \u2014 so there is nothing to list.'
-      : 'Nothing logged on this one yet. Log try and Log send will start filling it in.';
+      : 'Nothing logged on this one yet. Quick log, on the board, will start filling it in.';
     rows.appendChild(d);
     return;
   }
@@ -5661,14 +5643,16 @@ function whoFill(box){
    whoever its own picker was last on, so after one look at another climber's it went on opening on theirs: Will,
    "it should follow the climber".) With nobody picked at the top it is the one last looked at, or the first. The
    picker inside still shows anybody else's. */
-async function openLog(){
+/* The Logbook is a page (2026-10-21): whatever offered it goes there, and on it, it is read again. */
+function openLog(){ if (page === 'book') bookShow(); else showPage('book'); }
+function bookShow(){
   const sel = $('logWho'), keep = meNow() || sel.value;
   sel.innerHTML = '';
   people.forEach(p => sel.appendChild(new Option(p, p)));
   sel.value = people.includes(keep) ? keep : (people[0] || '');
   sel.hidden = !people.length;
   logOpen = new Set([0]); storyOpen = null; logNote('');
-  showPanel('log');
+  $('logPanel').scrollTop = 0;
   ptsRank();
   loadLog();
 }
@@ -7783,7 +7767,7 @@ let kbClose = () => { $('q').blur(); };                                         
    board is where Back leads. ghost: for how long the next click should be dropped - set by
    whoever changes the page from a touch that has not finished yet (see below), and
    nobody else. */
-const PAGES = ['list', 'board', 'log', 'set'];
+const PAGES = ['list', 'board', 'log', 'book', 'set'];
 function showPage(which, fromBack, ghost){
   if (which === page || !PAGES.includes(which)) return;
   if (page === 'board' && (betaDraft || panelOpen)) return;
@@ -7797,6 +7781,7 @@ function showPage(which, fromBack, ghost){
   b.classList.toggle('listPage', which === 'list');
   b.classList.toggle('logPage', which === 'log');
   b.classList.toggle('setPage', which === 'set');
+  b.classList.toggle('bookPage', which === 'book');
   if (which === 'set' && piNow) relayPeek();          // what the Pi is doing now, not at the last look
   if (which === 'set' && Date.now() - wallBoardAt > 10000) wallBoardPull();      // and another wall's hold set
   b.classList.remove('slideL', 'slideR');
@@ -7813,9 +7798,14 @@ function showPage(which, fromBack, ghost){
      a moment later, when the board's page brought that route's row into view, and the
      board came back shrunken. Will, 2026-10-08: "I've picked a route and I want to see it". */
   listHand = 0;
-  // Back steps from either side page to the board
-  if (was !== 'board' && !fromBack) layerShut(was);
-  if (which !== 'board') layerOpen(which);
+  /* Back steps from any other page to the board. Page to page (History to the Logbook, say) the step that is there
+     becomes the new page's: stepping back and on again lost it, because the step back landed after the new step was
+     made, and Back then left the app (found 2026-10-21, once there were five pages to go between). */
+  if (was !== 'board' && which !== 'board' && !fromBack) layerSwap(was, which);
+  else {
+    if (was !== 'board' && !fromBack) layerShut(was);
+    if (which !== 'board') layerOpen(which);
+  }
   setCompact(false);
   if (which === 'list'){
     showFilters(true);                                 // there is room for them here, so they stand open
@@ -7826,8 +7816,9 @@ function showPage(which, fromBack, ghost){
   }
   if (which === 'log'){ $('logPage').scrollTop = 0; paintLogPage(); }
   if (which === 'set') $('setPanel').scrollTop = 0;
+  if (which === 'book') bookShow();
   const row = $('results').querySelector('.rt.sel');   // the open route stays in view on both
-  if (which !== 'log' && which !== 'set') rowShow(row, which === 'list');
+  if (which === 'list' || which === 'board') rowShow(row, which === 'list');
 }
 document.addEventListener('click', e => {
   if (Date.now() >= ghostUntil) return;
@@ -7840,7 +7831,7 @@ document.body.addEventListener('animationend', e => {
 
 (function pageSwipe(){
   let x0 = null, y0 = null;
-  const off = '#board, #kb, select, #quick, #gSlide, #sendFan, #setPanel input, #log, #logPanel, #pairPanel, #snakePanel, #entryPanel, #gamePanel, #rsPanel, #rsScrim, #facePanel, #faceScrim, #logScrim, #tipBox, #a2hs, #a2hsHow, #gestHow';
+  const off = '#board, #kb, select, #quick, #gSlide, #sendFan, #setPanel input, #log, #logPanel input, #pairPanel, #snakePanel, #entryPanel, #gamePanel, #rsPanel, #rsScrim, #facePanel, #faceScrim, #tipBox, #a2hs, #a2hsHow, #gestHow';
   document.addEventListener('pointerdown', e => {
     x0 = null;
     if (betaDraft || panelOpen || focusOn) return;
@@ -7860,9 +7851,11 @@ document.body.addEventListener('animationend', e => {
   document.addEventListener('pointercancel', () => { x0 = null; }, { passive: true });
 })();
 
-/* ---------- the log page ----------
-   The page to the right of the board. It is for two things: logging a go on the open
-   route, and seeing what you have climbed.
+/* ---------- the log page, called History ----------
+   The page to the right of the board: the open route, with its beta, how it has gone for you and who else has climbed
+   it, and this session. It was for logging a go as well, with Log try and Log send, until Will said on 2026-10-21 "We
+   don't really need the log try log send there because people can do that with the quick log on the board page... It
+   also means this is not a page dedicated to logging", and named it History. The Logbook is the page after it.
 
    A session is a run of goes with no gap of four hours in it - the same four hours
    the wall's own "tonight" uses - so an evening that runs past midnight stays one
@@ -7954,11 +7947,11 @@ function paintLogNow(){
   const st = r && me && stats[me] && stats[me][r.id];
   const sends = st && st.s ? st.s.length : 0, t = r ? myTries(r.id) : 0;
   box.querySelector('.sub').textContent =
-      !r  ? 'Open one on the board, or from the routes, and log it here.'
-    : !me ? 'Pick your name at the top to log a go.'
+      !r  ? 'Open one on the board, or from the routes.'
+    : !me ? 'Pick your name at the top to see your goes on it.'
     : [t ? t + (t === 1 ? ' try' : ' tries') + (sends ? ' since your last send' : ' so far') : (sends ? '' : 'Not tried yet'),
        sends ? 'sent ' + (sends === 1 ? 'once' : sends === 2 ? 'twice' : sends + ' times') : ''].filter(Boolean).join(' \u00b7 ');
-}                                          // the two buttons themselves are painted with the bar (paintBar)
+}
 
 /* Undo, on the log page. The relay takes off your newest entry, whenever that was, so
    here it is only offered for a go from this session, it says which go, and it wants
@@ -8118,12 +8111,11 @@ function quickShow(on, keep){             // keep: something else takes its step
   else if (!keep) layerShut('fan');
   paintQuick();
 }
-/* Where the line goes: just over the search row on the board's page, just under the
-   two big buttons on the log page; anywhere else, where the stylesheet puts it. */
+/* Where the line goes: just over the search row on the board's page; anywhere else, where the stylesheet puts it. */
 function toastY(){
-  const r = page === 'log' ? $('done').getBoundingClientRect() : page === 'board' ? $('bar').getBoundingClientRect() : null;
+  const r = page === 'board' ? $('bar').getBoundingClientRect() : null;
   if (!r || !r.height) return null;
-  return Math.max(56, Math.min(innerHeight - 110, page === 'log' ? r.bottom + 40 : r.top - 44));
+  return Math.max(56, Math.min(innerHeight - 110, r.top - 44));
 }
 function quickSay(txt, cls){              // what was logged, said for a moment
   const t = $('quickToast'), y = toastY();
@@ -8516,6 +8508,12 @@ function layerOpen(name){
   layers.push(name);
   try{ history.pushState({ mb: layers.length, b: baseSet ? 1 : 0 }, ''); }catch(e){}
 }
+/* One page for another on the same step, so that Back from either goes to the board. */
+function layerSwap(from, to){
+  const i = layers.lastIndexOf(from);
+  if (i < 0) return layerOpen(to);
+  layers[i] = to;
+}
 function layerShut(name){
   const i = layers.lastIndexOf(name);
   if (i < 0) return;
@@ -8534,7 +8532,7 @@ window.addEventListener('popstate', () => {
   if (name === 'panel') showPanel(null, true);
   else if (name === 'fan'){ closeSend(true); quickShow(false, true); }
   else if (name === 'focus') focusBoard(false, true);
-  else if (name === 'list' || name === 'log' || name === 'set') showPage('board', true);
+  else if (name === 'list' || name === 'log' || name === 'book' || name === 'set') showPage('board', true);
   else if (!name && ANDROID && !baseSet) quickSay('Press Back again to close');
 });
 // A page opened again (a reload, or a phone that put the app away and brought it back) can find itself on a step it
@@ -8812,13 +8810,11 @@ document.addEventListener('scroll', e => { if (e.target !== $('tipBox')) tipShut
 window.addEventListener('resize', tipShut);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') tipShut(); });
 
-const PANELS = { game: 'gamePanel', log: 'logPanel', ig: 'igPanel',
+const PANELS = { game: 'gamePanel', ig: 'igPanel',
                  snake: 'snakePanel', entry: 'entryPanel', pair: 'pairPanel', rs: 'rsPanel', face: 'facePanel' };
 
-function showPanel(which, fromBack){  // a key of PANELS, or null for none
-  const back = which === 'log' && !$('entryPanel').hidden;           // from an entry's card back to the logbook under it
+function showPanel(which, fromBack){  // a key of PANELS, or null for none (the Logbook, a page since 2026-10-21, is not one)
   $('gamePanel').hidden = which !== 'game';
-  $('logPanel').hidden = $('logScrim').hidden = which !== 'log' && which !== 'entry';     // an entry is shown over the logbook, which stays where it was
   $('igPanel').hidden   = which !== 'ig';
   $('pairPanel').hidden = which !== 'pair';
   $('snakePanel').hidden = which !== 'snake';
@@ -8826,7 +8822,7 @@ function showPanel(which, fromBack){  // a key of PANELS, or null for none
   $('rsPanel').hidden = $('rsScrim').hidden = which !== 'rs';
   $('facePanel').hidden = $('faceScrim').hidden = which !== 'face';
   if (which !== 'snake' && which !== 'entry' && sn) snStop();          // don't leave it running unseen, or a finished one on the wall
-  if (PANELS[which] && !back) $(PANELS[which]).scrollTop = 0;   // open at the top, always (but the logbook as it was left, back from an entry)
+  if (PANELS[which]) $(PANELS[which]).scrollTop = 0;   // open at the top, always
   // One step in the history for "a sheet is open", however many are swapped through.
   const open = !!PANELS[which];
   if (open && !panelOpen) layerOpen('panel');
@@ -9102,8 +9098,6 @@ function paintStory(){
   });
 }
 $('storyTog').onclick = () => { storyOpen = $('story').hidden; paintStory(); };
-$('logBtn').onclick = () => ($('logPanel').hidden ? openLog() : showPanel(null));
-$('logClose').onclick = $('logScrim').onclick = () => showPanel(null);
 $('entryPanel').onclick = e => { if (e.target === $('entryPanel')) $('enClose').onclick(); };      // a tap on the dark round the card
 $('snakeBtn').onclick = () => {
   const open = $('snakePanel').hidden;
@@ -9111,7 +9105,7 @@ $('snakeBtn').onclick = () => {
   if (open && !sn) snNew();
 };
 $('snClose').onclick = () => showPanel(null);
-$('enClose').onclick = () => { heldEntry = null; showPanel('log'); };
+$('enClose').onclick = () => { heldEntry = null; showPanel(null); };
 $('enUnlock').onclick = () => entryAction(heldEntry && heldEntry.lock ? 'unlock' : 'lock');
 $('enDelete').onclick = () => entryAction('delete');
 $('logLock').onclick = async () => {
@@ -9149,8 +9143,6 @@ $('c4off').onclick = c4Stop;
 $('c4pg').onchange = $('c4pb').onchange = () => c4Draw();
 $('c4timed').onchange = () => { if (c4) c4New(); else c4Clocks(); };
 $('c4mins').onchange  = () => { if (c4) c4New(); };
-$('done').onclick = () => { if (!needName('done')) doDone(); };
-$('try').onclick  = () => { if (!needName('try'))  doTry();  };
 let lastMe = '';
 $('me').onchange = () => {
   if ($('me').value === NEW_CLIMBER) return addPerson(lastMe);

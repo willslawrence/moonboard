@@ -52,9 +52,13 @@ in both the script and the page.
 
 ## The app, page by page
 
-Four pages side by side, named in a bar along the foot of the screen: **Routes**,
-**Board**, **Log**, and a cog at the right-hand end for **Settings**. Tap one, or swipe
-sideways anywhere but on the picture. Android's Back button comes back to the board, after
+Five pages side by side, named in a bar along the foot of the screen: **Routes**,
+**Board**, **History**, **Logbook**, and a cog at the right-hand end for **Settings**. Tap
+one, or swipe sideways anywhere but on the picture. (Five since 2026-10-21, when Will took
+logging off the log page, called it History, and made the Logbook a page of its own: it had
+been a sheet over the page.) Going from one page to another that is not the board keeps a
+single step in the history, so Back from any of them comes to the board; until that day
+History to Settings and then Back left the app. Android's Back button comes back to the board, after
 closing whatever is open on top of it, on both walls. With nothing open it says *Press Back
 again to close*, and only the next Back leaves the app (Abdullah, 2026-10-15). That takes a
 step in the history under everything else, which is put down on the first tap (Chrome passes
@@ -146,9 +150,12 @@ short list never looks like a bug. Pick a route and you are back at the board wi
 The list can also be narrowed to the routes that use certain holds, picked on the picture
 (see *Focus, and picking holds*). While it is, a note over the list says which holds.
 
-### Log
+### History
 
-Logging, and what you have climbed. Top to bottom:
+The open route and what has happened on it, and this session. It was the log page, with
+**Log try** and **Log send**, until 2026-10-21 (Will: "We don't really need the log try log
+send there because people can do that with the quick log on the board page... It also means
+this is not a page dedicated to logging"). Top to bottom:
 
 - **This session**, once there is one: your sends, tries and hardest grade, with a dot for
   every go in the order they happened. A ring is a try, a green dot a send, a gold dot a
@@ -156,8 +163,9 @@ Logging, and what you have climbed. Top to bottom:
   another shuts them; a tap on a row opens that route. A session is a run of goes with no
   gap of four hours, so an evening that runs past midnight is still one session. (The card
   was at the foot of the page, under a list that was always open, until 2026-10-11.)
-- **The open problem**, with **Log try** and **Log send**, then **Beta** and the
-  **Logbook**. A small line offers to undo your last go (see *Logbook*).
+- **The open problem**: its name, its grade and a small **Beta** on one line (Will: "make
+  the beta button smaller and inline with the route name"), then how it has gone for you.
+  A small line offers to undo your last go (see *Logbook*).
 - **Your history on this route**: one row for each session you were on it, a dot for
   every go.
 - **Community**: who has climbed the open problem and how each of them first got up it,
@@ -251,7 +259,7 @@ over 130 bytes, well inside what the box will draw.
 ### How a send is asked
 
 A send needs one more answer: which go it was. Four green bubbles swing out in an arc
-from the button that was pressed, under **Log send** and over **Quick log**: **Flash**,
+over **Quick log** (and under **Log send**, while there was one): **Flash**,
 **2nd**, **3rd**, **4+**. Because the tries are counted, the app already knows the likely
 answer and rings it in white: no tries logged means flash, one means 2nd, three or more
 means 4+. Tap it, or tap another if it is wrong. A tap on the dimmed screen, or on the
@@ -300,7 +308,7 @@ thing. The grade meter on row 1 stays dark while two are up.
 ### Beta
 
 How to climb it: the order hands and feet go on. One beta per problem, shared by the
-crew. **+ Beta** on the log page opens the tools beside the picture: pick a limb, tap a
+crew. **+ Beta**, beside the route's name on History, opens the tools beside the picture: pick a limb, tap a
 hold. A foot can also go on the kickboard, or flag left, down or right, and a Hips row
 shifts the weight left, square or right. Once a problem has one the button reads
 **▶ Beta**, and a stick climber drawn to scale moves through it over the picture until
@@ -844,17 +852,20 @@ page not on the site (a copy opened from a file) cannot reach them and draws let
 
 ## Logbook
 
-**Log try** logs one attempt and **Log send** asks which go it was (see *How a send is
-asked*). Both are on the log page, and **Quick log** does the same from the board.
+**Quick log**, on the board, logs a go: red for a try, green for a send, which asks which go
+it was (see *How a send is asked*). **Log try** and **Log send** did the same on the log page
+until 2026-10-21.
 
-The log page's own undo is careful. The relay's undo takes off a climber's newest entry,
+History's undo is careful. The relay's undo takes off a climber's newest entry,
 whenever that was, so the page only offers it for a go from the current session, names the
 go, and wants a second tap. Anything older is changed in the **Logbook**, where it can be
 seen.
 
-The **Logbook** is a sheet that rises from the foot of the screen, laid out as the Sun
-board's is (since 2026-10-12, when Will said of matching the two: "good idea"; it took the
-whole screen until then, and listed a day to a line). Top to bottom: whose logbook it is;
+The **Logbook** is a page of its own, between History and Settings, laid out as Settings is
+with its heading pinned at the top (since 2026-10-21; Will: "add the Logbook as its own
+page"). Before that it was a sheet that rose from the foot of the screen, laid out as the Sun
+board's is (2026-10-12), and before that a whole screen listing a day to a line. Top to
+bottom: whose logbook it is;
 **Export CSV**, **Import CSV** and **Lock my entries** on one line, with an i that explains
 them; a line that sums the logbook up; every go, a session to a line with the newest open,
 each go with its time, the route and its grade, how it went, and a padlock if it is locked;
@@ -862,7 +873,7 @@ then everyone's points, with how they are worked out behind an i. It opens on wh
 climbing, the name at the top of the page, each time it is opened; the picker inside shows
 anybody else's. (Until 2026-10-11 it went on opening on whoever was looked at last.)
 
-A tap on an entry of your own opens it in a card over the Logbook: **Keep it**, **Delete
+A tap on an entry of your own opens it in a card over the Logbook page: **Keep it**, **Delete
 this entry**, and **Lock it** or **Unlock it**. Every such entry ends in three dots (until
 2026-10-11 it took a held finger, which nobody found). A locked entry cannot be deleted or
 undone, and **Lock my entries** locks all of yours at once. Somebody else's logbook can be
