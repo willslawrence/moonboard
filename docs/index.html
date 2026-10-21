@@ -1119,6 +1119,22 @@
     box-shadow:0 8px 28px rgba(0,0,0,.35);font-size:14px;line-height:1.4}
   #arrived b{font-size:16px;color:var(--bright)}
   #arrived button{align-self:flex-end;width:auto;margin-top:4px;padding:9px 22px}
+  /* Connecting: a card at the foot of the screen while this phone waits for the wall (see connWait in the script).
+     Nothing behind it is dimmed, so one can carry on choosing a route, and it stands just over the names of the pages
+     so that they still work; the line along its foot runs out with the 30 seconds it stays up. */
+  #connWait{position:fixed;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom) + 54px);z-index:58;overflow:hidden;
+    display:flex;align-items:flex-start;gap:6px;padding:12px 4px 15px 14px;border-radius:14px;border:1px solid var(--now-edge);
+    background:var(--now-bg);color:var(--ink);box-shadow:0 8px 28px rgba(0,0,0,.35);font-size:13.5px;line-height:1.4;
+    animation:connIn .25s ease-out;transition:opacity .25s ease-out,transform .25s ease-out}
+  #connWait[hidden]{display:none}
+  #connWait.out{opacity:0;transform:translateY(14px)}
+  #connWait div{flex:1 1 auto;min-width:0;padding-top:2px}
+  #connWait b{display:block;margin-bottom:2px;font-size:15px;color:var(--bright)}
+  #connWait button{flex:none;width:34px;height:34px;padding:0;border:0;border-radius:17px;background:transparent;color:inherit;font-size:15px;opacity:.75}
+  #connWait i{position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--now-cap);transform-origin:left;animation:connRun 30s linear forwards}
+  @keyframes connIn{from{opacity:0;transform:translateY(14px)}}
+  @keyframes connRun{to{transform:scaleX(0)}}
+  @media (prefers-reduced-motion:reduce){ #connWait{animation:none;transition:none} #connWait i{display:none} }
   #quickToast.bad{background:#ef4444;color:#fff}
   body.betaEdit #quick{display:none}           /* the tools for hands and feet have the panel then */
   /* ---- on the wall: the problem someone has lit, and who lit it ----
@@ -1723,6 +1739,8 @@
 <div id="rsFlash" hidden></div>
 <div id="quickScrim" hidden></div>
 <div id="quickToast" hidden></div>
+<!-- While this phone waits for the wall: up to 30 seconds, gone the moment it connects (see connWait in the script). -->
+<div id="connWait" hidden role="status" aria-live="polite"><div><b>Connecting to the wall</b>The first connection can take 10 to 30 seconds. After that, routes light straight away.</div><button id="connWaitX" type="button" aria-label="Hide">&#10005;</button><i></i></div>
 <!-- How a send went, asked in bubbles and not on a sheet: four of them swing out in an
      arc over Quick log (and under Log send, while there was one, until 2026-10-21). The layer
      itself is the dimming; the button with the cross sits where the pressed one is. -->
@@ -1899,7 +1917,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-21 13:46';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-21 20:35';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -4649,6 +4667,7 @@ async function connect(){
       });
     }
     log('connecting to ' + (device.name || '(unnamed)') + ' …');
+    connWait('ble');
     const server = await device.gatt.connect();
     const svc = await server.getPrimaryService(NUS);
     rx = await svc.getCharacteristic(NUS_RX);
@@ -4671,6 +4690,7 @@ async function connect(){
     else standby();
   }catch(e){
     rx = null;
+    if (waitFor === 'ble') connWait('');
     setLive(false);
     log('connect failed: ' + e.message);
     log('If the picker was empty: box powered? MoonBoard app force-quit?');
@@ -5304,6 +5324,33 @@ let piHeard = false;         // since then it has been seen waking or holding
 let piThen = null;           // what to light once it has the wall: {str, meta, again}
 let piNote = null;           // {text, until}: why it gave up, in the banner for a minute
 
+/* ---------- connecting, said ----------
+   Will, 2026-10-21: "add a pop-up when someone is first connecting to the wall that it can take 10 to 30 seconds for
+   the initial connection... the pop-up should clear after 30 seconds or if the wall connects." So when this phone sets
+   off to reach the wall (the Pi woken by Connect or by Light up Route, or this phone's own Bluetooth once the board is
+   picked), a card rises from the foot of the screen to say so. It goes when the wall is this phone's (the Pi has it,
+   or this phone's Bluetooth does), when the try ends without it (the red line under the header then says why), after
+   30 seconds, or on its cross. Only on the phone that asked: another phone sees Connecting in its header. */
+let waitFor = '';            // 'pi' or 'ble' while the card is up for that way to the wall, '' while it is away
+let waitT = 0;
+function connWait(why){
+  const el = $('connWait');
+  clearTimeout(waitT);
+  if (why){
+    waitFor = why;
+    el.classList.remove('out');
+    el.hidden = false;
+    const run = el.querySelector('i');                  // the line along its foot starts its 30 seconds again
+    run.style.animation = 'none'; void run.offsetWidth; run.style.animation = '';
+    waitT = setTimeout(() => connWait(''), 30000);
+    return;
+  }
+  waitFor = '';
+  if (el.hidden) return;
+  el.classList.add('out');
+  waitT = setTimeout(() => { el.hidden = true; el.classList.remove('out'); }, 250);
+}
+
 const piCan = () => !rx && !!piNow && piNow.state === 'asleep' && !!relayRoom();
 const PI_WHY = { 'not found': 'last time it could not find the wall (off, or the Moon app had it)',
                  idle: 'it let go when nobody had the app open', lost: 'the wall was switched off',
@@ -5331,6 +5378,7 @@ async function piWake(then){
   if (then) piThen = then;
   if (piAsked) return;                    // asked already: it is on its way
   piAsked = Date.now(); piHeard = false; piNote = null;
+  connWait('pi');
   bridgeSeen = null;                      // not lost - on its way
   piNow = Object.assign({}, piNow, { state: 'waking' });
   wallState();
@@ -5379,6 +5427,8 @@ async function piSleep(){
 /* Connect while the Pi holds the wall would only fight it for the Bluetooth, so it
    stands aside; Settings says what the Pi is doing. */
 function paintPi(){
+  // The card that says connecting takes a while: away once the wall is this phone's, or once the Pi stops trying for it.
+  if (waitFor && (rx || (waitFor === 'pi' && !piAsked))) connWait('');
   const c = $('connect');
   const waking = !rx && !!piNow && piNow.state === 'waking';
   c.textContent = rx ? 'Disconnect' : 'Connect';
@@ -7736,6 +7786,7 @@ $('connect').onclick = () => {
   else connect();
 };
 $('piSleep').onclick = piSleep;
+$('connWaitX').onclick = () => connWait('');            // only the card: the connecting carries on
 $('bleBtn').onclick = () => {
   if (!navigator.bluetooth){ $('piState').textContent = noBluetoothAdvice(); return; }
   connect();
@@ -7883,7 +7934,7 @@ document.body.addEventListener('animationend', e => {
 
 (function pageSwipe(){
   let x0 = null, y0 = null;
-  const off = '#board, #kb, select, #quick, #gSlide, #sendFan, #setPanel input, #log, #logPanel input, #pairPanel, #snakePanel, #entryPanel, #gamePanel, #rsPanel, #rsScrim, #facePanel, #faceScrim, #tipBox, #a2hs, #a2hsHow, #gestHow';
+  const off = '#board, #kb, select, #quick, #gSlide, #sendFan, #setPanel input, #log, #logPanel input, #pairPanel, #snakePanel, #entryPanel, #gamePanel, #rsPanel, #rsScrim, #facePanel, #faceScrim, #tipBox, #a2hs, #a2hsHow, #gestHow, #connWait';
   document.addEventListener('pointerdown', e => {
     x0 = null;
     if (betaDraft || panelOpen || focusOn) return;

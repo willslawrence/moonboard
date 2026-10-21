@@ -773,6 +773,14 @@ Nothing to set up. Whoever taps **Connect** becomes the bridge automatically, an
 phone posts what it lights to the relay for that phone to write. The room code ships with a
 shared default, so a second phone just works. Bluetooth always wins if this phone has it.
 
+**The first connection takes a while**, 10 to 30 seconds: the Pi waking and finding the wall,
+or a phone's own Bluetooth once the board is picked. So the phone that asked (by Connect, or by
+Light up Route while the Pi is asleep) shows a card at the foot of the screen saying so, since
+2026-10-21 (Will: "add a pop-up when someone is first connecting to the wall... clear after 30
+seconds or if the wall connects"). It goes the moment the wall is connected, when the try ends
+without it (the red line says why), after 30 seconds, or on its cross. Other phones see
+Connecting… in the header and no card.
+
 The header only claims a connection it can prove. A room code being set means nothing on its
 own — the relay answers with how many phones are bridging, and if that's zero a red banner
 says so. Before that, losing Bluetooth mid-session left every button lit and the wall quietly
