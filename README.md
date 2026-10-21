@@ -269,11 +269,12 @@ about seventy on the 2016 set; on a 25° set, with fewer easy benchmarks, the gr
 there are forty), each move within three rows and three columns of the hand that stays, hands
 in turn and never crossing, up a band of rows (4 to 15) and down again.
 
-Four holds are lit at once (Will: "on pace is the one you're on and the one you're moving to, and
-then blue is the next one that's coming... if you end up grabbing blue, you're a little ahead of
-pace. So there's always four lights lit up at the same time"): **green**, the two the hands should
-be on; **red**, the one a hand should be leaving, still on it and you are behind; **blue**, the
-next, on it already and you are ahead. Every so many seconds (the pace, 1 to 7, 6 to begin with)
+Six holds are lit at once (Will, first: "on pace is the one you're on and the one you're moving
+to, and then blue is the next one that's coming... So there's always four lights lit up at the same
+time"; then: "two lights ahead, two lights behind. So green is still the two you're on, and then
+blue is the two you're moving to, and red would be the two you've left"): **green**, the two the
+hands should be on; **blue**, the two coming next, a hand already on one and you are ahead;
+**red**, the two just left, a hand still on one and you are behind. Every so many seconds (the pace, 1 to 7, 6 to begin with)
 the four move on by one hold, with a soft tick. Feet go anywhere.
 
 The settings: **Time on** (half a minute to ten, 1:30 to begin with; Will: "maybe be like a minute
@@ -285,9 +286,20 @@ it down with a dot for each round. A tap on the time pauses a round, or skips a 
 a round the lights go and the phone pings, and at the end of a rest it pings and flashes as the
 timed session does. Starting one technique ends the other.
 
-**For now ARC is shown on the phone's picture only: nothing is sent to the wall.** Lighting the
-wall, under the rule the rest count keeps (never taking the wall from another climber), is the next
-step. The plan is in the vault (`work/active/moonboard-arc-plan.md`).
+**On the wall** (Will: "the four lights on the real wall, only when the wall is free, pausing if
+someone else lights a route"). The wall is free when nothing is up, when what is up is the
+climber's own (a route they lit, or ARC), or when nothing new has gone up for ten minutes and nobody
+is waiting in the line; then ARC takes it without a word. Otherwise, on Start (or carrying on after
+a pause) it asks whether to light over what is up, and if not it runs on the phone's picture alone.
+Before every frame it looks at what is on the wall (asking the relay afresh, at most every second
+and a half, where another phone holds it); if that is not what ARC last put up, somebody has lit
+something, and ARC pauses and says whose route is up. A tap on the time carries on, asking first.
+Frames go up under a number no route has (`ARC_ID`, -1), so every phone's **On wall** card says
+**ARC** and the climber's name, and as the same lighting ("again"), so they are nobody's turn in the
+line. At a rest and at the end ARC's lights come off, if the wall is still ARC's; a round after a
+rest goes back up only on the wall ARC left dark. The relay and the Pi pass the frames on as they
+pass any route; nothing of theirs changed. The plan is in the vault
+(`work/active/moonboard-arc-plan.md`).
 
 ### How a send is asked
 

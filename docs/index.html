@@ -1781,10 +1781,10 @@
     <div class="rsRow"><span>Rest between rounds</span><button data-a="rest" data-d="-30" aria-label="Half a minute less">&#8722;</button><b id="arcRest">1:30</b><button data-a="rest" data-d="30" aria-label="Half a minute more">+</button></div>
     <div class="rsRow"><span>Rounds</span><button data-a="rounds" data-d="-1" aria-label="One fewer">&#8722;</button><b id="arcRounds">5</b><button data-a="rounds" data-d="1" aria-label="One more">+</button></div>
     <div class="rsRow"><span>A new hold every</span><button data-a="pace" data-d="-1" aria-label="A second less">&#8722;</button><b id="arcPace">6 s</b><button data-a="pace" data-d="1" aria-label="A second more">+</button></div>
-    <div class="arcKey"><i class="E"></i><em>behind</em><i class="S"></i><i class="S"></i><em>on pace</em><i class="P"></i><em>ahead</em><button type="button" class="tipBtn" aria-label="About: the four lights" aria-expanded="false">i</button><span class="tipTxt">Four holds are lit at once, and every few seconds they move on by one. <b>Green</b>: the two your hands should be on. <b>Red</b>: the one a hand should be leaving; still on it, you are behind the pace. <b>Blue</b>: the next one; on it already, you are ahead. Feet go anywhere. The path keeps to the set's friendliest holds, climbs to row 14 or so and comes down again, so there is no need to come off until the round is up.</span></div>
+    <div class="arcKey"><i class="E"></i><i class="E"></i><em>behind</em><i class="S"></i><i class="S"></i><em>on pace</em><i class="P"></i><i class="P"></i><em>ahead</em><button type="button" class="tipBtn" aria-label="About: the four lights" aria-expanded="false">i</button><span class="tipTxt">Six holds are lit at once, and every few seconds they move on by one. <b>Green</b>: the two your hands should be on. <b>Blue</b>: the two coming next; a hand on blue is ahead of the pace. <b>Red</b>: the two just left; a hand still on red is behind it. Feet go anywhere. The path keeps to the set's friendliest holds, climbs to row 14 or so and comes down again, so there is no need to come off until the round is up. On the wall, ARC takes it only when it is free: nothing up, your own route up, or nothing new for ten minutes with nobody waiting. Otherwise it asks first. If somebody lights a route, ARC pauses.</span></div>
     <div class="opt"><label for="arcTick">A tick on each new hold</label><span class="sw"><input type="checkbox" role="switch" id="arcTick" checked><i></i></span></div>
     <button id="arcGo" class="solid">Start ARC</button>
-    <div class="hint">For now the holds light on this phone's picture, not on the wall: try the pace here first. Tap the time to pause a round or skip a rest; End stops.</div>
+    <div class="hint">The holds light on the wall when it is free, and on this phone's picture. If somebody else lights a route, ARC pauses: tap the time to carry on. Tap the time to pause a round or skip a rest; End stops.</div>
   </div>
 </div>
 
@@ -1894,7 +1894,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-21 12:10';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-21 13:24';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -1916,6 +1916,8 @@ let holdFilter = [];                   // the same keys, once "Search routes" is
 const CUSTOM_ID = 0;
 const PICK_HOLD = 'P';               // how the picked holds are lit: blue
 const PICK_MAX = 30;                 // more than a problem ever has, and well inside what the box will take in one write
+const ARC_ID = -1;                   // what ARC's frames are lit under (no route has it), so every phone can say it is ARC
+const wallArc = () => !!(rx || bridgeLive) && !!wallNow && wallNow.id === ARC_ID;
 const wallCustom = () => !!(rx || bridgeLive) && !!wallNow && wallNow.id === CUSTOM_ID &&
                          (wallNow.board || boardKey) === boardKey;
 const holdSet = r => r.hs || (r.hs = new Set(Object.keys(cellsOf(r))));
@@ -4956,6 +4958,26 @@ function paintNow(){
   const b = $('nowBtn');
   if (!b) return;
   // Only when this phone can know: it holds the Bluetooth, or someone else does.
+  if (wallArc()){
+    // ARC (see "ARC on the wall"): easy climbing, the lights leading; it has no name but the climber's
+    const by = (wallNow.by || '').trim();
+    b.hidden = false;
+    b.classList.remove('here');
+    b.querySelector('.nm3').textContent = 'ARC';
+    b.querySelector('.nm4').textContent = '';
+    const who = b.querySelector('.by');
+    who.textContent = '';
+    if (by){
+      const chip = document.createElement('i');
+      chipPaint(chip, by);
+      const nm = document.createElement('span');
+      nm.textContent = by;
+      who.append(chip, nm);
+    }
+    b.title = 'ARC, easy climbing led by the lights' + (by ? ': ' + by : '');
+    b.setAttribute('aria-label', 'On the wall: ARC' + (by ? ', for ' + by : ''));
+    return;
+  }
   if (wallCustom()){
     // Holds somebody picked, not a problem off the list: it has no name but theirs.
     const by = (wallNow.by || '').trim();
@@ -5001,6 +5023,7 @@ function paintNow(){
 }
 
 function gotoWall(){
+  if (wallArc()) return quickSay('ARC' + (wallNow.by ? ' \u00b7 ' + wallNow.by.trim() : '') + ': easy climbing, the lights leading');
   if (wallCustom()){                     // its holds, picked on the picture, where they can be changed and lit again
     if (betaDraft) return;
     picks = cellsFromPayload(wallNow.payload);
@@ -8516,7 +8539,7 @@ function arcRnd(seed){
 /* A path of n hand holds. The first two side by side low in the band, the left one on the left; then the hands in turn,
    left first, each to a hold within three rows and three columns of the hand that stays, the left hand never more than
    a column to the right of it nor the right hand to its left; up the band, and down again from its top. Never back to
-   one of the last five holds, so the four lit at once are four holds. Where nothing fits it allows a longer reach, then
+   one of the last five holds, so the six lit at once are six holds. Where nothing fits it allows a longer reach, then
    turns round. null where the set has too few holds for it. A walk that runs into a corner before it is long enough
    is tried again on a new draw, up to thirty times, and the longest kept. */
 function arcPath(n, seed){
@@ -8539,7 +8562,7 @@ function arcWalk(n, seed){
   }
   if (!pairs.length) return null;
   let [L, R] = pairs[Math.floor(rnd() * pairs.length)];
-  const path = [L, R], ways = [{ old: 5, reach: 3 }, { old: 3, reach: 4 }];
+  const path = [L, R], ways = [{ old: 5, reach: 3 }, { old: 5, reach: 4 }];     // (never one of the last five: six lit at once are six holds)
   let up = true, left = true;            // which way the path is going, and which hand moves next
   while (path.length < n){
     let pick = null;
@@ -8569,18 +8592,18 @@ function arcWalk(n, seed){
   }
   return path.length >= Math.min(n, 6) ? path : null;
 }
-/* What the picture shows while a round is on: the four holds of the moment. Before the first move, the two to start
-   on and the first to go to; between rounds, nothing. null when no ARC is on, for the picture to show what it always
-   did. */
+/* What the picture (and the wall, when ARC has it) shows while a round is on: the six holds of the moment. Red, the two
+   just left; green, the two the hands should be on; blue, the two coming next (Will, 2026-10-21: "two lights ahead, two
+   lights behind. So green is still the two you're on, and then blue is the two you're moving to, and red would be the
+   two you've left"). Before the first move, the two to start on and the two after; between rounds, nothing. null when
+   no ARC is on, for the picture to show what it always did. */
 function arcCells(){
   try{ if (!AR) return null; }catch(e){ return null; }      // (asked before the session's own lines have run: none)
   const c = {};
   if (AR.phase === 'rest' || !AR.path) return c;
   const p = AR.path, k = AR.phase === 'lead' ? 0 : AR.k;
-  if (k > 0 && p[k - 1]) c[p[k - 1]] = 'E';
-  if (p[k]) c[p[k]] = 'S';
-  if (p[k + 1]) c[p[k + 1]] = 'S';
-  if (p[k + 2]) c[p[k + 2]] = 'P';
+  for (const [i, tag] of [[k - 2, 'E'], [k - 1, 'E'], [k, 'S'], [k + 1, 'S'], [k + 2, 'P'], [k + 3, 'P']])
+    if (i >= 0 && p[i]) c[p[i]] = tag;
   return c;
 }
 function arcClick(){                     // a soft tick for each new hold, where the phone will make one
@@ -8594,10 +8617,10 @@ function arcClick(){                     // a soft tick for each new hold, where
 }
 /* A round begins: a new path, and time to get on. */
 function arcRound(round, alarm){
-  const path = arcPath(Math.ceil(ARC.on / ARC.pace) + 6, Date.now() + round);
+  const path = arcPath(Math.ceil(ARC.on / ARC.pace) + 8, Date.now() + round);
   if (!path){ arcStop(false); quickSay('Too few holds on this set for ARC'); return; }
-  AR = { round, phase: 'lead', at: Date.now(), path, k: 0, paused: 0 };
-  paint(); arcBox();
+  AR = { round, phase: 'lead', at: Date.now(), path, k: 0, paused: 0, lost: false };
+  paint(); arcBox(); arcWallShow();
   if (alarm) rsAlarm();
 }
 function arcStart(){
@@ -8607,11 +8630,13 @@ function arcStart(){
   if (!AR) return;
   clearInterval(arcT); arcT = setInterval(arcBeat, 250);
   rsPaint();
+  arcWallTry(true);                      // the wall too, if it is free (or the climber says so)
 }
 function arcStop(done){
   clearInterval(arcT); arcT = 0;
   const was = AR;
   AR = null;
+  arcWallOff();
   paint(); rsPaint();
   if (done && was){ rsAlarm(); quickSay('ARC done · ' + ARC.rounds + ' × ' + rsClock(ARC.on)); }
 }
@@ -8622,24 +8647,29 @@ function arcBeat(){
   if (AR.paused) return arcBox();
   const now = Date.now(), t = now - AR.at;
   if (AR.phase === 'lead'){
-    if (t >= ARC_LEAD){ AR.phase = 'climb'; AR.at = now; AR.k = 1; arcClick(); paint(); }
+    if (t >= ARC_LEAD){ AR.phase = 'climb'; AR.at = now; AR.k = 1; arcClick(); paint(); arcWallShow(); }
   } else if (AR.phase === 'climb'){
     if (t >= ARC.on * 1000){
       if (AR.round >= ARC.rounds) return arcStop(true);
-      AR.phase = 'rest'; AR.at = now; paint(); rsPing();               // off the wall: a ping, and the lights go
+      AR.phase = 'rest'; AR.at = now; paint(); rsPing(); arcWallShow();     // off the wall: a ping, and the lights go
     } else {
-      const k = Math.max(1, Math.min(1 + Math.floor(t / (ARC.pace * 1000)), AR.path.length - 3));
-      if (k !== AR.k){ AR.k = k; arcClick(); paint(); }
+      const k = Math.max(1, Math.min(1 + Math.floor(t / (ARC.pace * 1000)), AR.path.length - 4));
+      if (k !== AR.k){ AR.k = k; arcClick(); paint(); arcWallShow(); }
     }
   } else if (t >= ARC.rest * 1000) return arcRound(AR.round + 1, true);
   arcBox();
 }
-/* A tap on the time: a round stops where it is, and a second tap carries on from there; a rest is skipped. */
+/* A tap on the time: a round stops where it is, and a second tap carries on from there; a rest is skipped. Carrying on
+   after a pause that somebody else's route made, ARC asks before it lights over theirs. */
 function arcTap(){
   if (!AR) return;
   rsArm();
   if (AR.phase === 'rest') return arcRound(AR.round + 1, false);
-  if (AR.paused){ AR.at += Date.now() - AR.paused; AR.paused = 0; } else AR.paused = Date.now();
+  if (AR.paused){
+    const lost = AR.lost;
+    AR.at += Date.now() - AR.paused; AR.paused = 0; AR.lost = false;
+    if (lost) arcWallTry(true); else arcWallShow();
+  } else AR.paused = Date.now();
   arcBox();
 }
 /* The board's box while ARC is on: the round's time left (or the count to the first move, or the rest's), a dot for
@@ -8669,6 +8699,93 @@ function arcSheet(){
   $('arcGo').textContent = AR ? 'End ARC' : 'Start ARC';
   $('arcGo').classList.toggle('solid', !AR);
   if (arc) $('rsSum').textContent = (AR ? 'on · ' : '') + ARC.rounds + (ARC.rounds === 1 ? ' round' : ' rounds') + ' of ' + rsClock(ARC.on) + ' on and ' + rsClock(ARC.rest) + ' off · a new hold every ' + ARC.pace + ' s';
+}
+/* ---------- ARC on the wall ----------
+   Will, 2026-10-21: "build ARC phase 2: the four lights on the real wall, only when the wall is free, pausing if someone
+   else lights a route" (six lights since, see arcCells). The wall is free when nothing is up, when what is up is the
+   climber's own (a route they lit, or ARC), or when nothing new has gone up for ten minutes and nobody is waiting in the
+   line. Then ARC takes it without a word. Otherwise, on a tap (Start, or carrying on after a pause) it asks whether to
+   light over what is up, and if not it goes on on this phone's picture alone; a round after a rest only ever goes on
+   the wall that ARC left.
+   It never takes the wall from anybody: before every frame it looks at what is up (asking the relay afresh, at most
+   every second and a half, where another phone holds the wall), and if that is not what ARC last put there, somebody
+   has lit something. ARC pauses and says who. Frames go up as the same lighting under the same name ("again", see
+   write), so they are nobody's turn in the line, and under ARC_ID, so that every phone's On wall card says ARC. At a
+   rest and at the end its lights come off, if the wall is still ARC's. A frame waits for the one before it; if the
+   holds have moved on meanwhile, only the newest goes up. */
+const ARC_IDLE = 10 * 60 * 1000;         // what went up this long ago, with nobody waiting for the wall, is nobody's now
+let arcWall = null;                      // { on, last: what ARC last put up ('l##' for dark), want, busy, peekAt }
+const arcWallNow = () => (wallNow && wallNow.payload) || 'l##';
+async function arcWallLook(w){           // what is on the wall this moment, as near as this phone can know
+  if (rx || document.visibilityState !== 'visible' || Date.now() - w.peekAt < 1500) return;
+  w.peekAt = Date.now();
+  await relayPeek();
+}
+function arcWallFree(){
+  if (!wallNow || wallNow.id === ARC_ID) return true;
+  const me = (meNow() || '').trim().toLowerCase();
+  if (me && (wallNow.by || '').trim().toLowerCase() === me) return true;
+  return Date.now() - (wallNow.t || 0) > ARC_IDLE && !(lineNow || []).length;
+}
+function arcWallWhat(){                  // what is up, in words: "Sara's Flash Gordon"
+  const r = wallRoute(), by = (wallNow && wallNow.by || '').trim();
+  return (by ? by + "'s " : '') + (wallCustom() ? 'custom route' : r ? r.name : 'route');
+}
+/* Take the wall for ARC if it is free, or if the climber says so (ask: only on a tap). Otherwise the phone alone. */
+async function arcWallTry(ask){
+  if (!AR) return;
+  if (!canSend()){ arcWall = null; return; }               // no wall to be had from here: the phone alone
+  const w = arcWall || (arcWall = { on: false, last: 'l##', want: null, busy: false, peekAt: 0 });
+  w.on = false;
+  await arcWallLook(w);
+  if (!AR || arcWall !== w) return;
+  if (!(rx || bridgeLive)) return quickSay('Not reaching the wall: ARC on this phone');
+  let take = arcWallFree();
+  if (!take && ask) take = confirm(arcWallWhat() + ' is on the wall. Light ARC over it?');
+  if (!AR || arcWall !== w) return;
+  if (!take) return quickSay('The wall is in use: ARC on this phone only');
+  w.on = true; w.last = arcWallNow(); w.want = null;
+  arcWallShow();
+}
+function arcWallShow(){                   // the holds of the moment to the wall, if ARC has it
+  const w = arcWall;
+  if (!w || !w.on || !AR) return;
+  w.want = AR.phase === 'rest' ? 'l##' : payloadOf(arcCells() || {});
+  if (!w.busy) arcWallPump(w);
+}
+async function arcWallPump(w){
+  w.busy = true;
+  try{
+    while (arcWall === w && w.on && w.want && w.want !== w.last){
+      const want = w.want;
+      await arcWallLook(w);
+      if (arcWall !== w || !w.on) break;
+      if (arcWallNow() !== w.last) return arcWallLost(w);
+      await write(want, true, want === 'l##' ? null : { id: ARC_ID, by: meNow() || '', board: boardKey }, false, true);
+      if (arcWall !== w || !w.on) break;
+      if (arcWallNow() !== want) return arcWallLost(w);
+      w.last = want;
+    }
+  } finally { w.busy = false; }
+}
+/* Somebody else has lit something, or the wall stopped answering: ARC stops where it is and says so. */
+function arcWallLost(w){
+  if (arcWall !== w) return;
+  w.on = false;
+  if (AR && !AR.paused){ AR.paused = Date.now(); AR.lost = true; arcBox(); }
+  quickSay('ARC paused: ' + (wallNow ? arcWallWhat() + ' is up' : 'the wall stopped answering') + '. Tap the time to carry on');
+}
+/* ARC is over, or was ended: its lights come off, if the wall is still as ARC left it. */
+async function arcWallOff(){
+  const w = arcWall;
+  arcWall = null;
+  if (!w || !w.on) return;
+  w.on = false;
+  for (let i = 0; w.busy && i < 100; i++) await new Promise(r => setTimeout(r, 100));
+  if (w.last === 'l##') return;
+  w.peekAt = 0;
+  await arcWallLook(w);
+  if (arcWallNow() === w.last) await write('l##', true, null, false, true);
 }
 $('rsHow').onclick = e => { const b = e.target.closest('button[data-how]'); if (!b) return; ARC.how = b.dataset.how; arcKeep(); rsPaint(); };
 $('arcSet').onclick = e => {
