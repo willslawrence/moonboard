@@ -1022,6 +1022,23 @@
   .rsRow b{flex:none;min-width:58px;text-align:center;font:700 17px ui-monospace,Menlo,monospace}
   #rsGo{width:100%}
   #rsBox{flex:none;display:flex;flex-direction:column;align-items:center;gap:6px;padding:7px 4px 4px;border:1px solid var(--edge);border-radius:10px;background:var(--panel)}
+  /* ---- ARC (2026-10-21): the sheet's two techniques, ARC's own rows, what its four lights say, its clock in the box ---- */
+  #rsHow{margin:0 0 10px}
+  #rsHow button{padding:10px 8px;font-size:14px}
+  #rsSet[hidden],#arcSet[hidden]{display:none}
+  #arcGo{width:100%}
+  .arcKey{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin:4px 0 8px;font-size:12.5px;color:var(--dim)}
+  .arcKey i{flex:none;width:15px;height:15px;border-radius:50%;border:3px solid;box-sizing:border-box}
+  .arcKey i.E{border-color:#ef4444}
+  .arcKey i.S{border-color:#22c55e}
+  .arcKey i.P{border-color:#2563eb}
+  .arcKey em{font-style:normal;margin-right:7px}
+  .arcKey button.tipBtn{margin-left:auto}
+  #rsBox.arc #rsTime{font:800 22px/1 ui-monospace,Menlo,monospace;letter-spacing:-.03em;color:var(--ink)}
+  #rsBox.arc.paused #rsTime{font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--dim)}
+  #rsBox.arc #rsDots{gap:4px;pointer-events:none}
+  #rsBox.arc #rsDots button{width:11px;height:11px;border-width:2px}
+  .mark.arc{border-width:4px}
   /* ---- quick log: a button at the foot of the panel, and the two it opens ----
      The two are round, red for a try and green for a send, and stand just over the
      button. Each is a fingertip across, which on a narrow panel takes the green one a
@@ -1745,6 +1762,9 @@
 <div id="rsScrim" hidden></div>
 <div id="rsPanel" hidden role="dialog" aria-label="Timed session">
   <div class="shHead"><h2>Timed session</h2><button id="rsShut" class="ghost">Close</button></div>
+  <!-- Two ways to train, chosen here (Will, 2026-10-21, of ARC: "The set up and setting can go in the timed session area
+       as another technique"). -->
+  <div class="two" id="rsHow" role="group" aria-label="Technique"><button type="button" data-how="sets">Sets and rests</button><button type="button" data-how="arc">ARC</button></div>
   <p id="rsSum"></p>
   <div id="rsSet">
     <div class="rsRow"><span>Goes in a set</span><button data-k="reps" data-d="-1" aria-label="One fewer">&#8722;</button><b id="rsReps">3</b><button data-k="reps" data-d="1" aria-label="One more">+</button></div>
@@ -1754,6 +1774,17 @@
     <button id="rsGo" class="solid">Start the session</button>
     <button id="rsTry" type="button">Try the ping</button>
     <div class="hint">On the board, tap a circle after each go. After the last one the rest counts down beside the wall. When it is up the phone pings and the screen flashes white. Tap the time to skip a rest.</div>
+  </div>
+  <!-- ARC: easy climbing without stopping, the lights leading (see "ARC" in the script). For now on this phone's picture only. -->
+  <div id="arcSet" hidden>
+    <div class="rsRow"><span>Time on</span><button data-a="on" data-d="-30" aria-label="Half a minute less">&#8722;</button><b id="arcOn">1:30</b><button data-a="on" data-d="30" aria-label="Half a minute more">+</button></div>
+    <div class="rsRow"><span>Rest between rounds</span><button data-a="rest" data-d="-30" aria-label="Half a minute less">&#8722;</button><b id="arcRest">1:30</b><button data-a="rest" data-d="30" aria-label="Half a minute more">+</button></div>
+    <div class="rsRow"><span>Rounds</span><button data-a="rounds" data-d="-1" aria-label="One fewer">&#8722;</button><b id="arcRounds">5</b><button data-a="rounds" data-d="1" aria-label="One more">+</button></div>
+    <div class="rsRow"><span>A new hold every</span><button data-a="pace" data-d="-1" aria-label="A second less">&#8722;</button><b id="arcPace">6 s</b><button data-a="pace" data-d="1" aria-label="A second more">+</button></div>
+    <div class="arcKey"><i class="E"></i><em>behind</em><i class="S"></i><i class="S"></i><em>on pace</em><i class="P"></i><em>ahead</em><button type="button" class="tipBtn" aria-label="About: the four lights" aria-expanded="false">i</button><span class="tipTxt">Four holds are lit at once, and every few seconds they move on by one. <b>Green</b>: the two your hands should be on. <b>Red</b>: the one a hand should be leaving; still on it, you are behind the pace. <b>Blue</b>: the next one; on it already, you are ahead. Feet go anywhere. The path keeps to the set's friendliest holds, climbs to row 14 or so and comes down again, so there is no need to come off until the round is up.</span></div>
+    <div class="opt"><label for="arcTick">A tick on each new hold</label><span class="sw"><input type="checkbox" role="switch" id="arcTick" checked><i></i></span></div>
+    <button id="arcGo" class="solid">Start ARC</button>
+    <div class="hint">For now the holds light on this phone's picture, not on the wall: try the pace here first. Tap the time to pause a round or skip a rest; End stops.</div>
   </div>
 </div>
 
@@ -1863,7 +1894,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-21 10:57';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-21 11:39';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -1935,9 +1966,6 @@ const markY = row => boardNow().geo === 'photo'
 function paint(){
   const m = $('marks');
   m.innerHTML = '';
-  const two = secondCells(second);
-  // a real hold always wins, and the open problem's over the second one's
-  const all = Object.assign({}, gradeCells, two, state);
   const ring = (k, cls) => {
     const [col, row] = k.split(',').map(Number);
     const d = document.createElement('div');
@@ -1946,6 +1974,12 @@ function paint(){
     d.style.top  = markY(row) + '%';
     m.appendChild(d);
   };
+  // a round of ARC draws its own four holds and nothing else, and between its rounds nothing (see ARC)
+  const arc = arcCells();
+  if (arc){ for (const k in arc) ring(k, arc[k] + ' arc'); return; }
+  const two = secondCells(second);
+  // a real hold always wins, and the open problem's over the second one's
+  const all = Object.assign({}, gradeCells, two, state);
   for (const k in all) ring(k, all[k] + (state[k] ? '' : two[k] ? ' two' : ' g'));
   // A hold both problems use is lit as the open problem's. Ring it again, so the
   // second one still reads whole on the picture.
@@ -8139,28 +8173,36 @@ const RS = { on: false, reps: 3, rest: 300, log: false, done: 0, set: 1, until: 
 try{ const k = JSON.parse(localStorage.getItem('mb-rest') || 'null'); if (k && typeof k === 'object') for (const f of Object.keys(RS)) if (typeof k[f] === typeof RS[f]) RS[f] = k[f]; }catch(e){}
 RS.reps = Math.max(1, Math.min(8, Math.round(RS.reps) || 3)); RS.rest = Math.max(30, Math.min(1800, Math.round(RS.rest) || 300));
 const rsKeep = () => { try{ localStorage.setItem('mb-rest', JSON.stringify(RS)); }catch(e){} };
+/* ARC, the timed session's other technique (see "ARC" further on): its settings, this phone's own and kept apart from
+   the session's, which the Sun board's page shares; and the session of it under way, if there is one. */
+const ARC = { how: 'sets', on: 90, rest: 90, rounds: 5, pace: 6, tick: true };
+try{ const k = JSON.parse(localStorage.getItem('mb-arc') || 'null'); if (k && typeof k === 'object') for (const f of Object.keys(ARC)) if (typeof k[f] === typeof ARC[f]) ARC[f] = k[f]; }catch(e){}
+let AR = null;
+arcFit();
 const rsClock = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
 let rsTick = 0, rsAudio = null, rsLock = null, rsPingEl = null, rsArmed = false, rsFlashT = 0;
 /* the screen stays on through a session, where a phone allows it, so that the flash at the end of a rest is seen */
 async function rsAwake(){
   try{
-    if (RS.on && !rsLock && navigator.wakeLock && document.visibilityState === 'visible'){ rsLock = await navigator.wakeLock.request('screen'); rsLock.addEventListener('release', () => { rsLock = null; }); }
-    else if (!RS.on && rsLock){ const w = rsLock; rsLock = null; await w.release(); }
+    if ((RS.on || AR) && !rsLock && navigator.wakeLock && document.visibilityState === 'visible'){ rsLock = await navigator.wakeLock.request('screen'); rsLock.addEventListener('release', () => { rsLock = null; }); }
+    else if (!RS.on && !AR && rsLock){ const w = rsLock; rsLock = null; await w.release(); }
   }catch(e){}
 }
 function rsPaint(){
   const box = $('rsBox'), resting = RS.on && RS.until > 0;
-  box.hidden = !RS.on;
+  box.hidden = !RS.on && !AR;
   box.classList.toggle('rest', resting);
   clearInterval(rsTick); rsTick = 0;
   // the setting-up, in the sheet the timer button opens; the button is green while a session is on
-  $('rsBtn').classList.toggle('on', RS.on); $('rsBtn').setAttribute('aria-label', RS.on ? 'Timed session, on' : 'Timed session');
+  $('rsBtn').classList.toggle('on', RS.on || !!AR); $('rsBtn').setAttribute('aria-label', RS.on || AR ? 'Timed session, on' : 'Timed session');
   $('rsReps').textContent = RS.reps; $('rsRest').textContent = rsClock(RS.rest); $('rsLog').checked = RS.log; $('rsWallChk').checked = rsWallWant;
   $('rsSum').textContent = (RS.on ? 'on \u00b7 ' : '') + RS.reps + (RS.reps === 1 ? ' go' : ' goes') + ', then ' + rsClock(RS.rest) + ' rest';
   $('rsGo').textContent = RS.on ? 'End the session' : 'Start the session';
   $('rsGo').classList.toggle('solid', !RS.on);
+  arcSheet();
   rsAwake();
-  if (!RS.on) return;
+  arcBox();
+  if (AR || !RS.on) return;
   $('rsDots').innerHTML = Array.from({ length: RS.reps }, (_, i) => '<button' + (i < RS.done ? ' class="on"' : '') + ' aria-label="Go ' + (i + 1) + (i < RS.done ? ', done' : '') + '"></button>').join('');
   const show = () => {
     if (!RS.until){ $('rsTime').textContent = 'Set ' + RS.set; $('rsTime').disabled = true; return; }
@@ -8241,7 +8283,7 @@ function rsPing(){
     if (p && p.then) p.then(() => { rsArmed = true; }, plain);
   }catch(e){ plain(); }
 }
-function rsStart(){ RS.on = true; RS.done = 0; RS.set = 1; RS.until = 0; rsKeep(); rsPaint(); rsWallFor = 0; rsRowClear(); }
+function rsStart(){ if (AR) arcStop(false); RS.on = true; RS.done = 0; RS.set = 1; RS.until = 0; rsKeep(); rsPaint(); rsWallFor = 0; rsRowClear(); }
 function rsEnd(){ RS.on = false; RS.done = 0; RS.set = 1; RS.until = 0; rsKeep(); rsPaint(); rsWallEnd(true); }
 
 /* ---------- the rest counted down on the wall ----------
@@ -8394,10 +8436,10 @@ $('rsWallChk').onchange = () => {
   rsWallFor = 0;                                           // ticked: a rest that is running is taken up at the clock's next beat
   if (RS.on && !RS.until) rsRowClear(); else rsRow();
 };
-$('rsDots').onclick = e => { const b = e.target.closest('button'); if (!b) return; rsArm(); b.classList.contains('on') ? rsUnpop() : rsPop(); };
-$('rsTime').onclick = () => { rsArm(); if (RS.until) rsOver(false); };
+$('rsDots').onclick = e => { const b = e.target.closest('button'); if (!b || AR) return; rsArm(); b.classList.contains('on') ? rsUnpop() : rsPop(); };
+$('rsTime').onclick = () => { if (AR) return arcTap(); rsArm(); if (RS.until) rsOver(false); };
 $('rsTry').onclick = () => rsAlarm();            // hear it and see it now: is the sound up, is the phone on silent
-$('rsEndBtn').onclick = () => rsEnd();
+$('rsEndBtn').onclick = () => AR ? arcStop(false) : rsEnd();
 $('rsSet').onclick = e => {
   const b = e.target.closest('button[data-k]'); if (!b) return;
   if (b.dataset.k === 'reps') RS.reps = Math.max(1, Math.min(8, RS.reps + +b.dataset.d)); else RS.rest = Math.max(30, Math.min(1800, RS.rest + +b.dataset.d));
@@ -8409,6 +8451,232 @@ $('rsBtn').onclick = () => { quickShow(false); rsPaint(); showPanel('rs'); };
 $('rsShut').onclick = $('rsScrim').onclick = () => showPanel(null);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') rsPaint(); });
 rsPaint();
+
+/* ---------- ARC: the lights lead an easy climb ----------
+   Will, 2026-10-21: "look up ARC training climbing and see how that work and make a plan to include this on the
+   moonboard using the lights as a guide to the climbing automatically. The set up and setting can go in the timed
+   session area as another technique." Then, of the plan: "it'd be frustrating as a climber if you fall behind the pace
+   and your light goes out, or if you're waiting for the pace... on pace is the one you're on and the one you're moving
+   to, and then blue is the next one that's coming. And that would be if you end up grabbing blue, you're a little ahead
+   of pace. So there's always four lights lit up at the same time", "We can set the pace", and of how long, "maybe be
+   like a minute 30 or 3 minutes or 4.5 minutes".
+
+   ARC (aerobic restoration and capillarity) is easy climbing without stopping, the pump kept light. The board's
+   benchmarks are too hard for it (the easiest on the 2016 set are 6B+), so the page makes its own climbing: a path of
+   hand holds over the set's friendliest holds, each move within reach of the hand that stays, hands in turn, up a
+   band of rows and down again. A move is due every so many seconds, the pace, and four holds are lit: red, the hold a
+   hand should be leaving (still on it: behind the pace); green, the two the hands should be on; blue, the next (on it
+   already: ahead). So many rounds of so long on and so long off: the rest is counted in the board's box, and ends with
+   the timed session's ping and flash. A tap on the time pauses a round, or skips a rest; End stops.
+
+   This first step shows it on the phone's picture only, and sends nothing to the wall: the pace can be tried anywhere.
+   The settings are this phone's own (mb-arc), declared beside the timed session's (RS). */
+const ARC_LEAD = 3000;                   // ms from Start, or the end of a rest, to the first move: time to get on
+const ARC_LO = 4, ARC_HI = 15;           // the band of rows a path keeps to: off the floor, and short of the top
+let arcT = 0;                            // the beat that runs a session
+function arcFit(){                       // settings as far as they go: half minutes, rounds, whole seconds
+  const num = (v, d) => Number.isFinite(+v) ? +v : d;      // (a nought is a number, to be held at the least there is)
+  const half = (v, d) => Math.max(30, Math.min(600, Math.round(num(v, d) / 30) * 30));
+  ARC.on = half(ARC.on, 90); ARC.rest = half(ARC.rest, 90);
+  ARC.rounds = Math.max(1, Math.min(12, Math.round(num(ARC.rounds, 5))));
+  ARC.pace = Math.max(3, Math.min(12, Math.round(num(ARC.pace, 6))));
+  if (ARC.how !== 'arc') ARC.how = 'sets';
+  ARC.tick = ARC.tick !== false;
+}
+const arcKeep = () => { try{ localStorage.setItem('mb-arc', JSON.stringify(ARC)); }catch(e){} };
+
+/* The holds a path may use: the friendliest on the set that is up, which is to say the holds the benchmarks of its two
+   easiest grades use at least twice, inside the band, with how often they are used. On the 2016 set at 40° that is
+   some seventy holds, each with a dozen or more of the others within reach. A set with few easy benchmarks (the 25°
+   ones) has too few that way, so the grades widen one at a time until there are forty. */
+const ARC_POOL = 40;
+function arcPool(){
+  const all = BY_BOARD[boardKey] || [];
+  if (!all.length) return {};
+  const low = Math.min(...all.map(r => r.grade)), high = Math.max(...all.map(r => r.grade));
+  let use = {};
+  for (let up = 1; low + up <= high + 1; up++){
+    use = {};
+    for (const r of all){
+      if (r.grade > low + up) continue;
+      const c = {};
+      parseHolds(r.s, 1, c); parseHolds(r.m, 1, c); parseHolds(r.e, 1, c);
+      for (const k in c) use[k] = (use[k] || 0) + 1;
+    }
+    for (const k in use){ const row = +k.split(',')[1]; if (use[k] < 2 || row < ARC_LO || row > ARC_HI) delete use[k]; }
+    if (Object.keys(use).length >= ARC_POOL) break;
+  }
+  return use;
+}
+/* Chance with a seed (mulberry32), so a round can be made again exactly. */
+function arcRnd(seed){
+  let a = seed >>> 0;
+  return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+/* A path of n hand holds. The first two side by side low in the band, the left one on the left; then the hands in turn,
+   left first, each to a hold within three rows and three columns of the hand that stays, the left hand never more than
+   a column to the right of it nor the right hand to its left; up the band, and down again from its top. Never back to
+   one of the last five holds, so the four lit at once are four holds. Where nothing fits it allows a longer reach, then
+   turns round. null where the set has too few holds for it. A walk that runs into a corner before it is long enough
+   is tried again on a new draw, up to thirty times, and the longest kept. */
+function arcPath(n, seed){
+  let best = null;
+  for (let i = 0; i < 30; i++){
+    const w = arcWalk(n, seed + i * 104729);
+    if (w && w.length >= n) return w;
+    if (w && (!best || w.length > best.length)) best = w;
+  }
+  return best;
+}
+function arcWalk(n, seed){
+  const pool = arcPool(), keys = Object.keys(pool);
+  if (keys.length < 12) return null;
+  const rnd = arcRnd(seed), P = k => k.split(',').map(Number);
+  const low = keys.filter(k => P(k)[1] <= ARC_LO + 4), pairs = [];
+  for (const a of low) for (const b of low){
+    const [ac, ar] = P(a), [bc, br] = P(b);
+    if (bc - ac >= 2 && bc - ac <= 4 && Math.abs(br - ar) <= 2) pairs.push([a, b]);
+  }
+  if (!pairs.length) return null;
+  let [L, R] = pairs[Math.floor(rnd() * pairs.length)];
+  const path = [L, R], ways = [{ old: 5, reach: 3 }, { old: 3, reach: 4 }];
+  let up = true, left = true;            // which way the path is going, and which hand moves next
+  while (path.length < n){
+    let pick = null;
+    for (let turn = 0; turn < 2 && !pick; turn++){
+      for (const w of ways){
+        const [sc, sr] = P(left ? R : L), recent = path.slice(-w.old);
+        let best = -1;
+        for (const k of keys){
+          if (recent.includes(k)) continue;
+          const [c, r] = P(k), dc = c - sc, dr = r - sr;
+          if (Math.abs(dc) > w.reach || Math.abs(dr) > w.reach || Math.hypot(dc, dr) < 1.5) continue;
+          if (left ? dc > 1 : dc < -1) continue;          // no crossing over
+          if (up ? dr < -1 : dr > 1) continue;            // going up, not much below the hand that stays; down, the other way
+          const v = pool[k] * ((up ? dr >= 1 : dr <= -1) ? 2 : 1) * (0.4 + rnd());
+          if (v > best){ best = v; pick = k; }
+        }
+        if (pick) break;
+      }
+      if (!pick) up = !up;                // nowhere to go this way: turn round, and look again
+    }
+    if (!pick) break;
+    path.push(pick);
+    if (left) L = pick; else R = pick;
+    left = !left;
+    const top = Math.max(P(L)[1], P(R)[1]), bottom = Math.min(P(L)[1], P(R)[1]);
+    if (up && top >= ARC_HI - 1) up = false; else if (!up && bottom <= ARC_LO + 1) up = true;
+  }
+  return path.length >= Math.min(n, 6) ? path : null;
+}
+/* What the picture shows while a round is on: the four holds of the moment. Before the first move, the two to start
+   on and the first to go to; between rounds, nothing. null when no ARC is on, for the picture to show what it always
+   did. */
+function arcCells(){
+  try{ if (!AR) return null; }catch(e){ return null; }      // (asked before the session's own lines have run: none)
+  const c = {};
+  if (AR.phase === 'rest' || !AR.path) return c;
+  const p = AR.path, k = AR.phase === 'lead' ? 0 : AR.k;
+  if (k > 0 && p[k - 1]) c[p[k - 1]] = 'E';
+  if (p[k]) c[p[k]] = 'S';
+  if (p[k + 1]) c[p[k + 1]] = 'S';
+  if (p[k + 2]) c[p[k + 2]] = 'P';
+  return c;
+}
+function arcClick(){                     // a soft tick for each new hold, where the phone will make one
+  if (!ARC.tick) return;
+  try{
+    if (!rsAudio || rsAudio.state !== 'running') return;
+    const o = rsAudio.createOscillator(), g = rsAudio.createGain(), t = rsAudio.currentTime;
+    o.frequency.value = 1600; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.2, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+    o.connect(g); g.connect(rsAudio.destination); o.start(t); o.stop(t + 0.09);
+  }catch(e){}
+}
+/* A round begins: a new path, and time to get on. */
+function arcRound(round, alarm){
+  const path = arcPath(Math.ceil(ARC.on / ARC.pace) + 6, Date.now() + round);
+  if (!path){ arcStop(false); quickSay('Too few holds on this set for ARC'); return; }
+  AR = { round, phase: 'lead', at: Date.now(), path, k: 0, paused: 0 };
+  paint(); arcBox();
+  if (alarm) rsAlarm();
+}
+function arcStart(){
+  if (RS.on) rsEnd();
+  rsArm();
+  arcRound(1, false);
+  if (!AR) return;
+  clearInterval(arcT); arcT = setInterval(arcBeat, 250);
+  rsPaint();
+}
+function arcStop(done){
+  clearInterval(arcT); arcT = 0;
+  const was = AR;
+  AR = null;
+  paint(); rsPaint();
+  if (done && was){ rsAlarm(); quickSay('ARC done · ' + ARC.rounds + ' × ' + rsClock(ARC.on)); }
+}
+/* The beat, four times a second. Everything is worked out from when the phase began, so a phone put away for a moment
+   comes back to where the round has got to. */
+function arcBeat(){
+  if (!AR) return;
+  if (AR.paused) return arcBox();
+  const now = Date.now(), t = now - AR.at;
+  if (AR.phase === 'lead'){
+    if (t >= ARC_LEAD){ AR.phase = 'climb'; AR.at = now; AR.k = 1; arcClick(); paint(); }
+  } else if (AR.phase === 'climb'){
+    if (t >= ARC.on * 1000){
+      if (AR.round >= ARC.rounds) return arcStop(true);
+      AR.phase = 'rest'; AR.at = now; paint(); rsPing();               // off the wall: a ping, and the lights go
+    } else {
+      const k = Math.max(1, Math.min(1 + Math.floor(t / (ARC.pace * 1000)), AR.path.length - 3));
+      if (k !== AR.k){ AR.k = k; arcClick(); paint(); }
+    }
+  } else if (t >= ARC.rest * 1000) return arcRound(AR.round + 1, true);
+  arcBox();
+}
+/* A tap on the time: a round stops where it is, and a second tap carries on from there; a rest is skipped. */
+function arcTap(){
+  if (!AR) return;
+  rsArm();
+  if (AR.phase === 'rest') return arcRound(AR.round + 1, false);
+  if (AR.paused){ AR.at += Date.now() - AR.paused; AR.paused = 0; } else AR.paused = Date.now();
+  arcBox();
+}
+/* The board's box while ARC is on: the round's time left (or the count to the first move, or the rest's), a dot for
+   each round, and End. */
+function arcBox(){
+  const box = $('rsBox');
+  if (!AR){ box.classList.remove('arc', 'paused'); return; }
+  box.hidden = false;
+  box.classList.add('arc');
+  box.classList.toggle('rest', AR.phase === 'rest');
+  box.classList.toggle('paused', !!AR.paused);
+  const t = ((AR.paused || Date.now()) - AR.at) / 1000;
+  $('rsTime').disabled = false;
+  $('rsTime').textContent = AR.paused ? 'Paused' : AR.phase === 'lead' ? String(Math.max(1, Math.ceil(ARC_LEAD / 1000 - t)))
+    : rsClock((AR.phase === 'rest' ? ARC.rest : ARC.on) - t);
+  const dots = Array.from({ length: ARC.rounds }, (_, i) => '<button tabindex="-1"' + (i < AR.round - 1 || (i === AR.round - 1 && AR.phase === 'rest') ? ' class="on"' : '') + ' aria-label="Round ' + (i + 1) + '"></button>').join('');
+  if ($('rsDots').innerHTML !== dots) $('rsDots').innerHTML = dots;
+}
+/* The sheet: Sets and rests, or ARC, and ARC's own rows. */
+function arcSheet(){
+  const arc = ARC.how === 'arc';
+  $('rsHow').querySelectorAll('button').forEach(b => { const on = b.dataset.how === ARC.how; b.classList.toggle('solid', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+  $('rsSet').hidden = arc; $('arcSet').hidden = !arc;
+  $('arcOn').textContent = rsClock(ARC.on); $('arcRest').textContent = rsClock(ARC.rest);
+  $('arcRounds').textContent = ARC.rounds; $('arcPace').textContent = ARC.pace + ' s';
+  $('arcTick').checked = ARC.tick;
+  $('arcGo').textContent = AR ? 'End ARC' : 'Start ARC';
+  $('arcGo').classList.toggle('solid', !AR);
+  if (arc) $('rsSum').textContent = (AR ? 'on · ' : '') + ARC.rounds + (ARC.rounds === 1 ? ' round' : ' rounds') + ' of ' + rsClock(ARC.on) + ' on and ' + rsClock(ARC.rest) + ' off · a new hold every ' + ARC.pace + ' s';
+}
+$('rsHow').onclick = e => { const b = e.target.closest('button[data-how]'); if (!b) return; ARC.how = b.dataset.how; arcKeep(); rsPaint(); };
+$('arcSet').onclick = e => {
+  const b = e.target.closest('button[data-a]'); if (!b) return;
+  ARC[b.dataset.a] += +b.dataset.d; arcFit(); arcKeep(); rsPaint();
+};
+$('arcTick').onchange = () => { ARC.tick = $('arcTick').checked; arcKeep(); };
+$('arcGo').onclick = () => { showPanel(null); if (AR) return arcStop(false); arcStart(); showPage('board'); };
 
 function quickPick(which){
   if (which === 'try'){ quickShow(false); if (!needName('try')) doTry(); return; }
