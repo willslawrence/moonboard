@@ -256,6 +256,39 @@ A rest skipped, a session ended, or the switch turned off takes the count's ligh
 the wall is still the count's. The letters are seven wide and nine tall and no frame is
 over 130 bytes, well inside what the box will draw.
 
+### ARC: the lights lead an easy climb
+
+The timed session's sheet has two techniques at its head: **Sets and rests**, as above, and
+**ARC** (since 2026-10-21, a first step; Will: "look up ARC training climbing ... make a plan to
+include this on the moonboard using the lights as a guide to the climbing automatically. The set
+up and setting can go in the timed session area as another technique"). ARC, aerobic restoration
+and capillarity, is easy climbing without stopping, the pump kept light. The benchmarks are too
+hard for it (the easiest on the 2016 set are 6B+), so the page makes its own climbing: a path of
+hand holds over the set's friendliest holds (those its easiest benchmarks use at least twice,
+about seventy on the 2016 set; on a 25° set, with fewer easy benchmarks, the grades widen until
+there are forty), each move within three rows and three columns of the hand that stays, hands
+in turn and never crossing, up a band of rows (4 to 15) and down again.
+
+Four holds are lit at once (Will: "on pace is the one you're on and the one you're moving to, and
+then blue is the next one that's coming... if you end up grabbing blue, you're a little ahead of
+pace. So there's always four lights lit up at the same time"): **green**, the two the hands should
+be on; **red**, the one a hand should be leaving, still on it and you are behind; **blue**, the
+next, on it already and you are ahead. Every so many seconds (the pace, 1 to 7, 6 to begin with)
+the four move on by one hold, with a soft tick. Feet go anywhere.
+
+The settings: **Time on** (half a minute to ten, 1:30 to begin with; Will: "maybe be like a minute
+30 or 3 minutes or 4.5 minutes"), **Rest between rounds** (the same), **Rounds** (one to twelve,
+five to begin with), **A new hold every** (the pace), and the tick. They are the phone's own
+(`mb-arc`), apart from the session's, which the Sun board's page shares. **Start ARC** goes to the
+board: three seconds to get on the two greens, then the round; the box beside the picture counts
+it down with a dot for each round. A tap on the time pauses a round, or skips a rest; at the end of
+a round the lights go and the phone pings, and at the end of a rest it pings and flashes as the
+timed session does. Starting one technique ends the other.
+
+**For now ARC is shown on the phone's picture only: nothing is sent to the wall.** Lighting the
+wall, under the rule the rest count keeps (never taking the wall from another climber), is the next
+step. The plan is in the vault (`work/active/moonboard-arc-plan.md`).
+
 ### How a send is asked
 
 A send needs one more answer: which go it was. Four green bubbles swing out in an arc
