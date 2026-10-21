@@ -1917,7 +1917,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-21 20:35';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-21 21:50';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3840,7 +3840,9 @@ function wallBoardFollow(){
   else wallBoardPull();
 }
 
+let listsAt = 0;                             // when the crew's lists last came back (a phone left open asks again, below)
 function applyLists(data){
+  listsAt = Date.now();
   people = data.people || [];
   lists  = data.lists  || {};
   done   = data.done   || {};
@@ -9656,6 +9658,9 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') relayPeek();
   if (document.visibilityState === 'visible' && Date.now() - facesAt > 60000) facesPull();
   if (document.visibilityState === 'visible' && Date.now() - wallBoardAt > 60000) wallBoardPull();
+  // At Will's Wall the hold set comes with the crew's lists, which a phone left open (a Home Screen app the phone kept
+  // in memory) had asked for only when it opened: so a switch made on another phone waited for that phone to log a go.
+  if (document.visibilityState === 'visible' && atHome() && Date.now() - listsAt > 60000) listsCall('/lists');
 });
 setInterval(peekTick, 1500);
 $('copy').onclick = async () => {
@@ -9689,9 +9694,14 @@ $('plyChk').onchange = () => {
   try{ localStorage.setItem('mb-ply', plyPick); }catch(e){}
   paintBoardPic();
 };
+/* Will, 2026-10-21, of "Switch the wall to Masters 2019 · 40° for everyone?": "This warning make it seem like changing
+   the wall switch everyone. Is that only people on wills wall or does it only change your phone?" So it names the wall,
+   and says whose phones follow and whose do not. */
 $('boardSel').onchange = () => {
   const key = $('boardSel').value, home = atHome(), room = relayRoom();
-  if (!confirm('Switch the wall to ' + BOARDS.find(b => b.key === key).label + (home ? ' for everyone?' : ' for everyone climbing on this MoonBoard?'))){
+  const label = BOARDS.find(b => b.key === key).label;
+  if (!confirm(home ? 'Switch Will’s Wall to ' + label + '?\n\nEvery phone climbing at Will’s Wall switches with it. Phones on another MoonBoard keep their own.'
+                    : 'Switch this MoonBoard to ' + label + '?\n\nEvery phone using this MoonBoard’s code switches with it. Will’s Wall keeps its own.')){
     $('boardSel').value = boardKey; return;
   }
   setBoard(key);

@@ -805,6 +805,15 @@ it switches it for every phone with the code, and never for Will's Wall. A phone
 wall asks for it when the page opens, when the code changes, when Settings opens and when the
 app comes back into sight; until somebody there picks one, a phone keeps the set it had.
 
+Switching asks first, and the question names the wall and whose phones follow: "Switch Will's
+Wall to Masters 2019 · 40°? Every phone climbing at Will's Wall switches with it. Phones on
+another MoonBoard keep their own." (At another MoonBoard: "Switch this MoonBoard to …? Every
+phone using this MoonBoard's code switches with it. Will's Wall keeps its own.") It said "for
+everyone?" until 2026-10-21, when Will asked whether that meant everyone or only his phone. A
+phone at Will's Wall left open (a Home Screen app the phone kept in memory) asks for the crew's
+lists again when it comes back into sight after a minute, so it follows a switch made on
+another phone without waiting to log a go.
+
 ### What's on the wall
 
 When someone lights a problem, every other phone gets an **On wall** card naming it and who
