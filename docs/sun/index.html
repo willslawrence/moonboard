@@ -96,15 +96,15 @@
      picNeed, and says so in --picH), so that the wall fills it from top to bottom; the list has what is left. The row
      with the open route's name (which is also the way to the search) and Quick log lies over the foot of the picture,
      where there is only floor. */
-  body:not(.listPage):not(.logPage):not(.setPage) #top{position:relative;border-bottom:0;margin-bottom:4px;flex:0 1 auto;min-height:0;display:flex;flex-direction:column}
-  body:not(.listPage):not(.logPage):not(.setPage) #boardWrap,
-  body:not(.listPage):not(.logPage):not(.setPage) #boardCol{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
-  body:not(.listPage):not(.logPage):not(.setPage) #pic{flex:1 1 auto;height:auto}
-  body:not(.listPage):not(.logPage):not(.setPage):not(.focus) #pic{flex:0 1 var(--picH, 62vh)}
-  body:not(.listPage):not(.logPage):not(.setPage) #bar{position:absolute;left:6px;right:6px;bottom:6px;padding:0;background:transparent}
-  body:not(.listPage):not(.logPage):not(.setPage) #filters{display:none}
-  body:not(.listPage):not(.logPage):not(.setPage) #quickBtn{box-shadow:0 0 0 1px rgba(255,255,255,.3)}
-  body:not(.listPage):not(.logPage):not(.setPage) #scroll{flex:1 1 72px;min-height:72px}
+  body:not(.listPage):not(.logPage):not(.setPage):not(.bookPage) #top{position:relative;border-bottom:0;margin-bottom:4px;flex:0 1 auto;min-height:0;display:flex;flex-direction:column}
+  body:not(.listPage):not(.logPage):not(.setPage):not(.bookPage) #boardWrap,
+  body:not(.listPage):not(.logPage):not(.setPage):not(.bookPage) #boardCol{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+  body:not(.listPage):not(.logPage):not(.setPage):not(.bookPage) #pic{flex:1 1 auto;height:auto}
+  body:not(.listPage):not(.logPage):not(.setPage):not(.bookPage):not(.focus) #pic{flex:0 1 var(--picH, 62vh)}
+  body:not(.listPage):not(.logPage):not(.setPage):not(.bookPage) #bar{position:absolute;left:6px;right:6px;bottom:6px;padding:0;background:transparent}
+  body:not(.listPage):not(.logPage):not(.setPage):not(.bookPage) #filters{display:none}
+  body:not(.listPage):not(.logPage):not(.setPage):not(.bookPage) #quickBtn{box-shadow:0 0 0 1px rgba(255,255,255,.3)}
+  body:not(.listPage):not(.logPage):not(.setPage):not(.bookPage) #scroll{flex:1 1 72px;min-height:72px}
   #stage{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
   #stage img{display:block;width:100%;height:100%;pointer-events:none;-webkit-user-drag:none}
   #stage svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
@@ -236,9 +236,9 @@
      number as for any other route (Will, 2026-10-11: "The climb by number route versus the other routes have bigger
      image views... It should be consistent"). It lay on the picture's foot, and the picture grew to make it room.
      The list gives up the room instead (body.nums), as it did before by the picture growing. In focus it is as it was. */
-  body:not(.listPage):not(.logPage):not(.setPage):not(.focus) #numBar{position:absolute;left:0;right:0;top:calc(100% + 10px);margin:0;background:rgba(20,20,22,.9)}
-  body.nums:not(.listPage):not(.logPage):not(.setPage):not(.focus) #top{margin-bottom:48px}
-  body.listPage #numBar,body.logPage #numBar,body.setPage #numBar{display:none}
+  body:not(.listPage):not(.logPage):not(.setPage):not(.bookPage):not(.focus) #numBar{position:absolute;left:0;right:0;top:calc(100% + 10px);margin:0;background:rgba(20,20,22,.9)}
+  body.nums:not(.listPage):not(.logPage):not(.setPage):not(.bookPage):not(.focus) #top{margin-bottom:48px}
+  body.listPage #numBar,body.logPage #numBar,body.setPage #numBar,body.bookPage #numBar{display:none}
   #numBarF{display:none}
   body.focus #numBarF:not([hidden]){display:flex;position:absolute;left:6px;right:6px;bottom:calc(env(safe-area-inset-bottom) + 8px);height:46px;z-index:2}
   #filtBtn{position:relative;flex:none;width:38px;height:38px;padding:0;font-size:16px;line-height:1;border-radius:9px;display:none}
@@ -249,7 +249,7 @@
   /* the route before and the route after in the list, either side of the open route's name (Will, 2026-10-11: "two
      arrow buttons, so that you can swap between the route list just by touching left or right") */
   #prevBtn,#nextBtn{flex:none;width:30px;height:38px;padding:0 0 3px;font-size:22px;line-height:1;border-radius:9px}
-  body:not(.listPage):not(.logPage):not(.setPage) #prevBtn,body:not(.listPage):not(.logPage):not(.setPage) #nextBtn{box-shadow:0 0 0 1px rgba(255,255,255,.3)}
+  body:not(.listPage):not(.logPage):not(.setPage):not(.bookPage) #prevBtn,body:not(.listPage):not(.logPage):not(.setPage):not(.bookPage) #nextBtn{box-shadow:0 0 0 1px rgba(255,255,255,.3)}
   body.listPage #prevBtn,body.listPage #nextBtn{display:none}
   #qBox{flex:1;min-width:0;height:38px;display:flex;align-items:center;gap:5px;padding:0 4px 0 9px;background:var(--panel2);
         border:1px solid var(--box);border-radius:9px}
@@ -368,15 +368,18 @@
   #holdChip span{flex:1;min-width:0;line-height:1.35}
   #holdChip button{flex:none;width:34px;height:30px;padding:0;font-size:13px}
 
-  /* ---- pages: the list, the log and settings each take the screen, as on the MoonBoard page ---- */
-  #logPage,#setPanel{display:none}
+  /* ---- pages: the list, History, the Logbook and Settings each take the screen, as on the MoonBoard page ---- */
+  #logPage,#setPanel,#bookSheet{display:none}
   body.listPage header,body.listPage #boardWrap{display:none !important}
   body.listPage #bar{padding-top:calc(env(safe-area-inset-top) + 12px)}
   body.listPage #filtBtn,body.listPage #toBoard{display:block}
   body.listPage #quick{display:none}
   body.logPage #boardWrap,body.logPage #bar,body.logPage #scroll,
-  body.setPage #boardWrap,body.setPage #bar,body.setPage #scroll{display:none !important}
-  body.logPage #top,body.setPage #top{border-bottom:0;margin-bottom:0}
+  body.setPage #boardWrap,body.setPage #bar,body.setPage #scroll,
+  body.bookPage #boardWrap,body.bookPage #bar,body.bookPage #scroll{display:none !important}
+  body.logPage #top,body.setPage #top,body.bookPage #top{border-bottom:0;margin-bottom:0}
+  body.bookPage #bookSheet{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;
+       padding:10px 0 calc(env(safe-area-inset-bottom) + 30px)}
   body.logPage #logPage{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;
        padding:10px 0 calc(env(safe-area-inset-bottom) + 30px)}
   body.setPage #setPanel{display:block;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;
@@ -429,17 +432,12 @@
   #lpNow .top b{flex:0 1 auto;min-width:0;font-size:17px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #lpNow .top .gd{font-size:11px}
   #lpNow .sub{margin-top:3px;font-size:12px;color:var(--dim);line-height:1.4}
-  #lpNow .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px}
-  #lpNow .btns button{padding:7px 6px;font-size:16px;font-weight:700;border-radius:12px}
-  /* The two buttons as on the MoonBoard page (they were red and green here until 2026-10-12): Log try says how many
-     tries there have been since the last send, and is filled once there is one; Log send is filled once the route
-     has been sent. */
-  #lpNow .btns button.on{background:var(--ink);border-color:var(--ink);color:var(--onink)}
   #lpNow .sub:empty{display:none}
-  /* its own top line, as on the MoonBoard page: the way back on the left, where the board is, and the page's name */
-  #lpCap{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin-bottom:10px}
-  #lpCap button{justify-self:start;width:auto;height:32px;padding:0 10px;font-size:13px;white-space:nowrap}
-  #lpCap b{font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase}
+  /* its own top line, as on the MoonBoard page: the way back on the left, where the board is, and the page's name
+     (the Logbook's page has the same) */
+  #lpCap,#bookCap{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin-bottom:10px}
+  #lpCap button,#bookCap button{justify-self:start;width:auto;height:32px;padding:0 10px;font-size:13px;white-space:nowrap}
+  #lpCap b,#bookCap b{font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase}
   /* the open route's own history: a line that sums it up, then a row a session, the day where a route's name is */
   #lpHistSum{font-size:13px;color:var(--dim);line-height:1.5}
   #lpHistSum b{color:var(--ink);font-weight:600}
@@ -463,13 +461,11 @@
   .sublbl:empty{display:none}
   #lpNow .more3{display:flex;gap:8px;margin-top:8px}
   #lpNow .more3 button{flex:1 1 0;min-width:0;padding:9px 6px;font-size:13px;border-radius:10px}
-  #lpNow .more3 button[hidden]{display:none}
-  #logBtn{display:flex;align-items:center;justify-content:center;gap:6px}
-  #logBtn svg{flex:none;width:17px;height:17px}
-  /* ---- the logbook: a sheet of its own, every go by session, and one go taken out ----
-     The log page is for the route that is open; this is for everything else that has been logged (Will, 2026-10-11:
-     "it kind of separates those two areas"). It is as tall as a sheet goes, so that it reads as a place. */
-  #bookSheet{height:92dvh}
+  #lpNow .more3 button[hidden],#lpNow .more3[hidden]{display:none}
+  /* ---- the logbook: a page of its own (2026-10-21), every go by session, and one go taken out ----
+     History is for the route that is open; this is for everything else that has been logged (Will, 2026-10-11:
+     "it kind of separates those two areas"). It was a sheet that rose from the foot until he asked, of the MoonBoard
+     page, to "add the Logbook as its own page", and for this page to match. */
   #bookSheet .lbl{margin:20px 0 7px}
   #bookWho{height:40px;padding:0 10px;font-size:16px}
   #bookHint{margin:8px 0 0}
@@ -586,6 +582,7 @@
   #pgDots button.on{background:var(--ink);color:var(--onink);font-weight:700}
   #pgDots button[data-go="set"]{flex:none;width:38px;display:grid;place-items:center}
   #pgDots button[data-go="set"] svg{width:17px;height:17px;display:block}
+  @media (max-width:360px){ #pgDots{margin-left:10px;margin-right:10px} }      /* five names have to fit on a small phone */
 
   /* ---- quick log, and which go a send was: round buttons over a dimmed screen ---- */
   /* ---- how did the send go: four bubbles in an arc, as on the MoonBoard page ----
@@ -654,9 +651,9 @@
   #rsBtn{flex:none;display:grid;place-items:center;width:40px;height:38px;padding:0;border-radius:9px}
   #rsBtn svg{width:21px;height:21px}
   #rsBtn.on{background:#22c55e;border-color:#22c55e;color:#06240e}
-  body:not(.listPage):not(.logPage):not(.setPage) #rsBtn{box-shadow:0 0 0 1px rgba(255,255,255,.3)}
+  body:not(.listPage):not(.logPage):not(.setPage):not(.bookPage) #rsBtn{box-shadow:0 0 0 1px rgba(255,255,255,.3)}
   body.listPage #rsBtn{display:none}
-  #rsSheet,#bookSheet,#faceSheet{position:fixed;left:0;right:0;bottom:0;z-index:71;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;background:var(--bg);
+  #rsSheet,#faceSheet{position:fixed;left:0;right:0;bottom:0;z-index:71;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;background:var(--bg);
          border-radius:16px 16px 0 0;border-top:1px solid var(--edge);padding:14px var(--pad) calc(env(safe-area-inset-bottom) + 14px)}
   /* your emoji: the button beside Climbing as in Settings, and its sheet, an emoji a key, eight to a row (as on the MoonBoard page) */
   #faceBtn{display:flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;font-size:13.5px}
@@ -903,7 +900,7 @@
      line that sums it up and a row a session; and the community, who has climbed it and what the crew has been on.
      What that page has and this one has not is the beta, so here the setter's two buttons stand where its button is. -->
 <div id="logPage">
-  <div id="lpCap"><button id="lpBack" class="ghost" aria-label="Back to the board">&#8249; Board</button><b>Log</b><span></span></div>
+  <div id="lpCap"><button id="lpBack" class="ghost" aria-label="Back to the board">&#8249; Board</button><b>History</b><span></span></div>
   <!-- This session, first on the page: three numbers and a dot for every go. A tap opens the session's climbs under
        them, and another shuts them. Not there until there is a session. -->
   <div id="lpHero" hidden>
@@ -922,14 +919,11 @@
     <div class="top"><b id="lpName"></b><span class="gd" id="lpGd" hidden></span></div>
     <div class="sub" id="lpSub"></div>
     <div class="sub" id="lpSub2"></div>
-    <div class="btns" id="lpBtns">
-      <button id="try" class="mini">Log try</button>
-      <button id="done" class="mini">Log send</button>
-    </div>
-    <div class="more3" id="lpMore">
+    <!-- the setter's two. Log try and Log send went on 2026-10-21, as on the MoonBoard page: Quick log on the board logs a
+         go. The Logbook button went with them: the Logbook is a page of its own. -->
+    <div class="more3" id="lpMore" hidden>
       <button id="editBtn" class="mini" hidden>Change it</button>
       <button id="goneBtn" class="mini" hidden>Take it down</button>
-      <button id="logBtn" class="mini" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 6.8C9.6 5.2 6.4 4.8 3 5.6v13c3.4-.8 6.6-.4 9 1.2 2.4-1.6 5.6-2 9-1.2v-13c-3.4-.8-6.6-.4-9 1.2zM12 6.8v13"/></svg> Logbook</button>
     </div>
     <button id="lpUndo" class="ghost mini" hidden></button>
   </div>
@@ -971,7 +965,7 @@
       <select id="me2" aria-label="Climbing as"></select>
     </div>
     <div>
-      <div class="lbl tipLbl">Your emoji<button type="button" class="tipBtn" aria-label="About: your emoji" aria-expanded="false">i</button><span class="tipTxt">It goes in your circle wherever your name is: beside the routes you have sent and on the log page. Everyone sees it, on the MoonBoard too. One climber to an emoji. With none, your circle has your first letter.</span></div>
+      <div class="lbl tipLbl">Your emoji<button type="button" class="tipBtn" aria-label="About: your emoji" aria-expanded="false">i</button><span class="tipTxt">It goes in your circle wherever your name is: beside the routes you have sent and on the History page. Everyone sees it, on the MoonBoard too. One climber to an emoji. With none, your circle has your first letter.</span></div>
       <button type="button" id="faceBtn"><i></i><span>Choose</span></button>
     </div>
   </div>
@@ -1009,7 +1003,25 @@
 <div id="tipBox" role="status" aria-live="polite" hidden></div>
 <div id="tipArrow" hidden></div>
 
-<nav id="pgDots" aria-label="Pages"><button data-go="list">&#8249; Routes</button><button data-go="board">Board</button><button data-go="log">Log &#8250;</button><button data-go="set" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor"><circle cx="12" cy="12" r="5.6" stroke-width="2"/><circle cx="12" cy="12" r="2" stroke-width="1.8"/><path stroke-width="3" d="M12 2.6v3.2M12 18.2v3.2M2.6 12h3.2M18.2 12h3.2M5.35 5.35l2.26 2.26M16.39 16.39l2.26 2.26M5.35 18.65l2.26-2.26M16.39 7.61l2.26-2.26"/></g></svg></button></nav>
+<!-- The logbook, the page between History and Settings (2026-10-21): every go of one climber, by session, newest first;
+     then everyone's points. An entry of your own is taken out by tapping it. Its own top line, as History has. -->
+<div id="bookSheet" aria-label="Logbook">
+  <div id="bookCap"><button id="bookBack" class="ghost" aria-label="Back to the board">&#8249; Board</button><b>Logbook</b><span></span></div>
+  <select id="bookWho" aria-label="Whose logbook"></select>
+  <div class="bookBtns">
+    <button id="bookCsv" class="ghost mini" disabled>Export CSV</button>
+    <button id="bookImp" class="ghost mini" disabled>Import CSV</button>
+    <button type="button" class="tipBtn" aria-label="About: the file" aria-expanded="false">i</button><span class="tipTxt"><b>Export CSV</b> makes a file of the logbook that is showing, a line a go. <b>Import CSV</b> reads a file laid out the same way and adds its goes to your own logbook. To bring a logbook in: export first (an empty logbook gives a sample, the headings and a few example lines), put a line for each go under them, and import the file. The example lines are left out. A line needs a date (2026-10-12), the route's name as the list has it, and how it went: try, flash, 2nd go, 3rd go or 4+ goes. The time and the other columns may be left empty; Hold reached and Seconds on the wall are for a go against the clock. Several sends of a route in a day are all kept, and a go the logbook already has is not added again.</span>
+  </div>
+  <div class="rankHead"><button type="button" id="rankTog" class="rankTog" aria-expanded="false" aria-controls="lpPoints">Ranking<i></i></button><button type="button" class="tipBtn" aria-label="About: the points" aria-expanded="false">i</button><span class="tipTxt">A route scores once, the first time you send it: its V number plus one (V0 is 1, V4 is 5), and one more for a flash. Tries score nothing. These are the Sun board's own points and are not added to MoonBoard points.</span></div>
+  <div id="lpPoints" hidden></div>
+  <input type="file" id="bookFile" accept=".csv,text/csv,text/comma-separated-values,text/plain" tabindex="-1" aria-hidden="true">
+  <p class="hint" id="bookHint"></p>
+  <div id="bookNote" role="status" hidden></div>
+  <div id="bookSum"></div>
+  <div id="bookRows"></div>
+</div>
+<nav id="pgDots" aria-label="Pages"><button data-go="list">&#8249; Routes</button><button data-go="board">Board</button><button data-go="log">History</button><button data-go="book">Logbook</button><button data-go="set" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor"><circle cx="12" cy="12" r="5.6" stroke-width="2"/><circle cx="12" cy="12" r="2" stroke-width="1.8"/><path stroke-width="3" d="M12 2.6v3.2M12 18.2v3.2M2.6 12h3.2M18.2 12h3.2M5.35 5.35l2.26 2.26M16.39 16.39l2.26 2.26M5.35 18.65l2.26-2.26M16.39 7.61l2.26-2.26"/></g></svg></button></nav>
 
 <div id="quickScrim" hidden></div>
 <div id="quickToast" hidden></div>
@@ -1089,24 +1101,6 @@
     <button id="faceLetter" type="button" class="ghost">Use my letter</button>
   </div>
 </div>
-<!-- The logbook: every go of one climber, by session, newest first; then everyone's points. Opened by the Logbook
-     button on the log page. An entry of your own is taken out by tapping it. -->
-<div id="bookSheet" hidden role="dialog" aria-label="Logbook">
-  <div class="shHead"><h2>Logbook</h2><button id="bookShut" class="ghost">Close</button></div>
-  <select id="bookWho" aria-label="Whose logbook"></select>
-  <div class="bookBtns">
-    <button id="bookCsv" class="ghost mini" disabled>Export CSV</button>
-    <button id="bookImp" class="ghost mini" disabled>Import CSV</button>
-    <button type="button" class="tipBtn" aria-label="About: the file" aria-expanded="false">i</button><span class="tipTxt"><b>Export CSV</b> makes a file of the logbook that is showing, a line a go. <b>Import CSV</b> reads a file laid out the same way and adds its goes to your own logbook. To bring a logbook in: export first (an empty logbook gives a sample, the headings and a few example lines), put a line for each go under them, and import the file. The example lines are left out. A line needs a date (2026-10-12), the route's name as the list has it, and how it went: try, flash, 2nd go, 3rd go or 4+ goes. The time and the other columns may be left empty; Hold reached and Seconds on the wall are for a go against the clock. Several sends of a route in a day are all kept, and a go the logbook already has is not added again.</span>
-  </div>
-  <div class="rankHead"><button type="button" id="rankTog" class="rankTog" aria-expanded="false" aria-controls="lpPoints">Ranking<i></i></button><button type="button" class="tipBtn" aria-label="About: the points" aria-expanded="false">i</button><span class="tipTxt">A route scores once, the first time you send it: its V number plus one (V0 is 1, V4 is 5), and one more for a flash. Tries score nothing. These are the Sun board's own points and are not added to MoonBoard points.</span></div>
-  <div id="lpPoints" hidden></div>
-  <input type="file" id="bookFile" accept=".csv,text/csv,text/comma-separated-values,text/plain" tabindex="-1" aria-hidden="true">
-  <p class="hint" id="bookHint"></p>
-  <div id="bookNote" role="status" hidden></div>
-  <div id="bookSum"></div>
-  <div id="bookRows"></div>
-</div>
 <div id="entrySheet" hidden role="dialog" aria-label="Log entry">
   <div class="card">
     <div class="shHead"><h2>Log entry</h2></div>
@@ -1170,7 +1164,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-21 10:57';
+const BUILD = '2026-10-21 11:38';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -2726,12 +2720,11 @@ function quickShow(on){
   if (on){ quickShut = setTimeout(() => { quickShow(false); syncBack(); }, 6000); $('quickToast').hidden = true; }
   paintQuick();
 }
-/* Where the line goes: just over the row with the name on the board's page, just under the two big buttons on the
-   log page; anywhere else, where the stylesheet puts it. */
+/* Where the line goes: just over the row with the name on the board's page; anywhere else, where the stylesheet puts it. */
 function toastY(){
-  const r = page === 'log' ? $('done').getBoundingClientRect() : page === 'board' ? $('bar').getBoundingClientRect() : null;
+  const r = page === 'board' ? $('bar').getBoundingClientRect() : null;
   if (!r || !r.height) return null;
-  return Math.max(56, Math.min(innerHeight - 110, page === 'log' ? r.bottom + 40 : r.top - 44));
+  return Math.max(56, Math.min(innerHeight - 110, r.top - 44));
 }
 function quickSay(txt, cls){              // what was logged, said for a moment
   const t = $('quickToast'), y = toastY();
@@ -2900,9 +2893,6 @@ function quickPick(which){
 // On the click, not on the touch going down: a layer that went on the touch would let the click that follows land
 // on whatever is under it.
 $('quickScrim').addEventListener('click', () => quickShow(false));
-/* Log try and Log send, on the log page, act as whoever is picked in the header. */
-$('try').onclick = () => { if (needMe()) doTry(); };
-$('done').onclick = () => { if (!openRoute()) return toast('Open a route first.', true); if (needMe()) openSend($('done')); };
 let undoArmed = 0;
 $('lpUndo').onclick = async () => {
   if (Date.now() - undoArmed > 4000){ undoArmed = Date.now(); paintLog(); return; }
@@ -3085,7 +3075,7 @@ function histFill(r){
   if (!me){ rows.innerHTML = '<div class="none">Say who you are to keep a logbook.</div>'; return; }
   if (histRoute !== r.id){ histRoute = r.id; histShown = 4; }
   const entries = tagRepeats(myLog.filter(e => e.route === r.id && e.person === me)).sort((a, b) => logTime(b) - logTime(a));     // newest first
-  if (!entries.length){ rows.innerHTML = '<div class="none">Nothing logged on this one yet. Log try and Log send will start filling it in.</div>'; return; }
+  if (!entries.length){ rows.innerHTML = '<div class="none">Nothing logged on this one yet. Quick log, on the board, will start filling it in.</div>'; return; }
   const sends = entries.filter(e => e.result !== 'try'), tries = entries.length - sends.length, first = sends[sends.length - 1];    // first: the oldest send, the one that scores
   const head = document.createElement('b'), said = [];
   head.textContent = [sends.length ? sends.length + (sends.length === 1 ? ' send' : ' sends') : 'Not sent yet',
@@ -3153,16 +3143,11 @@ function paintLog(){
   $('lpGd').hidden = !r; if (r) paintPill($('lpGd'), r.grade);
   $('lpSub').textContent = r ? 'by ' + r.setter + ' · ' + FEET[r.feet] + rulesSay(r) + (r.tape ? ' · tape: ' + r.tape : '') + (r.note ? ' · ' + r.note : '') + (r.retired ? ' · taken down' : '')
                              : 'Pick one on the Routes page, or make one: two taps on the picture, tap its holds, and save them.';
-  $('lpBtns').hidden = !r || r.retired;
-  // the two buttons as on the MoonBoard page: the tries since the last send on Log try, and Log send filled once it has been sent
   const t = r && me ? myTries(r.id) : 0, sends = r && me && statOf(me, r.id) && statOf(me, r.id).s ? statOf(me, r.id).s.length : 0;
-  $('try').textContent = t ? 'Log try \u00b7 ' + t : 'Log try';
-  $('try').className = 'mini' + (t ? ' on' : '');
-  $('done').className = 'mini' + (sends ? ' on' : '');
-  $('lpSub2').textContent = !r || r.retired ? '' : !me ? 'Pick your name at the top to log a go.'
+  $('lpSub2').textContent = !r || r.retired ? '' : !me ? 'Pick your name at the top to see your goes on it.'
     : [t ? t + (t === 1 ? ' try' : ' tries') + (sends ? ' since your last send' : ' so far') : (sends ? '' : 'Not tried yet'),
        sends ? 'sent ' + (sends === 1 ? 'once' : sends === 2 ? 'twice' : sends + ' times') : ''].filter(Boolean).join(' \u00b7 ');
-  $('editBtn').hidden = $('goneBtn').hidden = !r || r.setter !== me;        // the setter's two; the logbook's button is always there
+  $('editBtn').hidden = $('goneBtn').hidden = $('lpMore').hidden = !r || r.setter !== me;        // the setter's two, and only for the setter
   if (r) $('goneBtn').textContent = r.retired ? 'Put it back' : 'Take it down';
   const last = mine[mine.length - 1], lr = last && routeById(last.route);
   $('lpUndo').hidden = !last;
@@ -3245,15 +3230,14 @@ document.addEventListener('scroll', e => { if (e.target !== $('tipBox')) tipShut
 window.addEventListener('resize', tipShut);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') tipShut(); });
 
-/* ---------- sheets that rise from the foot: the timed session, the logbook, and one entry over it ---------- */
-function showSheet(id){
+/* ---------- sheets that rise from the foot: the timed session, your emoji, and one entry over the logbook ---------- */
+function showSheet(id){         // (the logbook, a sheet until 2026-10-21, is a page now: an entry is shown over it)
   $('rsSheet').hidden = id !== 'rsSheet';
-  $('bookSheet').hidden = id !== 'bookSheet' && id !== 'entrySheet';        // an entry is shown over the logbook, which stays where it was
   $('entrySheet').hidden = id !== 'entrySheet';
   $('faceSheet').hidden = id !== 'faceSheet';
   $('scrim').hidden = !id && $('sheet').hidden && $('goSheet').hidden;
 }
-const sheetUp = () => ['entrySheet', 'rsSheet', 'bookSheet', 'faceSheet'].find(x => !$(x).hidden) || null;       // the one on top
+const sheetUp = () => ['entrySheet', 'rsSheet', 'faceSheet'].find(x => !$(x).hidden) || null;       // the one on top
 
 /* ---------- the logbook ----------
    Every go of one climber, a session to a line, the newest open; then everyone's points. The log page is for the
@@ -3263,14 +3247,16 @@ const sheetUp = () => ['entrySheet', 'rsSheet', 'bookSheet', 'faceSheet'].find(x
    to delete a log, so it is said in a line at the top and every entry of yours has three dots at its end. Somebody
    else's logbook can be read and not changed, which is a courtesy and not a lock: there are no accounts. */
 let bookRows = [], bookAsk = 0, bookEntry = null, bookOpen = new Set([0]);
-function openBook(){
+/* The logbook is a page (2026-10-21): whatever offered it goes there, and on it, it is read again. */
+function openBook(){ if (page === 'book') bookShow(); else showPage('book'); }
+function bookShow(){
   const sel = $('bookWho');
   sel.innerHTML = snap.people.map(p => '<option>' + esc(p) + '</option>').join('');
   sel.value = snap.people.includes(me) ? me : (snap.people[0] || '');
   sel.hidden = !snap.people.length;
   bookOpen = new Set([0]); bookNote('');
-  showSheet('bookSheet'); $('bookSheet').scrollTop = 0;
-  paintLog();                                // everyone's points, which live in this sheet
+  $('bookSheet').scrollTop = 0;
+  paintLog();                                // everyone's points, which live on this page
   loadBook();
 }
 /* ---------- the logbook, as a file, and a file into the logbook ----------
@@ -3664,15 +3650,14 @@ function openEntry(e){
   $('enErr').textContent = ''; $('enDelete').disabled = false;
   showSheet('entrySheet');
 }
-$('logBtn').onclick = openBook;
+$('bookBack').onclick = () => showPage('board');
 $('rankTog').onclick = () => {              // the ranking at the head of the logbook: shut until it is tapped
   const open = $('lpPoints').hidden;
   $('lpPoints').hidden = !open;
   $('rankTog').setAttribute('aria-expanded', open ? 'true' : 'false');
 };
-$('bookShut').onclick = () => showSheet(null);
 $('bookWho').onchange = () => { bookOpen = new Set([0]); bookNote(''); loadBook(); };
-$('enCancel').onclick = () => { bookEntry = null; showSheet('bookSheet'); };
+$('enCancel').onclick = () => { bookEntry = null; showSheet(null); };
 $('entrySheet').onclick = e => { if (e.target === $('entrySheet')) $('enCancel').onclick(); };       // a tap on the dark round it
 $('enDelete').onclick = async () => {
   const e = bookEntry;
@@ -3683,7 +3668,7 @@ $('enDelete').onclick = async () => {
     bookEntry = null;
     mine = []; logAt = 0;                    // Undo on the log page takes off the newest go, which may be the one that has just gone
     bookRows = bookRows.filter(x => x.k !== e.k);
-    showSheet('bookSheet'); take(d); paintBookRows(); loadLog(); toast('Deleted');
+    showSheet(null); take(d); paintBookRows(); loadLog(); toast('Deleted');
   }catch(err){ $('enErr').textContent = err.message; $('enDelete').disabled = false; }
 };
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && sheetUp()) sheetUp() === 'entrySheet' ? $('enCancel').onclick() : showSheet(null); });
@@ -4078,7 +4063,7 @@ $('fixWall').onclick = e => { const b = e.target.closest('button[data-v]'); if (
 $('fixDone').onclick = () => { const n = (snap.fixes || []).length; focusOff(); if (n) toast(n + (n === 1 ? ' change is' : ' changes are') + ' in. Thank you.'); };
 
 /* ---------- pages ---------- */
-const PAGES = ['list', 'board', 'log', 'set'];
+const PAGES = ['list', 'board', 'log', 'book', 'set'];
 function showPage(p){
   const was = page;
   if (was === 'list') listTop = $('scroll').scrollTop;
@@ -4087,6 +4072,7 @@ function showPage(p){
   document.body.classList.toggle('listPage', p === 'list');
   document.body.classList.toggle('logPage', p === 'log');
   document.body.classList.toggle('setPage', p === 'set');
+  document.body.classList.toggle('bookPage', p === 'book');
   [...$('pgDots').children].forEach(b => b.classList.toggle('on', b.dataset.go === p));
   if (p === 'board') requestAnimationFrame(() => {
     fit();
@@ -4095,6 +4081,7 @@ function showPage(p){
     if (r && tv.faces && !fixing && !draft){ const b = bestLook(marksShown(r), tv); turnTo(b.t, b.x); }      // opened from the logbook: look at it
   });
   if (p === 'log'){ paintLog(); loadLog(); }
+  if (p === 'book') bookShow();
   // on the Routes page the filters stand open, as on the MoonBoard page (the button beside the search box shuts them)
   if (p !== 'list') $('filters').hidden = true; else if (was !== 'list') $('filters').hidden = false;
   paintList();
@@ -4107,7 +4094,7 @@ $('pgDots').onclick = e => { const b = e.target.closest('button[data-go]'); if (
 let sw = null;
 document.addEventListener('touchstart', e => {
   const t = e.target;
-  sw = (focus || e.touches.length !== 1 || t.closest('#pic, #sheet, #goSheet, #rsSheet, #bookSheet, #entrySheet, #faceSheet, #a2hs, #a2hsHow, #quick, #sendFan, select, input, #grades, #gSlide')) ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
+  sw = (focus || e.touches.length !== 1 || t.closest('#pic, #sheet, #goSheet, #rsSheet, #entrySheet, #faceSheet, #a2hs, #a2hsHow, #quick, #sendFan, select, input, #grades, #gSlide')) ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
 }, { passive: true });
 document.addEventListener('touchend', e => {
   if (!sw) return;
@@ -4120,7 +4107,7 @@ document.addEventListener('touchend', e => {
 function paintAll(){
   if (!wall) return;
   paintMe(); fillFilters(); paintBoard(); paintList();
-  if (page === 'log') paintLog();
+  if (page === 'log' || page === 'book') paintLog();      // (the points are painted with it, and they are on the Logbook)
 }
 
 /* ---------- Back ----------
@@ -4150,7 +4137,6 @@ function openNow(){        // what is open, the one underneath first
   if (!$('sheet').hidden) o.push('sheet');
   if (!$('goSheet').hidden) o.push('go');
   if (!$('rsSheet').hidden) o.push('rs');
-  if (!$('bookSheet').hidden) o.push('book');
   if (!$('entrySheet').hidden) o.push('entry');
   if (!$('faceSheet').hidden) o.push('face');
   if (!$('a2hsHow').hidden) o.push('a2hs');
@@ -4162,8 +4148,7 @@ function shutOne(k){       // what Back does to the one on top: what its own but
   if (k === 'tip') tipShut();
   else if (k === 'gest') $('gestOk').click();
   else if (k === 'a2hs') $('a2hsOk').click();
-  else if (k === 'entry') showSheet('bookSheet');
-  else if (k === 'book' || k === 'rs' || k === 'face') showSheet(null);
+  else if (k === 'entry' || k === 'rs' || k === 'face') showSheet(null);
   else if (k === 'go') $('goDrop').onclick();              // asks first
   else if (k === 'sheet') $('shBack').onclick();           // back to the route being marked, as its own button
   else if (k === 'send') closeSend();

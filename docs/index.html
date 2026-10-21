@@ -1588,19 +1588,19 @@
   <!-- Where you are climbing, then the hold set, straight under who is climbing (Will, 2026-10-21: "just below that, it
        should ask you where you're climbing at. And then hold set below that"). Until then both were near the foot of
        the page, under "The wall, for everyone". -->
-  <div class="lbl tipLbl">Where you're climbing<button type="button" class="tipBtn" aria-label="About: where you are climbing" aria-expanded="false">i</button><span class="tipTxt">Will's Wall is the MoonBoard at Will's. On a different MoonBoard? Pick Another wall and give it a code of its own, the same on every phone there, so the two walls never light each other's problems. The board takes one Bluetooth connection, so everyone at a wall shares the phone that has it: whoever taps Connect becomes the bridge automatically, and every other phone sends what it lights through them.</span></div>
+  <div class="lbl tipLbl">Where you're climbing<button type="button" class="tipBtn" aria-label="About: where you are climbing" aria-expanded="false">i</button><span class="tipTxt">Will's Wall is the MoonBoard at Will's. On a different MoonBoard? Pick Another MoonBoard and give it a code of its own, the same on every phone there, so the two boards never light each other's problems. The board takes one Bluetooth connection, so everyone at a board shares the phone that has it: whoever taps Connect becomes the bridge automatically, and every other phone sends what it lights through them.</span></div>
   <select id="loc" aria-label="Where you're climbing">
     <option value="home">Will's Wall</option>
-    <option value="other">Another wall</option>
+    <option value="other">Another MoonBoard</option>
   </select>
   <div class="two" id="roomRow">
-    <input type="text" id="room" placeholder="that wall's code" spellcheck="false"
+    <input type="text" id="room" placeholder="that MoonBoard's code" spellcheck="false"
            autocapitalize="off" autocomplete="off">
     <button id="relayBtn" class="ghost">Connect relay</button>
   </div>
   <div class="hint" id="relayState">relay off</div>
 
-  <div class="lbl tipLbl">Hold set on the wall<button type="button" class="tipBtn" aria-label="About: the hold set" aria-expanded="false">i</button><span class="tipTxt">The holds up on the wall where you&rsquo;re climbing. At Will&rsquo;s Wall it is the crew&rsquo;s; at another wall it is that wall&rsquo;s own, kept under its code. Switching it changes the route list and the board picture for everyone climbing there, so only switch it when the holds on the wall actually change.</span></div>
+  <div class="lbl tipLbl">Hold set on the wall<button type="button" class="tipBtn" aria-label="About: the hold set" aria-expanded="false">i</button><span class="tipTxt">The holds up on the wall where you&rsquo;re climbing. At Will&rsquo;s Wall it is the crew&rsquo;s; on another MoonBoard it is that board&rsquo;s own, kept under its code. Switching it changes the route list and the board picture for everyone climbing there, so only switch it when the holds on the wall actually change.</span></div>
   <select id="boardSel" aria-label="Hold set on the wall"></select>
 
   <div class="lbl">Lighting the wall</div>
@@ -1636,7 +1636,7 @@
   <!-- The Pi, shown once the relay says this room has one (see piSet). Where you're climbing and the hold set were
        beside it, under "The wall, for everyone", until they went up to the top of the page (2026-10-21). -->
   <div id="piRow" hidden>
-    <div class="lbl tipLbl">The Pi in the majlis<button type="button" class="tipBtn" aria-label="About: the Pi" aria-expanded="false">i</button><span class="tipTxt">A small computer on the majlis ceiling holds the wall's Bluetooth, so nobody has to leave a phone awake by the wall and every phone lights it in plain Safari. Connect wakes it. It lets go by itself once nobody has had the app open for 15 minutes, or when the wall is switched off, and then the Moon app works again. Letting go here drops the wall for every phone. This phone's Bluetooth is for when the Pi or the internet is down. The Pi is only for Will's Wall: at another wall (Where you're climbing, Another wall) phones connect with their own Bluetooth, as before.</span></div>
+    <div class="lbl tipLbl">The Pi in the majlis<button type="button" class="tipBtn" aria-label="About: the Pi" aria-expanded="false">i</button><span class="tipTxt">A small computer on the majlis ceiling holds the wall's Bluetooth, so nobody has to leave a phone awake by the wall and every phone lights it in plain Safari. Connect wakes it. It lets go by itself once nobody has had the app open for 15 minutes, or when the wall is switched off, and then the Moon app works again. Letting go here drops the wall for every phone. This phone's Bluetooth is for when the Pi or the internet is down. The Pi is only for Will's Wall: on another MoonBoard (Where you're climbing, Another MoonBoard) phones connect with their own Bluetooth, as before.</span></div>
     <div class="hint" id="piState"></div>
     <div class="two" style="margin-top:8px">
       <button id="piSleep" class="ghost" type="button">Let go of the wall</button>
@@ -1863,7 +1863,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-21 10:57';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-21 11:38';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3748,7 +3748,7 @@ function setBoard(key, fromServer){
   // wall: whoever switched it lights what goes up next.
   if (current && current.board !== key) clearRoute(fromServer);
   else { paint(); renderResults(); }
-  log('board: ' + boardNow().label + (fromServer ? (atHome() ? ' (set for the crew)' : ' (set for this wall)') : ''));
+  log('board: ' + boardNow().label + (fromServer ? (atHome() ? ' (set for the crew)' : ' (set for this MoonBoard)') : ''));
 }
 
 /* The hold set is the wall's (Will, 2026-10-21: "make the hold set per wall. At another wall it's that wall's own,
@@ -3767,14 +3767,14 @@ async function wallBoardPull(){
   try{
     const d = await (await fetch(BOARD_API + '?room=' + encodeURIComponent(room), { cache: 'no-store' })).json();
     if (room === relayRoom() && !atHome() && d && d.board) setBoard(d.board, true);     // not if the code changed meanwhile
-  }catch(e){ log('hold set for this wall: out of reach (' + e.message + ')'); }
+  }catch(e){ log('hold set for this MoonBoard: out of reach (' + e.message + ')'); }
 }
 async function wallBoardPush(room, key){
   try{
     const d = await (await fetch(BOARD_API, { method: 'POST', headers: { 'Content-Type': 'application/json' },
                                               body: JSON.stringify({ room, board: key }) })).json();
-    log(d.error ? 'hold set for this wall: ' + d.error : 'hold set kept for this wall: ' + boardNow().label);
-  }catch(e){ log('hold set for this wall: out of reach (' + e.message + ')'); }
+    log(d.error ? 'hold set for this MoonBoard: ' + d.error : 'hold set kept for this MoonBoard: ' + boardNow().label);
+  }catch(e){ log('hold set for this MoonBoard: out of reach (' + e.message + ')'); }
 }
 // Where you're climbing has changed: back at Will's Wall, the crew's hold set; at another wall, that wall's own.
 function wallBoardFollow(){
@@ -4667,7 +4667,7 @@ function wallState(){
   document.body.classList.toggle('noWall', lost || !!note);      // the picture gives it its room (see the styles)
   // The usual reason for nobody bridging is a phone on a different room code.
   const off = relayRoom() && relayRoom() !== DEFAULT_ROOM;
-  el.textContent = note || (off ? 'Not reaching the board \u2014 this phone is set to another wall. Tap to check'
+  el.textContent = note || (off ? 'Not reaching the board \u2014 this phone is set to another MoonBoard. Tap to check'
                                 : 'Not reaching the board \u2014 tap Connect');
   const live = bridgeLive !== null ? bridgeLive : bridgeSeen;
   const piWaking = !rx && !!piNow && piNow.state === 'waking';
@@ -9216,7 +9216,7 @@ $('loc').onchange = () => {
   if (relayWant && relayRoom()) relayConnect();
   if (!home) $('room').focus();
   if (!home){ try{ localStorage.setItem('mb-wall', 'moon'); }catch(e){} }
-  log(home ? 'climbing at Will\u2019s Wall.' : 'climbing at another wall \u2014 it needs a code of its own.');
+  log(home ? 'climbing at Will\u2019s Wall.' : 'climbing on another MoonBoard \u2014 it needs a code of its own.');
 };
 $('noWall').onclick = () => {
   if (relayRoom() && relayRoom() !== DEFAULT_ROOM) showPage('set');
@@ -9261,7 +9261,7 @@ $('plyChk').onchange = () => {
 };
 $('boardSel').onchange = () => {
   const key = $('boardSel').value, home = atHome(), room = relayRoom();
-  if (!confirm('Switch the wall to ' + BOARDS.find(b => b.key === key).label + (home ? ' for everyone?' : ' for everyone climbing at this wall?'))){
+  if (!confirm('Switch the wall to ' + BOARDS.find(b => b.key === key).label + (home ? ' for everyone?' : ' for everyone climbing on this MoonBoard?'))){
     $('boardSel').value = boardKey; return;
   }
   setBoard(key);

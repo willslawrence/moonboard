@@ -378,8 +378,8 @@ climbing"):
     Everybody sees it, on both walls: see *The crew*. One climber to an emoji, so a circle
     still says who: one somebody here has, chosen or in their name, is faded in the sheet
     and a tap on it says whose.
-- **Where you're climbing**, straight under them (see below): Will's Wall, or Another wall
-  with its code; under it the relay's button and the line that says what the relay is
+- **Where you're climbing**, straight under them (see below): Will's Wall, or Another
+  MoonBoard with its code; under it the relay's button and the line that says what the relay is
   doing.
 - **Hold set on the wall**, under that: the holds up on the wall where you are climbing.
   At Will's Wall it is the crew's, kept with the tick lists as it always was; at another
@@ -570,7 +570,7 @@ tangle; the slider goes faint, having nothing to do. It is the phone's own choic
 stays as it was left. A short climb by number, which has no slider, keeps its lines.
 
 **Changing a route.** Only its setter is offered **Change it** and **Take it down**, on
-the log page. A route taken down leaves the list and keeps what was logged on it.
+History (the log page until 2026-10-21); somebody else sees no row of buttons there. A route taken down leaves the list and keeps what was logged on it.
 
 **The filters on the Routes page are the MoonBoard page's.** One line: a line with two dots
 to drag for the easiest and hardest grade wanted, each dot with its grade over it, then
@@ -585,7 +585,8 @@ an end left alone moves with the wall when a route is added beyond it. There is 
 of setters: the search box finds a setter by name.
 
 **Logbook and points.** A try, or a send with how many goes it took, from **Quick log** on
-the board or from the log page. Quick log is the MoonBoard's (see *Quick log* above), with
+the board (and from **Log try** and **Log send** on the log page until 2026-10-21, when the
+page became History, as on the MoonBoard page). Quick log is the MoonBoard's (see *Quick log* above), with
 the same words: a press swings out **Try** and **Send**, a tap on one or a slide on to it
 and a let-go logs it, a send asks which go it was in four bubbles with the likely answer
 ringed, a route sent before is a session send, a route tried on another day is never
@@ -594,8 +595,10 @@ the button says what was logged or that it was not saved.
 A route scores once, the first time it is sent: its V number plus one, and one more for a
 flash. Tries score nothing. The points are the Sun board's own.
 
-**Your own logbook.** The log page keeps each climber's own record the way the MoonBoard
-page does. **This session** is a card at the top of the page: the session in three numbers
+**Your own logbook.** History keeps each climber's own record the way the MoonBoard
+page's History does. Since 2026-10-21 the row of pages at the foot is the MoonBoard page's
+five: **Routes**, **Board**, **History**, **Logbook** and the cog (Will: "make the Sun board
+match"). **This session** is a card at the top of the page: the session in three numbers
 (sends, tries, and the hardest sent) and a dot for every go (a ring for a try, green for a
 send, gold for a flash). A tap on it opens the session's climbs under the numbers, a row a
 route with the latest first and how it went, and another tap shuts them. At the foot of the
@@ -604,19 +607,20 @@ of four hours in it, and it is "this session" until its last go is eight hours o
 on a route opens it on the page, ready for another go, and the board turns to look at it.
 Changing the name at the top changes whose logbook it is. The page is otherwise the open
 route's, and since 2026-10-12 it is laid out as the MoonBoard page's is (Will: "Match the
-two pages log pages"): its own top line with the way back to the board; the route's card,
-where **Log try** carries the tries since the last send and **Log send** is filled once
-the route has been sent (they were red and green); **Your history on this route**, a line
+two pages log pages"): its own top line with the way back to the board and the page's name,
+**History**; the route's card (it had **Log try** and **Log send** until 2026-10-21);
+**Your history on this route**, a line
 that sums it up and a row a session with a dot for every go; and **Community**, who has
 climbed it, a row a climber with their circle (their emoji, or their initial) and how their first send
 went, then **Lately on the Sun board**, a few of the crew's latest goes in rows of the
 same kind, where a tap on a row goes to the board with that route up. What the MoonBoard
-page has and this one has not is the beta, so the setter's two buttons, **Change it** and
-**Take it down**, stand where its button is.
+page has and this one has not is the beta, so the route's card holds the setter's two
+buttons, **Change it** and **Take it down**, and for anybody else nothing.
 
-**The Logbook** is a sheet of its own, opened by the button in the route's card or the line
-at the foot of the log page, and the MoonBoard page's is laid out the same since
-2026-10-12. It has every go of one climber, a session to a line with the newest open, then
+**The Logbook** is a page of its own, between History and Settings, with a top line as
+History has (the way back to the board and its name), since 2026-10-21; it was a sheet,
+opened by a button in the route's card, until then. The line at the foot of History goes
+there too. The MoonBoard page's is laid out the same. It has every go of one climber, a session to a line with the newest open, then
 everyone's points, listed as that page lists them (how they are worked out is behind the i
 beside their heading). Under the picker, **Export CSV** makes a file of the logbook that is
 showing and **Import CSV** adds a file's goes to your own (see *Logbook* below; here a go
@@ -731,8 +735,10 @@ The code is in public source, so it isn't a secret - but the relay only does any
 someone is actively bridging.
 
 **Where you're climbing**, near the top of Settings, is which wall a phone talks to. It is Will's Wall
-unless you say otherwise, and that needs no code. A different MoonBoard picks **Another wall**
-and gives it a code of its own, the same on every phone there, so two walls on the same hold
+unless you say otherwise, and that needs no code. A different MoonBoard picks **Another
+MoonBoard** (it said Another wall until 2026-10-21; Will: "the whole purpose there is to
+establish a different room to control the lights. So instead of saying another wall, we
+should say another moonboard") and gives it a code of its own, the same on every phone there, so two walls on the same hold
 set never light each other's problems. Each wall has its own line and its own evening's
 routes. The logbook and the climbers are still one shared set.
 
