@@ -658,9 +658,13 @@
   body.listPage #rsBtn{display:none}
   #rsSheet,#bookSheet,#faceSheet{position:fixed;left:0;right:0;bottom:0;z-index:71;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;background:var(--bg);
          border-radius:16px 16px 0 0;border-top:1px solid var(--edge);padding:14px var(--pad) calc(env(safe-area-inset-bottom) + 14px)}
-  /* your emoji: the row under Climbing as in Settings, and its sheet, an emoji a key, eight to a row (as on the MoonBoard page) */
-  #faceCard{margin-top:8px}
-  #faceBtn{margin-left:auto;flex:none;width:auto;display:flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;font-size:13.5px}
+  /* your emoji: the button beside Climbing as in Settings, and its sheet, an emoji a key, eight to a row (as on the MoonBoard page) */
+  #faceBtn{display:flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;font-size:13.5px}
+  #faceBtn span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* who is climbing and their emoji, side by side, a heading over each; the two boxes as tall as each other */
+  #meRow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+  #meRow > div{min-width:0;display:flex;flex-direction:column}
+  #meRow > div > :last-child{flex:1 1 auto}
   #faceBtn i,#faceNow{flex:none;display:grid;place-items:center;border-radius:50%;font-style:normal;font-weight:700;color:#0e0e0f}
   #faceBtn i{width:28px;height:28px;font-size:15px}
   #faceBtn i[hidden]{display:none}
@@ -957,14 +961,19 @@
     <button class="solid" disabled>&#9728;&#65039; Sun board</button>
   </div>
 
-  <div class="lbl tipLbl">Climbing as<button type="button" class="tipBtn" aria-label="About: your name" aria-expanded="false">i</button><span class="tipTxt">The name your tries and sends are logged under. It is the picker at the top of the page, and the same name on the MoonBoard. There are no passwords: a name is a name.</span></div>
-  <div class="two">
-    <select id="me2" aria-label="Climbing as"></select>
-    <button id="addMe" style="flex:none;width:auto">Add a name</button>
-  </div>
-  <!-- Your emoji, in your circle where your first letter was (Will, 2026-10-19): the sheet it opens is #faceSheet. -->
-  <div class="card" id="faceCard">
-    <div class="opt"><label for="faceBtn">Your emoji</label><button type="button" class="tipBtn" aria-label="About: your emoji" aria-expanded="false">i</button><span class="tipTxt">It goes in your circle wherever your name is: beside the routes you have sent and on the log page. Everyone sees it, on the MoonBoard too. One climber to an emoji. With none, your circle has your first letter.</span><button type="button" id="faceBtn"><i></i><span>Choose</span></button></div>
+  <!-- Who is climbing, and their emoji, side by side under a heading each, as on the MoonBoard page (Will, 2026-10-21:
+       "Choosing your name or your emoji. So those two can go on the same line"). A new name is "+ New climber" at the
+       head of the picker, which is why the button "Add a name" that stood beside it has gone. The emoji (2026-10-19)
+       opens the sheet #faceSheet. -->
+  <div id="meRow">
+    <div>
+      <div class="lbl tipLbl">Climbing as<button type="button" class="tipBtn" aria-label="About: your name" aria-expanded="false">i</button><span class="tipTxt">The name your tries and sends are logged under. It is the picker at the top of the page, and the same name on the MoonBoard. Not in the list? Pick <b>+ New climber</b>, the first line of it. There are no passwords: a name is a name.</span></div>
+      <select id="me2" aria-label="Climbing as"></select>
+    </div>
+    <div>
+      <div class="lbl tipLbl">Your emoji<button type="button" class="tipBtn" aria-label="About: your emoji" aria-expanded="false">i</button><span class="tipTxt">It goes in your circle wherever your name is: beside the routes you have sent and on the log page. Everyone sees it, on the MoonBoard too. One climber to an emoji. With none, your circle has your first letter.</span></div>
+      <button type="button" id="faceBtn"><i></i><span>Choose</span></button>
+    </div>
   </div>
 
   <div class="lbl tipLbl">The picture<button type="button" class="tipBtn" aria-label="About: the picture" aria-expanded="false">i</button><span class="tipTxt">A finger across the picture turns your head, from the flat wall round to the overhang, and it stays where you leave it. Flat and Overhang in the picture's corners go back to those two views. Two taps, or a short stroke down, and the picture fills the screen; there a tap picks a hold, and a stroke up or down, or the cross, goes back. Two fingers zoom: apart for closer, together for further off, until the whole wall is in sight. A hold that has no outline can still go in a route: tap it while marking the route and a ring goes where you tapped.</span></div>
@@ -1161,7 +1170,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-19 21:36';
+const BUILD = '2026-10-21 09:14';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -1309,7 +1318,6 @@ async function addPerson(){
 }
 $('me').onchange = () => $('me').value === NEW_CLIMBER ? addPerson() : setMe($('me').value);
 $('me2').onchange = () => $('me2').value === NEW_CLIMBER ? addPerson() : setMe($('me2').value);
-$('addMe').onclick = addPerson;
 
 /* ---------- your emoji ----------
    As on the MoonBoard page (Will, 2026-10-19: "Instead of the circles with letters for your name. Can it be a custom
@@ -1337,7 +1345,8 @@ function faceRow(){
   b.disabled = !me;
   chip.hidden = !me;
   if (me) chipPaint(chip, me);
-  b.querySelector('span').textContent = !me ? 'Pick your name first' : (snap.faces || {})[me] ? 'Change' : 'Choose';
+  // (short enough for half the line beside the name picker, at 320px too)
+  b.querySelector('span').textContent = !me ? 'Pick a name first' : (snap.faces || {})[me] ? 'Change' : 'Choose';
 }
 function faceSays(txt, bad){
   $('faceSay').textContent = txt;

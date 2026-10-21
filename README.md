@@ -349,13 +349,19 @@ wherever there is room; a tap anywhere else, a scroll, or another tap on the i p
 bubble away. The same switches and the same i are in the sheets (the timed session's,
 Connect four's) and on the Sun board's page.
 
-Top to bottom (the order is of 2026-10-12):
+Top to bottom (the order is of 2026-10-21; Will: "There's a few other moon boards around
+that people use this app for, so I want it to be more clear how they choose where they're
+climbing"):
 
 - **Which wall**, at Will's: the MoonBoard and the Sun board.
-- **Climbing as**: the name picker at the top of the page, here as well, with **Add a
-  name** beside it, as on the Sun board's page. Whichever of the two pickers is changed,
-  the other follows.
-  - **Your emoji** (since 2026-10-19), under it: the emoji in your circle wherever your
+- **Climbing as** and **Your emoji**, side by side on one line, a heading over each (Will:
+  "It doesn't need to be full width. Choosing your name or your emoji. So those two can go
+  on the same line"). The same line is on the Sun board's page.
+  - **Climbing as** is the name picker at the top of the page, here as well. Whichever of
+    the two pickers is changed, the other follows. A new name is **+ New climber**, the
+    first line of either picker; the **Add a name** button that stood beside it went with
+    the change of 2026-10-21.
+  - **Your emoji** (since 2026-10-19): the emoji in your circle wherever your
     name is drawn, where your first letter was. A tap opens a sheet at the foot of the
     screen with 56 to tap, and a box for any other from the phone's own emoji keys; **Use
     my letter** goes back. Will: "Instead of the circles with letters for your name. Can
@@ -364,6 +370,13 @@ Top to bottom (the order is of 2026-10-12):
     Everybody sees it, on both walls: see *The crew*. One climber to an emoji, so a circle
     still says who: one somebody here has, chosen or in their name, is faded in the sheet
     and a tap on it says whose.
+- **Where you're climbing**, straight under them (see below): Will's Wall, or Another wall
+  with its code; under it the relay's button and the line that says what the relay is
+  doing.
+- **Hold set on the wall**, under that. It changes the route list and the picture for
+  everyone who uses the app, at every wall (it is one setting, not one a wall), so only
+  switch it when the holds on the wall actually change. Where you're climbing and the hold
+  set were near the foot of the page, under "The wall, for everyone", until 2026-10-21.
 - **Lighting the wall**
   - **Light a route as soon as I open it**, off unless a phone turns it on.
   - **Show the grade on the bottom row**. Row 1 carries no holds on any 2016 benchmark, so
@@ -383,9 +396,8 @@ Top to bottom (the order is of 2026-10-12):
     it starts on plywood and the switch is on. Once a phone has moved the switch, that is
     what it gets on every set. Masters 2019 keeps its own picture.
 - **Games on the wall**: Connect four (Snake is put away). It opens over the page.
-- **The wall, for everyone**: **Hold set on the wall**, which changes the route list and
-  the picture for everyone, so only switch it when the holds on the wall actually change;
-  and **Where you're climbing** (see below).
+- **The Pi in the majlis**, only where the relay says the wall has one (Will's Wall): what
+  it is doing, **Let go of the wall** and **This phone's Bluetooth**.
 - **Help**: **Picture gestures**, the card of what a finger does on the picture, and **Add
   to Home Screen**, the card that says how.
 - **Connection log**: what the page has done with the wall and the relay, with **Copy
@@ -604,7 +616,8 @@ this entry** takes it out (`POST /log/delete`, which counts the tally again from
 Somebody else's logbook can be read and not changed, which is a courtesy: there are no
 accounts.
 
-**Settings.** As on the MoonBoard page since 2026-10-12: which wall, who is climbing, then
+**Settings.** As on the MoonBoard page since 2026-10-12: which wall, who is climbing and
+their emoji (side by side on one line since 2026-10-21, with no Add a name button), then
 **The picture** (two switches: dim the wall behind an open route, and always outline
 every hold), **How it looks on this phone** (the background), and **Holds changed?**.
 What each does is behind the i beside it. The header is as tall as the MoonBoard page's,
@@ -707,7 +720,7 @@ frozen.
 The code is in public source, so it isn't a secret - but the relay only does anything while
 someone is actively bridging.
 
-**Where you're climbing**, in Settings, is which wall a phone talks to. It is Will's Wall
+**Where you're climbing**, near the top of Settings, is which wall a phone talks to. It is Will's Wall
 unless you say otherwise, and that needs no code. A different MoonBoard picks **Another wall**
 and gives it a code of its own, the same on every phone there, so two walls on the same hold
 set never light each other's problems. Each wall has its own line and its own evening's

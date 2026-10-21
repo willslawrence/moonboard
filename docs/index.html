@@ -737,9 +737,9 @@
            background:var(--bg);border-radius:16px 16px 0 0;border-top:1px solid var(--edge);
            padding:14px var(--pad) calc(env(safe-area-inset-bottom) + 14px)}
   #rsPanel[hidden],#facePanel[hidden]{display:none}
-  /* your emoji: the row under Climbing as in Settings, and its sheet, an emoji a key, eight to a row */
-  #faceCard{margin-top:8px}
-  #faceBtn{margin-left:auto;flex:none;width:auto;display:flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;font-size:13.5px}
+  /* your emoji: the button beside Climbing as in Settings, and its sheet, an emoji a key, eight to a row */
+  #faceBtn{display:flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;font-size:13.5px}
+  #faceBtn span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #faceBtn i,#faceNow{flex:none;display:grid;place-items:center;border-radius:50%;font-style:normal;font-weight:700;color:#0e0e0f}
   #faceBtn i{width:28px;height:28px;font-size:15px}
   #faceBtn i[hidden]{display:none}
@@ -1248,9 +1248,12 @@
   /* ---- Settings: a heading, then what belongs under it ---- */
   #setPanel .lbl{margin:20px 2px 7px}
   #setPanel #wallPick .lbl{margin-top:4px}
-  #meRow{display:flex;gap:8px}
-  #meRow select{flex:1 1 0;min-width:0}
-  #meRow button{flex:none;width:auto;padding:0 14px}
+  /* who is climbing and their emoji, side by side, a heading over each; the two boxes as tall as each other */
+  #meRow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+  #meRow > div{min-width:0;display:flex;flex-direction:column}
+  #meRow > div > :last-child{flex:1 1 auto}
+  #roomRow{margin-top:8px}
+  #piRow #piState{margin-top:0}
   #setPanel #log{margin-top:0}
   #c4clock .mins{flex:none;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--dim)}
   /* ---- somebody new: better from the Home Screen (see a2hs at the foot of the script) ---- */
@@ -1559,11 +1562,14 @@
     <b>Settings</b>
   </div>
 
-  <!-- Settings, in this order since 2026-10-12 (Will: "You can re organize the setting page for a better order of
-       options"). Which wall, first, as he asked on 2026-10-11 ("put that option change right at the top"), and who
-       is climbing; then what this phone does with the wall's lights; how the app looks on this phone; the games;
-       and last the two things that are the same for everyone and seldom change, then Help (the card of what a
-       finger does on the picture, and the one about the Home Screen) with the connection's log under it. An option that is on or off is a row with a switch, and what it does is behind the small i beside it. -->
+  <!-- Settings, in this order since 2026-10-21. Which wall, first, as he asked on 2026-10-11 ("put that option change
+       right at the top"; it is there at Will's Wall only). Then who is climbing, where, and on which holds (Will,
+       2026-10-21: "There's a few other moon boards around that people use this app for, so I want it to be more clear
+       how they choose where they're climbing"): the name and the emoji on one line, where you're climbing under them,
+       the hold set under that. Then what this phone does with the wall's lights; how the app looks on this phone; the
+       games; the Pi, where the wall has one; then Help (the card of what a finger does on the picture, and the one
+       about the Home Screen) with the connection's log under it. An option that is on or off is a row with a switch,
+       and what it does is behind the small i beside it. -->
   <div id="wallPick">
     <div class="lbl tipLbl">Which wall<button type="button" class="tipBtn" aria-label="About: the two walls" aria-expanded="false">i</button><span class="tipTxt">Both are at Will's. The Sun board has no lights: its routes are made by picking holds on a picture of it, and it has a list of routes, a logbook and points of its own. The sun at the top of the page goes there too.</span></div>
     <div class="two">
@@ -1572,17 +1578,38 @@
     </div>
   </div>
 
-  <!-- Who is climbing: the picker at the top of the page, here as well, as on the Sun board's page (Will,
-       2026-10-12: "On the moon setting page add a climbing as input field like there is on the sun settings page"). -->
-  <div class="lbl tipLbl">Climbing as<button type="button" class="tipBtn" aria-label="About: your name" aria-expanded="false">i</button><span class="tipTxt">The name your tries and sends are logged under. It is the picker at the top of the page, and the same name on the Sun board. There are no passwords: a name is a name.</span></div>
+  <!-- Who is climbing, and their emoji, side by side under a heading each (Will, 2026-10-21: "It doesn't need to be
+       full width. Choosing your name or your emoji. So those two can go on the same line"). The name picker is the one
+       at the top of the page, here as well (2026-10-12); a new name is "+ New climber" at the head of its list, which is
+       why the button "Add a name" that stood beside it has gone. The emoji (2026-10-19) opens the sheet #facePanel. -->
   <div id="meRow">
-    <select id="me2" aria-label="Climbing as"></select>
-    <button id="addMe" type="button">Add a name</button>
+    <div>
+      <div class="lbl tipLbl">Climbing as<button type="button" class="tipBtn" aria-label="About: your name" aria-expanded="false">i</button><span class="tipTxt">The name your tries and sends are logged under. It is the picker at the top of the page, and the same name on the Sun board. Not in the list? Pick <b>+ New climber</b>, the first line of it. There are no passwords: a name is a name.</span></div>
+      <select id="me2" aria-label="Climbing as"></select>
+    </div>
+    <div>
+      <div class="lbl tipLbl">Your emoji<button type="button" class="tipBtn" aria-label="About: your emoji" aria-expanded="false">i</button><span class="tipTxt">It goes in your circle wherever your name is: beside the routes you have sent, in the line, on the wall&rsquo;s card and on the log page. Everyone sees it, on the Sun board too. One climber to an emoji. With none, your circle has your first letter.</span></div>
+      <button type="button" id="faceBtn"><i></i><span>Choose</span></button>
+    </div>
   </div>
-  <!-- Your emoji, in your circle where your first letter was (Will, 2026-10-19): the sheet it opens is #facePanel. -->
-  <div class="card" id="faceCard">
-    <div class="opt"><label for="faceBtn">Your emoji</label><button type="button" class="tipBtn" aria-label="About: your emoji" aria-expanded="false">i</button><span class="tipTxt">It goes in your circle wherever your name is: beside the routes you have sent, in the line, on the wall&rsquo;s card and on the log page. Everyone sees it, on the Sun board too. One climber to an emoji. With none, your circle has your first letter.</span><button type="button" id="faceBtn"><i></i><span>Choose</span></button></div>
+
+  <!-- Where you are climbing, then the hold set, straight under who is climbing (Will, 2026-10-21: "just below that, it
+       should ask you where you're climbing at. And then hold set below that"). Until then both were near the foot of
+       the page, under "The wall, for everyone". -->
+  <div class="lbl tipLbl">Where you're climbing<button type="button" class="tipBtn" aria-label="About: where you are climbing" aria-expanded="false">i</button><span class="tipTxt">Will's Wall is the MoonBoard at Will's. On a different MoonBoard? Pick Another wall and give it a code of its own, the same on every phone there, so the two walls never light each other's problems. The board takes one Bluetooth connection, so everyone at a wall shares the phone that has it: whoever taps Connect becomes the bridge automatically, and every other phone sends what it lights through them.</span></div>
+  <select id="loc" aria-label="Where you're climbing">
+    <option value="home">Will's Wall</option>
+    <option value="other">Another wall</option>
+  </select>
+  <div class="two" id="roomRow">
+    <input type="text" id="room" placeholder="that wall's code" spellcheck="false"
+           autocapitalize="off" autocomplete="off">
+    <button id="relayBtn" class="ghost">Connect relay</button>
   </div>
+  <div class="hint" id="relayState">relay off</div>
+
+  <div class="lbl tipLbl">Hold set on the wall<button type="button" class="tipBtn" aria-label="About: the hold set" aria-expanded="false">i</button><span class="tipTxt">Changes the route list and the board picture for everyone who uses the app, at every wall, so only switch it when the holds on the wall actually change.</span></div>
+  <select id="boardSel" aria-label="Hold set on the wall"></select>
 
   <div class="lbl">Lighting the wall</div>
   <div class="card">
@@ -1614,33 +1641,14 @@
     <button id="gameBtn" class="ghost"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="4.5" cy="4.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="4.5" cy="9.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="4.5" cy="14.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="4.5" cy="19.5" r="2.1" fill="#22c55e"/><circle cx="9.5" cy="4.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="9.5" cy="9.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="9.5" cy="14.5" r="2.1" fill="#22c55e"/><circle cx="9.5" cy="19.5" r="2.1" fill="#2563eb"/><circle cx="14.5" cy="4.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="14.5" cy="9.5" r="2.1" fill="#22c55e"/><circle cx="14.5" cy="14.5" r="2.1" fill="#2563eb"/><circle cx="14.5" cy="19.5" r="2.1" fill="#2563eb"/><circle cx="19.5" cy="4.5" r="2.1" fill="#22c55e"/><circle cx="19.5" cy="9.5" r="2.1" fill="#2563eb"/><circle cx="19.5" cy="14.5" r="2.1" fill="#22c55e"/><circle cx="19.5" cy="19.5" r="2.1" fill="#2563eb"/></svg> Connect four</button>
   </div>
 
-  <div class="lbl">The wall, for everyone</div>
-  <div class="card">
-    <div class="optCol">
-      <div class="opt"><label for="boardSel">Hold set on the wall</label><button type="button" class="tipBtn" aria-label="About: the hold set" aria-expanded="false">i</button><span class="tipTxt">Changes the route list and the board picture for everyone, so only switch it when the holds on the wall actually change.</span></div>
-      <select id="boardSel"></select>
-    </div>
-    <div class="optCol">
-      <div class="opt"><label for="loc">Where you're climbing</label><button type="button" class="tipBtn" aria-label="About: where you are climbing" aria-expanded="false">i</button><span class="tipTxt">The board takes one Bluetooth connection, so everyone shares the phone that has it. Whoever taps Connect becomes the bridge automatically, and every other phone sends what it lights through them. On a different MoonBoard? Pick Another wall and give it a code of its own, the same on every phone there, so the two walls never light each other's problems.</span></div>
-      <select id="loc">
-        <option value="home">Will's Wall</option>
-        <option value="other">Another wall</option>
-      </select>
-      <div class="two" style="margin-top:8px">
-        <input type="text" id="room" placeholder="that wall's code" spellcheck="false"
-               autocapitalize="off" autocomplete="off">
-        <button id="relayBtn" class="ghost">Connect relay</button>
-      </div>
-      <div class="hint" id="relayState">relay off</div>
-    </div>
-    <!-- Shown once the relay says this room has a Pi (see piSet). -->
-    <div class="optCol" id="piRow" hidden>
-      <div class="opt"><label>The Pi in the majlis</label><button type="button" class="tipBtn" aria-label="About: the Pi" aria-expanded="false">i</button><span class="tipTxt">A small computer on the majlis ceiling holds the wall's Bluetooth, so nobody has to leave a phone awake by the wall and every phone lights it in plain Safari. Connect wakes it. It lets go by itself once nobody has had the app open for 15 minutes, or when the wall is switched off, and then the Moon app works again. Letting go here drops the wall for every phone. This phone's Bluetooth is for when the Pi or the internet is down. The Pi is only for Will's Wall: at another wall (Where you're climbing, Another wall) phones connect with their own Bluetooth, as before.</span></div>
-      <div class="hint" id="piState"></div>
-      <div class="two" style="margin-top:8px">
-        <button id="piSleep" class="ghost" type="button">Let go of the wall</button>
-        <button id="bleBtn" class="ghost" type="button">This phone's Bluetooth</button>
-      </div>
+  <!-- The Pi, shown once the relay says this room has one (see piSet). Where you're climbing and the hold set were
+       beside it, under "The wall, for everyone", until they went up to the top of the page (2026-10-21). -->
+  <div id="piRow" hidden>
+    <div class="lbl tipLbl">The Pi in the majlis<button type="button" class="tipBtn" aria-label="About: the Pi" aria-expanded="false">i</button><span class="tipTxt">A small computer on the majlis ceiling holds the wall's Bluetooth, so nobody has to leave a phone awake by the wall and every phone lights it in plain Safari. Connect wakes it. It lets go by itself once nobody has had the app open for 15 minutes, or when the wall is switched off, and then the Moon app works again. Letting go here drops the wall for every phone. This phone's Bluetooth is for when the Pi or the internet is down. The Pi is only for Will's Wall: at another wall (Where you're climbing, Another wall) phones connect with their own Bluetooth, as before.</span></div>
+    <div class="hint" id="piState"></div>
+    <div class="two" style="margin-top:8px">
+      <button id="piSleep" class="ghost" type="button">Let go of the wall</button>
+      <button id="bleBtn" class="ghost" type="button">This phone's Bluetooth</button>
     </div>
   </div>
 
@@ -1863,7 +1871,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-19 21:36';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-21 09:14';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3854,7 +3862,8 @@ function faceRow(){
   b.disabled = !me;
   chip.hidden = !me;
   if (me) chipPaint(chip, me);
-  b.querySelector('span').textContent = !me ? 'Pick your name first' : faces[me] ? 'Change' : 'Choose';
+  // (short enough for half the line beside the name picker, at 320px too)
+  b.querySelector('span').textContent = !me ? 'Pick a name first' : faces[me] ? 'Change' : 'Choose';
 }
 function faceSays(txt, bad){
   $('faceSay').textContent = txt;
@@ -9116,7 +9125,6 @@ $('me').onchange = () => {
   if (page === 'log') paintLogPage();
 };
 $('me2').onchange = () => { $('me').value = $('me2').value; $('me').onchange(); };
-$('addMe').onclick = () => addPerson(lastMe);
 /* The background: a name on the page's root, which the styles turn into colours. The
    browser's own bar round the page is told the same colour. */
 function setBg(v){
