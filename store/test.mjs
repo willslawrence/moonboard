@@ -353,6 +353,33 @@ console.log('a climber\'s emoji, the same on both walls');
   check('other methods are refused', (await handle(new Request('https://x.test/api/faces', { method: 'DELETE' }), db)).status === 405);
   check('a body that is not JSON is refused', (await handle(new Request('https://x.test/api/faces', { method: 'POST', body: 'face=x' }), db)).status === 400);
 }
+console.log('the hold set of a MoonBoard that is not Will\'s, kept under its code');
+{
+  let b = await call('GET', '/api/board?room=test-gym-one');
+  check('a wall nobody has said anything of has none', b.status === 200 && b.room === 'test-gym-one' && b.board === null, b);
+  b = await call('POST', '/api/board', { room: 'test-gym-one', board: '2019-40' });
+  check('one is kept and answered with', b.status === 200 && b.room === 'test-gym-one' && b.board === '2019-40', b);
+  b = await call('GET', '/api/board?room=test-gym-one');
+  check('and every phone with that code is told it', b.board === '2019-40', b);
+  b = await call('POST', '/api/board', { room: 'test-gym-one', board: '2024-25' });
+  check('switching it again changes it', b.board === '2024-25' && (await call('GET', '/api/board?room=test-gym-one')).board === '2024-25', b);
+  check('another wall\'s is its own', (await call('GET', '/api/board?room=test-gym-two')).board === null);
+  b = await call('POST', '/api/board', { room: '  Boulder Barn  ', board: '2016-40' });
+  check('a code as somebody typed it is a code, spaces round it or not', b.room === 'Boulder Barn' && (await call('GET', '/api/board?room=' + encodeURIComponent(' Boulder Barn'))).board === '2016-40', b);
+  check('a code shorter than six is refused, as the relay refuses it', (await call('GET', '/api/board?room=abc')).status === 400 &&
+    (await call('POST', '/api/board', { room: 'abc', board: '2016-40' })).status === 400 && (await call('GET', '/api/board')).status === 400);
+  check('a hold set there is not is refused', (await call('POST', '/api/board', { room: 'test-gym-one', board: '2030-40' })).status === 400 &&
+    (await call('POST', '/api/board', { room: 'test-gym-one' })).status === 400 && (await call('GET', '/api/board?room=test-gym-one')).board === '2024-25');
+  check('Will\'s Wall\'s is not kept here: its code is refused', (await call('POST', '/api/board', { room: 'moonwall-crew', board: '2024-40' })).status === 400 &&
+    (await call('GET', '/api/board?room=moonwall-crew')).board === null);
+  check('only a check\'s code can be cleared', (await call('POST', '/api/board/reset?room=' + encodeURIComponent('Boulder Barn'), {})).status === 404 &&
+    (await call('GET', '/api/board?room=' + encodeURIComponent('Boulder Barn'))).board === '2016-40');
+  b = await call('POST', '/api/board/reset?room=test-gym-one', {});
+  check('and a check\'s is', b.board === null && (await call('GET', '/api/board?room=test-gym-one')).board === null, b);
+  check('other methods are refused', (await handle(new Request('https://x.test/api/board?room=test-gym-one', { method: 'DELETE' }), db)).status === 405);
+  check('a body that is not JSON is refused', (await handle(new Request('https://x.test/api/board', { method: 'POST', body: 'board=2016-40' }), db)).status === 400);
+  check('with no database it says so', (await handle(new Request('https://x.test/api/board?room=test-gym-one'), undefined)).status === 500);
+}
 check('a body that is not JSON is refused',
   (await handle(new Request('https://x.test/api/w/sun/person', { method: 'POST', body: 'name=Will' }), db)).status === 400);
 check('other methods are refused', (await handle(new Request('https://x.test/api/w/sun', { method: 'DELETE' }), db)).status === 405);

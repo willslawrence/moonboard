@@ -1608,7 +1608,7 @@
   </div>
   <div class="hint" id="relayState">relay off</div>
 
-  <div class="lbl tipLbl">Hold set on the wall<button type="button" class="tipBtn" aria-label="About: the hold set" aria-expanded="false">i</button><span class="tipTxt">Changes the route list and the board picture for everyone who uses the app, at every wall, so only switch it when the holds on the wall actually change.</span></div>
+  <div class="lbl tipLbl">Hold set on the wall<button type="button" class="tipBtn" aria-label="About: the hold set" aria-expanded="false">i</button><span class="tipTxt">The holds up on the wall where you&rsquo;re climbing. At Will&rsquo;s Wall it is the crew&rsquo;s; at another wall it is that wall&rsquo;s own, kept under its code. Switching it changes the route list and the board picture for everyone climbing there, so only switch it when the holds on the wall actually change.</span></div>
   <select id="boardSel" aria-label="Hold set on the wall"></select>
 
   <div class="lbl">Lighting the wall</div>
@@ -1871,7 +1871,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-21 09:14';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-21 09:30';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3651,6 +3651,7 @@ function applyGradeBy(){
 }
 applyGradeBy();
 let boardKey = DEFAULT_BOARD;
+let crewBoard = '';                    // the crew's hold set as the tick lists last gave it: Will's Wall's (see wallBoardPull)
 /* Which picture of the board. A phone can ask in Settings for the holds on plywood
    (Will, 2026-10-09). The plywood picture is in the same frame as the set's own, so the
    rings land where they did. A set without one keeps its own picture. On the 2016 set
@@ -3736,8 +3737,9 @@ function paintBoardPic(){
   im.alt = boardNow().label + ' wall';
   try{ localStorage.setItem('mb-pic', src); }catch(e){}    // for the line under the picture that puts it back on the next visit
 }
-/* Swap to another hold set or angle. The setting is the crew's, not the phone's:
-   there is one wall, so it is stored with the tick lists and every phone follows.
+/* Swap to another hold set or angle. The setting is the wall's, not the phone's: at Will's
+   Wall it is stored with the tick lists and every phone there follows; at another wall it is
+   kept by the site under that wall's code (see wallBoardPull).
    A relay that predates this just never sends one, and the phone keeps its own. */
 function setBoard(key, fromServer){
   if (!BY_BOARD[key]) return;
@@ -3754,7 +3756,38 @@ function setBoard(key, fromServer){
   // wall: whoever switched it lights what goes up next.
   if (current && current.board !== key) clearRoute(fromServer);
   else { paint(); renderResults(); }
-  log('board: ' + boardNow().label + (fromServer ? ' (set for the crew)' : ''));
+  log('board: ' + boardNow().label + (fromServer ? (atHome() ? ' (set for the crew)' : ' (set for this wall)') : ''));
+}
+
+/* The hold set is the wall's (Will, 2026-10-21: "make the hold set per wall. At another wall it's that wall's own,
+   and Will's Wall stays as it is"). At Will's Wall it is the crew's, kept with the tick lists (/lists/board) as it
+   always was. At another wall it is that wall's own, kept by the site under the wall's code (store/store.js,
+   /api/board), so one phone there switching it switches it for every phone with the code, and never for Will's Wall.
+   A phone at another wall asks when the page opens, when the code is changed, when Settings opens, and when it
+   comes back into sight after a minute or more. */
+const BOARD_API = '/api/board';
+let wallBoardAt = 0;                         // when another wall's hold set was last asked for
+function atHome(){ return ($('room').value || '').trim() === DEFAULT_ROOM; }
+async function wallBoardPull(){
+  const room = relayRoom();
+  if (atHome() || !room) return;
+  wallBoardAt = Date.now();
+  try{
+    const d = await (await fetch(BOARD_API + '?room=' + encodeURIComponent(room), { cache: 'no-store' })).json();
+    if (room === relayRoom() && !atHome() && d && d.board) setBoard(d.board, true);     // not if the code changed meanwhile
+  }catch(e){ log('hold set for this wall: out of reach (' + e.message + ')'); }
+}
+async function wallBoardPush(room, key){
+  try{
+    const d = await (await fetch(BOARD_API, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                              body: JSON.stringify({ room, board: key }) })).json();
+    log(d.error ? 'hold set for this wall: ' + d.error : 'hold set kept for this wall: ' + boardNow().label);
+  }catch(e){ log('hold set for this wall: out of reach (' + e.message + ')'); }
+}
+// Where you're climbing has changed: back at Will's Wall, the crew's hold set; at another wall, that wall's own.
+function wallBoardFollow(){
+  if (atHome()){ if (crewBoard) setBoard(crewBoard, true); }
+  else wallBoardPull();
 }
 
 function applyLists(data){
@@ -3764,7 +3797,8 @@ function applyLists(data){
   wins   = data.wins   || {};
   stats  = data.stats  || {};
   snakeBest = data.snake || {};
-  if (data.board) setBoard(data.board, true);      // the crew's wall, shared
+  // the crew's hold set, which every phone at Will's Wall follows; another wall has its own (see wallBoardPull)
+  if (data.board){ crewBoard = data.board; if (atHome()) setBoard(data.board, true); }
   if (data.betas) betaIds = new Set(data.betas);
   fillWho();
   c4Fill();
@@ -7764,6 +7798,7 @@ function showPage(which, fromBack, ghost){
   b.classList.toggle('logPage', which === 'log');
   b.classList.toggle('setPage', which === 'set');
   if (which === 'set' && piNow) relayPeek();          // what the Pi is doing now, not at the last look
+  if (which === 'set' && Date.now() - wallBoardAt > 10000) wallBoardPull();      // and another wall's hold set
   b.classList.remove('slideL', 'slideR');
   void b.offsetWidth;                                  // so the slide plays again
   b.classList.add(PAGES.indexOf(which) < PAGES.indexOf(was) ? 'slideL' : 'slideR');
@@ -9178,13 +9213,14 @@ $('room').oninput = () => {
   paintBar(); paintLoc(); relayPeek();
 };
 // Done typing the code: a phone that is already bridging moves to the new room.
-$('room').onchange = () => { if (relayWant && relayRoom()) relayConnect(); };
+$('room').onchange = () => { if (relayWant && relayRoom()) relayConnect(); wallBoardFollow(); };
 $('loc').onchange = () => {
   const home = $('loc').value === 'home';
   let other = '';
   try{ other = localStorage.getItem('mb-room-other') || ''; }catch(e){}
   $('room').value = home ? DEFAULT_ROOM : other;
   $('room').oninput();
+  wallBoardFollow();
   if (relayWant && relayRoom()) relayConnect();
   if (!home) $('room').focus();
   if (!home){ try{ localStorage.setItem('mb-wall', 'moon'); }catch(e){} }
@@ -9197,6 +9233,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && relayWant) keepAwake();
   if (document.visibilityState === 'visible') relayPeek();
   if (document.visibilityState === 'visible' && Date.now() - facesAt > 60000) facesPull();
+  if (document.visibilityState === 'visible' && Date.now() - wallBoardAt > 60000) wallBoardPull();
 });
 setInterval(peekTick, 1500);
 $('copy').onclick = async () => {
@@ -9213,6 +9250,7 @@ paintLoc();
 BOARDS.forEach(b => $('boardSel').appendChild(new Option(b.label + ' — ' + BY_BOARD[b.key].length + ' benchmarks', b.key)));
 $('boardSel').value = boardKey;
 try{ const b = localStorage.getItem('mb-board'); if (b) setBoard(b); }catch(e){}
+wallBoardPull();                       // at another wall, that wall's own
 paintBoardPic();
 $('listSel').onchange = () => {
   try{ localStorage.setItem('mb-list', $('listSel').value); }catch(e){}
@@ -9230,12 +9268,13 @@ $('plyChk').onchange = () => {
   paintBoardPic();
 };
 $('boardSel').onchange = () => {
-  const key = $('boardSel').value;
-  if (!confirm('Switch the wall to ' + BOARDS.find(b => b.key === key).label + ' for everyone?')){
+  const key = $('boardSel').value, home = atHome(), room = relayRoom();
+  if (!confirm('Switch the wall to ' + BOARDS.find(b => b.key === key).label + (home ? ' for everyone?' : ' for everyone climbing at this wall?'))){
     $('boardSel').value = boardKey; return;
   }
   setBoard(key);
-  listsCall('/lists/board', { board: key });
+  if (home) listsCall('/lists/board', { board: key });       // the crew's, at Will's Wall
+  else if (room) wallBoardPush(room, key);                   // that wall's own (see wallBoardPull)
 };
 paint();
 $('ver').textContent = 'build ' + BUILD;

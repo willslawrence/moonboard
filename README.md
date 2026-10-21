@@ -373,9 +373,11 @@ climbing"):
 - **Where you're climbing**, straight under them (see below): Will's Wall, or Another wall
   with its code; under it the relay's button and the line that says what the relay is
   doing.
-- **Hold set on the wall**, under that. It changes the route list and the picture for
-  everyone who uses the app, at every wall (it is one setting, not one a wall), so only
-  switch it when the holds on the wall actually change. Where you're climbing and the hold
+- **Hold set on the wall**, under that: the holds up on the wall where you are climbing.
+  At Will's Wall it is the crew's, kept with the tick lists as it always was; at another
+  wall it is that wall's own (since 2026-10-21, see *Where you're climbing* below). It
+  changes the route list and the picture for everyone climbing there, so only switch it
+  when the holds on the wall actually change. Where you're climbing and the hold
   set were near the foot of the page, under "The wall, for everyone", until 2026-10-21.
 - **Lighting the wall**
   - **Light a route as soon as I open it**, off unless a phone turns it on.
@@ -724,7 +726,15 @@ someone is actively bridging.
 unless you say otherwise, and that needs no code. A different MoonBoard picks **Another wall**
 and gives it a code of its own, the same on every phone there, so two walls on the same hold
 set never light each other's problems. Each wall has its own line and its own evening's
-routes. The logbook, the climbers and the hold-set setting are still one shared set.
+routes. The logbook and the climbers are still one shared set.
+
+**The hold set is the wall's** (since 2026-10-21; Will: "At another wall it's that wall's
+own, and Will's Wall stays as it is"). Will's Wall's is the crew's, kept with the tick lists
+on the relay as before. Another wall's is kept by the site under that wall's code
+(`/api/board` in `store/store.js`, beside the climbers' emoji), so one phone there switching
+it switches it for every phone with the code, and never for Will's Wall. A phone at another
+wall asks for it when the page opens, when the code changes, when Settings opens and when the
+app comes back into sight; until somebody there picks one, a phone keeps the set it had.
 
 ### What's on the wall
 

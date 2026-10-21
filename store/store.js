@@ -57,7 +57,18 @@
      POST /api/faces                  { name, face }                       choose one; an empty face goes back to the letter
 
    A check keeps a crew of its own, ?crew=test-..., the name of the test wall it makes; /api/faces/reset?crew=test-...
-   and that wall's /reset clear it. */
+   and that wall's /reset clear it.
+
+   The hold set on a MoonBoard that is not Will's (Will, 2026-10-21: "make the hold set per wall. At another wall it's
+   that wall's own, and Will's Wall stays as it is"). The phones at another wall share a code of their own (the
+   MoonBoard page's Settings, Where you're climbing), and the hold set up on that wall is kept here under the code, so
+   one phone switching it switches it for every phone with that code. Will's Wall keeps its hold set with the relay's
+   tick lists, as it always has, and is not kept here.
+
+     GET  /api/board?room=<code>      { room, board }                      board is null until a phone there picks one
+     POST /api/board                  { room, board }                      that wall's hold set is now this one
+
+   A check uses a code that begins test-, and /api/board/reset?room=test-... clears it. */
 
 export const RESULTS = ['try', 'flash', '2nd', '3rd', '4+'];
 export const ROLES = ['s', 'h', 'f', 'e', 'n'];            // start, hold, foot only, finish, and a hold with its number in a climb by number
@@ -72,6 +83,10 @@ const WALLS = { sun: 'Sun board' };                         // the walls there a
 const MAX_ROUTES = 3000, MAX_PEOPLE = 300, MAX_MARKS = 250, MAX_FIXES = 2000, MAX_FACES = 300;
 const CREW = 'wills-wall';                                  // whose emoji: everyone who climbs at Will's, on either wall
 const FIX_KINDS = ['add', 'drop', 'redo'], FIX_SIZES = ['s', 'm', 'l'];
+// a MoonBoard's hold sets and angles, as the MoonBoard page and the relay name them (the three lists go in step)
+const MOON_BOARDS = ['2016-40', '2019-40', '2019-25', '2024-40', '2024-25'];
+const HOME_ROOM = 'moonwall-crew';                         // Will's Wall's code: its hold set is the relay's, never kept here
+const MAX_ROOMS = 1000;
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
   status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
@@ -112,6 +127,7 @@ const SCHEMA = [
      kind TEXT NOT NULL, v TEXT NOT NULL, x REAL NOT NULL, y REAL NOT NULL, h TEXT, size TEXT, done INTEGER NOT NULL DEFAULT 0)`,
   `CREATE INDEX IF NOT EXISTS fixes_wall ON fixes (wall, done, k)`,
   `CREATE TABLE IF NOT EXISTS faces (crew TEXT NOT NULL, name TEXT NOT NULL, face TEXT NOT NULL, t TEXT NOT NULL, PRIMARY KEY (crew, name))`,
+  `CREATE TABLE IF NOT EXISTS boards (room TEXT NOT NULL PRIMARY KEY, board TEXT NOT NULL, t TEXT NOT NULL)`,
 ];
 /* Columns added since the tables were first made. A go against the clock on a climb by number: on its row of the
    logbook, the number reached and the seconds it took; in the tally, the best such go. A route's further rules, as
@@ -219,6 +235,40 @@ async function faceCall(request, url, db, now){
   return json({ faces: await facesOf(db, crew), name, face });
 }
 
+/* /api/board: see the top of this file. A wall's code is a key, so it is taken as the page sends it, cleaned the
+   same way on the way in and on the way out. */
+async function boardCall(request, url, db, now){
+  if (!db) return bad('the store has no database bound to it', 500);
+  await tables(db);
+  const reset = url.pathname === '/api/board/reset';
+  if (request.method === 'GET' && !reset){
+    const room = clean(url.searchParams.get('room') || '', 64);
+    if (room.length < 6) return bad('a wall code is needed, six characters or more');
+    const row = await db.prepare('SELECT board FROM boards WHERE room = ?').bind(room).first();
+    return json({ room, board: row ? row.board : null });
+  }
+  if (request.method !== 'POST') return bad('GET or POST', 405);
+  if (reset){                                 // a check clears up after itself; no other wall's can be cleared this way
+    const room = clean(url.searchParams.get('room') || '', 64);
+    if (!isTest(room)) return bad('not found', 404);
+    await db.prepare('DELETE FROM boards WHERE room = ?').bind(room).run();
+    return json({ room, board: null });
+  }
+  let body;
+  try{ body = JSON.parse((await request.text()).slice(0, 2000)); }catch(e){ return bad('the body must be JSON'); }
+  if (!body || typeof body !== 'object') return bad('the body must be JSON');
+  const room = clean(body.room, 64), board = typeof body.board === 'string' ? body.board : '';
+  if (room.length < 6) return bad('a wall code is needed, six characters or more');
+  if (room === HOME_ROOM) return bad("Will's Wall keeps its hold set with the crew's tick lists");
+  if (!MOON_BOARDS.includes(board)) return bad('no such hold set');
+  const have = await db.prepare('SELECT 1 AS ok FROM boards WHERE room = ?').bind(room).first();
+  if (!have && (await db.prepare('SELECT COUNT(*) AS n FROM boards').first()).n >= MAX_ROOMS)
+    return bad('that is all the walls the store can hold', 409);
+  await db.prepare(`INSERT INTO boards (room, board, t) VALUES (?, ?, ?)
+      ON CONFLICT (room) DO UPDATE SET board = excluded.board, t = excluded.t`).bind(room, board, now()).run();
+  return json({ room, board });
+}
+
 /* One climber's tally on one route, from that pair's rows. */
 /* One climber's tally on one route, from that climber's goes on it in the order they happened. */
 function tally(rows){
@@ -248,6 +298,7 @@ const knows = async (db, wall, name) =>
 export async function handle(request, db, now = () => new Date().toISOString()){
   const url = new URL(request.url);
   if (url.pathname === '/api/faces' || url.pathname === '/api/faces/reset') return faceCall(request, url, db, now);
+  if (url.pathname === '/api/board' || url.pathname === '/api/board/reset') return boardCall(request, url, db, now);
   const m = url.pathname.match(/^\/api\/w\/([a-z0-9-]{1,32})(\/.*)?$/);
   if (!m) return bad('not found', 404);
   const wall = m[1], path = m[2] || '';
