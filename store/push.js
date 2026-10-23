@@ -1,0 +1,88 @@
+/* Connect alerts (Will, 2026-10-23: "When someone connects the moonboard… pings phones").
+
+   A phone that turns on "Tell me when someone connects the wall" in Settings signs up here with
+   its push subscription, the room it climbs in and its climber's name. The phone that gets the
+   wall (the Pi took it for that phone, or its own Bluetooth connected) says so, and every other
+   signed-up phone in that room gets a notification: never the connecting phone, never another phone
+   of the same climber, and no phone more than once in 20 minutes. No logins, as everywhere on the
+   site; the 20 minutes is what keeps it from becoming a nuisance.
+
+     GET  /api/push/key                                          { key } for pushManager.subscribe
+     POST /api/push/subscribe   { endpoint, keys, room, name }   this phone wants the alerts
+     POST /api/push/unsubscribe { endpoint }                     it doesn't any more
+     POST /api/push/connected   { room, by, endpoint }           answers at once; the pings go after
+
+   The VAPID key is the Pages project's secret VAPID_JWK (store/webpush.js). */
+import { publicKeyOf, sendPush } from './webpush.js';
+
+const QUIET = 20 * 60e3;
+const HOME_ROOM = 'moonwall-crew';
+const ready = new WeakSet();
+
+async function tables(db){
+  if (ready.has(db)) return;
+  await db.prepare(`CREATE TABLE IF NOT EXISTS push_subs (endpoint TEXT PRIMARY KEY, room TEXT NOT NULL,
+    name TEXT NOT NULL DEFAULT '', p256dh TEXT NOT NULL, auth TEXT NOT NULL, t INTEGER NOT NULL, pinged INTEGER NOT NULL DEFAULT 0)`).run();
+  ready.add(db);
+}
+
+const json = (body, status = 200) => new Response(JSON.stringify(body),
+  { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
+const roomOf = v => (typeof v === 'string' && /^[\w-]{1,64}$/.test(v) ? v : null);
+const nameOf = v => (typeof v === 'string' ? v.trim().slice(0, 40) : '');
+const endpointOf = v => (typeof v === 'string' && /^https:\/\/\S{8,1000}$/.test(v) ? v : null);
+
+export async function handlePush(request, env, waitUntil = p => p, now = Date.now){
+  if (!env.VAPID_JWK) return json({ error: 'notifications are not set up' }, 503);
+  const db = env.DB, jwk = JSON.parse(env.VAPID_JWK);
+  const what = new URL(request.url).pathname.replace(/^\/api\/push\/?/, '');
+  if (what === 'key' && request.method === 'GET') return json({ key: publicKeyOf(jwk) });
+  if (request.method !== 'POST') return json({ error: 'not found' }, 404);
+  await tables(db);
+  const b = await request.json().catch(() => ({}));
+
+  if (what === 'subscribe'){
+    const endpoint = endpointOf(b.endpoint), room = roomOf(b.room), k = b.keys || {};
+    if (!endpoint || !room || !/^[\w-]{40,200}$/.test(k.p256dh || '') || !/^[\w-]{10,60}$/.test(k.auth || ''))
+      return json({ error: 'expected endpoint, keys and room' }, 400);
+    await db.prepare(`INSERT INTO push_subs (endpoint, room, name, p256dh, auth, t) VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT (endpoint) DO UPDATE SET room = excluded.room, name = excluded.name, p256dh = excluded.p256dh,
+      auth = excluded.auth, t = excluded.t`).bind(endpoint, room, nameOf(b.name), k.p256dh, k.auth, now()).run();
+    return json({ ok: true });
+  }
+
+  if (what === 'unsubscribe'){
+    const endpoint = endpointOf(b.endpoint);
+    if (!endpoint) return json({ error: 'expected an endpoint' }, 400);
+    await db.prepare('DELETE FROM push_subs WHERE endpoint = ?').bind(endpoint).run();
+    return json({ ok: true });
+  }
+
+  if (what === 'connected'){
+    const room = roomOf(b.room);
+    if (!room) return json({ error: 'expected a room' }, 400);
+    const by = nameOf(b.by), from = endpointOf(b.endpoint) || '', t = now();
+    const subs = (await db.prepare('SELECT * FROM push_subs WHERE room = ? AND endpoint != ? AND pinged < ?')
+      .bind(room, from, t - QUIET).all()).results
+      .filter(s => !by || s.name.toLowerCase() !== by.toLowerCase());
+    if (!subs.length) return json({ ok: true, pinging: 0 });
+    await db.prepare(`UPDATE push_subs SET pinged = ? WHERE endpoint IN (${subs.map(() => '?').join(',')})`)
+      .bind(t, ...subs.map(s => s.endpoint)).run();
+    const wall = room === HOME_ROOM ? "Will's Wall" : 'the MoonBoard';
+    const message = {
+      title: `🧗 ${by || 'Someone'} connected ${wall}`,
+      body: `${by || 'Somebody'} is on the wall. Tap to open the app.`,
+      url: '/',
+      tag: 'connect-' + room,
+    };
+    waitUntil((async () => {
+      for (const s of subs){
+        const r = await sendPush({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, message, jwk,
+          'https://wills-wall.pages.dev').catch(() => null);
+        if (r && (r.status === 404 || r.status === 410)) await db.prepare('DELETE FROM push_subs WHERE endpoint = ?').bind(s.endpoint).run();
+      }
+    })());
+    return json({ ok: true, pinging: subs.length });
+  }
+  return json({ error: 'not found' }, 404);
+}

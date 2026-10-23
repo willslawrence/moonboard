@@ -1648,6 +1648,12 @@
     <div class="opt"><label for="pairChk">Show the &ldquo;Show 2nd route&rdquo; button</label><button type="button" class="tipBtn" aria-label="About: the second route" aria-expanded="false">i</button><span class="tipTxt">For this phone only, and off to begin with. The button stands beside Light up Route and puts the open route up next to the one already on the wall, in a second colour. Two routes that somebody else puts up are shown as two either way.</span><span class="sw"><input type="checkbox" role="switch" id="pairChk"><i></i></span></div>
   </div>
 
+  <!-- Connect alerts (Will, 2026-10-23: "When someone connects the moonboard... pings phones"); see store/push.js. -->
+  <div class="lbl">Notifications</div>
+  <div class="card">
+    <div class="opt"><label for="connPush">Tell me when someone connects the wall</label><button type="button" class="tipBtn" aria-label="About: connect alerts" aria-expanded="false">i</button><span class="tipTxt">For this phone only. When somebody connects the wall where you climb (the Pi takes it for them, or their phone's Bluetooth does), this phone gets a notification, so you know someone is climbing. Never for your own connects, and at most one every 20 minutes. On an iPhone it works only from the Home Screen icon, and the phone asks once to allow notifications.</span><span class="sw"><input type="checkbox" role="switch" id="connPush"><i></i></span></div>
+  </div>
+
   <div class="lbl">How it looks on this phone</div>
   <div class="card">
     <div class="opt"><label for="bgSel">Background</label><button type="button" class="tipBtn" aria-label="About: the background" aria-expanded="false">i</button><span class="tipTxt">For this phone only, and for both walls. Light taupe is what everyone starts on.</span><select id="bgSel">
@@ -1917,7 +1923,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-21 21:50';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-23 23:24';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -4687,6 +4693,7 @@ async function connect(){
     // Whoever holds the Bluetooth becomes the bridge automatically, so everyone
     // else's phone can light the wall without being told to do anything.
     if (relayRoom() && !relayWant) relayConnect();
+    connAnnounce();
     if (current) sendProblem();          // pick up whatever was already chosen
     else if ($('standby').value === 'moonScroll') moonIntro();
     else standby();
@@ -5400,6 +5407,7 @@ function piTook(){
   piAsked = 0; piHeard = false;
   bridgeLive = true; bridgeSeen = null;
   log('the Pi has the wall.');
+  connAnnounce();
   const then = piThen; piThen = null;
   if (then) write(then.str, false, then.meta, false, then.again);
   else if (current) sendProblem();
@@ -9774,6 +9782,83 @@ else log('ready. Power the box, force-quit the MoonBoard app, then Connect.');
   el.addEventListener('click', e => { if (moved) return; if (e.target.closest('#a2hsX')) return away(true); clearTimeout(gone); how.hidden = false; });
   how.addEventListener('click', e => { if (e.target === how || e.target.closest('#a2hsOk')){ how.hidden = true; away(true); } });
   setTimeout(window.a2hsShow, 1200);
+})();
+
+/* ---------- connect alerts ----------
+   Will, 2026-10-23: "When someone connects the moonboard... pings phones". A phone that turns on "Tell me when
+   someone connects the wall" (Settings, Notifications) signs up for web push with its room and climber's name; the
+   phone that gets the wall tells the site (connAnnounce), and the site (store/push.js) pings every other signed-up
+   phone in that room, but none of the same climber's and none more than once in 20 minutes. The service worker
+   (sw.js) is only for showing them: it is registered on this phone only once the switch is on, and keeps no copy
+   of the site. On an iPhone, push works only in the app opened from its Home Screen icon. */
+const pushOk = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && location.protocol === 'https:';
+const pushOn = () => { try{ return localStorage.getItem('mb-push') === '1'; }catch(e){ return false; } };
+const b64uBytes = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), c => c.charCodeAt(0));
+
+async function connSub(){
+  const reg = await navigator.serviceWorker.register('/sw.js');
+  await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub){
+    const { key } = await (await fetch('/api/push/key')).json();
+    sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uBytes(key) });
+  }
+  const res = await fetch('/api/push/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(Object.assign(sub.toJSON(), { room: relayRoom() || DEFAULT_ROOM, name: localStorage.getItem('mb-me') || '' })) });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'the site said no');
+  return sub;
+}
+
+async function connPushSet(on){
+  const sw = $('connPush');
+  try{
+    if (on){
+      const home = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+      if (!pushOk()) throw new Error(home ? 'This phone cannot show notifications from the app.' : 'Open the app from its Home Screen icon, then turn this on.');
+      if (await Notification.requestPermission() !== 'granted') throw new Error('Notifications are off for this app: turn them on in the phone\'s Settings, Notifications.');
+      await connSub();
+      localStorage.setItem('mb-push', '1');
+      log('connect alerts on for this phone.');
+      quickSay('Connect alerts on');
+    } else {
+      localStorage.removeItem('mb-push');
+      const reg = pushOk() && await navigator.serviceWorker.getRegistration();
+      const sub = reg && await reg.pushManager.getSubscription();
+      if (sub){
+        await fetch('/api/push/unsubscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) }).catch(() => {});
+        await sub.unsubscribe();
+      }
+      log('connect alerts off for this phone.');
+      quickSay('Connect alerts off');
+    }
+  }catch(e){
+    if (on){ try{ localStorage.removeItem('mb-push'); }catch(x){} sw.checked = false; }
+    log('connect alerts: ' + e.message);
+    alert(e.message);
+  }
+}
+
+// This phone has just got the wall: tell the others (the site decides who hears).
+async function connAnnounce(){
+  try{
+    let endpoint = '';
+    if (pushOk()){
+      const reg = await navigator.serviceWorker.getRegistration();
+      const sub = reg && await reg.pushManager.getSubscription();
+      if (sub) endpoint = sub.endpoint;
+    }
+    const d = await (await fetch('/api/push/connected', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ room: relayRoom() || DEFAULT_ROOM, by: localStorage.getItem('mb-me') || '', endpoint }) })).json();
+    if (d.pinging) log('told ' + d.pinging + ' phone' + (d.pinging === 1 ? '' : 's') + ' the wall is connected.');
+  }catch(e){ /* the alerts are a courtesy: never in the way of climbing */ }
+}
+
+(function connAlerts(){
+  const sw = $('connPush');
+  sw.checked = pushOn();
+  sw.onchange = () => connPushSet(sw.checked);
+  // keep this phone's sign-up fresh: the room and name may have changed, and Apple can renew it
+  if (pushOn() && pushOk() && Notification.permission === 'granted') connSub().catch(() => {});
 })();
 
 /* ---------- what a finger does on the picture, said once ----------
