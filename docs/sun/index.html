@@ -980,7 +980,7 @@
        MoonBoard page has the same card for its connect alerts. See store/push.js. -->
   <div class="lbl">Notifications</div>
   <div class="card">
-    <div class="opt"><label for="sunPush">Tell me when someone logs a climb</label><button type="button" class="tipBtn" aria-label="About: log alerts" aria-expanded="false">i</button><span class="tipTxt">For this phone only. When somebody logs a try or a send on the Sun board, this phone gets a notification saying who, so you know someone is climbing. Never for your own, and at most one every 3 hours. On an iPhone it works only from the Home Screen icon, and the phone asks once to allow notifications.</span><span class="sw"><input type="checkbox" role="switch" id="sunPush"><i></i></span></div>
+    <div class="opt"><label for="sunPush">Tell me when the wall is active</label><button type="button" class="tipBtn" aria-label="About: log alerts" aria-expanded="false">i</button><span class="tipTxt">For this phone only. When somebody logs a try or a send on the Sun board, this phone gets a notification saying who, so you know someone is climbing. Never for your own, and at most one every 3 hours. On an iPhone it works only from the Home Screen icon, and the phone asks once to allow notifications.</span><span class="sw"><input type="checkbox" role="switch" id="sunPush"><i></i></span></div>
   </div>
 
   <div class="lbl">How it looks on this phone</div>
@@ -1171,7 +1171,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-23 23:50';
+const BUILD = '2026-10-23 23:55';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit

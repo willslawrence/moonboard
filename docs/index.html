@@ -1651,7 +1651,7 @@
   <!-- Connect alerts (Will, 2026-10-23: "When someone connects the moonboard... pings phones"); see store/push.js. -->
   <div class="lbl">Notifications</div>
   <div class="card">
-    <div class="opt"><label for="connPush">Tell me when someone connects the wall</label><button type="button" class="tipBtn" aria-label="About: connect alerts" aria-expanded="false">i</button><span class="tipTxt">For this phone only. When somebody connects the wall where you climb (the Pi takes it for them, or their phone's Bluetooth does), this phone gets a notification, so you know someone is climbing. It says who connected; if their phone has no climber picked, it waits up to 10 minutes for one. Never for your own connects, and at most one every 2 hours. On an iPhone it works only from the Home Screen icon, and the phone asks once to allow notifications.</span><span class="sw"><input type="checkbox" role="switch" id="connPush"><i></i></span></div>
+    <div class="opt"><label for="connPush">Tell me when the wall is active</label><button type="button" class="tipBtn" aria-label="About: connect alerts" aria-expanded="false">i</button><span class="tipTxt">For this phone only. When somebody connects the wall where you climb (the Pi takes it for them, or their phone's Bluetooth does), this phone gets a notification, so you know someone is climbing. It says who connected; if their phone has no climber picked, it waits up to 10 minutes for one. Never for your own connects, and at most one every 2 hours. On an iPhone it works only from the Home Screen icon, and the phone asks once to allow notifications.</span><span class="sw"><input type="checkbox" role="switch" id="connPush"><i></i></span></div>
   </div>
 
   <div class="lbl">How it looks on this phone</div>
@@ -1923,7 +1923,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-23 23:50';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-23 23:55';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
