@@ -1651,7 +1651,7 @@
   <!-- Connect alerts (Will, 2026-10-23: "When someone connects the moonboard... pings phones"); see store/push.js. -->
   <div class="lbl">Notifications</div>
   <div class="card">
-    <div class="opt"><label for="connPush">Tell me when someone connects the wall</label><button type="button" class="tipBtn" aria-label="About: connect alerts" aria-expanded="false">i</button><span class="tipTxt">For this phone only. When somebody connects the wall where you climb (the Pi takes it for them, or their phone's Bluetooth does), this phone gets a notification, so you know someone is climbing. Never for your own connects, and at most one every 20 minutes. On an iPhone it works only from the Home Screen icon, and the phone asks once to allow notifications.</span><span class="sw"><input type="checkbox" role="switch" id="connPush"><i></i></span></div>
+    <div class="opt"><label for="connPush">Tell me when someone connects the wall</label><button type="button" class="tipBtn" aria-label="About: connect alerts" aria-expanded="false">i</button><span class="tipTxt">For this phone only. When somebody connects the wall where you climb (the Pi takes it for them, or their phone's Bluetooth does), this phone gets a notification, so you know someone is climbing. It says who connected; if their phone has no climber picked, it waits up to 10 minutes for one. Never for your own connects, and at most one every 20 minutes. On an iPhone it works only from the Home Screen icon, and the phone asks once to allow notifications.</span><span class="sw"><input type="checkbox" role="switch" id="connPush"><i></i></span></div>
   </div>
 
   <div class="lbl">How it looks on this phone</div>
@@ -1923,7 +1923,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-23 23:24';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-23 23:27';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -9838,7 +9838,14 @@ async function connPushSet(on){
   }
 }
 
-// This phone has just got the wall: tell the others (the site decides who hears).
+// This phone has just got the wall: tell the others (the site decides who hears), with who it is.
+// Will, 2026-10-23: "If the phone hasn't set a climber then the notification wait 10 minutes to see if they do and
+// then send it, else send it without that info." So with no climber picked it waits, looking every few seconds;
+// a name picked within 10 minutes goes out straight away with the alert. It goes without one at 10 minutes, or as
+// soon as the app is put away, because a phone in a pocket stops counting and the alert would never go.
+const climberNow = () => (($('me') && $('me').value) || localStorage.getItem('mb-me') || '').trim();
+let connWaiting = null;            // {room, endpoint, until, tick} while an alert waits for a name
+
 async function connAnnounce(){
   try{
     let endpoint = '';
@@ -9847,10 +9854,33 @@ async function connAnnounce(){
       const sub = reg && await reg.pushManager.getSubscription();
       if (sub) endpoint = sub.endpoint;
     }
-    const d = await (await fetch('/api/push/connected', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ room: relayRoom() || DEFAULT_ROOM, by: localStorage.getItem('mb-me') || '', endpoint }) })).json();
-    if (d.pinging) log('told ' + d.pinging + ' phone' + (d.pinging === 1 ? '' : 's') + ' the wall is connected.');
+    const room = relayRoom() || DEFAULT_ROOM;
+    if (climberNow()) return connSend(room, climberNow(), endpoint);
+    if (connWaiting) return;                       // one is waiting already
+    log('connect alert waits up to 10 minutes for a climber to be picked.');
+    connWaiting = { room, endpoint, until: Date.now() + 10 * 60e3 };
+    connWaiting.tick = setInterval(() => {
+      const name = climberNow();
+      if (name || Date.now() >= connWaiting.until) connFlush(name);
+    }, 3000);
   }catch(e){ /* the alerts are a courtesy: never in the way of climbing */ }
+}
+
+function connFlush(name){
+  if (!connWaiting) return;
+  const w = connWaiting;
+  connWaiting = null;
+  clearInterval(w.tick);
+  connSend(w.room, name || '', w.endpoint);
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') connFlush(climberNow()); });
+
+async function connSend(room, by, endpoint){
+  try{
+    const d = await (await fetch('/api/push/connected', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ room, by, endpoint }) })).json();
+    if (d.pinging) log('told ' + d.pinging + ' phone' + (d.pinging === 1 ? '' : 's') + ' the wall is connected' + (by ? ' (' + by + ')' : '') + '.');
+  }catch(e){ /* a courtesy */ }
 }
 
 (function connAlerts(){
