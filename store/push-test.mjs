@@ -1,6 +1,6 @@
 // The connect alerts on their own: the stand-in D1, a made-up key, and a stand-in for the push
 // services that records who was pinged.   node store/push-test.mjs
-import { handlePush } from './push.js';
+import { handlePush, messageFor } from './push.js';
 import { standInD1 } from './stand-in-d1.mjs';
 
 let pass = 0, fail = 0;
@@ -40,24 +40,26 @@ check('Will connects: Abdu and Sara, not Will\'s own phone or iPad, not the othe
 pinged = []; clock += 5 * 60e3;
 r = await call('POST', 'connected', { room: 'moonwall-crew', by: 'Abdu', endpoint: abdu.endpoint });
 check('Abdu five minutes later: Will\'s two, and Sara is left alone (pinged 5 min ago)', pinged.sort().join() === 'willPad,willPhone', pinged);
-pinged = []; clock += 10 * 60e3;
+pinged = []; clock += 100 * 60e3;
 r = await call('POST', 'connected', { room: 'moonwall-crew', by: 'Sara', endpoint: sara.endpoint });
-check('Sara ten minutes after that: nobody, everyone heard in the last 20 minutes', pinged.length === 0 && r.pinging === 0, pinged);
-pinged = []; clock += 30 * 60e3;
+check('Sara 100 minutes after that: nobody, everyone heard in the last 2 hours', pinged.length === 0 && r.pinging === 0, pinged);
+pinged = []; clock += 150 * 60e3;
 r = await call('POST', 'connected', { room: 'moonwall-crew', by: '', endpoint: '' });
 check('somebody with no name, later: all four crew phones', pinged.length === 4, pinged);
-pinged = []; clock += 30 * 60e3;
+pinged = []; clock += 150 * 60e3;
 await call('POST', 'connected', { room: 'gym-xyz', by: 'Someone' });
 check('another MoonBoard pings only its own phones', pinged.join() === 'away', pinged);
 
+check('the alert reads in Will\'s words', messageFor('moonwall-crew', 'Abdu').title === '🧗 Abdu climbing at Will\'s Wall', messageFor('moonwall-crew', 'Abdu'));
+check('with no name, Someone', messageFor('moonwall-crew', '').title === '🧗 Someone climbing at Will\'s Wall');
 console.log('phones that let go');
-gone.add(sara.endpoint); pinged = []; clock += 30 * 60e3;
+gone.add(sara.endpoint); pinged = []; clock += 150 * 60e3;
 await call('POST', 'connected', { room: 'moonwall-crew', by: 'Abdu', endpoint: abdu.endpoint });
-pinged = []; clock += 30 * 60e3;
+pinged = []; clock += 150 * 60e3;
 await call('POST', 'connected', { room: 'moonwall-crew', by: 'Abdu', endpoint: abdu.endpoint });
 check('a phone the push service has forgotten is dropped', !pinged.includes('sara') && pinged.length === 2, pinged);
 check('unsubscribe', (await call('POST', 'unsubscribe', { endpoint: willPad.endpoint })).ok === true);
-pinged = []; clock += 30 * 60e3;
+pinged = []; clock += 150 * 60e3;
 await call('POST', 'connected', { room: 'moonwall-crew', by: 'Abdu', endpoint: abdu.endpoint });
 check('and it hears nothing more', pinged.join() === 'willPhone', pinged);
 check('without the key, the alerts say they are not set up', (await handlePush(new Request('https://x.test/api/push/key'), { DB: env.DB })).status === 503);

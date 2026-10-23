@@ -4,8 +4,8 @@
    its push subscription, the room it climbs in and its climber's name. The phone that gets the
    wall (the Pi took it for that phone, or its own Bluetooth connected) says so, and every other
    signed-up phone in that room gets a notification: never the connecting phone, never another phone
-   of the same climber, and no phone more than once in 20 minutes. No logins, as everywhere on the
-   site; the 20 minutes is what keeps it from becoming a nuisance.
+   of the same climber, and no phone more than once in 2 hours. No logins, as everywhere on the
+   site; the 2 hours is what keeps it from becoming a nuisance.
 
      GET  /api/push/key                                          { key } for pushManager.subscribe
      POST /api/push/subscribe   { endpoint, keys, room, name }   this phone wants the alerts
@@ -15,7 +15,7 @@
    The VAPID key is the Pages project's secret VAPID_JWK (store/webpush.js). */
 import { publicKeyOf, sendPush } from './webpush.js';
 
-const QUIET = 20 * 60e3;
+const QUIET = 2 * 3600e3;   // Will, 2026-10-23: "At most one every 2 hours so not to spam"
 const HOME_ROOM = 'moonwall-crew';
 const ready = new WeakSet();
 
@@ -31,6 +31,12 @@ const json = (body, status = 200) => new Response(JSON.stringify(body),
 const roomOf = v => (typeof v === 'string' && /^[\w-]{1,64}$/.test(v) ? v : null);
 const nameOf = v => (typeof v === 'string' ? v.trim().slice(0, 40) : '');
 const endpointOf = v => (typeof v === 'string' && /^https:\/\/\S{8,1000}$/.test(v) ? v : null);
+
+// What a phone shows, in Will's words: "🧗 Abdu climbing at Will's Wall".
+export function messageFor(room, by){
+  const wall = room === HOME_ROOM ? "Will's Wall" : 'the MoonBoard';
+  return { title: `🧗 ${by || 'Someone'} climbing at ${wall}`, body: 'Tap to open the app.', url: '/', tag: 'connect-' + room };
+}
 
 export async function handlePush(request, env, waitUntil = p => p, now = Date.now){
   if (!env.VAPID_JWK) return json({ error: 'notifications are not set up' }, 503);
@@ -68,13 +74,7 @@ export async function handlePush(request, env, waitUntil = p => p, now = Date.no
     if (!subs.length) return json({ ok: true, pinging: 0 });
     await db.prepare(`UPDATE push_subs SET pinged = ? WHERE endpoint IN (${subs.map(() => '?').join(',')})`)
       .bind(t, ...subs.map(s => s.endpoint)).run();
-    const wall = room === HOME_ROOM ? "Will's Wall" : 'the MoonBoard';
-    const message = {
-      title: `🧗 ${by || 'Someone'} connected ${wall}`,
-      body: `${by || 'Somebody'} is on the wall. Tap to open the app.`,
-      url: '/',
-      tag: 'connect-' + room,
-    };
+    const message = messageFor(room, by);
     waitUntil((async () => {
       for (const s of subs){
         const r = await sendPush({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, message, jwk,
