@@ -1,6 +1,6 @@
 // The connect alerts on their own: the stand-in D1, a made-up key, and a stand-in for the push
 // services that records who was pinged.   node store/push-test.mjs
-import { handlePush, messageFor } from './push.js';
+import { handlePush, messageFor, sunLogged } from './push.js';
 import { standInD1 } from './stand-in-d1.mjs';
 
 let pass = 0, fail = 0;
@@ -63,6 +63,26 @@ pinged = []; clock += 150 * 60e3;
 await call('POST', 'connected', { room: 'moonwall-crew', by: 'Abdu', endpoint: abdu.endpoint });
 check('and it hears nothing more', pinged.join() === 'willPhone', pinged);
 check('without the key, the alerts say they are not set up', (await handlePush(new Request('https://x.test/api/push/key'), { DB: env.DB })).status === 503);
+
+console.log('the Sun board: a logged climb, at most every 3 hours a phone');
+for (const [p, name] of [[willPhone, 'Will'], [abdu, 'Abdu'], [sara, 'Sara']])
+  check(name + ' signs up for the Sun board', (await call('POST', 'sun/subscribe', { ...p, name })).ok === true);
+gone.clear(); pinged = []; clock += 10 * 3600e3;
+let n = await sunLogged(env, 'Abdu', now);
+check('Abdu logs a try: Will and Sara hear', pinged.sort().join() === 'sara,willPhone' && n === 2, pinged);
+pinged = []; clock += 60 * 60e3;
+n = await sunLogged(env, 'Will', now);
+check('Will an hour later: only Abdu (the other two heard within 3 hours)', pinged.join() === 'abdu', pinged);
+pinged = []; clock += 60 * 60e3;
+await sunLogged(env, 'Sara', now);
+check('Sara an hour after that: nobody', pinged.length === 0, pinged);
+pinged = []; clock += 70 * 60e3;
+await sunLogged(env, 'Sara', now);
+check('3 h 10 after the first: Will hears again, Sara never for her own', pinged.join() === 'willPhone', pinged);
+check('the Sun board and the MoonBoard keep their own lists', (await call('POST', 'sun/unsubscribe', { endpoint: abdu.endpoint })).ok === true);
+pinged = []; clock += 4 * 3600e3;
+await sunLogged(env, 'Will', now);
+check('after unsubscribing, Abdu hears nothing from the Sun board', pinged.join() === 'sara', pinged);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

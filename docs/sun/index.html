@@ -976,6 +976,13 @@
     <div class="opt"><label for="allChk">Always outline every hold</label><button type="button" class="tipBtn" aria-label="About: outlining every hold" aria-expanded="false">i</button><span class="tipTxt">On, every hold on the wall has its outline all the time. Off, the outlines show only when the picture fills the screen, where they are what can be tapped. For this phone only.</span><span class="sw"><input type="checkbox" role="switch" id="allChk"><i></i></span></div>
   </div>
 
+  <!-- Log alerts (Will, 2026-10-23: "One notification at most every 3 hours if someone has logged a climb"); the
+       MoonBoard page has the same card for its connect alerts. See store/push.js. -->
+  <div class="lbl">Notifications</div>
+  <div class="card">
+    <div class="opt"><label for="sunPush">Tell me when someone logs a climb</label><button type="button" class="tipBtn" aria-label="About: log alerts" aria-expanded="false">i</button><span class="tipTxt">For this phone only. When somebody logs a try or a send on the Sun board, this phone gets a notification saying who, so you know someone is climbing. Never for your own, and at most one every 3 hours. On an iPhone it works only from the Home Screen icon, and the phone asks once to allow notifications.</span><span class="sw"><input type="checkbox" role="switch" id="sunPush"><i></i></span></div>
+  </div>
+
   <div class="lbl">How it looks on this phone</div>
   <div class="card">
     <div class="opt"><label for="bgSel">Background</label><button type="button" class="tipBtn" aria-label="About: the background" aria-expanded="false">i</button><span class="tipTxt">For this phone only, and for both walls. Light taupe is what everyone starts on.</span><select id="bgSel">
@@ -1164,7 +1171,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-21 19:42';
+const BUILD = '2026-10-23 23:50';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -4259,6 +4266,61 @@ setInterval(() => { tick++; if (document.visibilityState === 'visible' && wall &
   el.addEventListener('click', e => { if (moved) return; if (e.target.closest('#a2hsX')) return away(true); clearTimeout(gone); how.hidden = false; });
   how.addEventListener('click', e => { if (e.target === how || e.target.closest('#a2hsOk')){ how.hidden = true; away(true); } });
   setTimeout(window.a2hsShow, 1200);
+})();
+
+/* ---------- log alerts ----------
+   Will, 2026-10-23: "One notification at most every 3 hours if someone has logged a climb". A phone that turns on
+   "Tell me when someone logs a climb" (Settings, Notifications) signs up for web push with its climber's name; the
+   site pings it when anybody else logs a try or a send here, at most once in 3 hours (store/push.js). Nothing on
+   this page says a climb was logged: the site does that when it writes the log. The service worker (/sw.js) only
+   shows notifications and is registered only on a phone that turns this on. */
+const pushOk = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && location.protocol === 'https:';
+const sunPushOn = () => ls.get('mb-sunpush') === '1';
+const b64uBytes = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), c => c.charCodeAt(0));
+
+async function sunSub(){
+  const reg = await navigator.serviceWorker.register('/sw.js');
+  await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub){
+    const { key } = await (await fetch('/api/push/key')).json();
+    sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uBytes(key) });
+  }
+  const res = await fetch('/api/push/sun/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(Object.assign(sub.toJSON(), { name: me || '' })) });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'the site said no');
+}
+
+async function sunPushSet(on){
+  const sw = $('sunPush');
+  try{
+    if (on){
+      const home = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+      if (!pushOk()) throw new Error(home ? 'This phone cannot show notifications from the app.' : 'Open the app from its Home Screen icon, then turn this on.');
+      if (await Notification.requestPermission() !== 'granted') throw new Error('Notifications are off for this app: turn them on in the phone\'s Settings, Notifications.');
+      await sunSub();
+      ls.set('mb-sunpush', '1');
+      quickSay('Log alerts on');
+    } else {
+      ls.set('mb-sunpush', '');
+      const reg = pushOk() && await navigator.serviceWorker.getRegistration();
+      const sub = reg && await reg.pushManager.getSubscription();
+      if (sub) await fetch('/api/push/sun/unsubscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) }).catch(() => {});
+      // the subscription itself stays: the MoonBoard page's connect alerts may use it
+      quickSay('Log alerts off');
+    }
+  }catch(e){
+    if (on){ ls.set('mb-sunpush', ''); sw.checked = false; }
+    alert(e.message);
+  }
+}
+
+(function sunAlerts(){
+  const sw = $('sunPush');
+  sw.checked = sunPushOn();
+  sw.onchange = () => sunPushSet(sw.checked);
+  // keep the sign-up fresh: the name may have changed, and Apple can renew it
+  if (sunPushOn() && pushOk() && Notification.permission === 'granted') sunSub().catch(() => {});
 })();
 
 /* ---------- what a finger does on the picture, said once ----------

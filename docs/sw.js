@@ -1,4 +1,4 @@
-// Will's Wall's service worker: only for the connect alerts (store/push.js). It keeps no copy of
+// Will's Wall's service worker: only for the alerts (store/push.js): connects on the MoonBoard, logs on the Sun board. It keeps no copy of
 // the site and answers no requests, so pages load exactly as they did without it. It is registered
 // only on a phone that turns the alerts on in Settings.
 self.addEventListener('install', () => self.skipWaiting());
@@ -18,6 +18,10 @@ self.addEventListener('push', e => {
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   const url = new URL((e.notification.data && e.notification.data.url) || '/', location.origin).href;
-  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list =>
-    list.length ? list[0].focus() : self.clients.openWindow(url)));
+  const path = new URL(url).pathname;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    // the Sun board's alerts open the Sun page, the MoonBoard's the MoonBoard's
+    const same = list.find(c => new URL(c.url).pathname === path);
+    return same ? same.focus() : self.clients.openWindow(url);
+  }));
 });
