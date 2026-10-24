@@ -12,11 +12,12 @@ self.addEventListener('push', e => {
     tag: m.tag,
     icon: '/icon-192.png',
     data: { url: m.url || '/' },
-  }));
+  }).then(badge));
 });
 
 self.addEventListener('notificationclick', e => {
   e.notification.close();
+  badge();
   const url = new URL((e.notification.data && e.notification.data.url) || '/', location.origin).href;
   const path = new URL(url).pathname;
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
@@ -25,3 +26,10 @@ self.addEventListener('notificationclick', e => {
     return same ? same.focus() : self.clients.openWindow(url);
   }));
 });
+
+// The red number on the app's icon: how many of its notifications are still waiting. Opening the app clears it.
+function badge() {
+  return self.registration.getNotifications()
+    .then(list => (self.navigator.setAppBadge ? self.navigator.setAppBadge(list.length) : null))
+    .catch(() => {});
+}

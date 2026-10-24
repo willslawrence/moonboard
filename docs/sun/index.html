@@ -1171,7 +1171,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-23 23:55';
+const BUILD = '2026-10-24 08:55';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -4351,6 +4351,19 @@ async function sunPushSet(on){
   $('gestBtn').onclick = () => window.gestShow();
   $('a2hsBtn').onclick = () => { $('a2hsHow').hidden = false; };
 })();
+
+// Opening the app clears the red number on its icon, and the notifications that set it.
+function clearBadge() {
+  if (navigator.clearAppBadge) navigator.clearAppBadge().catch(() => {});
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistration()
+      .then(reg => (reg ? reg.getNotifications() : []))
+      .then(list => list.forEach(n => n.close()))
+      .catch(() => {});
+  }
+}
+clearBadge();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') clearBadge(); });
 </script>
 </body>
 </html>
