@@ -533,6 +533,27 @@
   #lpSession{padding:1px 12px;border-top:1px solid var(--edge)}
   #lpSession[hidden]{display:none}
   #lpSession .lprow:last-child{border-bottom:0}
+  /* Community and the crew, each in a card like the session's (Will, 2026-10-26: "I like those cards that expand cause
+     that frame the information"): a heading, how many climbers, a chip for each; a tap opens the rows, another shuts
+     them. A card with nobody in it says "Nobody" and does not open. */
+  .xcard{border:1px solid var(--edge);border-radius:14px;background:var(--panel);margin-top:14px;overflow:hidden}
+  .xcard[hidden]{display:none}
+  .xcard .xtop{padding:13px 14px;cursor:pointer;-webkit-user-select:none;user-select:none}
+  .xcard .kick{display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+  .xcard .kick span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .xcard .kick em{flex:none;font-style:normal;color:var(--dimmer)}
+  .xcard .kick svg{flex:none;width:12px;height:12px;transition:transform .15s ease-out}
+  .xcard.open .kick svg{transform:rotate(180deg)}
+  .xcard.empty .xtop{cursor:default}
+  .xcard.empty .kick svg{visibility:hidden}
+  .xchips{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+  .xchips:empty{display:none}
+  .xchips i{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;
+            font-size:11px;font-weight:700;font-style:normal;color:#0e0e0f}
+  .xchips i.em{background:none;font-size:19px}
+  .xcard .xbody{padding:1px 12px;border-top:1px solid var(--edge)}
+  .xcard .xbody[hidden]{display:none}
+  .xcard .xbody > :last-child{border-bottom:0}
   #lpHero .nums{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:11px}
   #lpHero .nums b{display:block;font-size:34px;line-height:36px;font-weight:700;letter-spacing:-.02em}
   #lpHero .nums span{display:block;margin-top:3px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
@@ -547,7 +568,6 @@
   #lpHistSum{font-size:13px;color:var(--dim);line-height:1.5}
   #lpHistSum b{color:var(--ink);font-weight:600}
   .sublbl{font-size:12px;color:var(--dim);margin:8px 0 2px}
-  #lpFeedLbl{margin-top:18px}
   .sublbl[hidden],.sublbl:empty{display:none}
   .lprow .n em i{display:inline-grid;place-items:center;width:16px;height:16px;margin-right:5px;border-radius:50%;
                  font-size:9px;font-weight:700;font-style:normal;color:#0e0e0f;vertical-align:-3px}
@@ -1571,11 +1591,20 @@
   <div id="lpHistSum"></div>
   <div id="lpHistRows"></div>
 
-  <div class="lbl">Community</div>
-  <div class="sublbl" id="lpWhoLbl"></div>
-  <div id="lpWho" class="whoRows"></div>
-  <div class="sublbl" id="lpFeedLbl" hidden>The crew this session</div>
-  <div id="lpFeed"></div>
+  <div class="xcard empty" id="lpWhoCard">
+    <div class="xtop" role="button" tabindex="0" aria-expanded="false" aria-controls="lpWho">
+      <div class="kick"><span>Community</span><em>Nobody</em><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4.2l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="xchips"></div>
+    </div>
+    <div id="lpWho" class="whoRows xbody" hidden></div>
+  </div>
+  <div class="xcard empty" id="lpFeedCard">
+    <div class="xtop" role="button" tabindex="0" aria-expanded="false" aria-controls="lpFeed">
+      <div class="kick"><span>The crew this session</span><em>Nobody</em><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4.2l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="xchips"></div>
+    </div>
+    <div id="lpFeed" class="xbody" hidden></div>
+  </div>
 
   <!-- only when there is no session's card to show and a reason to give: no name picked, or the logbook out of reach -->
   <div class="lbl" id="lpSesLbl" hidden>This session</div>
@@ -1923,7 +1952,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-24 08:55';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-26 21:27';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -5647,7 +5676,7 @@ function histFill(entries, r, me, sum, rows){
     d.className = 'none';
     d.textContent = ticked
       ? 'Marked as climbed, from before the logbook kept dates \u2014 so there is nothing to list.'
-      : 'Nothing logged on this one yet. Quick log, on the board, will start filling it in.';
+      : 'Nothing yet';
     rows.appendChild(d);
     return;
   }
@@ -5701,7 +5730,6 @@ async function routeHist(){
   const sum = $('lpHistSum'), rows = $('lpHistRows');
   rows.innerHTML = ''; sum.textContent = '';
   $('lpRouteLbl').hidden = !r || !me;
-  $('lpWhoLbl').textContent = r ? 'Who has climbed ' + r.name : '';
   whoFill($('lpWho'));
   if (!r || !me) return;
   sum.textContent = 'loading\u2026';
@@ -5718,15 +5746,11 @@ async function routeHist(){
 
 function whoFill(box){
   box.innerHTML = '';
+  $('lpWhoCard').hidden = !current;
   if (!current) return;
   const who = done[current.id] || [];
-  if (!who.length){
-    const d = document.createElement('div');
-    d.className = 'none';
-    d.textContent = 'Nobody has logged a send on this one yet.';
-    box.appendChild(d);
-    return;
-  }
+  xcardPaint('lpWhoCard', who);
+  if (!who.length) return;
   who.forEach(n => {
     const st = stats[n] && stats[n][current.id];
     const first = firstSend(st), sends = (st && st.s) ? st.s.length : 0;
@@ -8083,13 +8107,13 @@ function paintUndo(){
    a climber and route. Asked for at most once a minute; quietly absent if it fails. */
 let crewCache = null;                      // {t, entries}
 async function crewFeed(me, mine){
-  const box = $('lpFeed'), lbl = $('lpFeedLbl');
+  const box = $('lpFeed');
   try{
     if (!crewCache || Date.now() - crewCache.t > 60000){
       const res = await fetch(LISTS_API + '/lists/log?limit=300');
       crewCache = { t: Date.now(), entries: (await res.json()).entries || [] };
     }
-  }catch(e){ if (mine === lpFor){ box.innerHTML = ''; lbl.hidden = true; } return; }
+  }catch(e){ if (mine === lpFor){ box.innerHTML = ''; $('lpFeedCard').hidden = true; } return; }
   if (mine !== lpFor || page !== 'log') return;
   const recent = tagRepeats(crewCache.entries.filter(e => e.person && e.person !== me && Date.now() - logTime(e) < SESSION_LIVE))
                                   .sort((a, b) => logTime(b) - logTime(a));
@@ -8102,7 +8126,8 @@ async function crewFeed(me, mine){
   });
   const rows = [...by.values()].sort((a, b) => b.t - a.t).slice(0, 12);
   box.innerHTML = '';
-  lbl.hidden = !rows.length;          // nobody else on tonight: say nothing (Will struck the line out)
+  $('lpFeedCard').hidden = false;
+  xcardPaint('lpFeedCard', [...new Set(rows.map(x => x.who))]);      // nobody else on tonight: "Nobody" (Will, 2026-10-26)
   rows.forEach(x => {
     const row = lpRow(x, true);
     const em = row.querySelector('em');
@@ -8124,6 +8149,27 @@ function paintSesOpen(){
 }
 $('lpHeroTop').onclick = () => { sesOpen = !sesOpen; paintSesOpen(); };
 $('lpHeroTop').onkeydown = e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('lpHeroTop').onclick(); } };
+
+/* The Community and crew cards: the count and a chip for each climber always; the rows when tapped open, which stays
+   as left while the page is open. Nobody in it: the card says so and does not open. */
+function xcardPaint(id, names){
+  const c = $(id), chips = c.querySelector('.xchips');
+  c.classList.toggle('empty', !names.length);
+  c.querySelector('.kick em').textContent = !names.length ? 'Nobody' : names.length + (names.length === 1 ? ' climber' : ' climbers');
+  chips.innerHTML = '';
+  names.forEach(n => { const i = document.createElement('i'); chipPaint(i, n); i.title = n; chips.appendChild(i); });
+  xcardShow(c);
+}
+function xcardShow(c){
+  const open = c.classList.contains('open') && !c.classList.contains('empty');
+  c.querySelector('.xbody').hidden = !open;
+  c.querySelector('.xtop').setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+document.querySelectorAll('#logPage .xcard').forEach(c => {
+  const top = c.querySelector('.xtop');
+  top.onclick = () => { if (c.classList.contains('empty')) return; c.classList.toggle('open'); xcardShow(c); };
+  top.onkeydown = e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); top.onclick(); } };
+});
 
 async function paintLogPage(){
   paintLogNow();

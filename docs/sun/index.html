@@ -457,7 +457,6 @@
   .whoRows .p .rs.far{background:var(--panel2);color:var(--dim)}       /* not sent: how far against the clock */
   .lprow .n em i{display:inline-grid;place-items:center;width:16px;height:16px;margin-right:5px;border-radius:50%;
                  font-size:9px;font-weight:700;font-style:normal;color:#0e0e0f;vertical-align:-3px}
-  #lpCrewLbl{margin-top:18px}
   .sublbl:empty{display:none}
   #lpNow .more3{display:flex;gap:8px;margin-top:8px}
   #lpNow .more3 button{flex:1 1 0;min-width:0;padding:9px 6px;font-size:13px;border-radius:10px}
@@ -538,6 +537,27 @@
   #lpSession{padding:1px 12px;border-top:1px solid var(--edge)}
   #lpSession[hidden]{display:none}
   #lpSession .lprow:last-child{border-bottom:0}
+  /* Community and the crew, each in a card like the session's (Will, 2026-10-26: "I like those cards that expand cause
+     that frame the information"): a heading, how many climbers, a chip for each; a tap opens the rows, another shuts
+     them. A card with nobody in it says "Nobody" and does not open. */
+  .xcard{border:1px solid var(--edge);border-radius:14px;background:var(--panel);margin-top:14px;overflow:hidden}
+  .xcard[hidden]{display:none}
+  .xcard .xtop{padding:13px 14px;cursor:pointer;-webkit-user-select:none;user-select:none}
+  .xcard .kick{display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+  .xcard .kick span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .xcard .kick em{flex:none;font-style:normal;color:var(--dimmer)}
+  .xcard .kick svg{flex:none;width:12px;height:12px;transition:transform .15s ease-out}
+  .xcard.open .kick svg{transform:rotate(180deg)}
+  .xcard.empty .xtop{cursor:default}
+  .xcard.empty .kick svg{visibility:hidden}
+  .xchips{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+  .xchips:empty{display:none}
+  .xchips i{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;
+            font-size:11px;font-weight:700;font-style:normal;color:#0e0e0f}
+  .xchips i.em{background:none;font-size:19px}
+  .xcard .xbody{padding:1px 12px;border-top:1px solid var(--edge)}
+  .xcard .xbody[hidden]{display:none}
+  .xcard .xbody > :last-child{border-bottom:0}
   #lpHero .nums{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:11px}
   #lpHero .nums b{display:block;font-size:34px;line-height:36px;font-weight:700;letter-spacing:-.02em}
   #lpHero .nums span{display:block;margin-top:3px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dimmer)}
@@ -931,12 +951,21 @@
   <div id="lpHistSum"></div>
   <div id="lpHist"></div>
 
-  <div class="lbl" id="lpComLbl">Community</div>
-  <div class="sublbl" id="lpWhoLbl"></div>
-  <div id="lpWho" class="whoRows"></div>
+  <div class="xcard empty" id="lpWhoCard">
+    <div class="xtop" role="button" tabindex="0" aria-expanded="false" aria-controls="lpWho">
+      <div class="kick"><span>Community</span><em>Nobody</em><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4.2l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="xchips"></div>
+    </div>
+    <div id="lpWho" class="whoRows xbody" hidden></div>
+  </div>
   <!-- what the crew has been on lately, on any route: a tap on a row goes to the board with that route up -->
-  <div class="sublbl" id="lpCrewLbl">Lately on the Sun board</div>
-  <div id="lpCrew"></div>
+  <div class="xcard empty" id="lpCrewCard">
+    <div class="xtop" role="button" tabindex="0" aria-expanded="false" aria-controls="lpCrew">
+      <div class="kick"><span>Lately on the Sun board</span><em>Nobody</em><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4.2l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="xchips"></div>
+    </div>
+    <div id="lpCrew" class="xbody" hidden></div>
+  </div>
   <!-- only when there is no session's card to show and a reason to give: nobody has said who they are -->
   <div class="lbl" id="lpSesLbl" hidden>This session</div>
   <div id="lpSesNote"></div>
@@ -1171,7 +1200,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-24 08:55';
+const BUILD = '2026-10-26 21:27';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -2999,6 +3028,27 @@ function paintSesOpen(){
 }
 $('lpHeroTop').onclick = () => { sesOpen = !sesOpen; paintSesOpen(); };
 $('lpHeroTop').onkeydown = e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('lpHeroTop').onclick(); } };
+
+/* The Community and crew cards: the count and a chip for each climber always; the rows when tapped open, which stays
+   as left while the page is open. Nobody in it: the card says so and does not open. */
+function xcardPaint(id, names){
+  const c = $(id), chips = c.querySelector('.xchips');
+  c.classList.toggle('empty', !names.length);
+  c.querySelector('.kick em').textContent = !names.length ? 'Nobody' : names.length + (names.length === 1 ? ' climber' : ' climbers');
+  chips.innerHTML = '';
+  names.forEach(n => { const i = document.createElement('i'); chipPaint(i, n); i.title = n; chips.appendChild(i); });
+  xcardShow(c);
+}
+function xcardShow(c){
+  const open = c.classList.contains('open') && !c.classList.contains('empty');
+  c.querySelector('.xbody').hidden = !open;
+  c.querySelector('.xtop').setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+document.querySelectorAll('#logPage .xcard').forEach(c => {
+  const top = c.querySelector('.xtop');
+  top.onclick = () => { if (c.classList.contains('empty')) return; c.classList.toggle('open'); xcardShow(c); };
+  top.onkeydown = e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); top.onclick(); } };
+});
 function paintBook(){
   const hero = $('lpHero'), ses = $('lpSession'), foot = $('lpFoot'), note = $('lpSesNote');
   ses.innerHTML = ''; foot.textContent = ''; note.innerHTML = '';
@@ -3082,7 +3132,7 @@ function histFill(r){
   if (!me){ rows.innerHTML = '<div class="none">Say who you are to keep a logbook.</div>'; return; }
   if (histRoute !== r.id){ histRoute = r.id; histShown = 4; }
   const entries = tagRepeats(myLog.filter(e => e.route === r.id && e.person === me)).sort((a, b) => logTime(b) - logTime(a));     // newest first
-  if (!entries.length){ rows.innerHTML = '<div class="none">Nothing logged on this one yet. Quick log, on the board, will start filling it in.</div>'; return; }
+  if (!entries.length){ rows.innerHTML = '<div class="none">Nothing yet</div>'; return; }
   const sends = entries.filter(e => e.result !== 'try'), tries = entries.length - sends.length, first = sends[sends.length - 1];    // first: the oldest send, the one that scores
   const head = document.createElement('b'), said = [];
   head.textContent = [sends.length ? sends.length + (sends.length === 1 ? ' send' : ' sends') : 'Not sent yet',
@@ -3118,14 +3168,13 @@ function histFill(r){
 function whoFill(r){
   const box = $('lpWho');
   box.innerHTML = '';
-  $('lpComLbl').hidden = !r;
-  $('lpWhoLbl').textContent = '';
+  $('lpWhoCard').hidden = !r;
   if (!r) return;
   // who has sent it; on a climb by number, also those who have not, with how far each has got against the clock, the furthest first
   const sent = senders(r.id), timed = byNumber(r) ? snap.people.filter(n => (statOf(n, r.id) || {}).g && !sent.includes(n)) : [];
   timed.sort((a, b) => { const x = statOf(a, r.id).g, y = statOf(b, r.id).g; return y[0] - x[0] || x[1] - y[1]; });
-  $('lpWhoLbl').textContent = !sent.length && timed.length ? 'How far people have got on ' + r.name : 'Who has climbed ' + r.name;
-  if (!sent.length && !timed.length){ box.innerHTML = '<div class="none">Nobody has logged a send on this one yet.</div>'; return; }
+  xcardPaint('lpWhoCard', sent.concat(timed));
+  if (!sent.length && !timed.length) return;
   sent.concat(timed).forEach(n => {
     const st = statOf(n, r.id), first = firstSend(n, r.id), sends = st && st.s ? st.s.length : 0, best = bestWords(n, r), d = st && st.d ? new Date(st.d) : null;
     const row = document.createElement('div');
@@ -3177,7 +3226,7 @@ function paintLog(){
     if (x && x.t0 - t < SESSION_GAP){ x.goes.unshift(e); x.t0 = t; }                           // (goes: in the order they happened)
     else { const nx = { id: e.route, who: e.person, goes: [e], t, t0: t, iso: e.t }; at.set(k, nx); groups.push(nx); }
   });
-  $('lpCrewLbl').hidden = !groups.length;
+  xcardPaint('lpCrewCard', [...new Set(groups.slice(0, CREW_SHOWN).map(x => x.who))]);
   $('lpCrew').innerHTML = '';
   groups.slice(0, CREW_SHOWN).forEach(x => {
     const row = lpRow(x, false), em = row.querySelector('em'), chip = document.createElement('i');
