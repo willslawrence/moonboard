@@ -374,13 +374,16 @@
   #pickGo{flex:1.3 1 0}
   #pickFind{flex:1 1 0}
   #pickBar #pickClear{flex:none;width:46px;padding:0;font-size:15px}
-  /* ---- the list narrowed to routes that use the picked holds: said over the list, with the way out ---- */
-  #holdChip{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:6px 6px 6px 10px;
+  /* ---- the list narrowed to routes that use the picked holds, or to another climber's sends (Head to head):
+     said over the list, with the way out ---- */
+  #listChips{position:sticky;top:0;z-index:2}
+  #holdChip,#rivalChip{display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:6px 6px 6px 10px;
             border:1px solid #7c3aed;border-radius:9px;background:var(--panel2);font-size:12px;color:var(--ink)}
-  #holdChip[hidden]{display:none}
-  #holdChip span{flex:1;min-width:0;line-height:1.35}
-  #holdChip b{font-weight:700}
-  #holdChip button{flex:none;width:34px;height:30px;padding:0;font-size:13px}
+  #rivalChip{border-color:var(--gold)}
+  #holdChip[hidden],#rivalChip[hidden]{display:none}
+  #holdChip span,#rivalChip span{flex:1;min-width:0;line-height:1.35}
+  #holdChip b,#rivalChip b{font-weight:700}
+  #holdChip button,#rivalChip button{flex:none;width:34px;height:30px;padding:0;font-size:13px}
   /* iOS starts its own image drag on a sideways swipe, which eats the gesture */
   #board img{-webkit-user-drag:none;user-select:none;pointer-events:none}
   #board img{display:block;width:100%;height:auto}   /* beat the height attribute */
@@ -1546,7 +1549,10 @@
 <div id="scroll">
 
 <section>
-  <div id="holdChip" hidden><span></span><button id="holdX" class="ghost mini" aria-label="Show every route again">&#10005;</button></div>
+  <div id="listChips">
+    <div id="holdChip" hidden><span></span><button id="holdX" class="ghost mini" aria-label="Show every route again">&#10005;</button></div>
+    <div id="rivalChip" hidden><span></span><button id="rivalX" class="ghost mini" aria-label="Show every route again">&#10005;</button></div>
+  </div>
   <div id="count"></div>
   <div id="results"></div>
 </section>
@@ -1756,7 +1762,7 @@
   </div>
   <div class="rankHead"><button type="button" id="rankTog" class="rankTog" aria-expanded="false" aria-controls="ptsRank">Ranking<i></i></button><button type="button" class="tipBtn" aria-label="About: the points" aria-expanded="false">i</button><span class="tipTxt">MoonBoard scoring: 350 at 5+, 50 more for each grade above it, by the community grade (the one the climbers voted for), whichever grade this phone shows; then 53 more for a flash, 2 for a second go, 1 for a third. Benchmarks only, and only the first time you send a route.</span></div>
   <div id="ptsRank" hidden></div>
-  <div class="rankHead" id="storyHead" hidden><button type="button" id="storyTog" class="rankTog" aria-expanded="false" aria-controls="story"><span id="storyLbl">Your story</span><i></i></button><button type="button" class="tipBtn" aria-label="About: the story" aria-expanded="false">i</button><span class="tipTxt">Worked out from the goes in the logbook that is showing: the grades you have sent, how often first go, the route that took longest, the ones that got away, your days and your holds. <b>Flash grade</b>: the hardest grade at which half or more of the routes you have tried went first go. <b>Edge grade</b>: the hardest at which half or more went in the end, however many goes it took. <b>Average send</b>: the middle of all your sends. On your own logbook, a tap on any of the three opens a route of that grade you have not sent, on the hold set now on the wall. <b>Next up</b> counts what the next grade would take. <b>Head to head</b> puts you beside another climber. <b>Share my story as a picture</b> makes one picture of it all to send on. The more of your logbook is in here, the more it can tell. <b>Import CSV</b> brings an old logbook over.</span></div>
+  <div class="rankHead" id="storyHead" hidden><button type="button" id="storyTog" class="rankTog" aria-expanded="false" aria-controls="story"><span id="storyLbl">Your story</span><i></i></button><button type="button" class="tipBtn" aria-label="About: the story" aria-expanded="false">i</button><span class="tipTxt">Worked out from the goes in the logbook that is showing: the grades you have sent, how often first go, the route that took longest, the ones that got away, your days and your holds. <b>Flash grade</b>: the hardest grade at which half or more of the routes you have tried went first go. <b>Edge grade</b>: the hardest at which half or more went in the end, however many goes it took. <b>Average send</b>: the middle of all your sends. On your own logbook, a tap on any of the three opens a route of that grade you have not sent, on the hold set now on the wall. <b>Next up</b> counts what the next grade would take. <b>Head to head</b> puts you beside another climber, and its button lists the routes they have sent that you have not. <b>Share my story as a picture</b> makes one picture of it all to send on. The more of your logbook is in here, the more it can tell. <b>Import CSV</b> brings an old logbook over.</span></div>
   <div id="story" hidden></div>
   <input type="file" id="logFile" accept=".csv,text/csv,text/comma-separated-values,text/plain" tabindex="-1" aria-hidden="true">
   <p id="logHint"></p>
@@ -1952,7 +1958,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-26 21:27';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-27 23:39';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -1971,6 +1977,8 @@ let rsWall = null;                     // ...and while one is being counted ther
 try{ rsWallWant = localStorage.getItem('mb-rest-wall') === '1'; }catch(e){}
 let picks = {};                        // "col,row" -> true: holds tapped in focus (see "picking holds")
 let holdFilter = [];                   // the same keys, once "Search routes" is tapped: the list is only routes that use them all
+let rivalFilter = null;                // a climber's name, from Head to head: the list is only routes they have sent
+let rivalHidePrev = null;              // ...and what Sent was before it set Hide, for the way back
 const CUSTOM_ID = 0;
 const PICK_HOLD = 'P';               // how the picked holds are lit: blue
 const PICK_MAX = 30;                 // more than a problem ever has, and well inside what the box will take in one write
@@ -4319,8 +4327,10 @@ function filtered(){
   // "exclude my sends"). Both need a name, to know what is yours.
   const hide = me && $('hideDone').value === '1', only = me && $('hideDone').value === '2';
   const need = holdFilter;
+  const theirs = rivalFilter ? storySent(rivalFilter) : null;
   let out = PROBLEMS.filter(r => r.grade >= lo && r.grade <= hi &&
     (!need.length || need.every(k => holdSet(r).has(k))) &&
+    (!theirs || theirs.has(r.id)) &&
     (!mine || mine.has(r.id)) &&
     !(hide && (done[r.id] || []).includes(me)) &&
     !(only && !(done[r.id] || []).includes(me)) &&
@@ -4374,10 +4384,11 @@ function goesMap(){
 function renderResults(){
   paintGradeSlide();                     // whatever changed From or To, the two dots follow
   paintChips();                          // ...and the two small boxes say what Sent and Sort are set to
+  paintRivalChip();
   const hits = filtered();
   lastHits = hits;
   const key = [searchQ, $('gmin').value, $('gmax').value, whoNow(),
-               $('hideDone').value, $('sort').value, holdFilter.join(' ')].join('|');
+               $('hideDone').value, $('sort').value, holdFilter.join(' '), rivalFilter].join('|');
   if (key !== limitKey){ limitKey = key; limit = PAGE; }
   const at = current ? hits.indexOf(current) : -1;          // keep the pick on screen
   if (at >= limit) limit = Math.ceil((at + 1) / PAGE) * PAGE;
@@ -4419,6 +4430,7 @@ function renderResults(){
     ? Object.entries(done).filter(([, who]) => who.includes(me)).length : 0;
   $('count').textContent = hits.length ? ''
     : (holdFilter.length ? (holdFilter.length > 1 ? 'No route here uses all ' + holdFilter.length + ' of those holds' : 'No route here uses that hold')
+       : rivalFilter ? (hidden ? 'You have sent everything ' + rivalFilter + ' has sent that matches' : rivalFilter + ' has sent nothing that matches')
        : view ? 'Nothing saved here yet'
             : hidden ? "You've climbed everything that matches"
             : me && $('hideDone').value === '2' ? "You haven't sent any route that matches" : 'Nothing matches');
@@ -7071,6 +7083,34 @@ function paintHoldChip(){
   b.textContent = names.join(' \u00b7 ');
   sp.appendChild(b);
 }
+/* Another climber's sends (Will, 2026-10-27: "a button that took you to the full list of routes that the other climber
+   has sent. So you could look and find one to try and continue to look"). Head to head opens the list on them with
+   Sent on Hide; Sent still works (Show for all of theirs, Only for the ones you share), and the \u2715 puts Sent back. */
+function paintRivalChip(){
+  const chip = $('rivalChip');
+  chip.hidden = !rivalFilter;
+  if (chip.hidden) return;
+  const sent = meNow() ? $('hideDone').value : '';
+  const sp = chip.querySelector('span');
+  sp.textContent = '\ud83e\udd1d ';
+  const b = document.createElement('b');
+  b.textContent = rivalFilter;
+  sp.append(b, '\u2019s sends' + (sent === '1' ? ' that you have not sent' : sent === '2' ? ' that you have sent too' : ''));
+}
+function rivalList(name){
+  rivalFilter = name;
+  if (meNow() && $('hideDone').value !== '1'){ rivalHidePrev = $('hideDone').value; $('hideDone').value = '1'; }
+  showPanel(null);
+  showPage('list');
+  kbClose();                             // the list is what was asked for, not the keys
+  renderResults();
+  $('scroll').scrollTop = 0;
+}
+$('rivalX').onclick = () => {
+  if (rivalHidePrev !== null && $('hideDone').value === '1') $('hideDone').value = rivalHidePrev;
+  rivalFilter = null; rivalHidePrev = null;
+  renderResults();
+};
 $('pickGo').onclick = async () => {
   const keys = pickKeys();
   if (!keys.length) return;
@@ -9242,7 +9282,7 @@ function paintGradeSlide(held){
    bug rather than a setting. */
 function markFilters(){
   const narrowed = +$('gmin').value > gradeLo || +$('gmax').value < gradeHi;
-  const on = narrowed || whoNow() || (meNow() && $('hideDone').value !== '') || holdFilter.length;
+  const on = narrowed || whoNow() || (meNow() && $('hideDone').value !== '') || holdFilter.length || rivalFilter;
   $('filtBtn').classList.toggle('active', !!on);
 }
 function showFilters(on){
@@ -9475,7 +9515,7 @@ function storyMore(who, entries, G, own){
     F.push({ ic: '🤝', k: 'Head to head', noShare: true, v: '<select id="storyRivalSel" aria-label="Beside which climber">' + others.map(r => '<option' + (r.n === pick ? ' selected' : '') + '>' + esc(r.n) + '</option>').join('') + '</select>' +
       '<span class="ln"><em>' + both + '</em> ' + (both === 1 ? 'route' : 'routes') + ' you have both sent.</span><span class="ln"><em>' + (G.sent.size - both) + '</em> only ' + (own ? 'you' : esc(who)) + ' · <em>' + onlyThem.length + '</em> only ' + esc(pick) + '.</span>' +
       '<span class="ln">Hardest: ' + (own ? 'you' : esc(who)) + ' ' + GRADES[hard(G.sent)] + ', ' + esc(pick) + ' ' + GRADES[hard(theirs)] + '.</span>' +
-      (own && open.length ? '<button type="button" id="storyRivalPick" class="mini">Open one of ' + esc(pick) + '’s that you have not sent</button>' : ''), open });
+      (own && open.length ? '<button type="button" id="storyRivalList" class="mini">See ' + esc(pick) + '’s sends you have not sent</button>' : ''), rival: pick });
   }
   return F;
 }
@@ -9569,11 +9609,7 @@ function paintStory(){
     (!sample && own && sends < 20 ? '<p class="more">The more of your logbook is in here, the more this can tell. <b>Import CSV</b>, above, brings an old logbook over.</p>' : '') +
     (!sample && own && G ? '<button type="button" id="storyShare" class="ghost">Share my story as a picture</button>' : '');
   if ($('storyRivalSel')) $('storyRivalSel').onchange = () => { storyRival = $('storyRivalSel').value; paintStory(); };
-  if ($('storyRivalPick')) $('storyRivalPick').onclick = () => {
-    const open = more.find(f => f.open).open, r = byId[open[Math.floor(Math.random() * open.length)]];
-    if (!r) return;
-    showPanel(null); loadRoute(r); showPage('board');
-  };
+  if ($('storyRivalList')) $('storyRivalList').onclick = () => rivalList(more.find(f => f.rival).rival);
   if ($('storyShare')) $('storyShare').onclick = () => {
     const facts2 = rowsAll.slice(); facts2.pyr = facts.pyr; facts2.N = facts.N;
     storyShare(logShown.who, facts2, G);
