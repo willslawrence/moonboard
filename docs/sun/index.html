@@ -431,6 +431,23 @@
   #lpNow .top{display:flex;align-items:center;gap:8px;min-width:0}
   #lpNow .top b{flex:0 1 auto;min-width:0;font-size:17px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #lpNow .top .gd{font-size:11px}
+  /* A climber's word on a route (Will, 2026-10-28: "a small button to rate the climb either trash or favorite. If rated
+     favorite then give the sun burst around the grade or if rated trash give the toilet"). The two buttons sit at the
+     right of the card's last line; the art is drawn behind the grade wherever this climber sees the route's grade in a
+     list or on this card. Its parent is its own layer so the art goes behind the grade but in front of the row. */
+  #lpNow .rateRow{display:flex;align-items:center;gap:10px}
+  #lpNow .rateRow .sub{flex:1;min-width:0}
+  #lpRate{flex:none;display:flex;gap:6px;margin:6px 0 0 auto}
+  #lpRate[hidden]{display:none}
+  #lpRate button{width:38px;height:34px;padding:0;border-radius:10px;font-size:18px;line-height:1;opacity:.55;filter:grayscale(.85)}
+  #lpRate button[aria-pressed="true"]{opacity:1;filter:none;background:var(--panel2);border-color:var(--ink)}
+  .rside,#lpNow .top{isolation:isolate}
+  .gd.fav,.gd.trash{position:relative}
+  #lpNow .top .gd.fav{margin-left:5px}
+  .gd.fav{box-shadow:0 0 0 1.5px #f2bf0f,0 0 10px 2px rgba(242,191,15,.55)}
+  .gd.fav::before,.gd.trash::before{content:'';position:absolute;z-index:-1;pointer-events:none;background-size:100% 100%;background-repeat:no-repeat}
+  .gd.fav::before{inset:-10px -11px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 44' preserveAspectRatio='none'%3E%3Cpath d='M53.6 24.6L62.4 26.2M50.3 29.5L55.3 32.3M44.2 33.2L49.2 39.9M36.3 35.2L37.5 40.1M27.7 35.2L26.0 43.1M19.8 33.2L16.4 37.4M13.7 29.5L6.2 33.9M10.4 24.6L4.5 25.6M10.4 19.4L1.6 17.8M13.7 14.5L8.7 11.7M19.8 10.8L14.8 4.1M27.7 8.8L26.5 3.9M36.3 8.8L38.0 0.9M44.2 10.8L47.6 6.6M50.3 14.5L57.8 10.1M53.6 19.4L59.5 18.4' stroke='%23f2bf0f' stroke-width='2.6' stroke-linecap='round' fill='none'/%3E%3C/svg%3E")}
+  .gd.trash::before{inset:-14px -12px -13px -5px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 51 48' preserveAspectRatio='none'%3E%3Cg fill='%23f6f3ec' stroke='%235f554c' stroke-width='1.6' stroke-linejoin='round'%3E%3Crect x='36' y='1.5' width='12.5' height='25' rx='2.5'/%3E%3Cpath d='M15.5 38 L13.5 46.5 H31.5 L29.5 38 Z'/%3E%3Cpath d='M1 21.5 H41 V26 C41 35 33 41.5 22 41.5 C11 41.5 2.5 34 1 21.5 Z'/%3E%3Cpath d='M38.5 6.5 H45.5' fill='none'/%3E%3C/g%3E%3C/svg%3E")}
   #lpNow .sub{margin-top:3px;font-size:12px;color:var(--dim);line-height:1.4}
   #lpNow .sub:empty{display:none}
   /* its own top line, as on the MoonBoard page: the way back on the left, where the board is, and the page's name
@@ -938,7 +955,9 @@
   <div id="lpNow">
     <div class="top"><b id="lpName"></b><span class="gd" id="lpGd" hidden></span></div>
     <div class="sub" id="lpSub"></div>
-    <div class="sub" id="lpSub2"></div>
+    <div class="rateRow"><div class="sub" id="lpSub2"></div><span id="lpRate" hidden>
+      <button type="button" class="ghost" data-r="fav" aria-pressed="false" aria-label="Favourite: a sun round its grade">&#9728;&#65039;</button>
+      <button type="button" class="ghost" data-r="trash" aria-pressed="false" aria-label="Trash: a toilet round its grade">&#128701;</button></span></div>
     <!-- the setter's two. Log try and Log send went on 2026-10-21, as on the MoonBoard page: Quick log on the board logs a
          go. The Logbook button went with them: the Logbook is a page of its own. -->
     <div class="more3" id="lpMore" hidden>
@@ -1200,7 +1219,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-26 21:27';
+const BUILD = '2026-10-28 21:08';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -1221,6 +1240,9 @@ const vName = g => g < 0 ? 'VB' : 'V' + g;
 /* the same colours as the MoonBoard's pill and lights: green to V5, blue for V6 and V7, red above */
 const BANDS = [{ max: 5, bg: '#22c55e', fg: '#06240e' }, { max: 7, bg: '#2563eb', fg: '#eef4ff' }, { max: 99, bg: '#ef4444', fg: '#fff1f1' }];
 function paintPill(el, g){ const b = BANDS.find(x => g <= x.max); el.textContent = vName(g); el.style.background = b.bg; el.style.color = b.fg; }
+// this climber's word on a route: 'fav', 'trash' or ''; and the grade drawn with it
+const rateOf = id => (me && snap.rates && snap.rates[me] && snap.rates[me][id]) || '';
+function paintRate(el, id){ const v = rateOf(id); el.classList.toggle('fav', v === 'fav'); el.classList.toggle('trash', v === 'trash'); }
 const ls = { get: k => { try{ return localStorage.getItem(k); }catch(e){ return null; } }, set: (k, v) => { try{ localStorage.setItem(k, v); }catch(e){} } };
 
 let wall = null;                 // wall.json
@@ -1249,7 +1271,7 @@ async function call(path, body){
 }
 function take(d){
   if (!d || !Array.isArray(d.routes)) return;
-  snap = { people: d.people || [], routes: d.routes, stats: d.stats || {}, fixes: d.fixes || [], faces: d.faces || snap.faces || {} };
+  snap = { people: d.people || [], routes: d.routes, stats: d.stats || {}, fixes: d.fixes || [], faces: d.faces || snap.faces || {}, rates: d.rates || {} };
   relive();
   ls.set('sb-snap-' + WALL, JSON.stringify(snap));
   paintAll();
@@ -3196,7 +3218,9 @@ const kv = (left, right, cls) => '<div class="kv' + (cls ? ' ' + cls : '') + '">
 function paintLog(){
   const r = openRoute();
   $('lpName').textContent = r ? r.name : 'No route is open';
-  $('lpGd').hidden = !r; if (r) paintPill($('lpGd'), r.grade);
+  $('lpGd').hidden = !r; if (r){ paintPill($('lpGd'), r.grade); paintRate($('lpGd'), r.id); }
+  $('lpRate').hidden = !r || !me;
+  $('lpRate').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', r && rateOf(r.id) === b.dataset.r ? 'true' : 'false'));
   $('lpSub').textContent = r ? 'by ' + r.setter + ' · ' + FEET[r.feet] + rulesSay(r) + (r.tape ? ' · tape: ' + r.tape : '') + (r.note ? ' · ' + r.note : '') + (r.retired ? ' · taken down' : '')
                              : 'Pick one on the Routes page, or make one: two taps on the picture, tap its holds, and save them.';
   const t = r && me ? myTries(r.id) : 0, sends = r && me && statOf(me, r.id) && statOf(me, r.id).s ? statOf(me, r.id).s.length : 0;
@@ -3241,6 +3265,16 @@ function paintLog(){
 }
 const CREW_SHOWN = 8;                        // the log page is the open route's; this is a glance at the rest
 $('lpBack').onclick = () => showPage('board');
+/* The word is shown at once and then kept; a second tap on the same one takes it back. */
+$('lpRate').onclick = async e => {
+  const b = e.target.closest('button'), r = openRoute();
+  if (!b || !r || !me) return;
+  const next = rateOf(r.id) === b.dataset.r ? '' : b.dataset.r, mine0 = (snap.rates = snap.rates || {})[me] = { ...(snap.rates[me] || {}) };
+  if (next) mine0[r.id] = next; else delete mine0[r.id];
+  paintAll();
+  try{ take(await call('/rate', { person: me, route: r.id, rate: next })); }
+  catch(err){ toast('Could not keep that just now: ' + err.message, true); refresh(); }
+};
 
 /* ---------- the i beside an option: what it does, in a bubble ----------
    The words are in the page, out of sight, straight after their i. A tap on an i shows them in the one bubble there
@@ -3775,7 +3809,7 @@ function paintList(){
       ' · ' + (byNumber(r) ? 'by number · ' : '') + FEET[r.feet] + rulesSay(r, true) + (n ? ' · ' + n + ' sent' : '') + (r.tape ? ' · ' + esc(r.tape) : '') + '</span></div>' +
       '<div class="rside"><div class="gd" data-g="' + r.grade + '"></div>' + side + '</div><div class="chev">›</div></div>';
   }).join('');
-  box.querySelectorAll('.gd').forEach(p => paintPill(p, +p.dataset.g));
+  box.querySelectorAll('.gd').forEach(p => { paintPill(p, +p.dataset.g); paintRate(p, +p.closest('.rt').dataset.id); });
 }
 $('results').onclick = e => { const row = e.target.closest('.rt'); if (row) open(+row.dataset.id); };
 /* ---------- the filters: the MoonBoard page's, with this wall's grades ----------

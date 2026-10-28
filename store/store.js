@@ -25,6 +25,7 @@
      POST /api/w/sun/fix              { by, kind, v, x, y, h?, size? }     the map of holds is wrong here (see below)
      POST /api/w/sun/fix/undo         { k }                                take that back
      POST /api/w/sun/fixes/done       { ks }                               these are in the published map now
+     POST /api/w/sun/rate             { person, route, rate }              that climber's word on a route: fav, trash, or '' for none
 
    A write answers with the wall as it now stands, so the phone that wrote is up to date
    without asking again. There are no accounts, as on the rest of the app: a name is a name.
@@ -77,6 +78,9 @@ export const FEET = ['any', 'follow', 'marked'];           // any feet, feet fol
    feet, which is to say no smearing on it, a foot against bare wall where there is no hold (Will, 2026-10-11, of
    every route Abdullah has set). A route says them as a list; a route with none says nothing. */
 export const RULES = ['flatoff'];
+/* A climber's word on a route, theirs alone (Will, 2026-10-28: "a small button to rate the climb either trash or
+   favorite"): the page draws a sun round the grade for a favourite and a toilet for trash. */
+export const RATES = ['fav', 'trash'];
 const rulesOf = v => RULES.filter(k => v.includes(k)).join(' ');
 export const GRADE_MIN = -1, GRADE_MAX = 17;                // VB is -1, then V0 to V17
 const WALLS = { sun: 'Sun board' };                         // the walls there are; "test-..." is any wall a check makes
@@ -128,6 +132,8 @@ const SCHEMA = [
   `CREATE INDEX IF NOT EXISTS fixes_wall ON fixes (wall, done, k)`,
   `CREATE TABLE IF NOT EXISTS faces (crew TEXT NOT NULL, name TEXT NOT NULL, face TEXT NOT NULL, t TEXT NOT NULL, PRIMARY KEY (crew, name))`,
   `CREATE TABLE IF NOT EXISTS boards (room TEXT NOT NULL PRIMARY KEY, board TEXT NOT NULL, t TEXT NOT NULL)`,
+  `CREATE TABLE IF NOT EXISTS rates (wall TEXT NOT NULL, person TEXT NOT NULL, route INTEGER NOT NULL, rate TEXT NOT NULL, t TEXT NOT NULL,
+     PRIMARY KEY (wall, person, route))`,
 ];
 /* Columns added since the tables were first made. A go against the clock on a climb by number: on its row of the
    logbook, the number reached and the seconds it took; in the tally, the best such go. A route's further rules, as
@@ -179,14 +185,16 @@ const facesOf = async (db, crew) =>
   facesFrom((await db.prepare('SELECT name, face FROM faces WHERE crew = ? ORDER BY name').bind(crew).all()).results);
 
 async function snapshot(db, wall){
-  const [p, r, s, f, e] = await db.batch([
+  const [p, r, s, f, e, v] = await db.batch([
     db.prepare('SELECT name FROM people WHERE wall = ? ORDER BY t, name').bind(wall),
     db.prepare('SELECT id, name, grade, setter, marks, feet, rules, tape, note, t, edited, retired FROM routes WHERE wall = ? ORDER BY id').bind(wall),
     db.prepare('SELECT person, route, a, r, s, d, gn, gs FROM stats WHERE wall = ?').bind(wall),
     db.prepare('SELECT k, who, kind, v, x, y, h, size FROM fixes WHERE wall = ? AND done = 0 ORDER BY k').bind(wall),
     db.prepare('SELECT name, face FROM faces WHERE crew = ? ORDER BY name').bind(crewOf(wall)),
+    db.prepare('SELECT person, route, rate FROM rates WHERE wall = ?').bind(wall),
   ]);
-  const stats = {};
+  const stats = {}, rates = {};
+  for (const row of v.results) (rates[row.person] = rates[row.person] || {})[row.route] = row.rate;
   for (const row of s.results){
     const e = { a: row.a, r: row.r, d: row.d };
     const sends = JSON.parse(row.s);
@@ -200,6 +208,7 @@ async function snapshot(db, wall){
     stats,
     fixes: f.results.map(x => { const o = { k: x.k, by: x.who, kind: x.kind, v: x.v, x: x.x, y: x.y }; if (x.h) o.h = x.h; if (x.size) o.size = x.size; return o; }),
     faces: facesFrom(e.results),
+    rates,
   };
 }
 
@@ -546,9 +555,20 @@ export async function handle(request, db, now = () => new Date().toISOString()){
     return json(await snapshot(db, wall));
   }
 
+  if (path === '/rate'){
+    const person = clean(body.person, 40), route = Number(body.route), rate = body.rate || '';
+    if (!person || !(await knows(db, wall, person))) return bad('say who you are first', 404);
+    if (rate && !RATES.includes(rate)) return bad('fav, trash, or nothing');
+    if (!(await db.prepare('SELECT 1 AS ok FROM routes WHERE wall = ? AND id = ?').bind(wall, route).first())) return bad('no such route', 404);
+    if (!rate) await db.prepare('DELETE FROM rates WHERE wall = ? AND person = ? AND route = ?').bind(wall, person, route).run();
+    else await db.prepare(`INSERT INTO rates (wall, person, route, rate, t) VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT (wall, person, route) DO UPDATE SET rate = excluded.rate, t = excluded.t`).bind(wall, person, route, rate, now()).run();
+    return json(await snapshot(db, wall));
+  }
+
   // a check clears up after itself; a real wall cannot be emptied this way
   if (path === '/reset' && isTest(wall)){
-    await db.batch(['people', 'routes', 'log', 'stats', 'fixes'].map(t => db.prepare('DELETE FROM ' + t + ' WHERE wall = ?').bind(wall))
+    await db.batch(['people', 'routes', 'log', 'stats', 'fixes', 'rates'].map(t => db.prepare('DELETE FROM ' + t + ' WHERE wall = ?').bind(wall))
       .concat([db.prepare('DELETE FROM faces WHERE crew = ?').bind(wall)]));
     return json(await snapshot(db, wall));
   }

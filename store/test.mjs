@@ -380,6 +380,28 @@ console.log('the hold set of a MoonBoard that is not Will\'s, kept under its cod
   check('a body that is not JSON is refused', (await handle(new Request('https://x.test/api/board', { method: 'POST', body: 'board=2016-40' }), db)).status === 400);
   check('with no database it says so', (await handle(new Request('https://x.test/api/board?room=test-gym-one'), undefined)).status === 500);
 }
+console.log('a climber\'s word on a route: favourite or trash');
+{
+  await call('POST', '/api/w/test-rate/person', { name: 'Will' });
+  await call('POST', '/api/w/test-rate/person', { name: 'Sara' });
+  const id = (await call('POST', '/api/w/test-rate/route', { by: 'Will', name: 'Rated', grade: 7, marks })).id;
+  let v = await call('GET', '/api/w/test-rate');
+  check('nobody has rated anything to begin with', v.rates && Object.keys(v.rates).length === 0, v.rates);
+  v = await call('POST', '/api/w/test-rate/rate', { person: 'Will', route: id, rate: 'fav' });
+  check('a favourite is kept and answered with', v.status === 200 && v.rates.Will[id] === 'fav', v.rates);
+  v = await call('POST', '/api/w/test-rate/rate', { person: 'Sara', route: id, rate: 'trash' });
+  check('each climber has their own word on it', v.rates.Will[id] === 'fav' && v.rates.Sara[id] === 'trash', v.rates);
+  v = await call('POST', '/api/w/test-rate/rate', { person: 'Will', route: id, rate: 'trash' });
+  check('a second word takes the place of the first', v.rates.Will[id] === 'trash', v.rates);
+  v = await call('POST', '/api/w/test-rate/rate', { person: 'Will', route: id, rate: '' });
+  check('an empty word takes it back', !v.rates.Will && v.rates.Sara[id] === 'trash', v.rates);
+  check('a stranger cannot rate', (await call('POST', '/api/w/test-rate/rate', { person: 'Nobody', route: id, rate: 'fav' })).status === 404);
+  check('a word that is not one is refused', (await call('POST', '/api/w/test-rate/rate', { person: 'Will', route: id, rate: 'meh' })).status === 400);
+  check('a route that is not there is refused', (await call('POST', '/api/w/test-rate/rate', { person: 'Will', route: 9999, rate: 'fav' })).status === 404);
+  check('another wall does not see them', !Object.keys((await call('GET', '/api/w/test-a')).rates).length);
+  v = await call('POST', '/api/w/test-rate/reset', {});
+  check('a check\'s wall is cleared of them', Object.keys(v.rates).length === 0, v.rates);
+}
 check('a body that is not JSON is refused',
   (await handle(new Request('https://x.test/api/w/sun/person', { method: 'POST', body: 'name=Will' }), db)).status === 400);
 check('other methods are refused', (await handle(new Request('https://x.test/api/w/sun', { method: 'DELETE' }), db)).status === 405);
