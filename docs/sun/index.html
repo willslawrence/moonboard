@@ -439,8 +439,15 @@
   #lpNow .rateRow .sub{flex:1;min-width:0}
   #lpRate{flex:none;display:flex;gap:6px;margin:6px 0 0 auto}
   #lpRate[hidden]{display:none}
-  #lpRate button{width:38px;height:34px;padding:0;border-radius:10px;font-size:18px;line-height:1;opacity:.55;filter:grayscale(.85)}
-  #lpRate button[aria-pressed="true"]{opacity:1;filter:none;background:var(--panel2);border-color:var(--ink)}
+  #lpRate button{display:flex;align-items:center;justify-content:center;gap:4px;width:auto;min-width:38px;height:34px;padding:0 8px;border-radius:10px;font-size:18px;line-height:1}
+  #lpRate button .re{opacity:.55;filter:grayscale(.85)}
+  #lpRate button .rc{font:700 13px ui-monospace,Menlo,monospace;color:var(--dim)}
+  #lpRate button .rc:empty{display:none}
+  #lpRate button[aria-pressed="true"]{background:var(--panel2);border-color:var(--ink)}
+  #lpRate button[aria-pressed="true"] .re{opacity:1;filter:none}
+  #lpRate button[aria-pressed="true"] .rc{color:var(--ink)}
+  /* the crew's count on a route's row (Will, 2026-10-28, asked mine or shared: "Shared") */
+  .nm span .rk{white-space:nowrap}
   .rside,#lpNow .top{isolation:isolate}
   .gd.fav,.gd.trash{position:relative}
   #lpNow .top .gd.fav{margin-left:5px}
@@ -956,8 +963,8 @@
     <div class="top"><b id="lpName"></b><span class="gd" id="lpGd" hidden></span></div>
     <div class="sub" id="lpSub"></div>
     <div class="rateRow"><div class="sub" id="lpSub2"></div><span id="lpRate" hidden>
-      <button type="button" class="ghost" data-r="fav" aria-pressed="false" aria-label="Favourite: a sun round its grade">&#9728;&#65039;</button>
-      <button type="button" class="ghost" data-r="trash" aria-pressed="false" aria-label="Trash: a toilet round its grade">&#128701;</button></span></div>
+      <button type="button" class="ghost" data-r="fav" aria-pressed="false" aria-label="Favourite: a sun round its grade"><span class="re">&#9728;&#65039;</span><span class="rc"></span></button>
+      <button type="button" class="ghost" data-r="trash" aria-pressed="false" aria-label="Trash: a toilet round its grade"><span class="re">&#128701;</span><span class="rc"></span></button></span></div>
     <!-- the setter's two. Log try and Log send went on 2026-10-21, as on the MoonBoard page: Quick log on the board logs a
          go. The Logbook button went with them: the Logbook is a page of its own. -->
     <div class="more3" id="lpMore" hidden>
@@ -1219,7 +1226,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-28 21:08';
+const BUILD = '2026-10-28 21:14';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -1242,6 +1249,14 @@ const BANDS = [{ max: 5, bg: '#22c55e', fg: '#06240e' }, { max: 7, bg: '#2563eb'
 function paintPill(el, g){ const b = BANDS.find(x => g <= x.max); el.textContent = vName(g); el.style.background = b.bg; el.style.color = b.fg; }
 // this climber's word on a route: 'fav', 'trash' or ''; and the grade drawn with it
 const rateOf = id => (me && snap.rates && snap.rates[me] && snap.rates[me][id]) || '';
+/* The crew's words on a route, everyone's, this climber's among them (Will, 2026-10-28: "Shared"): the art round the
+   grade stays each climber's own, and the counts are shown beside it. */
+function rateCount(id){
+  const c = { fav: 0, trash: 0 };
+  for (const who in snap.rates || {}){ const v = snap.rates[who][id]; if (v in c) c[v]++; }
+  return c;
+}
+const rateWords = c => (c.fav ? ' \u00b7 <span class="rk">\u2600\ufe0f ' + c.fav + '</span>' : '') + (c.trash ? ' \u00b7 <span class="rk">\ud83d\udebd ' + c.trash + '</span>' : '');
 function paintRate(el, id){ const v = rateOf(id); el.classList.toggle('fav', v === 'fav'); el.classList.toggle('trash', v === 'trash'); }
 const ls = { get: k => { try{ return localStorage.getItem(k); }catch(e){ return null; } }, set: (k, v) => { try{ localStorage.setItem(k, v); }catch(e){} } };
 
@@ -3220,7 +3235,9 @@ function paintLog(){
   $('lpName').textContent = r ? r.name : 'No route is open';
   $('lpGd').hidden = !r; if (r){ paintPill($('lpGd'), r.grade); paintRate($('lpGd'), r.id); }
   $('lpRate').hidden = !r || !me;
-  $('lpRate').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', r && rateOf(r.id) === b.dataset.r ? 'true' : 'false'));
+  const rc = r ? rateCount(r.id) : { fav: 0, trash: 0 };
+  $('lpRate').querySelectorAll('button').forEach(b => { b.setAttribute('aria-pressed', r && rateOf(r.id) === b.dataset.r ? 'true' : 'false');
+    b.querySelector('.rc').textContent = rc[b.dataset.r] || ''; });
   $('lpSub').textContent = r ? 'by ' + r.setter + ' · ' + FEET[r.feet] + rulesSay(r) + (r.tape ? ' · tape: ' + r.tape : '') + (r.note ? ' · ' + r.note : '') + (r.retired ? ' · taken down' : '')
                              : 'Pick one on the Routes page, or make one: two taps on the picture, tap its holds, and save them.';
   const t = r && me ? myTries(r.id) : 0, sends = r && me && statOf(me, r.id) && statOf(me, r.id).s ? statOf(me, r.id).s.length : 0;
@@ -3806,7 +3823,7 @@ function paintList(){
     const side = goes ? '<div class="who goes">' + (g ? (g.length > GOES_MAX ? '<span class="more">+' + (g.length - GOES_MAX) + '</span>' : '') + goDots(g.slice(-GOES_MAX)) : '') + '</div>' + (bw ? '<div class="bw">' + esc(bw) + '</div>' : '')
       : '<div class="who crew">' + who.map(chipHtml).join('') + '</div>';
     return '<div class="rt' + (r.id === openId ? ' sel' : '') + (r.retired ? ' gone' : '') + '" data-id="' + r.id + '"><div class="nm"><b>' + esc(r.name) + '</b><span>' + esc(r.setter) +
-      ' · ' + (byNumber(r) ? 'by number · ' : '') + FEET[r.feet] + rulesSay(r, true) + (n ? ' · ' + n + ' sent' : '') + (r.tape ? ' · ' + esc(r.tape) : '') + '</span></div>' +
+      ' · ' + (byNumber(r) ? 'by number · ' : '') + FEET[r.feet] + rulesSay(r, true) + (n ? ' · ' + n + ' sent' : '') + (r.tape ? ' · ' + esc(r.tape) : '') + rateWords(rateCount(r.id)) + '</span></div>' +
       '<div class="rside"><div class="gd" data-g="' + r.grade + '"></div>' + side + '</div><div class="chev">›</div></div>';
   }).join('');
   box.querySelectorAll('.gd').forEach(p => { paintPill(p, +p.dataset.g); paintRate(p, +p.closest('.rt').dataset.id); });
