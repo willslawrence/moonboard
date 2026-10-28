@@ -434,7 +434,7 @@
   /* A climber's word on a route (Will, 2026-10-28: "a small button to rate the climb either trash or favorite. If rated
      favorite then give the sun burst around the grade or if rated trash give the toilet"). The two buttons sit at the
      right of the card's last line; the art is drawn behind the grade wherever this climber sees the route's grade in a
-     list or on this card. Its parent is its own layer so the art goes behind the grade but in front of the row. */
+     list or on this card, by the crew's sum. Its parent is its own layer so the art goes behind the grade but in front of the row. */
   #lpNow .rateRow{display:flex;align-items:center;gap:10px}
   #lpNow .rateRow .sub{flex:1;min-width:0}
   #lpRate{flex:none;display:flex;gap:6px;margin:6px 0 0 auto}
@@ -446,10 +446,9 @@
   #lpRate button[aria-pressed="true"]{background:var(--panel2);border-color:var(--ink)}
   #lpRate button[aria-pressed="true"] .re{opacity:1;filter:none}
   #lpRate button[aria-pressed="true"] .rc{color:var(--ink)}
-  /* the crew's count on a route's row (Will, 2026-10-28, asked mine or shared: "Shared") */
-  .nm span .rk{white-space:nowrap}
   .rside,#lpNow .top{isolation:isolate}
   .gd.fav,.gd.trash{position:relative}
+  .nm span .rk{white-space:nowrap}
   #lpNow .top .gd.fav{margin-left:5px}
   .gd.fav{box-shadow:0 0 0 1.5px #f2bf0f,0 0 10px 2px rgba(242,191,15,.55)}
   .gd.fav::before,.gd.trash::before{content:'';position:absolute;z-index:-1;pointer-events:none;background-size:100% 100%;background-repeat:no-repeat}
@@ -1226,7 +1225,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-28 21:14';
+const BUILD = '2026-10-28 21:23';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -1249,15 +1248,19 @@ const BANDS = [{ max: 5, bg: '#22c55e', fg: '#06240e' }, { max: 7, bg: '#2563eb'
 function paintPill(el, g){ const b = BANDS.find(x => g <= x.max); el.textContent = vName(g); el.style.background = b.bg; el.style.color = b.fg; }
 // this climber's word on a route: 'fav', 'trash' or ''; and the grade drawn with it
 const rateOf = id => (me && snap.rates && snap.rates[me] && snap.rates[me][id]) || '';
-/* The crew's words on a route, everyone's, this climber's among them (Will, 2026-10-28: "Shared"): the art round the
-   grade stays each climber's own, and the counts are shown beside it. */
+/* The crew's words on a route, a tug of war (Will, 2026-10-28: "for everyone, community, I want the big sun or toilet
+   around the grade... if one person trashes and another person suns it... they're equaled out, so it goes away. And
+   if a third person suns it... it gets the sun again... an average route doesn't show anything"): every climber's
+   word counts once, a sun +1 and a toilet -1, and the sum decides what everyone sees round the grade. The counts
+   are kept too ("you can keep the tallies for how many people liked it, how many people trashed it"): on History's
+   two buttons, and at the end of each route's grey line in the list. */
 function rateCount(id){
   const c = { fav: 0, trash: 0 };
   for (const who in snap.rates || {}){ const v = snap.rates[who][id]; if (v in c) c[v]++; }
   return c;
 }
 const rateWords = c => (c.fav ? ' \u00b7 <span class="rk">\u2600\ufe0f ' + c.fav + '</span>' : '') + (c.trash ? ' \u00b7 <span class="rk">\ud83d\udebd ' + c.trash + '</span>' : '');
-function paintRate(el, id){ const v = rateOf(id); el.classList.toggle('fav', v === 'fav'); el.classList.toggle('trash', v === 'trash'); }
+function paintRate(el, id){ const c = rateCount(id), net = c.fav - c.trash; el.classList.toggle('fav', net > 0); el.classList.toggle('trash', net < 0); }
 const ls = { get: k => { try{ return localStorage.getItem(k); }catch(e){ return null; } }, set: (k, v) => { try{ localStorage.setItem(k, v); }catch(e){} } };
 
 let wall = null;                 // wall.json
