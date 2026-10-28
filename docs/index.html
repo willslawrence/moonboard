@@ -920,6 +920,31 @@
   #story .st .ln{display:block;margin-top:3px}
   #story .st select{width:auto;max-width:100%;height:32px;margin:2px 0 6px;padding:0 8px;font-size:14px}
   #story .st button.mini{width:auto;margin-top:7px;padding:7px 10px;font-size:12.5px;white-space:normal;text-align:left}
+  /* Head to head, side by side: the same three columns all the way down, you on the left in ink, them on the right in gold */
+  #story .st.wide{display:block}
+  #story .h2h{margin-top:7px;padding:12px 10px 10px;border-radius:12px;background:var(--panel);border:1px solid var(--edge)}
+  #story .h2h .hh,#story .h2h .hv,#story .h2h .tape{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:6px}
+  #story .h2h .hh{align-items:center}
+  #story .h2h .cl{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
+  #story .h2h .fc{display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;font:700 21px/1 -apple-system,BlinkMacSystemFont,sans-serif;font-style:normal;color:#fff}
+  #story .h2h .fc.em{background:none;font-size:40px}
+  #story .h2h .nm{max-width:100%;font-size:14px;font-weight:700;line-height:32px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #story .h2h select{width:100%;margin:0;text-align:center;text-align-last:center;font-weight:700;text-overflow:ellipsis}
+  #story .h2h .vs{justify-self:center;font:800 13px/1 -apple-system,BlinkMacSystemFont,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--dimmer)}
+  #story .h2h .hv{margin-top:12px}
+  #story .h2h .hv > div{min-width:0;padding:9px 4px 8px;border-radius:9px;background:var(--panel2);border-top:3px solid var(--box);text-align:center}
+  #story .h2h .hv .a{border-top-color:var(--ink)}
+  #story .h2h .hv .b{border-top-color:var(--gold)}
+  #story .h2h .hv em{display:block;font:800 25px/1.1 ui-monospace,Menlo,monospace}
+  #story .h2h .hv .b em{color:var(--gold)}
+  #story .h2h .hv small{display:block;margin-top:3px;font-size:11px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #story .h2h .hbar{display:flex;gap:2px;height:7px;margin-top:8px;border-radius:4px;overflow:hidden}
+  #story .h2h .hbar i{min-width:3px}
+  #story .h2h .hbar .a{background:var(--ink)} #story .h2h .hbar .m{background:var(--box)} #story .h2h .hbar .b{background:var(--gold)}
+  #story .h2h .tape{gap:7px 6px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);align-items:baseline;text-align:center;font:600 14px ui-monospace,Menlo,monospace;color:var(--dim)}
+  #story .h2h .tape .k{font:700 10px -apple-system,BlinkMacSystemFont,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--dimmer)}
+  #story .h2h .tape .win{font-weight:800;color:var(--ink)}
+  #story .h2h button.mini{display:block;width:100%;margin-top:12px;padding:9px 10px;text-align:center}
   #story .yr{display:grid;grid-template-columns:auto repeat(4,1fr);gap:3px 10px;margin-top:4px;font-size:12.5px}
   #story .yr span{color:var(--dim)} #story .yr i{font-style:normal;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--dimmer)}
   #storyShare{margin:12px 0 4px;font-size:14px;font-weight:600}
@@ -1958,7 +1983,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-27 23:39';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-28 19:39';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -9512,10 +9537,22 @@ function storyMore(who, entries, G, own){
     const theirs = storySent(pick), both = [...G.sent].filter(id => theirs.has(id)).length, onlyThem = [...theirs].filter(id => !G.sent.has(id));
     const hard = set0 => [...set0].reduce((m, id) => byId[id] && byId[id].grade > m ? byId[id].grade : m, -1);
     const open = onlyThem.filter(id => byId[id].board === boardKey);
-    F.push({ ic: '🤝', k: 'Head to head', noShare: true, v: '<select id="storyRivalSel" aria-label="Beside which climber">' + others.map(r => '<option' + (r.n === pick ? ' selected' : '') + '>' + esc(r.n) + '</option>').join('') + '</select>' +
-      '<span class="ln"><em>' + both + '</em> ' + (both === 1 ? 'route' : 'routes') + ' you have both sent.</span><span class="ln"><em>' + (G.sent.size - both) + '</em> only ' + (own ? 'you' : esc(who)) + ' · <em>' + onlyThem.length + '</em> only ' + esc(pick) + '.</span>' +
-      '<span class="ln">Hardest: ' + (own ? 'you' : esc(who)) + ' ' + GRADES[hard(G.sent)] + ', ' + esc(pick) + ' ' + GRADES[hard(theirs)] + '.</span>' +
-      (own && open.length ? '<button type="button" id="storyRivalList" class="mini">See ' + esc(pick) + '’s sends you have not sent</button>' : ''), rival: pick });
+    /* Side by side (Will, 2026-10-28: "one climber's emoji on one side and the other's on the other side... the climbs
+       sent only by me on my side and his on his side and the common ones in the middle"): the two climbers face each
+       other, the three counts sit under them over a bar of their sizes, then a tale of the tape with the leader bold. */
+    const A = scoreFor(who), B = scoreFor(pick), mine = G.sent.size - both;
+    const first = n => esc(n.split(' ')[0]), face = n => '<i class="fc" data-n="' + esc(n) + '"></i>';
+    const gr = g => g < 0 ? '–' : GRADES[g], num = n => n.toLocaleString();
+    const tape = (k, a, b, show) => '<span' + (a > b ? ' class="win"' : '') + '>' + show(a) + '</span><span class="k">' + k + '</span><span' + (b > a ? ' class="win"' : '') + '>' + show(b) + '</span>';
+    F.push({ ic: '🤝', k: 'Head to head', noShare: true, wide: true, rival: pick, v: '<div class="h2h">' +
+      '<div class="hh"><div class="cl">' + face(who) + '<span class="nm">' + (own ? 'You' : esc(who)) + '</span></div><span class="vs">vs</span>' +
+        '<div class="cl">' + face(pick) + '<select id="storyRivalSel" aria-label="Beside which climber">' + others.map(r => '<option' + (r.n === pick ? ' selected' : '') + '>' + esc(r.n) + '</option>').join('') + '</select></div></div>' +
+      '<div class="hv"><div class="a"><em>' + mine + '</em><small>only ' + (own ? 'you' : first(who)) + '</small></div>' +
+        '<div class="m"><em>' + both + '</em><small>both sent</small></div>' +
+        '<div class="b"><em>' + onlyThem.length + '</em><small>only ' + first(pick) + '</small></div></div>' +
+      '<div class="hbar" aria-hidden="true">' + [['a', mine], ['m', both], ['b', onlyThem.length]].filter(x => x[1]).map(x => '<i class="' + x[0] + '" style="flex:' + x[1] + '"></i>').join('') + '</div>' +
+      '<div class="tape">' + tape('Sent', G.sent.size, theirs.size, num) + tape('Flashes', A.flashes, B.flashes, num) + tape('Hardest', hard(G.sent), hard(theirs), gr) + tape('Points', A.total, B.total, num) + '</div>' +
+      (own && open.length ? '<button type="button" id="storyRivalList" class="mini">See ' + esc(pick) + '’s sends you have not sent</button>' : '') + '</div>' });
   }
   return F;
 }
@@ -9605,9 +9642,10 @@ function paintStory(){
   const rowsAll = sample ? STORY_SAMPLE : more.filter(f => f.k === 'Next up').concat(facts, more.filter(f => f.k !== 'Next up'));
   const note = tiles.includes('<button') ? '<p class="sgNote">Tap a grade for a route of that grade you have not sent.</p>' : '';
   box.innerHTML = (sample ? '<div class="smp"><b>A sample.</b> This is what your logbook can tell you once your climbs are in it. Bring your MoonBoard logbook over with <b>Import CSV</b>, above, and these become yours.</div>' : '') + tiles + note +
-    rowsAll.map(f => '<div class="st"><span class="ic">' + f.ic + '</span><div class="tx"><b>' + f.k + '</b>' + f.v + '</div></div>').join('') +
+    rowsAll.map(f => '<div class="st' + (f.wide ? ' wide' : '') + '">' + (f.wide ? '' : '<span class="ic">' + f.ic + '</span>') + '<div class="tx"><b>' + (f.wide ? f.ic + ' ' : '') + f.k + '</b>' + f.v + '</div></div>').join('') +
     (!sample && own && sends < 20 ? '<p class="more">The more of your logbook is in here, the more this can tell. <b>Import CSV</b>, above, brings an old logbook over.</p>' : '') +
     (!sample && own && G ? '<button type="button" id="storyShare" class="ghost">Share my story as a picture</button>' : '');
+  box.querySelectorAll('.h2h .fc').forEach(el => chipPaint(el, el.dataset.n));
   if ($('storyRivalSel')) $('storyRivalSel').onchange = () => { storyRival = $('storyRivalSel').value; paintStory(); };
   if ($('storyRivalList')) $('storyRivalList').onclick = () => rivalList(more.find(f => f.rival).rival);
   if ($('storyShare')) $('storyShare').onclick = () => {
