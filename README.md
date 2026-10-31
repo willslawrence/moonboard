@@ -21,7 +21,8 @@ controller, no Raspberry Pi. We act as the BLE central and write the same
 - **`docs/sun/`** — the Sun board: Will's other wall, which has no lights. A page of its
   own, with pictures of the wall and a map of its holds. See [The Sun board](#the-sun-board).
 - **`store/`, `functions/`, `wrangler.toml`** — where the Sun board's routes and logbook
-  are kept: a Pages Function on a D1 database, on the same address as the pages.
+  are kept, and both walls' ratings and comments: a Pages Function on a D1 database, on the
+  same address as the pages.
 - **`moonprobe.py`** — macOS BLE probe. `python3 moonprobe.py go` scans, finds the
   box, and dumps its GATT services. Read-only.
 - **`docs/test.html`** — a bare wall test: single LEDs, a column, a row, the corners,
@@ -165,7 +166,9 @@ this is not a page dedicated to logging"). Top to bottom:
   was at the foot of the page, under a list that was always open, until 2026-10-11.)
 - **The open problem**: its name, its grade and a small **Beta** on one line (Will: "make
   the beta button smaller and inline with the route name"), then how it has gone for you.
-  A small line offers to undo your last go (see *Logbook*).
+  A small line offers to undo your last go (see *Logbook*). At the right of that line are
+  three small grey buttons (Will, 2026-10-31: "Keep the buttons low profile"): a speech
+  bubble for **comments**, a **sun** and a **toilet**. See *Ratings and comments*.
 - **Your history on this route**: one row for each session you were on it, a dot for
   every go.
 - **Community**: who has climbed the open problem and how each of them first got up it,
@@ -173,6 +176,32 @@ this is not a page dedicated to logging"). Top to bottom:
   routes to open it.
 - Earlier sessions are not listed here: the **Logbook** has every one of them, a session to a
   line (they were on this page too until 2026-10-11, which said the same thing twice).
+
+### Ratings and comments
+
+The same on both walls, and the same calls to the store (Will, 2026-10-31: "can we add
+comments to the log book. So each route I can save comments. And a favorite sun burst like
+we did on the sunboard… add that to the moon board").
+
+**A rating** is a climber's word on a route, a sun or a toilet, and a second tap takes it
+back. It is a tug of war (Will, 2026-10-28): every climber's word counts once, a sun +1 and a
+toilet -1, and the sum decides what everyone sees round the grade, on the route's card and in
+the list: a sunburst above nothing, a toilet below it, and at nothing no art at all. The
+tallies stay, on the buttons and at the end of the route's line in the list.
+
+**A comment** is a climber's own, on a route, with the day it was written; a route can have
+as many as they like. The bubble on History's card opens a sheet to write one, and that
+sheet lists them with a cross on each (two taps, as anything that goes for good). They show
+on the route's card, newest first, and in the Logbook under the go, once however many goes
+the session had: under the newest go of that route in the latest session to begin before the
+comment was written. A tap on a go in the Logbook has a small **Comment** at the head of its
+card, so one can be written from there.
+
+Comments are personal (Will: "The comments/notes should be personal. So climbers only see
+they're own comments"). The wall as a phone is sent it has none in it: a phone asks for those
+of the name it has picked, and is handed those and no others; they go when the name changes
+and are not kept on the phone; and somebody else's logbook shows none. There are no accounts,
+so that is as far as it can go: whoever picks your name at the top is you, and sees yours.
 
 ### Somebody new
 
@@ -741,7 +770,10 @@ database (`wrangler.toml`), at `/api/w/sun` on the site's own address, so it goe
 a push like the pages do. The relay and the crew's MoonBoard logbook are not involved,
 except once: the first time anyone opens the Sun board it copies the crew's names across.
 It also keeps the climbers' emoji for both walls, at `/api/faces` (see *The crew*); a check
-keeps its own with `?crew=test-...`, and a test wall's `/reset` clears that wall's.
+keeps its own with `?crew=test-...`, and a test wall's `/reset` clears that wall's. And it
+keeps the MoonBoard's ratings and comments, as a wall called `moon` with nothing else on it
+(`/api/w/moon`; a check's is `test-moon-...`), so that they are the same calls as the Sun
+board's and go live with a push, with no change to the relay. See *Ratings and comments*.
 
 A logbook brought in from a file goes to `POST /api/w/sun/log/import`: many goes of one
 climber in a call, each with when it happened. For each route and day the logbook ends up

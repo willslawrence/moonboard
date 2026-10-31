@@ -26,9 +26,16 @@
      POST /api/w/sun/fix/undo         { k }                                take that back
      POST /api/w/sun/fixes/done       { ks }                               these are in the published map now
      POST /api/w/sun/rate             { person, route, rate }              that climber's word on a route: fav, trash, or '' for none
+     GET  /api/w/sun/comments?person=                                      that climber's own comments, and nobody else's
+     POST /api/w/sun/comment          { person, route, text }              a comment of that climber's on a route, kept with its date; a route can have many
+     POST /api/w/sun/comment/delete   { person, k }                        take that one comment (k, as they were handed it) back
 
    A write answers with the wall as it now stands, so the phone that wrote is up to date
    without asking again. There are no accounts, as on the rest of the app: a name is a name.
+   Comments are the exception. They are their climber's alone (Will, 2026-10-31: "The comments/notes should be
+   personal. So climbers only see they're own comments"), so the wall as it stands does not carry them: a phone asks
+   for those of the name it has picked, the two comment calls answer with that climber's and nothing else, and no
+   call hands out the crew's. With no accounts that is as far as it can go: whoever picks a name is that climber.
    "Only the setter changes a route" is a courtesy the page keeps, not a lock.
 
    A logbook row is one try or one send. The tally per climber and route is the same shape
@@ -69,7 +76,15 @@
      GET  /api/board?room=<code>      { room, board }                      board is null until a phone there picks one
      POST /api/board                  { room, board }                      that wall's hold set is now this one
 
-   A check uses a code that begins test-, and /api/board/reset?room=test-... clears it. */
+   A check uses a code that begins test-, and /api/board/reset?room=test-... clears it.
+
+   The MoonBoard's words on its routes (Will, 2026-10-31: "can we add comments to the log book... And a favorite sun
+   burst like we did on the sunboard... add that to the moon board"). Its climbers, routes and logbook are the relay's,
+   but ratings and comments are kept here, as a wall called moon that has nothing else on it, so that they are the same
+   calls as the Sun board's and go live with a push. /api/w/moon answers with { wall, rates }, and of the calls above it
+   takes only /rate, /comments, /comment and /comment/delete. Here a name is whatever the page says and a route is a number
+   (a MoonBoard problem's id), since the relay is the one that knows them. A check's wall of this kind is named test-moon-...
+   */
 
 export const RESULTS = ['try', 'flash', '2nd', '3rd', '4+'];
 export const ROLES = ['s', 'h', 'f', 'e', 'n'];            // start, hold, foot only, finish, and a hold with its number in a climb by number
@@ -81,10 +96,11 @@ export const RULES = ['flatoff'];
 /* A climber's word on a route, theirs alone (Will, 2026-10-28: "a small button to rate the climb either trash or
    favorite"): the page draws a sun round the grade for a favourite and a toilet for trash. */
 export const RATES = ['fav', 'trash'];
+export const COMMENT_MAX = 1000;                            // characters in one comment
 const rulesOf = v => RULES.filter(k => v.includes(k)).join(' ');
 export const GRADE_MIN = -1, GRADE_MAX = 17;                // VB is -1, then V0 to V17
-const WALLS = { sun: 'Sun board' };                         // the walls there are; "test-..." is any wall a check makes
-const MAX_ROUTES = 3000, MAX_PEOPLE = 300, MAX_MARKS = 250, MAX_FIXES = 2000, MAX_FACES = 300;
+const WALLS = { sun: 'Sun board', moon: 'MoonBoard' };      // the walls there are; "test-..." is any wall a check makes
+const MAX_ROUTES = 3000, MAX_PEOPLE = 300, MAX_MARKS = 250, MAX_FIXES = 2000, MAX_FACES = 300, MAX_COMMENTS = 5000;
 const CREW = 'wills-wall';                                  // whose emoji: everyone who climbs at Will's, on either wall
 const FIX_KINDS = ['add', 'drop', 'redo'], FIX_SIZES = ['s', 'm', 'l'];
 // a MoonBoard's hold sets and angles, as the MoonBoard page and the relay name them (the three lists go in step)
@@ -100,7 +116,13 @@ const bad = (msg, status = 400) => json({ error: msg }, status);
 const clean = (v, max) => typeof v === 'string'
   ? v.replace(/[\x00-\x1f\x7f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max) : '';
 const unit = v => typeof v === 'number' && v >= 0 && v <= 1;
+/* A comment: as clean, but its line breaks stay. */
+const cleanLines = (v, max) => typeof v === 'string'
+  ? v.replace(/\r\n?/g, '\n').replace(/[\x00-\x09\x0b-\x1f\x7f<>]/g, ' ').replace(/[ \t]+/g, ' ').replace(/ ?\n ?/g, '\n').replace(/\n{3,}/g, '\n\n').trim().slice(0, max) : '';
 const isTest = wall => /^test-[a-z0-9-]{1,24}$/.test(wall);
+const wordsOnly = wall => wall === 'moon' || /^test-moon-/.test(wall);      // a wall kept with the relay: see the top of this file
+// a climber's name as it is kept: on a wall kept with the relay, exactly as the page has it, since it is a key there
+const nameOf = (wall, v) => wordsOnly(wall) ? (typeof v === 'string' ? v.trim().slice(0, 40) : '') : clean(v, 40);
 const crewOf = wall => isTest(wall) ? wall : CREW;
 /* One emoji as a phone's keyboard gives it: one character on the screen, which may be several code points (a skin
    tone, a flag, a family joined up, a keycap). '' for none, null for anything else. */
@@ -134,6 +156,9 @@ const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS boards (room TEXT NOT NULL PRIMARY KEY, board TEXT NOT NULL, t TEXT NOT NULL)`,
   `CREATE TABLE IF NOT EXISTS rates (wall TEXT NOT NULL, person TEXT NOT NULL, route INTEGER NOT NULL, rate TEXT NOT NULL, t TEXT NOT NULL,
      PRIMARY KEY (wall, person, route))`,
+  `CREATE TABLE IF NOT EXISTS comments (k INTEGER PRIMARY KEY AUTOINCREMENT, wall TEXT NOT NULL, person TEXT NOT NULL, route INTEGER NOT NULL,
+     text TEXT NOT NULL, t TEXT NOT NULL)`,
+  `CREATE INDEX IF NOT EXISTS comments_wall ON comments (wall, person, route, k)`,
 ];
 /* Columns added since the tables were first made. A go against the clock on a climb by number: on its row of the
    logbook, the number reached and the seconds it took; in the tally, the best such go. A route's further rules, as
@@ -184,17 +209,30 @@ const facesFrom = rows => Object.fromEntries(rows.map(x => [x.name, x.face]));
 const facesOf = async (db, crew) =>
   facesFrom((await db.prepare('SELECT name, face FROM faces WHERE crew = ? ORDER BY name').bind(crew).all()).results);
 
+const ratesQ = (db, wall) => db.prepare('SELECT person, route, rate FROM rates WHERE wall = ?').bind(wall);
+const ratesFrom = rows => {                  // { person: { route: rate } }
+  const out = {};
+  for (const row of rows) (out[row.person] = out[row.person] || {})[row.route] = row.rate;
+  return out;
+};
+/* One climber's comments, { route: [{ k, t, text }, oldest first] }. Never the crew's: see the top of this file. */
+async function commentsOf(db, wall, person){
+  const out = {}, rows = await db.prepare('SELECT k, route, text, t FROM comments WHERE wall = ? AND person = ? ORDER BY k').bind(wall, person).all();
+  for (const row of rows.results) (out[row.route] = out[row.route] || []).push({ k: row.k, t: row.t, text: row.text });
+  return out;
+}
+
 async function snapshot(db, wall){
+  if (wordsOnly(wall)) return { wall, rates: ratesFrom((await ratesQ(db, wall).all()).results) };
   const [p, r, s, f, e, v] = await db.batch([
     db.prepare('SELECT name FROM people WHERE wall = ? ORDER BY t, name').bind(wall),
     db.prepare('SELECT id, name, grade, setter, marks, feet, rules, tape, note, t, edited, retired FROM routes WHERE wall = ? ORDER BY id').bind(wall),
     db.prepare('SELECT person, route, a, r, s, d, gn, gs FROM stats WHERE wall = ?').bind(wall),
     db.prepare('SELECT k, who, kind, v, x, y, h, size FROM fixes WHERE wall = ? AND done = 0 ORDER BY k').bind(wall),
     db.prepare('SELECT name, face FROM faces WHERE crew = ? ORDER BY name').bind(crewOf(wall)),
-    db.prepare('SELECT person, route, rate FROM rates WHERE wall = ?').bind(wall),
+    ratesQ(db, wall),
   ]);
-  const stats = {}, rates = {};
-  for (const row of v.results) (rates[row.person] = rates[row.person] || {})[row.route] = row.rate;
+  const stats = {};
   for (const row of s.results){
     const e = { a: row.a, r: row.r, d: row.d };
     const sends = JSON.parse(row.s);
@@ -208,7 +246,7 @@ async function snapshot(db, wall){
     stats,
     fixes: f.results.map(x => { const o = { k: x.k, by: x.who, kind: x.kind, v: x.v, x: x.x, y: x.y }; if (x.h) o.h = x.h; if (x.size) o.size = x.size; return o; }),
     faces: facesFrom(e.results),
-    rates,
+    rates: ratesFrom(v.results),
   };
 }
 
@@ -315,8 +353,15 @@ export async function handle(request, db, now = () => new Date().toISOString()){
   if (!db) return bad('the store has no database bound to it', 500);
   await tables(db);
 
+  if (wordsOnly(wall) && !['', '/rate', '/comments', '/comment', '/comment/delete', '/reset'].includes(path)) return bad('not found', 404);
+
   if (request.method === 'GET'){
     if (path === '') return json(await snapshot(db, wall));
+    if (path === '/comments'){
+      const person = nameOf(wall, url.searchParams.get('person'));
+      if (!person) return bad('say whose');
+      return json({ person, comments: await commentsOf(db, wall, person) });
+    }
     if (path === '/log'){
       const person = clean(url.searchParams.get('person') || '', 40);
       const route = Number(url.searchParams.get('route') || 0);
@@ -555,20 +600,47 @@ export async function handle(request, db, now = () => new Date().toISOString()){
     return json(await snapshot(db, wall));
   }
 
+  // who is saying it, and of which route: the store knows them, or on a wall kept with the relay, takes the page's word
+  const speaker = async () => {
+    const name = nameOf(wall, body.person);
+    if (!name || /[\x00-\x1f\x7f<>]/.test(name)) return '';
+    return wordsOnly(wall) || (await knows(db, wall, name)) ? name : '';
+  };
+  const isRoute = async id => wordsOnly(wall) ? Number.isInteger(id) && id > 0
+    : !!(await db.prepare('SELECT 1 AS ok FROM routes WHERE wall = ? AND id = ?').bind(wall, id).first());
+
   if (path === '/rate'){
-    const person = clean(body.person, 40), route = Number(body.route), rate = body.rate || '';
-    if (!person || !(await knows(db, wall, person))) return bad('say who you are first', 404);
+    const person = await speaker(), route = Number(body.route), rate = body.rate || '';
+    if (!person) return bad('say who you are first', 404);
     if (rate && !RATES.includes(rate)) return bad('fav, trash, or nothing');
-    if (!(await db.prepare('SELECT 1 AS ok FROM routes WHERE wall = ? AND id = ?').bind(wall, route).first())) return bad('no such route', 404);
+    if (!(await isRoute(route))) return bad('no such route', 404);
     if (!rate) await db.prepare('DELETE FROM rates WHERE wall = ? AND person = ? AND route = ?').bind(wall, person, route).run();
     else await db.prepare(`INSERT INTO rates (wall, person, route, rate, t) VALUES (?, ?, ?, ?, ?)
         ON CONFLICT (wall, person, route) DO UPDATE SET rate = excluded.rate, t = excluded.t`).bind(wall, person, route, rate, now()).run();
     return json(await snapshot(db, wall));
   }
 
+  if (path === '/comment'){
+    const person = await speaker(), route = Number(body.route), text = cleanLines(body.text, COMMENT_MAX);
+    if (!person) return bad('say who you are first', 404);
+    if (!text) return bad('a comment needs some words');
+    if (!(await isRoute(route))) return bad('no such route', 404);
+    if ((await db.prepare('SELECT COUNT(*) AS n FROM comments WHERE wall = ?').bind(wall).first()).n >= MAX_COMMENTS)
+      return bad('that is all the comments this wall can hold', 409);
+    await db.prepare('INSERT INTO comments (wall, person, route, text, t) VALUES (?, ?, ?, ?, ?)').bind(wall, person, route, text, now()).run();
+    return json({ person, comments: await commentsOf(db, wall, person) });
+  }
+
+  if (path === '/comment/delete'){
+    const person = await speaker();
+    if (!person) return bad('say who you are first', 404);
+    await db.prepare('DELETE FROM comments WHERE wall = ? AND person = ? AND k = ?').bind(wall, person, Number(body.k)).run();
+    return json({ person, comments: await commentsOf(db, wall, person) });
+  }
+
   // a check clears up after itself; a real wall cannot be emptied this way
   if (path === '/reset' && isTest(wall)){
-    await db.batch(['people', 'routes', 'log', 'stats', 'fixes', 'rates'].map(t => db.prepare('DELETE FROM ' + t + ' WHERE wall = ?').bind(wall))
+    await db.batch(['people', 'routes', 'log', 'stats', 'fixes', 'rates', 'comments'].map(t => db.prepare('DELETE FROM ' + t + ' WHERE wall = ?').bind(wall))
       .concat([db.prepare('DELETE FROM faces WHERE crew = ?').bind(wall)]));
     return json(await snapshot(db, wall));
   }

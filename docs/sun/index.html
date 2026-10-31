@@ -458,17 +458,24 @@
      favorite then give the sun burst around the grade or if rated trash give the toilet"). The two buttons sit at the
      right of the card's last line; the art is drawn behind the grade wherever this climber sees the route's grade in a
      list or on this card, by the crew's sum. Its parent is its own layer so the art goes behind the grade but in front of the row. */
-  #lpNow .rateRow{display:flex;align-items:center;gap:10px}
+  #lpNow .rateRow{display:flex;align-items:flex-end;gap:10px}
   #lpNow .rateRow .sub{flex:1;min-width:0}
-  #lpRate{flex:none;display:flex;gap:6px;margin:6px 0 0 auto}
+  /* low profile (Will, 2026-10-31: "Keep the buttons low profile"): grey and borderless until they have something to say */
+  #lpRate{flex:none;display:flex;gap:1px;margin:2px -4px -4px auto}
   #lpRate[hidden]{display:none}
-  #lpRate button{display:flex;align-items:center;justify-content:center;gap:4px;width:auto;min-width:38px;height:34px;padding:0 8px;border-radius:10px;font-size:18px;line-height:1}
-  #lpRate button .re{opacity:.55;filter:grayscale(.85)}
-  #lpRate button .rc{font:700 13px ui-monospace,Menlo,monospace;color:var(--dim)}
+  #lpRate button{position:relative;display:flex;align-items:center;justify-content:center;gap:3px;width:auto;min-width:28px;height:26px;padding:0 4px;border:0;border-radius:7px;background:none;font-size:15px;line-height:1}
+  #lpRate button::after{content:'';position:absolute;inset:-9px -1px}         /* a finger's room round a small button */
+  #lpRate button .re{opacity:.5;filter:grayscale(1)}
+  #lpRate button .rc{font:700 11px ui-monospace,Menlo,monospace;color:var(--dim)}
   #lpRate button .rc:empty{display:none}
-  #lpRate button[aria-pressed="true"]{background:var(--panel2);border-color:var(--ink)}
   #lpRate button[aria-pressed="true"] .re{opacity:1;filter:none}
   #lpRate button[aria-pressed="true"] .rc{color:var(--ink)}
+  /* a comment: on the route's card, under its go in the logbook, and in the sheet where they are written */
+  #lpCmts{margin-top:8px;padding-top:6px;border-top:1px solid var(--line)}
+  .cmt{padding:2px 0;font-size:12.5px;line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere}
+  .cmt i{margin-right:6px;font-style:normal;font-size:11px;color:var(--dimmer)}
+  .bke.hasc{border-bottom:0;padding-bottom:3px}
+  .bkcs{padding:0 2px 9px 65px;border-bottom:1px solid var(--line);color:var(--dim)}
   .rside,#lpNow .top{isolation:isolate}
   .gd.fav,.gd.trash{position:relative}
   .nm span .rk{white-space:nowrap}
@@ -558,6 +565,20 @@
   #enFor{margin:2px 0 14px;font-size:14px;color:var(--dim);line-height:1.5}
   #enFor b{display:block;font-size:17px;color:var(--ink)}
   #enDelete{background:#dc2626;border-color:#dc2626;color:#fff;font-weight:700}
+  #cmtFor{display:flex;align-items:center;gap:8px;min-width:0;margin-bottom:10px}
+  #cmtFor b{min-width:0;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #cmtFor .gd{font-size:10px}
+  #cmtBox{display:block;width:100%;min-height:76px;padding:10px;border-radius:8px;border:1px solid var(--edge);background:var(--panel);color:var(--ink);
+          font:16px/1.35 -apple-system,system-ui,sans-serif;resize:none;appearance:none;-webkit-user-select:text;user-select:text}
+  #cmtBox::placeholder{color:var(--dimmer)}
+  #cmtSave{margin-top:8px}
+  #cmtErr{margin:6px 0 0;font-size:12px;color:#dc2626}
+  #cmtErr:empty{display:none}
+  #cmtList{margin-top:10px}
+  #cmtList .cmt{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
+  #cmtList .cmt span{flex:1;min-width:0}
+  #cmtList .cmt button{flex:none;width:auto;min-width:30px;height:26px;padding:0 6px;border:0;background:none;color:var(--dim);font-size:12px}
+  #cmtList .cmt button.armed{color:#dc2626;font-weight:700}
   #enErr{color:#ef4444;font-size:13px;min-height:18px;margin:8px 0 0}
   #lpFoot button{display:block;width:auto;margin:4px auto 0;padding:3px 10px;border:0;background:transparent;font-size:12.5px;font-weight:600;color:var(--dim);text-decoration:underline;text-underline-offset:2px}
   #lpUndo{display:block;width:auto;max-width:100%;margin:9px auto 0;padding:2px 8px;border:0;font-size:11px;overflow:hidden;text-overflow:ellipsis}
@@ -719,7 +740,7 @@
   #rsBtn.on{background:#22c55e;border-color:#22c55e;color:#06240e}
   body:not(.listPage):not(.logPage):not(.setPage):not(.bookPage) #rsBtn{box-shadow:0 0 0 1px rgba(255,255,255,.3)}
   body.listPage #rsBtn{display:none}
-  #rsSheet,#faceSheet{position:fixed;left:0;right:0;bottom:0;z-index:71;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;background:var(--bg);
+  #rsSheet,#faceSheet,#cmtSheet{position:fixed;left:0;right:0;bottom:0;z-index:71;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;background:var(--bg);
          border-radius:16px 16px 0 0;border-top:1px solid var(--edge);padding:14px var(--pad) calc(env(safe-area-inset-bottom) + 14px)}
   /* your emoji: the button beside Climbing as in Settings, and its sheet, an emoji a key, eight to a row (as on the MoonBoard page) */
   #faceBtn{display:flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;font-size:13.5px}
@@ -986,8 +1007,10 @@
     <div class="top"><b id="lpName"></b><span class="gd" id="lpGd" hidden></span></div>
     <div class="sub" id="lpSub"></div>
     <div class="rateRow"><div class="sub" id="lpSub2"></div><span id="lpRate" hidden>
+      <button type="button" id="cmtBtn" class="ghost" aria-pressed="false" aria-label="Comments on this route"><span class="re">&#128172;</span><span class="rc"></span></button>
       <button type="button" class="ghost" data-r="fav" aria-pressed="false" aria-label="Favourite: a sun round its grade"><span class="re">&#9728;&#65039;</span><span class="rc"></span></button>
       <button type="button" class="ghost" data-r="trash" aria-pressed="false" aria-label="Trash: a toilet round its grade"><span class="re">&#128701;</span><span class="rc"></span></button></span></div>
+    <div id="lpCmts" hidden></div>
     <!-- the setter's two. Log try and Log send went on 2026-10-21, as on the MoonBoard page: Quick log on the board logs a
          go. The Logbook button went with them: the Logbook is a page of its own. -->
     <div class="more3" id="lpMore" hidden>
@@ -1186,9 +1209,18 @@
     <button id="faceLetter" type="button" class="ghost">Use my letter</button>
   </div>
 </div>
+<!-- Your comments on a route (Will, 2026-10-31: "can we add comments to the log book. So each route I can save comments"). -->
+<div id="cmtSheet" hidden role="dialog" aria-label="Comments">
+  <div class="shHead"><h2>Comments</h2><button id="cmtShut" class="ghost">Close</button></div>
+  <div id="cmtFor"><b></b><span class="gd"></span></div>
+  <textarea id="cmtBox" rows="3" maxlength="1000" placeholder="Add a comment" aria-label="Your comment"></textarea>
+  <button id="cmtSave" class="solid">Save</button>
+  <p id="cmtErr"></p>
+  <div id="cmtList"></div>
+</div>
 <div id="entrySheet" hidden role="dialog" aria-label="Log entry">
   <div class="card">
-    <div class="shHead"><h2>Log entry</h2></div>
+    <div class="shHead"><h2>Log entry</h2><button id="enCmt" class="ghost">&#128172; Comment</button></div>
     <div id="enFor"></div>
     <div class="two">
       <button id="enCancel" class="ghost">Keep it</button>
@@ -1249,7 +1281,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-28 21:44';
+const BUILD = '2026-10-31 20:43';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -3259,12 +3291,19 @@ function whoFill(r){
 const kv = (left, right, cls) => '<div class="kv' + (cls ? ' ' + cls : '') + '"><span>' + left + '</span><span>' + right + '</span></div>';
 function paintLog(){
   const r = openRoute();
+  if (me !== cmtsFor) cmtsPull();
   $('lpName').textContent = r ? r.name : 'No route is open';
   $('lpGd').hidden = !r; if (r){ paintPill($('lpGd'), r.grade); paintRate($('lpGd'), r.id); }
   $('lpRate').hidden = !r || !me;
   const rc = r ? rateCount(r.id) : { fav: 0, trash: 0 };
-  $('lpRate').querySelectorAll('button').forEach(b => { b.setAttribute('aria-pressed', r && rateOf(r.id) === b.dataset.r ? 'true' : 'false');
+  $('lpRate').querySelectorAll('button[data-r]').forEach(b => { b.setAttribute('aria-pressed', r && rateOf(r.id) === b.dataset.r ? 'true' : 'false');
     b.querySelector('.rc').textContent = rc[b.dataset.r] || ''; });
+  const cs = r && me ? cmtsOf(r.id) : [];
+  $('cmtBtn').setAttribute('aria-pressed', cs.length ? 'true' : 'false');
+  $('cmtBtn').querySelector('.rc').textContent = cs.length || '';
+  $('lpCmts').hidden = !cs.length;
+  $('lpCmts').innerHTML = '';
+  cs.slice().reverse().forEach(c => { const l = cmtLine(c); l.onclick = () => cmtOpen(r.id); $('lpCmts').appendChild(l); });
   $('lpSub').textContent = r ? 'by ' + r.setter + ' · ' + FEET[r.feet] + rulesSay(r) + (r.tape ? ' · tape: ' + r.tape : '') + (r.note ? ' · ' + r.note : '') + (r.retired ? ' · taken down' : '')
                              : 'Pick one on the Routes page, or make one: two taps on the picture, tap its holds, and save them.';
   const t = r && me ? myTries(r.id) : 0, sends = r && me && statOf(me, r.id) && statOf(me, r.id).s ? statOf(me, r.id).s.length : 0;
@@ -3311,13 +3350,117 @@ const CREW_SHOWN = 8;                        // the log page is the open route's
 $('lpBack').onclick = () => showPage('board');
 /* The word is shown at once and then kept; a second tap on the same one takes it back. */
 $('lpRate').onclick = async e => {
-  const b = e.target.closest('button'), r = openRoute();
+  const b = e.target.closest('button[data-r]'), r = openRoute();
   if (!b || !r || !me) return;
   const next = rateOf(r.id) === b.dataset.r ? '' : b.dataset.r, mine0 = (snap.rates = snap.rates || {})[me] = { ...(snap.rates[me] || {}) };
   if (next) mine0[r.id] = next; else delete mine0[r.id];
   paintAll();
   try{ take(await call('/rate', { person: me, route: r.id, rate: next })); }
   catch(err){ toast('Could not keep that just now: ' + err.message, true); refresh(); }
+};
+
+/* ---------- comments ----------
+   A climber's own words on a route, as many as they like, each with its day: on the route's card on History, under
+   the go in their logbook, and written in a sheet from the small button on the card or from a go in the logbook.
+   They are that climber's alone (Will, 2026-10-31: "The comments/notes should be personal. So climbers only see they're
+   own comments"): the store hands this phone those of the name that is picked and no others, they go when the name
+   changes, they are not kept on the phone, and somebody else's logbook shows none. */
+let cmts = {}, cmtsFor = '';                   // route -> comments, oldest first, and whose they are
+const cmtsOf = id => cmts[id] || [];
+async function cmtsPull(){
+  const who = me;
+  if (who !== cmtsFor){ cmts = {}; cmtsFor = who; }
+  if (!who) return;
+  try{ const d = await call('/comments?person=' + encodeURIComponent(who)); if (who === cmtsFor) cmtsTake(d); }
+  catch(e){}                                   // none to show, until the page next asks
+}
+function cmtsTake(d){
+  const was = JSON.stringify(cmts);
+  cmts = d.comments || {};
+  if (JSON.stringify(cmts) === was) return;
+  paintLog();
+  if (page === 'book') paintBookRows();
+  if (!$('cmtSheet').hidden) cmtPaint();
+}
+const cmtDay = t => { const d = new Date(t);
+  return d.toLocaleDateString([], Object.assign({ day: 'numeric', month: 'short' }, d.getFullYear() === new Date().getFullYear() ? {} : { year: 'numeric' })); };
+function cmtLine(c){
+  const l = document.createElement('div'), day = document.createElement('i');
+  l.className = 'cmt'; day.textContent = cmtDay(c.t);
+  l.append(day, c.text);
+  return l;
+}
+/* Which session of a logbook each comment goes with: the latest on that route to begin before it was written, or
+   failing that the route's first. Session -> route -> comments; sessions come newest first, as logSessions gives them. */
+function cmtHomes(sessions){
+  const homes = new Map();
+  for (const id in cmts){
+    const on = sessions.filter(s => s.rows.some(e => e.route === +id));
+    cmts[id].forEach(c => {
+      const s = on.find(x => x.t0 <= Date.parse(c.t)) || on[on.length - 1];
+      if (!s) return;
+      if (!homes.has(s)) homes.set(s, new Map());
+      const m = homes.get(s);
+      m.set(+id, (m.get(+id) || []).concat(c));
+    });
+  }
+  return homes;
+}
+let cmtRoute = 0;
+function cmtOpen(id){
+  if (!me || !routeById(id)) return;
+  if (id !== cmtRoute) $('cmtBox').value = '';                 // what was typed stays, if the same route is opened again
+  cmtRoute = id;
+  $('cmtErr').textContent = '';
+  cmtPaint();
+  showSheet('cmtSheet');
+  cmtLift();
+  if (!cmtsOf(id).length) $('cmtBox').focus();
+}
+function cmtPaint(){
+  const r = routeById(cmtRoute), box = $('cmtList');
+  if (!r) return;
+  $('cmtFor').querySelector('b').textContent = r.name;
+  paintPill($('cmtFor').querySelector('.gd'), r.grade);
+  box.innerHTML = '';
+  cmtsOf(cmtRoute).slice().reverse().forEach(c => {
+    const l = document.createElement('div'), words = document.createElement('span'), x = document.createElement('button');
+    l.className = 'cmt';
+    words.append(...cmtLine(c).childNodes);
+    x.type = 'button'; x.textContent = '\u2715'; x.setAttribute('aria-label', 'Delete this comment');
+    x.onclick = async () => {                                  // two taps, as anything else that goes for good
+      if (!x.classList.contains('armed')){
+        x.classList.add('armed'); x.textContent = 'Delete?';
+        setTimeout(() => { x.classList.remove('armed'); x.textContent = '\u2715'; }, 3000);
+        return;
+      }
+      x.disabled = true;
+      try{ cmtsTake(await call('/comment/delete', { person: me, k: c.k })); }
+      catch(err){ $('cmtErr').textContent = err.message; x.disabled = false; }
+    };
+    l.append(words, x);
+    box.appendChild(l);
+  });
+}
+/* A sheet stands on the foot of the screen, and a phone's keyboard comes up over that: it is lifted to stand on the keyboard. */
+function cmtLift(){
+  const v = window.visualViewport, sh = $('cmtSheet');
+  sh.style.bottom = v && !sh.hidden ? Math.max(0, innerHeight - v.height - v.offsetTop) + 'px' : '';
+  sh.style.maxHeight = v && !sh.hidden ? v.height * .92 + 'px' : '';
+}
+if (window.visualViewport){ visualViewport.addEventListener('resize', cmtLift); visualViewport.addEventListener('scroll', cmtLift); }
+$('cmtBtn').onclick = () => { const r = openRoute(); if (r) cmtOpen(r.id); };
+$('cmtShut').onclick = () => showSheet(null);
+$('cmtSave').onclick = async () => {
+  const text = $('cmtBox').value.trim();
+  if (!text || !me || !cmtRoute) return;
+  $('cmtSave').disabled = true;
+  try{
+    cmtsTake(await call('/comment', { person: me, route: cmtRoute, text }));
+    $('cmtBox').value = '';
+    showSheet(null);
+  }catch(err){ $('cmtErr').textContent = err.message; }
+  $('cmtSave').disabled = false;
 };
 
 /* ---------- the i beside an option: what it does, in a bubble ----------
@@ -3369,9 +3512,10 @@ function showSheet(id){         // (the logbook, a sheet until 2026-10-21, is a 
   $('rsSheet').hidden = id !== 'rsSheet';
   $('entrySheet').hidden = id !== 'entrySheet';
   $('faceSheet').hidden = id !== 'faceSheet';
+  $('cmtSheet').hidden = id !== 'cmtSheet';
   $('scrim').hidden = !id && $('sheet').hidden && $('goSheet').hidden;
 }
-const sheetUp = () => ['entrySheet', 'rsSheet', 'faceSheet'].find(x => !$(x).hidden) || null;       // the one on top
+const sheetUp = () => ['entrySheet', 'rsSheet', 'faceSheet', 'cmtSheet'].find(x => !$(x).hidden) || null;       // the one on top
 
 /* ---------- the logbook ----------
    Every go of one climber, a session to a line, the newest open; then everyone's points. The log page is for the
@@ -3754,10 +3898,11 @@ function paintBookRows(){
   const sorted = tagRepeats(bookRows.slice()).sort((a, b) => logTime(b) - logTime(a));
   const sends = sorted.filter(e => e.result !== 'try'), tries = sorted.length - sends.length, flashes = sends.filter(e => e.result === 'flash' && !e.rep).length;
   let hard = null; sends.forEach(e => { const r = routeById(e.route); if (r && (!hard || r.grade > hard.grade)) hard = r; });
-  $('bookHint').textContent = own ? (sorted.length ? 'Tap an entry to delete it.' : '') : 'This is ' + who + '\u2019s logbook. To delete an entry of your own, or to import a file, pick your name here.';
+  $('bookHint').textContent = own ? (sorted.length ? 'Tap an entry to comment on it or delete it.' : '') : 'This is ' + who + '\u2019s logbook. To delete an entry of your own, or to import a file, pick your name here.';
   $('bookSum').textContent = !sorted.length ? 'Nothing logged yet.' : [sends.length + (sends.length === 1 ? ' send' : ' sends'), flashes + ' flashed',
     tries + (tries === 1 ? ' try' : ' tries'), hard ? 'hardest ' + vName(hard.grade) : '', scoreFor(who).total + ' points'].filter(Boolean).join(' \u00b7 ');
-  logSessions(sorted).forEach((ses, i) => {
+  const sessions = logSessions(sorted), homes = own ? cmtHomes(sessions) : new Map();      // your comments, in your logbook only
+  sessions.forEach((ses, i) => {
     const sum = sessionSum(ses), el = document.createElement('div');
     el.className = 'lpses';
     el.innerHTML = '<div class="h"><span class="cv">\u203a</span><b></b><span class="s"></span><span class="gd"></span></div><div class="body" hidden></div>';
@@ -3767,7 +3912,21 @@ function paintBookRows(){
     if (sum.hard) paintPill(el.querySelector('.gd'), sum.hard.grade); else el.querySelector('.gd').remove();
     const body = el.querySelector('.body');
     const show = on => {
-      if (on && !body.children.length) ses.rows.forEach(e => body.appendChild(bookRow(e, own)));
+      if (on && !body.children.length){
+        const said = new Map(homes.get(ses) || []);                // a route's comments go under its newest go of the session
+        ses.rows.forEach(e => {
+          const row = bookRow(e, own), cs = said.get(e.route);
+          body.appendChild(row);
+          if (!cs) return;
+          said.delete(e.route);
+          row.classList.add('hasc');
+          const box = document.createElement('div');
+          box.className = 'bkcs';
+          cs.slice().reverse().forEach(c => box.appendChild(cmtLine(c)));
+          if (own) box.onclick = () => cmtOpen(e.route);
+          body.appendChild(box);
+        });
+      }
       body.hidden = !on; el.classList.toggle('open', on);
       on ? bookOpen.add(i) : bookOpen.delete(i);
     };
@@ -3782,6 +3941,7 @@ function openEntry(e){
   $('enFor').innerHTML = '<b>' + esc(r ? r.name : 'a route that is gone') + '</b>' + esc((e.rep && e.result !== 'try' ? SESSION_SAID['s' + e.result] : goWords(e)) + ' \u00b7 ' +
     new Date(e.t).toLocaleString([], { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }));
   $('enErr').textContent = ''; $('enDelete').disabled = false;
+  $('enCmt').hidden = !r;
   showSheet('entrySheet');
 }
 $('bookBack').onclick = () => showPage('board');
@@ -3792,6 +3952,7 @@ $('rankTog').onclick = () => {              // the ranking at the head of the lo
 };
 $('bookWho').onchange = () => { bookOpen = new Set([0]); bookNote(''); loadBook(); };
 $('enCancel').onclick = () => { bookEntry = null; showSheet(null); };
+$('enCmt').onclick = () => { if (bookEntry) cmtOpen(bookEntry.route); };
 $('entrySheet').onclick = e => { if (e.target === $('entrySheet')) $('enCancel').onclick(); };       // a tap on the dark round it
 $('enDelete').onclick = async () => {
   const e = bookEntry;
@@ -4230,7 +4391,7 @@ $('pgDots').onclick = e => { const b = e.target.closest('button[data-go]'); if (
 let sw = null;
 document.addEventListener('touchstart', e => {
   const t = e.target;
-  sw = (focus || e.touches.length !== 1 || t.closest('#pic, #kb, #sheet, #goSheet, #rsSheet, #entrySheet, #faceSheet, #a2hs, #a2hsHow, #quick, #sendFan, select, input, #grades, #gSlide')) ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
+  sw = (focus || e.touches.length !== 1 || t.closest('#pic, #kb, #sheet, #goSheet, #rsSheet, #entrySheet, #faceSheet, #cmtSheet, #a2hs, #a2hsHow, #quick, #sendFan, select, input, #grades, #gSlide')) ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
 }, { passive: true });
 document.addEventListener('touchend', e => {
   if (!sw) return;
@@ -4353,6 +4514,7 @@ function openNow(){        // what is open, the one underneath first
   if (!$('rsSheet').hidden) o.push('rs');
   if (!$('entrySheet').hidden) o.push('entry');
   if (!$('faceSheet').hidden) o.push('face');
+  if (!$('cmtSheet').hidden) o.push('cmt');
   if (!$('a2hsHow').hidden) o.push('a2hs');
   if (!$('gestHow').hidden) o.push('gest');
   if (tipFor) o.push('tip');
@@ -4362,7 +4524,7 @@ function shutOne(k){       // what Back does to the one on top: what its own but
   if (k === 'tip') tipShut();
   else if (k === 'gest') $('gestOk').click();
   else if (k === 'a2hs') $('a2hsOk').click();
-  else if (k === 'entry' || k === 'rs' || k === 'face') showSheet(null);
+  else if (k === 'entry' || k === 'rs' || k === 'face' || k === 'cmt') showSheet(null);
   else if (k === 'go') $('goDrop').onclick();              // asks first
   else if (k === 'sheet') $('shBack').onclick();           // back to the route being marked, as its own button
   else if (k === 'send') closeSend();
@@ -4446,7 +4608,7 @@ paintMe();
   await seedCrew();
   await knowMe();
 })();
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && wall){ refresh(); if (timing && !timing.t1) awake(true); } });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && wall){ refresh(); cmtsPull(); if (timing && !timing.t1) awake(true); } });
 /* Ask again every minute while the page is being looked at; three times as often while the map is
    being fixed, when two people at the wall may be at it together. */
 let tick = 0;

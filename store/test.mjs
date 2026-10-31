@@ -15,7 +15,7 @@ const call = async (method, path, body) => {
 const marks = [{ h: 'W012', r: 's' }, { h: 'W040', r: 'h' }, { h: 'W041', r: 'f' }, { v: 'over', x: 0.42, y: 0.137512, r: 'h' }, { h: 'K003', r: 'e' }];
 
 console.log('a wall that does not exist, and an empty one');
-check('an unknown wall is refused', (await call('GET', '/api/w/moon')).status === 404);
+check('an unknown wall is refused', (await call('GET', '/api/w/mars')).status === 404);
 check('anything outside /api/w is refused', (await call('GET', '/api/lists')).status === 404);
 let s = await call('GET', '/api/w/sun');
 check('the Sun board starts empty', s.status === 200 && s.wall === 'sun' && s.people.length === 0 && s.routes.length === 0 && Object.keys(s.stats).length === 0 && s.fixes.length === 0, s);
@@ -401,6 +401,62 @@ console.log('a climber\'s word on a route: favourite or trash');
   check('another wall does not see them', !Object.keys((await call('GET', '/api/w/test-a')).rates).length);
   v = await call('POST', '/api/w/test-rate/reset', {});
   check('a check\'s wall is cleared of them', Object.keys(v.rates).length === 0, v.rates);
+}
+console.log('a climber\'s comments on a route, theirs alone');
+{
+  await call('POST', '/api/w/test-note/person', { name: 'Will' });
+  await call('POST', '/api/w/test-note/person', { name: 'Sara' });
+  const id = (await call('POST', '/api/w/test-note/route', { by: 'Will', name: 'Noted', grade: 7, marks })).id;
+  const of = async who => (await call('GET', '/api/w/test-note/comments?person=' + encodeURIComponent(who))).comments;
+  check('nobody has said anything to begin with', Object.keys(await of('Will')).length === 0);
+  let v = await call('POST', '/api/w/test-note/comment', { person: 'Will', route: id, text: '  Left heel   hook\r\n\r\n\r\n\r\nthen <big> move ' });
+  const one = v.comments[id];
+  check('a comment is kept, with its date, tidied, its lines kept', v.status === 200 && one.length === 1 && one[0].text === 'Left heel hook\n\nthen big move' && !!one[0].t && !!one[0].k, one);
+  v = await call('POST', '/api/w/test-note/comment', { person: 'Will', route: id, text: 'Second go at it' });
+  check('a route can have more than one', v.comments[id].length === 2 && v.comments[id][1].text === 'Second go at it', v.comments);
+  v = await call('POST', '/api/w/test-note/comment', { person: 'Sara', route: id, text: 'Mine' });
+  check('writing one is answered with your own and nobody else\'s', v.person === 'Sara' && v.comments[id].length === 1 && v.comments[id][0].text === 'Mine', v);
+  const wall = await call('GET', '/api/w/test-note');
+  check('the wall as it stands carries nobody\'s', wall.comments === undefined && !JSON.stringify(wall).includes('heel'), Object.keys(wall));
+  check('after a write either', (await call('POST', '/api/w/test-note/rate', { person: 'Will', route: id, rate: 'fav' })).comments === undefined);
+  check('asking for a climber gives that climber\'s alone', (await of('Will'))[id].length === 2 && (await of('Sara'))[id].length === 1);
+  check('asking for nobody gives nothing', (await call('GET', '/api/w/test-note/comments')).status === 400);
+  v = await call('POST', '/api/w/test-note/comment', { person: 'Will', route: id, text: 'x'.repeat(5000) });
+  check('a long one is cut to the limit', v.comments[id][2].text.length === 1000, v.comments[id][2].text.length);
+  check('a stranger cannot comment', (await call('POST', '/api/w/test-note/comment', { person: 'Nobody', route: id, text: 'hi' })).status === 404);
+  check('a comment with no words is refused', (await call('POST', '/api/w/test-note/comment', { person: 'Will', route: id, text: '   ' })).status === 400);
+  check('a route that is not there is refused', (await call('POST', '/api/w/test-note/comment', { person: 'Will', route: 9999, text: 'hi' })).status === 404);
+  const sara = (await of('Sara'))[id][0].k;
+  await call('POST', '/api/w/test-note/comment/delete', { person: 'Will', k: sara });
+  check('nobody can take back somebody else\'s', (await of('Sara'))[id].length === 1);
+  v = await call('POST', '/api/w/test-note/comment/delete', { person: 'Will', k: (await of('Will'))[id][2].k });
+  check('your own goes', v.comments[id].length === 2, v.comments);
+  v = await call('POST', '/api/w/test-note/comment/delete', { person: 'Sara', k: sara });
+  check('the last one takes the route with it', !v.comments[id], v.comments);
+  check('another wall does not see them', !Object.keys((await call('GET', '/api/w/test-a/comments?person=Will')).comments).length);
+  await call('POST', '/api/w/test-note/reset', {});
+  check('a check\'s wall is cleared of them', Object.keys(await of('Will')).length === 0);
+}
+console.log('the MoonBoard\'s words, a wall with nothing else on it');
+{
+  let v = await call('GET', '/api/w/test-moon-a');
+  check('it answers with its ratings and nothing else', v.status === 200 && v.wall === 'test-moon-a' && !v.routes && !v.people && !v.comments && !Object.keys(v.rates).length, v);
+  v = await call('POST', '/api/w/test-moon-a/rate', { person: 'Abdullah \u{1F353}', route: 396551, rate: 'fav' });
+  check('a name is the page\'s word, a route a number', v.status === 200 && v.rates['Abdullah \u{1F353}'][396551] === 'fav', v);
+  v = await call('POST', '/api/w/test-moon-a/comment', { person: 'Will', route: 396551, text: 'Crimpy' });
+  check('a comment goes in the same way', v.comments[396551][0].text === 'Crimpy', v.comments);
+  check('and comes back to its climber alone', (await call('GET', '/api/w/test-moon-a/comments?person=Will')).comments[396551].length === 1
+    && !Object.keys((await call('GET', '/api/w/test-moon-a/comments?person=Sara')).comments).length && !JSON.stringify(await call('GET', '/api/w/test-moon-a')).includes('Crimpy'));
+  check('a route that is no number is refused', (await call('POST', '/api/w/test-moon-a/rate', { person: 'Will', route: 'x', rate: 'fav' })).status === 404
+    && (await call('POST', '/api/w/test-moon-a/comment', { person: 'Will', route: -4, text: 'x' })).status === 404);
+  check('a name is needed', (await call('POST', '/api/w/test-moon-a/rate', { person: ' ', route: 5, rate: 'fav' })).status === 404);
+  for (const [path, body] of [['/person', { name: 'Will' }], ['/route', { by: 'Will', name: 'R', grade: 7, marks }], ['/log', { person: 'Will', route: 5, result: 'try' }]])
+    check('it takes no ' + path, (await call('POST', '/api/w/test-moon-a' + path, body)).status === 404);
+  check('and has no logbook', (await call('GET', '/api/w/test-moon-a/log')).status === 404);
+  check('the moon wall itself is there', (await call('GET', '/api/w/moon')).wall === 'moon');
+  check('and cannot be emptied', (await call('POST', '/api/w/moon/reset', {})).status === 404);
+  v = await call('POST', '/api/w/test-moon-a/reset', {});
+  check('a check\'s wall is cleared', !Object.keys(v.rates).length && !Object.keys((await call('GET', '/api/w/test-moon-a/comments?person=Will')).comments).length, v);
 }
 check('a body that is not JSON is refused',
   (await handle(new Request('https://x.test/api/w/sun/person', { method: 'POST', body: 'name=Will' }), db)).status === 400);
