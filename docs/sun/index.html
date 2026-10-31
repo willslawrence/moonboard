@@ -458,7 +458,7 @@
      favorite then give the sun burst around the grade or if rated trash give the toilet"). The two buttons sit at the
      right of the card's last line; the art is drawn behind the grade wherever this climber sees the route's grade in a
      list or on this card, by the crew's sum. Its parent is its own layer so the art goes behind the grade but in front of the row. */
-  #lpNow .rateRow{display:flex;align-items:flex-end;gap:10px}
+  #lpNow .rateRow{display:flex;align-items:center;gap:10px}
   #lpNow .rateRow .sub{flex:1;min-width:0}
   /* low profile (Will, 2026-10-31: "Keep the buttons low profile"): grey and borderless until they have something to say */
   #lpRate{flex:none;display:flex;gap:1px;margin:2px -4px -4px auto}
@@ -492,8 +492,18 @@
   #lpCap button,#bookCap button{justify-self:start;width:auto;height:32px;padding:0 10px;font-size:13px;white-space:nowrap}
   #lpCap b,#bookCap b{font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase}
   /* the open route's own history: a line that sums it up, then a row a session, the day where a route's name is */
-  #lpHistSum{font-size:13px;color:var(--dim);line-height:1.5}
-  #lpHistSum b{color:var(--ink);font-weight:600}
+  /* Your goes on the route, in the card (Will, 2026-10-31: "you'll see the circle go dots, like tries versus sends... the
+     history is expandable... Default collapsed"): the dots always, and a tap on them opens the sessions under the comment. */
+  #histTog{flex:0 1 auto;min-width:0;display:flex;align-items:center;gap:6px;width:auto;margin:2px 0 -2px;padding:4px 6px 4px 0;border:0;border-radius:6px;background:none}
+  #histTog[hidden]{display:none}
+  #histTog .hd{display:flex;flex-wrap:wrap;align-items:center;gap:3px;min-width:0}
+  #histTog .more{font:700 10px ui-monospace,Menlo,monospace;color:var(--dimmer);margin-right:1px}
+  #histTog svg{flex:none;width:12px;height:12px;color:var(--dim);transition:transform .15s ease-out}
+  #histTog[aria-expanded="true"] svg{transform:rotate(180deg)}
+  #lpHist{margin-top:6px;padding-top:2px;border-top:1px solid var(--line)}
+  #lpHist[hidden]{display:none}
+  #lpHist .lprow:last-child{border-bottom:0}
+  #lpHist .none{padding:6px 0;font-size:12px;color:var(--dim)}
   .lprow.hist{padding:8px 2px}
   .lprow.hist .n{display:flex;align-items:baseline;gap:8px}
   .lprow.hist .n b{flex:none;font-size:14px}
@@ -575,14 +585,10 @@
   /* the search's keys at the foot of the sheet, in sight however long the list above them */
   #cmtKb{position:sticky;bottom:0;margin:10px calc(-1 * var(--pad)) 0}
   #cmtSheet.keys{padding-bottom:0}
+  #cmtSheet.keys #cmtSave{display:none}
   #cmtSave{margin-top:8px}
   #cmtErr{margin:6px 0 0;font-size:12px;color:#dc2626}
   #cmtErr:empty{display:none}
-  #cmtList{margin-top:10px}
-  #cmtList .cmt{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
-  #cmtList .cmt span{flex:1;min-width:0}
-  #cmtList .cmt button{flex:none;width:auto;min-width:30px;height:26px;padding:0 6px;border:0;background:none;color:var(--dim);font-size:12px}
-  #cmtList .cmt button.armed{color:#dc2626;font-weight:700}
   #enErr{color:#ef4444;font-size:13px;min-height:18px;margin:8px 0 0}
   #lpFoot button{display:block;width:auto;margin:4px auto 0;padding:3px 10px;border:0;background:transparent;font-size:12.5px;font-weight:600;color:var(--dim);text-decoration:underline;text-underline-offset:2px}
   #lpUndo{display:block;width:auto;max-width:100%;margin:9px auto 0;padding:2px 8px;border:0;font-size:11px;overflow:hidden;text-overflow:ellipsis}
@@ -1010,11 +1016,12 @@
   <div id="lpNow">
     <div class="top"><b id="lpName"></b><span class="gd" id="lpGd" hidden></span></div>
     <div class="sub" id="lpSub"></div>
-    <div class="rateRow"><div class="sub" id="lpSub2"></div><span id="lpRate" hidden>
-      <button type="button" id="cmtBtn" class="ghost" aria-pressed="false" aria-label="Comments on this route"><span class="re">&#128172;</span><span class="rc"></span></button>
+    <div class="rateRow"><button type="button" id="histTog" hidden aria-expanded="false" aria-label="Your history on this route"><span class="hd"></span><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4.2l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="sub" id="lpSub2"></div><span id="lpRate" hidden>
+      <button type="button" id="cmtBtn" class="ghost" aria-label="Add a comment"><span class="re">&#128172;</span></button>
       <button type="button" class="ghost" data-r="fav" aria-pressed="false" aria-label="Favourite: a sun round its grade"><span class="re">&#9728;&#65039;</span><span class="rc"></span></button>
       <button type="button" class="ghost" data-r="trash" aria-pressed="false" aria-label="Trash: a toilet round its grade"><span class="re">&#128701;</span><span class="rc"></span></button></span></div>
     <div id="lpCmts" hidden></div>
+    <div id="lpHist" hidden></div>
     <!-- the setter's two. Log try and Log send went on 2026-10-21, as on the MoonBoard page: Quick log on the board logs a
          go. The Logbook button went with them: the Logbook is a page of its own. -->
     <div class="more3" id="lpMore" hidden>
@@ -1023,9 +1030,6 @@
     </div>
     <button id="lpUndo" class="ghost mini" hidden></button>
   </div>
-  <div class="lbl" id="lpRouteLbl">Your history on this route</div>
-  <div id="lpHistSum"></div>
-  <div id="lpHist"></div>
 
   <div class="xcard empty" id="lpWhoCard">
     <div class="xtop" role="button" tabindex="0" aria-expanded="false" aria-controls="lpWho">
@@ -1213,14 +1217,13 @@
     <button id="faceLetter" type="button" class="ghost">Use my letter</button>
   </div>
 </div>
-<!-- Your comments on a route (Will, 2026-10-31: "can we add comments to the log book. So each route I can save comments"). -->
-<div id="cmtSheet" hidden role="dialog" aria-label="Comments">
-  <div class="shHead"><h2>Comments</h2><button id="cmtShut" class="ghost">Close</button></div>
+<!-- Your comment on a route (Will, 2026-10-31: "can we add comments to the log book", and "Only you can add one comment"). -->
+<div id="cmtSheet" hidden role="dialog" aria-label="Comment">
+  <div class="shHead"><h2>Comment</h2><button id="cmtShut" class="ghost">Close</button></div>
   <div id="cmtFor"><b></b><span class="gd"></span></div>
   <textarea id="cmtBox" rows="3" maxlength="1000" placeholder="Add a comment" aria-label="Your comment"></textarea>
   <button id="cmtSave" class="solid">Save</button>
   <p id="cmtErr"></p>
-  <div id="cmtList"></div>
   <div id="cmtKb" hidden></div>
 </div>
 <div id="entrySheet" hidden role="dialog" aria-label="Log entry">
@@ -1286,7 +1289,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-31 20:55';
+const BUILD = '2026-10-31 21:09';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -3225,24 +3228,32 @@ function personColor(name){                // the same colour for a name as on t
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360;
   return 'hsl(' + h + ' 62% 62%)';
 }
-let histRoute = null, histShown = 4;
+/* One route's history, in the route's card: the dots of your goes on it always, tries and sends in the order they
+   happened, and under them, shut until they are tapped, a row for each session (Will, 2026-10-31: "you'll see the circle
+   go dots, like tries versus sends... Your personal history is expandable from there inside that card"). Shut again
+   for each new route. */
+let histRoute = null, histShown = 4, goesOpen = false;
+function histPaint(){
+  const open = goesOpen && !$('histTog').hidden;
+  $('lpHist').hidden = !open;
+  $('histTog').setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+$('histTog').onclick = () => { goesOpen = !goesOpen; histPaint(); };
 function histFill(r){
-  const sum = $('lpHistSum'), rows = $('lpHist');
-  sum.textContent = ''; rows.innerHTML = '';
-  if (!r) return;
-  if (!me){ rows.innerHTML = '<div class="none">Say who you are to keep a logbook.</div>'; return; }
-  if (histRoute !== r.id){ histRoute = r.id; histShown = 4; }
+  const rows = $('lpHist'), word = $('lpSub2');
+  rows.innerHTML = '';
+  $('histTog').hidden = true;
+  word.textContent = !r || r.retired ? '' : !me ? 'Pick your name at the top to see your goes on it.' : '';
+  if (!r || !me) return histPaint();
+  if (histRoute !== r.id){ histRoute = r.id; histShown = 4; goesOpen = false; }
   const entries = tagRepeats(myLog.filter(e => e.route === r.id && e.person === me)).sort((a, b) => logTime(b) - logTime(a));     // newest first
-  if (!entries.length){ rows.innerHTML = '<div class="none">Nothing yet</div>'; return; }
-  const sends = entries.filter(e => e.result !== 'try'), tries = entries.length - sends.length, first = sends[sends.length - 1];    // first: the oldest send, the one that scores
-  const head = document.createElement('b'), said = [];
-  head.textContent = [sends.length ? sends.length + (sends.length === 1 ? ' send' : ' sends') : 'Not sent yet',
-                      tries ? tries + (tries === 1 ? ' try' : ' tries') : ''].filter(Boolean).join(' \u00b7 ');
-  sum.appendChild(head);
-  if (first) said.push('first sent ' + new Date(first.t).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }) + ', ' + RESULT[first.result]);
-  const best = bestWords(me, r);
-  if (best) said.push('best ' + (statOf(me, r.id).g[0] >= topOf(r) ? 'the top in ' : '') + best.replace(/^to /, 'to hold ').replace(' \u00b7 ', ' in '));
-  if (said.length) sum.appendChild(document.createTextNode(' \u00b7 ' + said.join(' \u00b7 ')));
+  if (!entries.length){
+    if (!r.retired && !statOf(me, r.id)) word.textContent = 'Not tried yet';      // (the logbook may not have come yet)
+    return histPaint();
+  }
+  const inOrder = entries.slice().reverse();
+  $('histTog').hidden = false;
+  $('histTog').querySelector('.hd').innerHTML = (inOrder.length > GOES_MAX ? '<span class="more">+' + (inOrder.length - GOES_MAX) + '</span>' : '') + goDots(inOrder.slice(-GOES_MAX));
   const all = logSessions(entries);
   all.slice(0, histShown).forEach(s => {
     const goes = s.rows.slice().reverse(), sent = goes.filter(g => g.result !== 'try'), n = goes.length - sent.length, last = sent[sent.length - 1];   // goes: in the order they happened
@@ -3265,6 +3276,7 @@ function histFill(r){
     more.onclick = () => { histShown = 1e9; histFill(r); };
     rows.appendChild(more);
   }
+  histPaint();
 }
 function whoFill(r){
   const box = $('lpWho');
@@ -3304,24 +3316,18 @@ function paintLog(){
   $('lpRate').querySelectorAll('button[data-r]').forEach(b => { b.setAttribute('aria-pressed', r && rateOf(r.id) === b.dataset.r ? 'true' : 'false');
     b.querySelector('.rc').textContent = rc[b.dataset.r] || ''; });
   const cs = r && me ? cmtsOf(r.id) : [];
-  $('cmtBtn').setAttribute('aria-pressed', cs.length ? 'true' : 'false');
-  $('cmtBtn').querySelector('.rc').textContent = cs.length || '';
+  $('cmtBtn').hidden = !!cs.length;                            // with one written, a tap on it changes it
   $('lpCmts').hidden = !cs.length;
   $('lpCmts').innerHTML = '';
   cs.slice().reverse().forEach(c => { const l = cmtLine(c); l.onclick = () => cmtOpen(r.id); $('lpCmts').appendChild(l); });
   $('lpSub').textContent = r ? 'by ' + r.setter + ' · ' + FEET[r.feet] + rulesSay(r) + (r.tape ? ' · tape: ' + r.tape : '') + (r.note ? ' · ' + r.note : '') + (r.retired ? ' · taken down' : '')
                              : 'Pick one on the Routes page, or make one: two taps on the picture, tap its holds, and save them.';
-  const t = r && me ? myTries(r.id) : 0, sends = r && me && statOf(me, r.id) && statOf(me, r.id).s ? statOf(me, r.id).s.length : 0;
-  $('lpSub2').textContent = !r || r.retired ? '' : !me ? 'Pick your name at the top to see your goes on it.'
-    : [t ? t + (t === 1 ? ' try' : ' tries') + (sends ? ' since your last send' : ' so far') : (sends ? '' : 'Not tried yet'),
-       sends ? 'sent ' + (sends === 1 ? 'once' : sends === 2 ? 'twice' : sends + ' times') : ''].filter(Boolean).join(' \u00b7 ');
   $('editBtn').hidden = $('goneBtn').hidden = $('lpMore').hidden = !r || r.setter !== me;        // the setter's two, and only for the setter
   if (r) $('goneBtn').textContent = r.retired ? 'Put it back' : 'Take it down';
   const last = mine[mine.length - 1], lr = last && routeById(last.route);
   $('lpUndo').hidden = !last;
   if (last){ const armed = Date.now() - undoArmed <= 4000; $('lpUndo').classList.toggle('armed', armed);
     $('lpUndo').textContent = armed ? 'Tap again to take it back' : 'Undo: ' + goWords(last) + ' on ' + (lr ? lr.name : 'a route'); }
-  $('lpRouteLbl').hidden = !r;
   histFill(r);
   whoFill(r);
   paintBook();
@@ -3415,43 +3421,26 @@ let cmtRoute = 0;
 let cmtKeys = on => { if (on) $('cmtBox').focus(); };          // the keys up or down: on a phone, the search's (see the search keyboard)
 function cmtOpen(id){
   if (!me || !routeById(id)) return;
-  if (id !== cmtRoute) $('cmtBox').value = '';                 // what was typed stays, if the same route is opened again
+  // what is written, to change; or what was typed and not saved, if the same route is opened again
+  if (id !== cmtRoute || !$('cmtBox').value) $('cmtBox').value = cmtsOf(id).map(c => c.text).join('\n');
   cmtRoute = id;
   $('cmtErr').textContent = '';
   cmtPaint();
   showSheet('cmtSheet');
-  cmtKeys(!cmtsOf(id).length);
+  cmtKeys(true);
 }
 function cmtPaint(){
-  const r = routeById(cmtRoute), box = $('cmtList');
+  const r = routeById(cmtRoute);
   if (!r) return;
   $('cmtFor').querySelector('b').textContent = r.name;
   paintPill($('cmtFor').querySelector('.gd'), r.grade);
-  box.innerHTML = '';
-  cmtsOf(cmtRoute).slice().reverse().forEach(c => {
-    const l = document.createElement('div'), words = document.createElement('span'), x = document.createElement('button');
-    l.className = 'cmt';
-    words.append(...cmtLine(c).childNodes);
-    x.type = 'button'; x.textContent = '\u2715'; x.setAttribute('aria-label', 'Delete this comment');
-    x.onclick = async () => {                                  // two taps, as anything else that goes for good
-      if (!x.classList.contains('armed')){
-        x.classList.add('armed'); x.textContent = 'Delete?';
-        setTimeout(() => { x.classList.remove('armed'); x.textContent = '\u2715'; }, 3000);
-        return;
-      }
-      x.disabled = true;
-      try{ cmtsTake(await call('/comment/delete', { person: me, k: c.k })); }
-      catch(err){ $('cmtErr').textContent = err.message; x.disabled = false; }
-    };
-    l.append(words, x);
-    box.appendChild(l);
-  });
 }
 $('cmtBtn').onclick = () => { const r = openRoute(); if (r) cmtOpen(r.id); };
 $('cmtShut').onclick = () => showSheet(null);
 $('cmtSave').onclick = async () => {
   const text = $('cmtBox').value.trim();
-  if (!text || !me || !cmtRoute) return;
+  if (!me || !cmtRoute) return;
+  if (!text && !cmtsOf(cmtRoute).length) return showSheet(null);      // (saved empty, one that was written goes)
   $('cmtSave').disabled = true;
   try{
     cmtsTake(await call('/comment', { person: me, route: cmtRoute, text }));
@@ -4481,30 +4470,30 @@ document.addEventListener('touchend', e => {
 
   /* The comment sheet has these keys too (Will, 2026-10-31: "it was not the same keyboard as what the route search
      uses... have it pull up the same keyboard that the route search does"), in a box of their own, since the search's
-     live on the page of routes. The comment box never takes the focus, as the search box does not, so the phone's own
-     keyboard stays down. What is typed goes on the end, and with no shift key a sentence starts with a capital by itself. */
+     live on the page of routes, and always up: nothing is ever behind them, and Done is Save. The comment box never takes
+     the focus, as the search box does not, so the phone's own keyboard stays down. What is typed goes on the end, and with
+     no shift key a sentence starts with a capital by itself. */
   const box = $('cmtBox'), ck = $('cmtKb');
   let boxLayer = 'abc';
   box.readOnly = true;
   box.setAttribute('inputmode', 'none');
-  function boxKeys(on){
-    ck.hidden = !on;
-    box.classList.toggle('on', !!on);
-    $('cmtSheet').classList.toggle('keys', !!on);
-    if (on){ boxLayer = 'abc'; ck.innerHTML = keys(boxLayer); }
-  }
-  cmtKeys = boxKeys;
+  box.classList.add('on');
+  ck.hidden = false;
+  $('cmtSheet').classList.add('keys');
+  cmtKeys = () => { boxLayer = 'abc'; ck.innerHTML = keys(boxLayer); };
   function boxPress(k){
     const v = box.value;
     if      (k === '<')      box.value = v.slice(0, -1);
     else if (k === '#clear') box.value = '';
-    else if (k === '#done')  return boxKeys(false);
+    else if (k === '#done')  return;
     else if (k === '#123' || k === '#abc'){ boxLayer = k === '#abc' ? 'abc' : 'num'; ck.innerHTML = keys(boxLayer); return; }
     else if (v.length < box.maxLength) box.value = v + (/^$|[.!?] $|\n$/.test(v) ? k.toUpperCase() : k);
     box.scrollTop = box.scrollHeight;
   }
   wire(ck, boxPress);
-  box.addEventListener('pointerdown', e => { e.preventDefault(); if (ck.hidden) boxKeys(true); });
+  // on its click, not as the key goes down as the others do: the sheet goes, and the tail of the tap must not land on what was under it
+  ck.addEventListener('click', e => { if (e.target.closest('button[data-k="#done"]')) $('cmtSave').onclick(); });
+  box.addEventListener('pointerdown', e => { e.preventDefault(); });
   box.addEventListener('focus', () => { box.blur(); });
 })();
 function paintAll(){

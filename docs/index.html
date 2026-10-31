@@ -568,8 +568,18 @@
   .go{flex:none;width:10px;height:10px;border-radius:50%;box-sizing:border-box;border:1.5px solid var(--dimmer)}
   .go.s{border-color:#22c55e;background:#22c55e}
   .go.f{border-color:#eab308;background:#eab308}
-  #lpHistSum{font-size:13px;color:var(--dim);line-height:1.5}
-  #lpHistSum b{color:var(--ink);font-weight:600}
+  /* Your goes on the route, in the card (Will, 2026-10-31: "you'll see the circle go dots, like tries versus sends... the
+     history is expandable... Default collapsed"): the dots always, and a tap on them opens the sessions under the comment. */
+  #histTog{flex:0 1 auto;min-width:0;display:flex;align-items:center;gap:6px;width:auto;margin:2px 0 -2px;padding:4px 6px 4px 0;border:0;border-radius:6px;background:none}
+  #histTog[hidden]{display:none}
+  #histTog .hd{display:flex;flex-wrap:wrap;align-items:center;gap:3px;min-width:0}
+  #histTog .more{font:700 10px ui-monospace,Menlo,monospace;color:var(--dimmer);margin-right:1px}
+  #histTog svg{flex:none;width:12px;height:12px;color:var(--dim);transition:transform .15s ease-out}
+  #histTog[aria-expanded="true"] svg{transform:rotate(180deg)}
+  #lpHistRows{margin-top:6px;padding-top:2px;border-top:1px solid var(--line)}
+  #lpHistRows[hidden]{display:none}
+  #lpHistRows .lprow:last-child{border-bottom:0}
+  #lpHistRows .none{padding:6px 0;font-size:12px;color:var(--dim)}
   .sublbl{font-size:12px;color:var(--dim);margin:8px 0 2px}
   .sublbl[hidden],.sublbl:empty{display:none}
   .lprow .n em i{display:inline-grid;place-items:center;width:16px;height:16px;margin-right:5px;border-radius:50%;
@@ -582,10 +592,12 @@
   #lpNow .top .gd{font-size:11px}
   #lpNow .top .gd[hidden]{display:none}
   #lpNow .sub{margin-top:3px;font-size:12px;color:var(--dim);line-height:1.4}
+  #lpNow .sub:empty{display:none}
   #lpNow .top #betaBtn{flex:none;width:auto;margin-left:auto;padding:5px 11px;font-size:12px;border-radius:9px;white-space:nowrap}
   /* A climber's word on a route, the Sun board's (Will, 2026-10-31: "a favorite sun burst like we did on the sunboard...
      add that to the moon board... Keep the buttons low profile"): see rateCount. Comments beside it, see cmtOpen. */
-  #lpNow .rateRow{display:flex;align-items:flex-end;gap:10px}
+  #lpNow .rateRow{display:flex;align-items:center;gap:10px}
+  #cmtBtn[hidden]{display:none}
   #lpNow .rateRow .sub{flex:1;min-width:0}
   #lpRate{flex:none;display:flex;gap:1px;margin:2px -4px -4px auto}
   #lpRate[hidden]{display:none}
@@ -795,14 +807,10 @@
   /* the search's keys at the foot of the sheet, in sight however long the list above them */
   #cmtKb{position:sticky;bottom:0;margin:10px calc(-1 * var(--pad)) 0}
   #cmtPanel.keys{padding-bottom:0}
+  #cmtPanel.keys #cmtSave{display:none}
   #cmtSave{margin-top:8px}
   #cmtErr{margin:6px 0 0;font-size:12px;color:#dc2626}
   #cmtErr:empty{display:none}
-  #cmtList{margin-top:10px}
-  #cmtList .cmt{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
-  #cmtList .cmt span{flex:1;min-width:0}
-  #cmtList .cmt button{flex:none;width:auto;min-width:30px;height:26px;padding:0 6px;border:0;background:none;color:var(--dim);font-size:12px}
-  #cmtList .cmt button.armed{color:#dc2626;font-weight:700}
   #enCmt[hidden]{display:none}
   /* your emoji: the button beside Climbing as in Settings, and its sheet, an emoji a key, eight to a row */
   #faceBtn{display:flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;font-size:13.5px}
@@ -1661,17 +1669,14 @@
          with the route name"). Log try and Log send have gone, since Quick log on the board does that ("people can do that
          with the quick log on the board page"), and the Logbook is a page of its own. -->
     <div class="top"><b></b><span class="gd"></span><button id="betaBtn" class="mini" disabled>+ Beta</button></div>
-    <div class="rateRow"><div class="sub"></div><span id="lpRate" hidden>
-      <button type="button" id="cmtBtn" class="ghost" aria-pressed="false" aria-label="Comments on this route"><span class="re">&#128172;</span><span class="rc"></span></button>
+    <div class="rateRow"><button type="button" id="histTog" hidden aria-expanded="false" aria-label="Your history on this route"><span class="hd"></span><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4.2l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="sub"></div><span id="lpRate" hidden>
+      <button type="button" id="cmtBtn" class="ghost" aria-label="Add a comment"><span class="re">&#128172;</span></button>
       <button type="button" class="ghost" data-r="fav" aria-pressed="false" aria-label="Favourite: a sun round its grade"><span class="re">&#9728;&#65039;</span><span class="rc"></span></button>
       <button type="button" class="ghost" data-r="trash" aria-pressed="false" aria-label="Trash: a toilet round its grade"><span class="re">&#128701;</span><span class="rc"></span></button></span></div>
     <div id="lpCmts" hidden></div>
+    <div id="lpHistRows" hidden></div>
     <button id="lpUndo" class="ghost mini" hidden></button>
   </div>
-
-  <div class="lbl" id="lpRouteLbl">Your history on this route</div>
-  <div id="lpHistSum"></div>
-  <div id="lpHistRows"></div>
 
   <div class="xcard empty" id="lpWhoCard">
     <div class="xtop" role="button" tabindex="0" aria-expanded="false" aria-controls="lpWho">
@@ -1960,15 +1965,14 @@
   <div id="snRank" hidden></div>
 </div>
 
-<!-- Your comments on a route (Will, 2026-10-31: "can we add comments to the log book. So each route I can save comments"). -->
+<!-- Your comment on a route (Will, 2026-10-31: "can we add comments to the log book", and "Only you can add one comment"). -->
 <div id="cmtScrim" hidden></div>
-<div id="cmtPanel" hidden role="dialog" aria-label="Comments">
-  <div class="shHead"><h2>Comments</h2><button id="cmtShut" class="ghost">Close</button></div>
+<div id="cmtPanel" hidden role="dialog" aria-label="Comment">
+  <div class="shHead"><h2>Comment</h2><button id="cmtShut" class="ghost">Close</button></div>
   <div id="cmtFor"><b></b><span class="gd"></span></div>
   <textarea id="cmtBox" rows="3" maxlength="1000" placeholder="Add a comment" aria-label="Your comment"></textarea>
   <button id="cmtSave" class="solid">Save</button>
   <p id="cmtErr"></p>
-  <div id="cmtList"></div>
   <div id="cmtKb" hidden></div>
 </div>
 
@@ -2046,7 +2050,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-31 20:55';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-31 21:09';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -4155,37 +4159,19 @@ let cmtKeys = on => { if (on) $('cmtBox').focus(); };          // the keys up or
 function cmtOpen(id){
   const me = meNow();
   if (!me || !byId[id]) return;
-  if (id !== cmtRoute) $('cmtBox').value = '';                 // what was typed stays, if the same route is opened again
+  // what is written, to change; or what was typed and not saved, if the same route is opened again
+  if (id !== cmtRoute || !$('cmtBox').value) $('cmtBox').value = cmtsOf(id).map(c => c.text).join('\n');
   cmtRoute = id;
   $('cmtErr').textContent = '';
   cmtPaint();
   showPanel('cmt');
-  cmtKeys(!cmtsOf(id).length);
+  cmtKeys(true);
 }
 function cmtPaint(){
-  const r = byId[cmtRoute], box = $('cmtList'), me = meNow();
+  const r = byId[cmtRoute];
   if (!r) return;
   $('cmtFor').querySelector('b').textContent = r.name;
   paintPill($('cmtFor').querySelector('.gd'), r.grade);
-  box.innerHTML = '';
-  cmtsOf(cmtRoute).slice().reverse().forEach(c => {
-    const l = document.createElement('div'), words = document.createElement('span'), x = document.createElement('button');
-    l.className = 'cmt';
-    words.append(...cmtLine(c).childNodes);
-    x.type = 'button'; x.textContent = '\u2715'; x.setAttribute('aria-label', 'Delete this comment');
-    x.onclick = async () => {                                  // two taps, as anything else that goes for good
-      if (!x.classList.contains('armed')){
-        x.classList.add('armed'); x.textContent = 'Delete?';
-        setTimeout(() => { x.classList.remove('armed'); x.textContent = '\u2715'; }, 3000);
-        return;
-      }
-      x.disabled = true;
-      try{ cmtsTake(await wordSay('/comment/delete', { person: me, k: c.k })); }
-      catch(err){ $('cmtErr').textContent = err.message; x.disabled = false; }
-    };
-    l.append(words, x);
-    box.appendChild(l);
-  });
 }
 
 // who else has this emoji in their circle: chosen, or in their name with none chosen
@@ -5883,39 +5869,30 @@ async function myLog(me, fresh){
   try{ return await p; } finally{ if (logAsk === ask) logAsk = null; }
 }
 
-/* One route's history, for the log page: a line that sums it up, then a row for each
-   session it was tried in - the day, a dot for every go, and how it ended. The newest
-   few show; the rest wait behind a button. */
-let histShown = 4, histRoute = 0;
-function histFill(entries, r, me, sum, rows){
+/* One route's history, in the route's card on the log page: the dots of your goes on it always, tries and sends in the
+   order they happened, and under them, shut until they are tapped, a row for each session it was tried in - the day, a
+   dot for every go, and how it ended. The newest few show; the rest wait behind a button. Shut again for each new route. */
+let histShown = 4, histRoute = 0, goesOpen = false;
+function histPaint(){
+  const open = goesOpen && !$('histTog').hidden;
+  $('lpHistRows').hidden = !open;
+  $('histTog').setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+$('histTog').onclick = () => { goesOpen = !goesOpen; histPaint(); };
+function histFill(entries, r, me, rows){
   entries = entries.slice().sort((a, b) => logTime(b) - logTime(a));   // newest first
   rows.innerHTML = '';
-  sum.textContent = '';
-  if (histRoute !== r.id){ histRoute = r.id; histShown = 4; }
+  if (histRoute !== r.id){ histRoute = r.id; histShown = 4; goesOpen = false; }
+  $('histTog').hidden = !entries.length;
   if (!entries.length){
     // A tick from before the logbook kept dates has no rows to show.
-    const ticked = (done[r.id] || []).includes(me);
-    const d = document.createElement('div');
-    d.className = 'none';
-    d.textContent = ticked
-      ? 'Marked as climbed, from before the logbook kept dates \u2014 so there is nothing to list.'
-      : 'Nothing yet';
-    rows.appendChild(d);
+    $('lpNow').querySelector('.sub').textContent = (done[r.id] || []).includes(me)
+      ? 'Marked as climbed, from before the logbook kept dates' : 'Not tried yet';
+    histPaint();
     return;
   }
-  /* A row imported from the MoonBoard app is a calendar day, stored as midnight
-     UTC. Read in local time it would slip back a day anywhere west of Greenwich. */
-  const day = e => new Date(e.t).toLocaleDateString(undefined, Object.assign(
-    { day: 'numeric', month: 'short', year: 'numeric' }, e.src === 'moonboard' ? { timeZone: 'UTC' } : {}));
-  const sends = entries.filter(e => e.result !== 'try');
-  const tries = entries.length - sends.length;
-  const first = sends[sends.length - 1];                      // oldest send: the one that scores
-  const head = document.createElement('b');
-  head.textContent = [sends.length ? sends.length + (sends.length === 1 ? ' send' : ' sends') : 'Not sent yet',
-                      tries ? tries + (tries === 1 ? ' try' : ' tries') : ''].filter(Boolean).join(' \u00b7 ');
-  sum.appendChild(head);
-  if (first) sum.appendChild(document.createTextNode(' \u00b7 first sent ' + day(first) + ', ' + RESULT_WORDS[first.result]));
-
+  const inOrder = entries.slice().reverse().map(shown);
+  $('histTog').querySelector('.hd').innerHTML = (inOrder.length > GOES_MAX ? '<span class="more">+' + (inOrder.length - GOES_MAX) + '</span>' : '') + goDots(inOrder.slice(-GOES_MAX));
   const all = logSessions(entries);
   all.slice(0, histShown).forEach(s => {
     const goes = s.rows.slice().reverse().map(shown);          // in the order they happened
@@ -5937,9 +5914,10 @@ function histFill(entries, r, me, sum, rows){
     const more = document.createElement('button');
     more.className = 'ghost mini more';
     more.textContent = 'Show ' + (all.length - histShown) + ' earlier';
-    more.onclick = () => { histShown = 1e9; histFill(entries, r, me, sum, rows); };
+    more.onclick = () => { histShown = 1e9; histFill(entries, r, me, rows); };
     rows.appendChild(more);
   }
+  histPaint();
 }
 
 /* ---------- the open route, on the log page ----------
@@ -5950,21 +5928,22 @@ let histFor = 0;                          // guards against a slow answer landin
 async function routeHist(){
   const r = current, me = meNow();
   const mine = ++histFor;
-  const sum = $('lpHistSum'), rows = $('lpHistRows');
-  rows.innerHTML = ''; sum.textContent = '';
-  $('lpRouteLbl').hidden = !r || !me;
+  const rows = $('lpHistRows'), word = $('lpNow').querySelector('.sub');
+  rows.innerHTML = '';
+  $('histTog').hidden = true;
+  histPaint();
+  word.textContent = !r ? 'Open one on the board, or from the routes.' : !me ? 'Pick your name at the top to see your goes on it.' : '';
   whoFill($('lpWho'));
   if (!r || !me) return;
-  sum.textContent = 'loading\u2026';
   let entries = [];
   try{
     entries = tagRepeats(await myLog(me)).filter(e => Number(e.id) === r.id);
   }catch(e){
-    if (mine === histFor) sum.textContent = 'logbook unreachable \u2014 try again in a moment';
+    if (mine === histFor) word.textContent = 'logbook unreachable \u2014 try again in a moment';
     return;
   }
   if (mine !== histFor || page !== 'log') return;      // moved on while it loaded
-  histFill(entries, r, me, sum, rows);
+  histFill(entries, r, me, rows);
 }
 
 function whoFill(box){
@@ -8352,18 +8331,10 @@ function paintLogNow(){
   const rc = r ? rateCount(r.id) : { fav: 0, trash: 0 }, cs = r && me ? cmtsOf(r.id) : [];
   $('lpRate').querySelectorAll('button[data-r]').forEach(b => { b.setAttribute('aria-pressed', r && rateOf(r.id) === b.dataset.r ? 'true' : 'false');
     b.querySelector('.rc').textContent = rc[b.dataset.r] || ''; });
-  $('cmtBtn').setAttribute('aria-pressed', cs.length ? 'true' : 'false');
-  $('cmtBtn').querySelector('.rc').textContent = cs.length || '';
+  $('cmtBtn').hidden = !!cs.length;                            // with one written, a tap on it changes it
   $('lpCmts').hidden = !cs.length;
   $('lpCmts').innerHTML = '';
   cs.slice().reverse().forEach(c => { const l = cmtLine(c); l.onclick = () => cmtOpen(r.id); $('lpCmts').appendChild(l); });
-  const st = r && me && stats[me] && stats[me][r.id];
-  const sends = st && st.s ? st.s.length : 0, t = r ? myTries(r.id) : 0;
-  box.querySelector('.sub').textContent =
-      !r  ? 'Open one on the board, or from the routes.'
-    : !me ? 'Pick your name at the top to see your goes on it.'
-    : [t ? t + (t === 1 ? ' try' : ' tries') + (sends ? ' since your last send' : ' so far') : (sends ? '' : 'Not tried yet'),
-       sends ? 'sent ' + (sends === 1 ? 'once' : sends === 2 ? 'twice' : sends + ' times') : ''].filter(Boolean).join(' \u00b7 ');
 }
 
 /* The word is shown at once and then kept; a second tap on the same one takes it back. */
@@ -8380,7 +8351,8 @@ $('cmtBtn').onclick = () => { if (current) cmtOpen(current.id); };
 $('cmtShut').onclick = $('cmtScrim').onclick = () => showPanel(null);
 $('cmtSave').onclick = async () => {
   const text = $('cmtBox').value.trim(), me = meNow();
-  if (!text || !me || !cmtRoute) return;
+  if (!me || !cmtRoute) return;
+  if (!text && !cmtsOf(cmtRoute).length) return showPanel(null);      // (saved empty, one that was written goes)
   $('cmtSave').disabled = true;
   try{
     cmtsTake(await wordSay('/comment', { person: me, route: cmtRoute, text }));
@@ -9419,30 +9391,30 @@ if (stepsUp() > 0){ backSkip++; try{ history.go(-stepsUp()); }catch(e){ backSkip
 
   /* The comment sheet has these keys too (Will, 2026-10-31: "it was not the same keyboard as what the route search
      uses... have it pull up the same keyboard that the route search does"), in a box of their own, since the search's
-     live on the page of routes. The comment box never takes the focus, as the search box does not, so the phone's own
-     keyboard stays down. What is typed goes on the end, and with no shift key a sentence starts with a capital by itself. */
+     live on the page of routes, and always up: nothing is ever behind them, and Done is Save. The comment box never takes
+     the focus, as the search box does not, so the phone's own keyboard stays down. What is typed goes on the end, and with
+     no shift key a sentence starts with a capital by itself. */
   const box = $('cmtBox'), ck = $('cmtKb');
   let boxLayer = 'abc';
   box.readOnly = true;
   box.setAttribute('inputmode', 'none');
-  function boxKeys(on){
-    ck.hidden = !on;
-    box.classList.toggle('on', !!on);
-    $('cmtPanel').classList.toggle('keys', !!on);
-    if (on){ boxLayer = 'abc'; ck.innerHTML = keys(boxLayer); }
-  }
-  cmtKeys = boxKeys;
+  box.classList.add('on');
+  ck.hidden = false;
+  $('cmtPanel').classList.add('keys');
+  cmtKeys = () => { boxLayer = 'abc'; ck.innerHTML = keys(boxLayer); };
   function boxPress(k){
     const v = box.value;
     if      (k === '<')      box.value = v.slice(0, -1);
     else if (k === '#clear') box.value = '';
-    else if (k === '#done')  return boxKeys(false);
+    else if (k === '#done')  return;
     else if (k === '#123' || k === '#abc'){ boxLayer = k === '#abc' ? 'abc' : 'num'; ck.innerHTML = keys(boxLayer); return; }
     else if (v.length < box.maxLength) box.value = v + (/^$|[.!?] $|\n$/.test(v) ? k.toUpperCase() : k);
     box.scrollTop = box.scrollHeight;
   }
   wire(ck, boxPress);
-  box.addEventListener('pointerdown', e => { e.preventDefault(); if (ck.hidden) boxKeys(true); });
+  // on its click, not as the key goes down as the others do: the sheet goes, and the tail of the tap must not land on what was under it
+  ck.addEventListener('click', e => { if (e.target.closest('button[data-k="#done"]')) $('cmtSave').onclick(); });
+  box.addEventListener('pointerdown', e => { e.preventDefault(); });
   box.addEventListener('focus', () => { box.blur(); });
 })();
 // What is seen of Sent and Sort: a small box each, with the choice in it. The picker lies over its box, unseen.

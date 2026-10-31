@@ -165,12 +165,13 @@ this is not a page dedicated to logging"). Top to bottom:
   gap of four hours, so an evening that runs past midnight is still one session. (The card
   was at the foot of the page, under a list that was always open, until 2026-10-11.)
 - **The open problem**: its name, its grade and a small **Beta** on one line (Will: "make
-  the beta button smaller and inline with the route name"), then how it has gone for you.
-  A small line offers to undo your last go (see *Logbook*). At the right of that line are
-  three small grey buttons (Will, 2026-10-31: "Keep the buttons low profile"): a speech
-  bubble for **comments**, a **sun** and a **toilet**. See *Ratings and comments*.
-- **Your history on this route**: one row for each session you were on it, a dot for
-  every go.
+  the beta button smaller and inline with the route name"). Under them, **a dot for every go
+  you have had on it**, tries and sends in the order they happened, and at the right of that
+  line a **sun** and a **toilet**, small and grey (Will, 2026-10-31: "Keep the buttons low
+  profile"), and until you have written one a small bubble for a **comment**; see *Ratings
+  and comments*. Your comment stands under them. A tap on the dots opens **your history on
+  this route** in the card, one row for each session you were on it; it is shut to begin
+  with, and for each new route. A small line offers to undo your last go (see *Logbook*).
 - **Community**: who has climbed the open problem and how each of them first got up it,
   then what the rest of the crew have logged in the last eight hours. Tap one of their
   routes to open it.
@@ -189,18 +190,17 @@ toilet -1, and the sum decides what everyone sees round the grade, on the route'
 the list: a sunburst above nothing, a toilet below it, and at nothing no art at all. The
 tallies stay, on the buttons and at the end of the route's line in the list.
 
-**A comment** is a climber's own, on a route, with the day it was written; a route can have
-as many as they like. The bubble on History's card opens a sheet to write one, and that
-sheet lists them with a cross on each (two taps, as anything that goes for good). They show
-on the route's card, newest first, and in the Logbook under the go, once however many goes
-the session had: under the newest go of that route in the latest session to begin before the
-comment was written. A tap on a go in the Logbook has a small **Comment** at the head of its
-card, so one can be written from there.
+**A comment** is a climber's own, one to a route (Will: "Only you can add one comment"), with
+the day it was written. The small bubble on History's card opens a sheet to write it, and is
+there only until there is one; after that the comment stands in the card and a tap on it
+changes it. Saved empty, it goes. In the Logbook it shows under the go, once however many
+goes the session had: under the newest go of that route in the latest session to begin before
+it was written, and a tap on a go has a small **Comment** at the head of its card.
 
-On a phone the sheet brings up the route search's own keys, not the phone's (Will: "the
-standard one the iPhone uses, which is big and clunky"), so the comment box never takes the
-focus. What is typed goes on the end, and a sentence starts with a capital by itself, as
-there is no shift key. A computer keeps the real box.
+On a phone the sheet has the route search's own keys, not the phone's (Will: "the standard
+one the iPhone uses, which is big and clunky"), so the comment box never takes the focus. They
+are always up, and **Done** saves. What is typed goes on the end, and a sentence starts with
+a capital by itself, as there is no shift key. A computer keeps the real box and a Save button.
 
 Comments are personal (Will: "The comments/notes should be personal. So climbers only see
 they're own comments"). The wall as a phone is sent it has none in it: a phone asks for those
@@ -689,9 +689,9 @@ on a route opens it on the page, ready for another go, and the board turns to lo
 Changing the name at the top changes whose logbook it is. The page is otherwise the open
 route's, and since 2026-10-12 it is laid out as the MoonBoard page's is (Will: "Match the
 two pages log pages"): its own top line with the way back to the board and the page's name,
-**History**; the route's card (it had **Log try** and **Log send** until 2026-10-21);
-**Your history on this route**, a line
-that sums it up and a row a session with a dot for every go; and **Community**, who has
+**History**; the route's card (it had **Log try** and **Log send** until 2026-10-21), with
+the dots of your goes on it, a tap on which opens a row a session with a dot for every go,
+as on the MoonBoard page (see *Ratings and comments*); and **Community**, who has
 climbed it, a row a climber with their circle (their emoji, or their initial) and how their first send
 went, then **Lately on the Sun board**, a few of the crew's latest goes in rows of the
 same kind, where a tap on a row goes to the board with that route up. What the MoonBoard

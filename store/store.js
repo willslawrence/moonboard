@@ -27,15 +27,17 @@
      POST /api/w/sun/fixes/done       { ks }                               these are in the published map now
      POST /api/w/sun/rate             { person, route, rate }              that climber's word on a route: fav, trash, or '' for none
      GET  /api/w/sun/comments?person=                                      that climber's own comments, and nobody else's
-     POST /api/w/sun/comment          { person, route, text }              a comment of that climber's on a route, kept with its date; a route can have many
-     POST /api/w/sun/comment/delete   { person, k }                        take that one comment (k, as they were handed it) back
+     POST /api/w/sun/comment          { person, route, text }              that climber's comment on a route, kept with its date: it takes the
+                                      place of any they had there, and with no text it goes
 
    A write answers with the wall as it now stands, so the phone that wrote is up to date
    without asking again. There are no accounts, as on the rest of the app: a name is a name.
    Comments are the exception. They are their climber's alone (Will, 2026-10-31: "The comments/notes should be
    personal. So climbers only see they're own comments"), so the wall as it stands does not carry them: a phone asks
-   for those of the name it has picked, the two comment calls answer with that climber's and nothing else, and no
-   call hands out the crew's. With no accounts that is as far as it can go: whoever picks a name is that climber.
+   for those of the name it has picked, /comment answers with that climber's and nothing else, and no call hands out
+   the crew's. With no accounts that is as far as it can go: whoever picks a name is that climber. A climber has one
+   comment on a route ("Only you can add one comment"); it is handed over in a list because a few from the first
+   evening are two, until they are next saved.
    "Only the setter changes a route" is a courtesy the page keeps, not a lock.
 
    A logbook row is one try or one send. The tally per climber and route is the same shape
@@ -82,7 +84,7 @@
    burst like we did on the sunboard... add that to the moon board"). Its climbers, routes and logbook are the relay's,
    but ratings and comments are kept here, as a wall called moon that has nothing else on it, so that they are the same
    calls as the Sun board's and go live with a push. /api/w/moon answers with { wall, rates }, and of the calls above it
-   takes only /rate, /comments, /comment and /comment/delete. Here a name is whatever the page says and a route is a number
+   takes only /rate, /comments and /comment. Here a name is whatever the page says and a route is a number
    (a MoonBoard problem's id), since the relay is the one that knows them. A check's wall of this kind is named test-moon-...
    */
 
@@ -353,7 +355,7 @@ export async function handle(request, db, now = () => new Date().toISOString()){
   if (!db) return bad('the store has no database bound to it', 500);
   await tables(db);
 
-  if (wordsOnly(wall) && !['', '/rate', '/comments', '/comment', '/comment/delete', '/reset'].includes(path)) return bad('not found', 404);
+  if (wordsOnly(wall) && !['', '/rate', '/comments', '/comment', '/reset'].includes(path)) return bad('not found', 404);
 
   if (request.method === 'GET'){
     if (path === '') return json(await snapshot(db, wall));
@@ -623,18 +625,11 @@ export async function handle(request, db, now = () => new Date().toISOString()){
   if (path === '/comment'){
     const person = await speaker(), route = Number(body.route), text = cleanLines(body.text, COMMENT_MAX);
     if (!person) return bad('say who you are first', 404);
-    if (!text) return bad('a comment needs some words');
     if (!(await isRoute(route))) return bad('no such route', 404);
-    if ((await db.prepare('SELECT COUNT(*) AS n FROM comments WHERE wall = ?').bind(wall).first()).n >= MAX_COMMENTS)
+    if (text && (await db.prepare('SELECT COUNT(*) AS n FROM comments WHERE wall = ?').bind(wall).first()).n >= MAX_COMMENTS)
       return bad('that is all the comments this wall can hold', 409);
-    await db.prepare('INSERT INTO comments (wall, person, route, text, t) VALUES (?, ?, ?, ?, ?)').bind(wall, person, route, text, now()).run();
-    return json({ person, comments: await commentsOf(db, wall, person) });
-  }
-
-  if (path === '/comment/delete'){
-    const person = await speaker();
-    if (!person) return bad('say who you are first', 404);
-    await db.prepare('DELETE FROM comments WHERE wall = ? AND person = ? AND k = ?').bind(wall, person, Number(body.k)).run();
+    await db.batch([db.prepare('DELETE FROM comments WHERE wall = ? AND person = ? AND route = ?').bind(wall, person, route)]
+      .concat(text ? [db.prepare('INSERT INTO comments (wall, person, route, text, t) VALUES (?, ?, ?, ?, ?)').bind(wall, person, route, text, now())] : []));
     return json({ person, comments: await commentsOf(db, wall, person) });
   }
 
