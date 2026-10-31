@@ -212,19 +212,19 @@
      iOS Safari puts its prev/next/Done bar on top of the system keyboard and no
      page can turn it off, so on a phone the search opens this instead: four
      short rows, laid out in the page so the list shrinks rather than hides. */
-  #kb{flex:none;margin:0 calc(-1 * var(--pad));background:var(--kb);border-top:1px solid var(--edge);
+  #kb,#cmtKb{flex:none;margin:0 calc(-1 * var(--pad));background:var(--kb);border-top:1px solid var(--edge);
       padding:6px 4px calc(env(safe-area-inset-bottom) + 6px);
       user-select:none;-webkit-user-select:none;touch-action:manipulation}
-  #kb[hidden]{display:none}
-  #kb .r{display:flex;gap:5px;margin-bottom:5px;justify-content:center}
-  #kb .r:last-child{margin-bottom:0}
-  #kb button{flex:1 1 0;min-width:0;width:auto;height:36px;padding:0;border-radius:6px;
+  #kb[hidden],#cmtKb[hidden]{display:none}
+  #kb .r,#cmtKb .r{display:flex;gap:5px;margin-bottom:5px;justify-content:center}
+  #kb .r:last-child,#cmtKb .r:last-child{margin-bottom:0}
+  #kb button,#cmtKb button{flex:1 1 0;min-width:0;width:auto;height:36px;padding:0;border-radius:6px;
              border:0;background:var(--key);color:var(--ink);font:500 17px -apple-system,system-ui,sans-serif}
-  #kb button.fn{background:var(--keyfn);font-size:13px;font-weight:600;flex-grow:1.5}
-  #kb button.sp{flex-grow:5}
-  #kb button.ok{background:var(--ink);color:var(--onink);flex-grow:2}
-  #kb button.dn{background:var(--keydn)}
-  #kb .half{flex:.5 1 0}
+  #kb button.fn,#cmtKb button.fn{background:var(--keyfn);font-size:13px;font-weight:600;flex-grow:1.5}
+  #kb button.sp,#cmtKb button.sp{flex-grow:5}
+  #kb button.ok,#cmtKb button.ok{background:var(--ink);color:var(--onink);flex-grow:2}
+  #kb button.dn,#cmtKb button.dn{background:var(--keydn)}
+  #kb .half,#cmtKb .half{flex:.5 1 0}
   select{background-image:none}
   .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--dimmer);margin-bottom:6px}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -791,6 +791,10 @@
   #cmtBox{display:block;width:100%;min-height:76px;padding:10px;border-radius:8px;border:1px solid var(--edge);background:var(--panel);color:var(--ink);
           font:16px/1.35 -apple-system,system-ui,sans-serif;resize:none;appearance:none;-webkit-user-select:text;user-select:text}
   #cmtBox::placeholder{color:var(--dimmer)}
+  #cmtBox.on{border-color:var(--ink)}
+  /* the search's keys at the foot of the sheet, in sight however long the list above them */
+  #cmtKb{position:sticky;bottom:0;margin:10px calc(-1 * var(--pad)) 0}
+  #cmtPanel.keys{padding-bottom:0}
   #cmtSave{margin-top:8px}
   #cmtErr{margin:6px 0 0;font-size:12px;color:#dc2626}
   #cmtErr:empty{display:none}
@@ -1965,6 +1969,7 @@
   <button id="cmtSave" class="solid">Save</button>
   <p id="cmtErr"></p>
   <div id="cmtList"></div>
+  <div id="cmtKb" hidden></div>
 </div>
 
 <!-- One entry of the logbook, in a card over it: keep it, take it out, or lock it. -->
@@ -2041,7 +2046,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-31 20:43';        // bumped every deploy, shown bottom left
+const BUILD = '2026-10-31 20:55';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -4146,6 +4151,7 @@ function cmtHomes(sessions){
   return homes;
 }
 let cmtRoute = 0;
+let cmtKeys = on => { if (on) $('cmtBox').focus(); };          // the keys up or down: on a phone, the search's (see the search keyboard)
 function cmtOpen(id){
   const me = meNow();
   if (!me || !byId[id]) return;
@@ -4154,8 +4160,7 @@ function cmtOpen(id){
   $('cmtErr').textContent = '';
   cmtPaint();
   showPanel('cmt');
-  cmtLift();
-  if (!cmtsOf(id).length) $('cmtBox').focus();
+  cmtKeys(!cmtsOf(id).length);
 }
 function cmtPaint(){
   const r = byId[cmtRoute], box = $('cmtList'), me = meNow();
@@ -4182,13 +4187,6 @@ function cmtPaint(){
     box.appendChild(l);
   });
 }
-/* A sheet stands on the foot of the screen, and a phone's keyboard comes up over that: it is lifted to stand on the keyboard. */
-function cmtLift(){
-  const v = window.visualViewport, sh = $('cmtPanel');
-  sh.style.bottom = v && !sh.hidden ? Math.max(0, innerHeight - v.height - v.offsetTop) + 'px' : '';
-  sh.style.maxHeight = v && !sh.hidden ? v.height * .92 + 'px' : '';
-}
-if (window.visualViewport){ visualViewport.addEventListener('resize', cmtLift); visualViewport.addEventListener('scroll', cmtLift); }
 
 // who else has this emoji in their circle: chosen, or in their name with none chosen
 function faceOwner(g, me){
@@ -9348,8 +9346,7 @@ if (stepsUp() > 0){ backSkip++; try{ history.go(-stepsUp()); }catch(e){ backSkip
           ['#clear',' ','#done']]
   };
   let layer = 'abc';
-  function draw(){
-    kb.innerHTML = LAYOUTS[layer].map(row => '<div class="r">' + row.map(k => {
+  const keys = l => LAYOUTS[l].map(row => '<div class="r">' + row.map(k => {
       if (k === '|')      return '<span class="half"></span>';
       if (k === ' ')      return '<button class="sp" data-k=" ">space</button>';
       if (k === '<')      return '<button class="fn" data-k="<" aria-label="Delete">&#9003;</button>';
@@ -9359,7 +9356,7 @@ if (stepsUp() > 0){ backSkip++; try{ history.go(-stepsUp()); }catch(e){ backSkip
       if (k === '#done')  return '<button class="ok" data-k="#done">Done</button>';
       return '<button data-k="' + k.replace(/"/g,'&quot;') + '">' + k + '</button>';
     }).join('') + '</div>').join('');
-  }
+  function draw(){ kb.innerHTML = keys(layer); }
   // Opening on the route's name highlights it; the first key replaces it.
   function open(){
     if (kb.hidden){
@@ -9390,19 +9387,22 @@ if (stepsUp() > 0){ backSkip++; try{ history.go(-stepsUp()); }catch(e){ backSkip
   }
   // Keys act on pointerdown so fast typing isn't held up by click delay; holding
   // delete repeats like the real one.
-  let hold = null;
-  function stopHold(){ clearTimeout(hold); clearInterval(hold); hold = null; }
-  kb.addEventListener('pointerdown', e => {
-    e.preventDefault();
-    const b = e.target.closest('button'); if (!b) return;
-    b.classList.add('dn'); setTimeout(() => b.classList.remove('dn'), 110);
-    press(b.dataset.k);
-    if (b.dataset.k === '<'){
-      stopHold();
-      hold = setTimeout(() => { hold = setInterval(() => press('<'), 70); }, 400);
-    }
-  });
-  ['pointerup','pointercancel','pointerleave'].forEach(t => kb.addEventListener(t, stopHold));
+  function wire(el, press){
+    let hold = null;
+    const stopHold = () => { clearTimeout(hold); clearInterval(hold); hold = null; };
+    el.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      const b = e.target.closest('button'); if (!b) return;
+      b.classList.add('dn'); setTimeout(() => b.classList.remove('dn'), 110);
+      press(b.dataset.k);
+      if (b.dataset.k === '<'){
+        stopHold();
+        hold = setTimeout(() => { hold = setInterval(() => press('<'), 70); }, 400);
+      }
+    });
+    ['pointerup','pointercancel','pointerleave'].forEach(t => el.addEventListener(t, stopHold));
+  }
+  wire(kb, press);
   // A touch anywhere on the box: from the board's page it goes to the page of routes,
   // which brings the keys up; already there, it brings them back if they were put away.
   $('qBox').addEventListener('pointerdown', e => {
@@ -9416,6 +9416,34 @@ if (stepsUp() > 0){ backSkip++; try{ history.go(-stepsUp()); }catch(e){ backSkip
   document.addEventListener('click', e => {
     if (!kb.hidden && !kb.contains(e.target) && !$('qBox').contains(e.target)) close();
   }, true);
+
+  /* The comment sheet has these keys too (Will, 2026-10-31: "it was not the same keyboard as what the route search
+     uses... have it pull up the same keyboard that the route search does"), in a box of their own, since the search's
+     live on the page of routes. The comment box never takes the focus, as the search box does not, so the phone's own
+     keyboard stays down. What is typed goes on the end, and with no shift key a sentence starts with a capital by itself. */
+  const box = $('cmtBox'), ck = $('cmtKb');
+  let boxLayer = 'abc';
+  box.readOnly = true;
+  box.setAttribute('inputmode', 'none');
+  function boxKeys(on){
+    ck.hidden = !on;
+    box.classList.toggle('on', !!on);
+    $('cmtPanel').classList.toggle('keys', !!on);
+    if (on){ boxLayer = 'abc'; ck.innerHTML = keys(boxLayer); }
+  }
+  cmtKeys = boxKeys;
+  function boxPress(k){
+    const v = box.value;
+    if      (k === '<')      box.value = v.slice(0, -1);
+    else if (k === '#clear') box.value = '';
+    else if (k === '#done')  return boxKeys(false);
+    else if (k === '#123' || k === '#abc'){ boxLayer = k === '#abc' ? 'abc' : 'num'; ck.innerHTML = keys(boxLayer); return; }
+    else if (v.length < box.maxLength) box.value = v + (/^$|[.!?] $|\n$/.test(v) ? k.toUpperCase() : k);
+    box.scrollTop = box.scrollHeight;
+  }
+  wire(ck, boxPress);
+  box.addEventListener('pointerdown', e => { e.preventDefault(); if (ck.hidden) boxKeys(true); });
+  box.addEventListener('focus', () => { box.blur(); });
 })();
 // What is seen of Sent and Sort: a small box each, with the choice in it. The picker lies over its box, unseen.
 function paintChips(){

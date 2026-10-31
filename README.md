@@ -197,6 +197,11 @@ the session had: under the newest go of that route in the latest session to begi
 comment was written. A tap on a go in the Logbook has a small **Comment** at the head of its
 card, so one can be written from there.
 
+On a phone the sheet brings up the route search's own keys, not the phone's (Will: "the
+standard one the iPhone uses, which is big and clunky"), so the comment box never takes the
+focus. What is typed goes on the end, and a sentence starts with a capital by itself, as
+there is no shift key. A computer keeps the real box.
+
 Comments are personal (Will: "The comments/notes should be personal. So climbers only see
 they're own comments"). The wall as a phone is sent it has none in it: a phone asks for those
 of the name it has picked, and is handed those and no others; they go when the name changes
