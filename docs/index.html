@@ -447,6 +447,14 @@
            font-size:15px;font-weight:600;outline:none;
            white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #qBox #q.fresh{color:#0e0e0f;background:#8fb8ff}
+
+  /* our own cursor in the search box (Will, 2026-11-08: "I can't see where I'm typing"); see caretPaint */
+  #qBox{position:relative}
+  #qBox.on #q{text-overflow:clip}
+  #qCaret{position:absolute;top:50%;width:2px;height:19px;margin-top:-9.5px;border-radius:1px;background:var(--blue-ink);
+          pointer-events:none;animation:qBlink 1.06s steps(1) infinite}
+  #qCaret[hidden]{display:none}
+  @keyframes qBlink{50%{opacity:0}}
   #qBox .pill[hidden],#qX[hidden]{display:none}
   #qX{flex:none;width:26px;height:26px;padding:0;border:0;border-radius:50%;
       background:transparent;color:var(--dim);font-size:13px}
@@ -9393,6 +9401,22 @@ if (stepsUp() > 0){ backSkip++; try{ history.go(-stepsUp()); }catch(e){ backSkip
   const q = $('q'), kb = $('kb');
   q.readOnly = true;
   q.setAttribute('inputmode', 'none');
+  /* A cursor of our own (Will, 2026-11-08: "add a cursor to the typing field. I can't see where I'm typing"). The box
+     never takes the focus, so the phone draws none: while the keys are up a thin bar blinks at the end of what is
+     typed, solid for a moment after each key, as the phone's own does. The end of a long search stays in view. */
+  const caret = document.createElement('i'), meas = document.createElement('canvas').getContext('2d');
+  caret.id = 'qCaret'; caret.hidden = true; $('qBox').appendChild(caret);
+  function caretPaint(){
+    const on = !kb.hidden && !q.classList.contains('fresh') && q.offsetWidth > 0;
+    caret.hidden = !on;
+    if (!on) return;
+    const cs = getComputedStyle(q), pl = parseFloat(cs.paddingLeft) || 0;
+    meas.font = cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+    const w = q.value ? meas.measureText(q.value).width : 0;
+    q.scrollLeft = Math.max(0, Math.ceil(w + pl + 3 - q.clientWidth));
+    caret.style.left = Math.round(Math.min(q.offsetLeft + pl + w - q.scrollLeft, q.offsetLeft + q.clientWidth - 2)) + 'px';
+    caret.style.animation = 'none'; void caret.offsetWidth; caret.style.animation = '';
+  }
   const LAYOUTS = {
     abc: [['q','w','e','r','t','y','u','i','o','p'],
           ['|','a','s','d','f','g','h','j','k','l','|'],
@@ -9422,16 +9446,18 @@ if (stepsUp() > 0){ backSkip++; try{ history.go(-stepsUp()); }catch(e){ backSkip
       $('qBox').classList.add('on');
     }
     if (nameShown()) q.classList.add('fresh');
+    caretPaint();
   }
   function close(){
     kb.hidden = true;
     $('qBox').classList.remove('on');
     showQ();
+    caretPaint();
   }
   kbOpen = open; kbClose = close;
   function set(v){
     q.classList.remove('fresh'); searchQ = v; showName = false; q.value = v;
-    paintQBox(); renderResults();
+    paintQBox(); renderResults(); caretPaint();
   }
   function press(k){
     const fresh = q.classList.contains('fresh');
