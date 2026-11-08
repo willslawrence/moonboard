@@ -1453,14 +1453,16 @@
   #gestHow button{margin-top:14px}
   #helpBtns button{padding:11px 8px;font-size:13px}
 
-  /* ==== TRIAL, not on main (Will, 2026-11-08): "the wall gets full width ... put the up next and history thing on
-     the top, and then try it also on the bottom". The wall's story leaves the column beside the board and runs in
-     one strip across the page, in time order left to right: tonight's routes, what is on the wall, the line, the
-     Next up button. The board then takes the page's width, or as much of it as the screen's height allows with
-     one route of the list still showing. The header and the search row give up a few pixels each for it.
-     While a beta is drawn the page is as it was. Second round, same evening (Will): the page buttons a third
-     narrower and floating, with the list running behind them; and when the list is scrolled the strip stays, the
-     board shrinks into the top right-hand corner in front of the list, and the search row moves up beside it. ==== */
+  /* ==== The wide board, since 2026-11-08 (Will, tried on a branch that evening, two ways, and "Strip on top...
+     Go live on main with this new version. I like it"). The wall's story left the column beside the board and runs
+     in one strip over it: the Next up button, then tonight's routes, what is on the wall and the line, in time
+     order left to right, scrolling sideways when it is full. The board takes the page's width, or as much of it as
+     the screen's height allows with a route of the list still showing; the header and the search row gave up a few
+     pixels each for it. While a beta is drawn the page is as it was, the column beside the board. The page buttons
+     are a quarter narrower and float, with the list running on behind them. When the list is scrolled the strip
+     stays, the board shrinks into the top right-hand corner in front of the list, the search row moves up beside
+     it, and coming back the board grows out of that corner (growBack). The strip under the board was the other
+     way tried (--stripAt:2). Every rule for the full-size board leaves focus alone: focus has its own size. ==== */
   :root{--strip:32px;--stripAt:0}   /* as tall as the header's name box and Connect (Will: "match that width") */
   #scroll{min-height:62px}            /* one route of the list, where it was nearly two */
   header{padding:calc(env(safe-area-inset-top) + 2px) 0 3px}
@@ -1499,13 +1501,21 @@
   body:not(.betaEdit) #histBar,body:not(.betaEdit) #wallCol #nextBtn{border-radius:8px}
   body:not(.betaEdit) .hrow b,body:not(.betaEdit) .nrow b,
   body:not(.betaEdit) #nowBtn .nm3,body:not(.betaEdit) #nowBtn .nm4{-webkit-line-clamp:1;white-space:nowrap;text-overflow:ellipsis;display:block}
-  body:not(.betaEdit) .nrow .put{display:none}
+  /* Put it up stays on the first card, small, at its right-hand end (it lights their problem under their name) */
+  body:not(.betaEdit) .nrow:has(.put){position:relative;width:166px;padding-right:58px}
+  body:not(.betaEdit) .nrow .put{position:absolute;right:4px;top:50%;transform:translateY(-50%);margin:0;
+        height:22px;padding:0 7px !important;font-size:9.5px !important;line-height:1;border-radius:6px;align-self:auto}
   body:not(.betaEdit) .hrow{display:flex;align-items:center;padding:3px 8px}
-  body:not(.compact):not(.betaEdit) #board{margin:0 auto;
+  body:not(.compact):not(.betaEdit):not(.focus) #board{margin:0 auto;
         width:min(calc(100vw - 2 * var(--pad)),calc((100dvh - 242px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * .65))}
-  body.noWall:not(.compact):not(.betaEdit) #board{
+  body.noWall:not(.compact):not(.betaEdit):not(.focus) #board{
         width:min(calc(100vw - 2 * var(--pad)),calc((100dvh - 298px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * .65))}
-  /* ---- the page buttons: a third narrower, floating over the page, the list going on behind them ---- */
+  /* the row with Show 2nd route, on a phone that asked for it in Settings, takes 29px more */
+  body:has(#pairBtn:not([hidden])):not(.compact):not(.betaEdit):not(.focus) #board{
+        width:min(calc(100vw - 2 * var(--pad)),calc((100dvh - 271px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * .65))}
+  body.noWall:has(#pairBtn:not([hidden])):not(.compact):not(.betaEdit):not(.focus) #board{
+        width:min(calc(100vw - 2 * var(--pad)),calc((100dvh - 327px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * .65))}
+  /* ---- the page buttons: a quarter narrower, floating over the page, the list going on behind them ---- */
   #pgDots{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 4px);margin:0;z-index:20;
           gap:1px;padding:2px;border-radius:11px;box-shadow:0 2px 12px rgba(40,30,20,.22)}
   #pgDots button{flex:none;width:auto;height:26px;padding:0 5px;font-size:10.5px;border-radius:8px}
@@ -1517,7 +1527,7 @@
   /* ---- the list scrolled: the board steps aside in front of the list ---- */
   body.compact:not(.betaEdit) #top{overflow:visible;position:relative;z-index:4;border-bottom:0}
   body.compact:not(.betaEdit) #boardWrap{position:relative}
-  body.compact:not(.betaEdit) #boardCol{position:absolute;right:0;top:calc(var(--strip) + 11px);z-index:4}
+  body.compact:not(.betaEdit):not(.focus) #boardCol{position:absolute;right:0;top:calc(var(--strip) + 11px);z-index:4}
   body.compact:not(.betaEdit) #board{box-shadow:0 3px 14px rgba(40,30,20,.3)}
   body.compact:not(.betaEdit) #bar{margin-right:calc(min(calc(100vw - 108px),16.56vh) + 6px)}
   body.compact:not(.betaEdit) #barTxt{flex-wrap:wrap;row-gap:5px}
@@ -2147,7 +2157,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-11-08 23:48 T';        // bumped every deploy, shown bottom left
+const BUILD = '2026-11-08 23:57';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -5499,7 +5509,7 @@ function paintStack(){
     const row = document.createElement('div');
     row.className = 'nrow n' + Math.min(i + 1, 4) + (sameName(e.by, me) ? ' mine' : '');
     row.innerHTML = '<span class="cap"></span><span class="by"><i></i><span></span></span><b></b><span class="gd"></span>';
-    row.querySelector('.cap').textContent = 'Next';      // trial: no numbers (Will, 2026-11-08); the colours keep them apart      // said on the card itself, as "On wall" is on the wall's
+    row.querySelector('.cap').textContent = 'Next';      // said on the card itself, as "On wall" is on the wall's; no numbers since 2026-11-08 (Will), the colours keep them apart
     const chip = row.querySelector('i');
     chipPaint(chip, e.by);
     row.querySelector('.by span').textContent = e.by;
@@ -9302,7 +9312,7 @@ function quickPick(which){
    on the list shrinks it: the list moving by itself, to keep the open route in view,
    does not. */
 let compactAt = 0;                 // when it last changed, so the list's own settling is not read as a scroll
-/* TRIAL (Will, 2026-11-08): "the return frown should start from the boards position top right" - coming back to full
+/* Will, 2026-11-08: "the return [should] start from the boards position top right" - coming back to full
    size, the picture grows out of the corner it sat in, not down from the middle. Laid out at full size at once, then
    drawn from the small one's place and size and let go (a transform, so it is smooth). */
 function growBack(){
@@ -9348,10 +9358,11 @@ function setCompact(on){
   sc.addEventListener('scroll', () => {
     if (page !== 'board' || Date.now() > listHand || Date.now() - compactAt < 450) return;
     // Not at the first nudge: the list under the full-size board can be browsed a little first. It steps aside once
-    // the list has gone about two and a half routes down (Will, 2026-11-08: "can it be a little less aggressive at
-    // shrinking... I want to just scroll a little in that small section"). It was 24px, a fraction of one route.
+    // the list has gone three and a half routes down (Will, 2026-11-08: "can it be a little less aggressive at
+    // shrinking... I want to just scroll a little in that small section", then "Set to 3.5 routes"). It was 24px,
+    // a fraction of one route.
     const row = sc.querySelector('.rt');
-    if (sc.scrollTop > Math.max(100, 2.5 * (row ? row.offsetHeight : 52))) setCompact(true);
+    if (sc.scrollTop > Math.max(140, 3.5 * (row ? row.offsetHeight : 52))) setCompact(true);
   }, { passive: true });
 })();
 

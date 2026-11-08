@@ -873,9 +873,10 @@
   #gestHow button{margin-top:14px}
   #helpBtns button{padding:11px 8px;font-size:13px}
 
-  /* ==== TRIAL, not on main (Will, 2026-11-08), matching the MoonBoard page's trial so nothing moves when you go from
-     one wall to the other: the header a few pixels shorter (its buttons 32px), and the page buttons a quarter
-     narrower, floating, with the page going on behind them. ==== */
+  /* ==== Since 2026-11-08, matching the MoonBoard page's wide board (see its note) so nothing moves when you go from
+     one wall to the other (Will: "the sunboard when I switch to the sunboard that banner moves slightly"): the header
+     a few pixels shorter (its buttons 32px), and the page buttons a quarter narrower, floating, with the page going
+     on behind them. ==== */
   header{padding:calc(env(safe-area-inset-top) + 2px) 0 3px}
   header #me,header #addRoute{height:32px}
   header #addRoute{width:32px;font-size:21px}
@@ -1316,7 +1317,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-11-08 23:43 T';
+const BUILD = '2026-11-08 23:57';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
