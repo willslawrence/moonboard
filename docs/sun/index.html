@@ -589,6 +589,11 @@
           font:16px/1.35 -apple-system,system-ui,sans-serif;resize:none;appearance:none;-webkit-user-select:text;user-select:text}
   #cmtBox::placeholder{color:var(--dimmer)}
   #cmtBox.on{border-color:var(--ink)}
+  /* the comment box's own cursor, like the search's (see boxCaret) */
+  #cmtCaret{position:absolute;width:2px;border-radius:1px;background:var(--blue-ink);pointer-events:none;animation:qBlink 1.06s steps(1) infinite}
+  #cmtCaret[hidden]{display:none}
+  #cmtMirror{position:absolute;visibility:hidden;pointer-events:none;white-space:pre-wrap;overflow-wrap:break-word;word-wrap:break-word;
+             border:solid transparent;overflow:hidden}
   /* the search's keys at the foot of the sheet, in sight however long the list above them */
   #cmtKb{position:sticky;bottom:0;margin:10px calc(-1 * var(--pad)) 0}
   #cmtSheet.keys{padding-bottom:0}
@@ -1296,7 +1301,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-11-08 23:38';
+const BUILD = '2026-11-08 23:43';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -4499,13 +4504,34 @@ document.addEventListener('touchend', e => {
      the focus, as the search box does not, so the phone's own keyboard stays down. What is typed goes on the end, and with
      no shift key a sentence starts with a capital by itself. */
   const box = $('cmtBox'), ck = $('cmtKb');
+  /* The same cursor in the comment box (Will, 2026-11-08: "Yea add there too"). The box is several lines, so where the
+     end of the text falls is found by laying a copy of it out the same way, out of sight, with a marker on the end. */
+  const bc = document.createElement('i'), bm = document.createElement('div');
+  bc.id = 'cmtCaret'; bm.id = 'cmtMirror'; bm.setAttribute('aria-hidden', 'true');
+  box.after(bc, bm);
+  function boxCaret(){
+    if (!box.offsetWidth){ bc.hidden = true; return; }
+    const cs = getComputedStyle(box);
+    ['fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+     'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth', 'boxSizing'].forEach(k => { bm.style[k] = cs[k]; });
+    bm.style.width = box.offsetWidth + 'px'; bm.style.left = box.offsetLeft + 'px'; bm.style.top = box.offsetTop + 'px';
+    bm.textContent = box.value;
+    const m = document.createElement('span'); m.textContent = '\u200b'; bm.appendChild(m);
+    box.scrollTop = box.scrollHeight;
+    const lh = m.offsetHeight || 21, y = m.offsetTop - box.scrollTop;
+    bc.hidden = false;
+    bc.style.left = (box.offsetLeft + m.offsetLeft) + 'px';
+    bc.style.top = (box.offsetTop + Math.max(y, 0)) + 'px';
+    bc.style.height = lh + 'px';
+    bc.style.animation = 'none'; void bc.offsetWidth; bc.style.animation = '';
+  }
   let boxLayer = 'abc';
   box.readOnly = true;
   box.setAttribute('inputmode', 'none');
   box.classList.add('on');
   ck.hidden = false;
   $('cmtSheet').classList.add('keys');
-  cmtKeys = () => { boxLayer = 'abc'; ck.innerHTML = keys(boxLayer); };
+  cmtKeys = () => { boxLayer = 'abc'; ck.innerHTML = keys(boxLayer); requestAnimationFrame(boxCaret); };
   function boxPress(k){
     const v = box.value;
     if      (k === '<')      box.value = v.slice(0, -1);
@@ -4514,6 +4540,7 @@ document.addEventListener('touchend', e => {
     else if (k === '#123' || k === '#abc'){ boxLayer = k === '#abc' ? 'abc' : 'num'; ck.innerHTML = keys(boxLayer); return; }
     else if (v.length < box.maxLength) box.value = v + (/^$|[.!?] $|\n$/.test(v) ? k.toUpperCase() : k);
     box.scrollTop = box.scrollHeight;
+    boxCaret();
   }
   wire(ck, boxPress);
   // on its click, not as the key goes down as the others do: the sheet goes, and the tail of the tap must not land on what was under it
