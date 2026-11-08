@@ -1446,7 +1446,7 @@
      Next up button. The board then takes the page's width, or as much of it as the screen's height allows with
      one route of the list still showing. The header and the search row give up a few pixels each for it.
      While the board steps aside (list scrolled), and while a beta is drawn, the page is as it was. ==== */
-  :root{--strip:46px;--stripAt:0}
+  :root{--strip:46px;--stripAt:2}      /* this branch: the strip under the board, over the search row */
   #scroll{min-height:62px}            /* one route of the list, where it was nearly two */
   #pgDots{margin-bottom:calc(env(safe-area-inset-bottom) + 2px)}
   header{padding:calc(env(safe-area-inset-top) + 2px) 0 3px}
@@ -2109,7 +2109,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-11-08 23:01';        // bumped every deploy, shown bottom left
+const BUILD = '2026-11-08 23:02';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
