@@ -1289,7 +1289,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-10-31 21:09';
+const BUILD = '2026-11-08 22:30';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
@@ -3230,9 +3230,9 @@ function personColor(name){                // the same colour for a name as on t
 }
 /* One route's history, in the route's card: the dots of your goes on it always, tries and sends in the order they
    happened, and under them, shut until they are tapped, a row for each session (Will, 2026-10-31: "you'll see the circle
-   go dots, like tries versus sends... Your personal history is expandable from there inside that card"). Shut again
-   for each new route. */
-let histRoute = null, histShown = 4, goesOpen = false;
+   go dots, like tries versus sends... Your personal history is expandable from there inside that card"). Open again
+   for each new route since 2026-11-08. */
+let histRoute = null, histShown = 4, goesOpen = true;   // open for each new route, as on the Moon page (Will, 2026-11-08)
 function histPaint(){
   const open = goesOpen && !$('histTog').hidden;
   $('lpHist').hidden = !open;
@@ -3245,7 +3245,7 @@ function histFill(r){
   $('histTog').hidden = true;
   word.textContent = !r || r.retired ? '' : !me ? 'Pick your name at the top to see your goes on it.' : '';
   if (!r || !me) return histPaint();
-  if (histRoute !== r.id){ histRoute = r.id; histShown = 4; goesOpen = false; }
+  if (histRoute !== r.id){ histRoute = r.id; histShown = 4; goesOpen = true; }
   const entries = tagRepeats(myLog.filter(e => e.route === r.id && e.person === me)).sort((a, b) => logTime(b) - logTime(a));     // newest first
   if (!entries.length){
     if (!r.retired && !statOf(me, r.id)) word.textContent = 'Not tried yet';      // (the logbook may not have come yet)

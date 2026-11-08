@@ -669,6 +669,19 @@
   #actRow #pairBtn{flex:3 1 0;padding:0 4px;font-size:11px;border-color:#8a4b17;color:var(--second)}
   #actRow #pairBtn.on{background:#fb923c;border-color:#fb923c;color:#0e0e0f}
   body.betaEdit #actRow{visibility:hidden}     /* nothing to light while placing hands and feet */
+  /* Since 2026-11-08 the Light up Route button is gone from the page (Will: "Remove the light up button above the
+     board and put a small note on the bottom edge of the board that says Swipe up to light up"). It stays in the
+     page, out of sight, because the code still keeps its disabled state; the row is drawn only for the second bulb,
+     on a phone that asked for it. The room it took goes to the list of routes. */
+  #actRow #send{display:none}
+  #actRow:has(#pairBtn[hidden]){display:none}
+  /* The note, in the strip of board under row 1, in the row numbers' white, centred on the holds rather than the
+     picture. Only while a route is open; not while the picture is stepped aside or a beta is being drawn. */
+  #swipeNote{position:absolute;left:52.8%;bottom:1.3%;transform:translateX(-50%);pointer-events:none;white-space:nowrap;
+             font-size:9.5px;line-height:1;font-weight:600;letter-spacing:.05em;color:rgba(255,255,255,.88);
+             text-shadow:0 0 3px rgba(0,0,0,.45)}
+  #swipeNote[hidden],body.compact #swipeNote,body.betaEdit #swipeNote{display:none}
+  body.focus #swipeNote{font-size:13px}
   /* The wall's story on the left takes what the board leaves; the board keeps its
      own width and stands against the right-hand edge. */
   #boardRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:stretch}
@@ -1537,6 +1550,7 @@
           document.currentScript.remove();
         </script>
         <div id="marks"></div>
+        <div id="swipeNote" hidden>Swipe up to light up</div>
         <svg id="betaSvg" viewBox="0 0 450 692" aria-hidden="true"></svg>
         <div id="betaTap"></div>
       </div>
@@ -2050,7 +2064,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-10-31 21:09';        // bumped every deploy, shown bottom left
+const BUILD = '2026-11-08 22:30';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -5871,8 +5885,9 @@ async function myLog(me, fresh){
 
 /* One route's history, in the route's card on the log page: the dots of your goes on it always, tries and sends in the
    order they happened, and under them, shut until they are tapped, a row for each session it was tried in - the day, a
-   dot for every go, and how it ended. The newest few show; the rest wait behind a button. Shut again for each new route. */
-let histShown = 4, histRoute = 0, goesOpen = false;
+   dot for every go, and how it ended. The newest few show; the rest wait behind a button. Open for each new route since
+   2026-11-08 (Will: "By default expanded ... Show the logs"); a tap on the dots still folds them. */
+let histShown = 4, histRoute = 0, goesOpen = true;
 function histPaint(){
   const open = goesOpen && !$('histTog').hidden;
   $('lpHistRows').hidden = !open;
@@ -5882,7 +5897,7 @@ $('histTog').onclick = () => { goesOpen = !goesOpen; histPaint(); };
 function histFill(entries, r, me, rows){
   entries = entries.slice().sort((a, b) => logTime(b) - logTime(a));   // newest first
   rows.innerHTML = '';
-  if (histRoute !== r.id){ histRoute = r.id; histShown = 4; goesOpen = false; }
+  if (histRoute !== r.id){ histRoute = r.id; histShown = 4; goesOpen = true; }
   $('histTog').hidden = !entries.length;
   if (!entries.length){
     // A tick from before the logbook kept dates has no rows to show.
@@ -7353,6 +7368,7 @@ function paintFocusLight(){
   if (!b) return;
   const up = !!wallPlace();                // this route is up there, on its own or as one of two
   b.hidden = !current;
+  $('swipeNote').hidden = !current;
   b.classList.toggle('on', up);
   b.setAttribute('aria-pressed', up ? 'true' : 'false');
 }
