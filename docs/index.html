@@ -9347,7 +9347,11 @@ function setCompact(on){
   ['touchstart', 'touchmove', 'wheel'].forEach(t => sc.addEventListener(t, mine, { passive: true }));
   sc.addEventListener('scroll', () => {
     if (page !== 'board' || Date.now() > listHand || Date.now() - compactAt < 450) return;
-    if (sc.scrollTop > 24) setCompact(true);
+    // Not at the first nudge: the list under the full-size board can be browsed a little first. It steps aside once
+    // the list has gone about two and a half routes down (Will, 2026-11-08: "can it be a little less aggressive at
+    // shrinking... I want to just scroll a little in that small section"). It was 24px, a fraction of one route.
+    const row = sc.querySelector('.rt');
+    if (sc.scrollTop > Math.max(100, 2.5 * (row ? row.offsetHeight : 52))) setCompact(true);
   }, { passive: true });
 })();
 
