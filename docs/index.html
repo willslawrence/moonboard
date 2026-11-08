@@ -1439,6 +1439,51 @@
   #gestHow li span{display:block;margin-top:1px;font-size:12.5px;line-height:1.4;color:var(--dim)}
   #gestHow button{margin-top:14px}
   #helpBtns button{padding:11px 8px;font-size:13px}
+
+  /* ==== TRIAL, not on main (Will, 2026-11-08): "the wall gets full width ... put the up next and history thing on
+     the top, and then try it also on the bottom". The wall's story leaves the column beside the board and runs in
+     one strip across the page, in time order left to right: tonight's routes, what is on the wall, the line, the
+     Next up button. The board then takes the page's width, or as much of it as the screen's height allows with
+     one route of the list still showing. The header and the search row give up a few pixels each for it.
+     While the board steps aside (list scrolled), and while a beta is drawn, the page is as it was. ==== */
+  :root{--strip:46px;--stripAt:0}
+  #scroll{min-height:62px}            /* one route of the list, where it was nearly two */
+  #pgDots{margin-bottom:calc(env(safe-area-inset-bottom) + 2px)}
+  header{padding:calc(env(safe-area-inset-top) + 2px) 0 3px}
+  header #me,#connect{height:32px}
+  #bar{padding:3px 0 4px}
+  #qBox,#barTxt #rsBtn,#barTxt #igBtn,#barTxt #filtBtn,#barTxt #toBoard,#quick,#quickBtn{height:34px}
+  #barTxt #igBtn,#barTxt #filtBtn{width:34px}
+  body:not(.compact):not(.betaEdit) #boardRow{display:flex;flex-direction:column;gap:5px}
+  body:not(.compact):not(.betaEdit) #boardCol{order:1}
+  body:not(.compact):not(.betaEdit) #leftCol{order:var(--stripAt);flex:none;height:var(--strip)}
+  body:not(.compact):not(.betaEdit) #leftIn{position:static;height:100%}
+  body:not(.compact):not(.betaEdit) #wallCol{flex-direction:row;align-items:stretch;gap:5px;height:100%;
+        overflow-x:auto;overflow-y:hidden;touch-action:pan-x}
+  body:not(.compact):not(.betaEdit) #wallCol > *{flex:none}
+  body:not(.compact):not(.betaEdit) #rsBox{order:0;flex-direction:row;padding:0 8px}
+  body:not(.compact):not(.betaEdit) #histBar{order:1;width:auto;height:auto;padding:0 9px;writing-mode:horizontal-tb}
+  body:not(.compact):not(.betaEdit) #wallHist{order:2;flex-direction:row;max-height:none;overflow:visible;touch-action:pan-x}
+  body:not(.compact):not(.betaEdit) #nowBtn{order:3;width:124px;justify-content:center}
+  body:not(.compact):not(.betaEdit) #wallNext{order:4;flex-direction:row !important}
+  body:not(.compact):not(.betaEdit) #wallCol #nextBtn{order:-1;width:auto;height:auto;padding:0 14px}
+  body:not(.compact):not(.betaEdit) .hrow,body:not(.compact):not(.betaEdit) .nrow{width:112px;justify-content:center}
+  /* a card in the strip is two lines: who and what it is, then the route */
+  body:not(.compact):not(.betaEdit) .nrow,body:not(.compact):not(.betaEdit) #nowBtn{flex-direction:row;flex-wrap:wrap;align-content:center;
+        align-items:center;column-gap:4px;row-gap:3px;padding:3px 7px}
+  body:not(.compact):not(.betaEdit) .nrow .by,body:not(.compact):not(.betaEdit) #nowBtn .by{order:0;flex:none;max-width:none}
+  body:not(.compact):not(.betaEdit) .nrow .by span,body:not(.compact):not(.betaEdit) #nowBtn .by span{display:none}
+  body:not(.compact):not(.betaEdit) .nrow .cap,body:not(.compact):not(.betaEdit) #nowBtn .cap{order:1;align-self:center}
+  body:not(.compact):not(.betaEdit) .nrow b,body:not(.compact):not(.betaEdit) #nowBtn .nm3,body:not(.compact):not(.betaEdit) #nowBtn .nm4{order:2;flex:1 0 100%;min-width:0;overflow:hidden}
+  body:not(.compact):not(.betaEdit) #nowBtn.here .nm3{display:block}
+  body:not(.compact):not(.betaEdit) .hrow b,body:not(.compact):not(.betaEdit) .nrow b,
+  body:not(.compact):not(.betaEdit) #nowBtn .nm3,body:not(.compact):not(.betaEdit) #nowBtn .nm4{-webkit-line-clamp:1;white-space:nowrap;text-overflow:ellipsis;display:block}
+  body:not(.compact):not(.betaEdit) .nrow .put{display:none}
+  body:not(.compact):not(.betaEdit) .hrow{display:flex;align-items:center;padding:3px 8px}
+  body:not(.compact):not(.betaEdit) #board{margin:0 auto;
+        width:min(calc(100vw - 2 * var(--pad)),calc((100dvh - 256px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * .65))}
+  body.noWall:not(.compact):not(.betaEdit) #board{
+        width:min(calc(100vw - 2 * var(--pad)),calc((100dvh - 312px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * .65))}
 </style>
 </head>
 <body>
@@ -2064,7 +2109,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-11-08 22:30';        // bumped every deploy, shown bottom left
+const BUILD = '2026-11-08 23:01';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -8229,7 +8274,7 @@ document.body.addEventListener('animationend', e => {
 
 (function pageSwipe(){
   let x0 = null, y0 = null;
-  const off = '#board, #kb, select, #quick, #gSlide, #sendFan, #setPanel input, #log, #logPanel input, #pairPanel, #snakePanel, #entryPanel, #gamePanel, #rsPanel, #rsScrim, #facePanel, #faceScrim, #cmtPanel, #cmtScrim, #tipBox, #a2hs, #a2hsHow, #gestHow, #connWait';
+  const off = '#board, #wallCol, #kb, select, #quick, #gSlide, #sendFan, #setPanel input, #log, #logPanel input, #pairPanel, #snakePanel, #entryPanel, #gamePanel, #rsPanel, #rsScrim, #facePanel, #faceScrim, #cmtPanel, #cmtScrim, #tipBox, #a2hs, #a2hsHow, #gestHow, #connWait';
   document.addEventListener('pointerdown', e => {
     x0 = null;
     if (betaDraft || panelOpen || focusOn) return;
