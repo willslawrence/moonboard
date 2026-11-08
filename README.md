@@ -74,21 +74,27 @@ The page you climb from, top to bottom:
 
 - At Will's, a moon and a sun side by side in the header, the one you are on filled: the
   two walls (see *The Sun board*). The Sun board's page has the same thing in the same place.
-- **Light up Route**, a low bar across the page, puts the open problem on the wall, and
-  says in small letters that a swipe up does the same. **Show 2nd route**, which adds the
-  open problem beside what is already up (see *Two routes at once*), stands beside it only
-  on a phone that has asked for it in Settings.
-- The picture of the wall with the open problem ringed: green start, blue, red finish.
-  Flick it left or right to step through the list. A long stroke up it lights the problem
-  (see *A long stroke upwards*), and a short stroke down it is two taps: into focus.
-- Left of the picture, the wall's panel: **Next up**, **History**, the line, and what is
-  on the wall (see *Two phones, one wall*).
+- **Show 2nd route**, which adds the open problem beside what is already up (see *Two
+  routes at once*), in a low row of its own, only on a phone that has asked for it in
+  Settings. (Until 2026-11-08 a **Light up Route** button stood in this row on every phone;
+  a long stroke up the picture does that now, and the picture's foot says so.)
+- The wall's strip, as tall as the header's buttons: **Next up**, **History**, what is on
+  the wall and the line, left to right in time order, scrolling sideways when it is full
+  (see *What's on the wall* and *Next up*). It was a panel left of the picture until
+  2026-11-08, and still is while a beta is being drawn.
+- The picture of the wall with the open problem ringed: green start, blue, red finish, as
+  wide as the page or as the screen's height allows, with *Swipe up to light up* in small
+  letters at its foot. Flick it left or right to step through the list. A long stroke up it
+  lights the problem (see *A long stroke upwards*), and a short stroke down it is two taps:
+  into focus.
 - A row with the open problem's name and grade, which is also the way to the search,
-  then **Quick log** and **Instagram**.
-- A short list of routes. Scroll it and the picture shrinks into the top corner so the
-  list has the room. It stays small while routes are picked, so the list can be gone
-  through with each one showing on the small picture, and a tap on the picture brings
-  it back.
+  then the timed session, **Quick log** and **Instagram**.
+- A short list of routes, running on behind the page buttons, which float at the foot.
+  Scroll it three and a half routes down and the picture shrinks into the top right-hand
+  corner, in front of the list, with the search row beside it and the strip still over
+  it; a little scrolling first does not (it was 24 pixels until 2026-11-08). It stays
+  small while routes are picked, so the list can be gone through with each one showing on
+  the small picture, and a tap on the picture brings it back, growing out of that corner.
 
 There is no Hide button: once a problem is open the board stays, and taking a problem
 off the wall is not something a stray tap should do with other people climbing. One tap on
@@ -854,8 +860,9 @@ another phone without waiting to log a go.
 ### What's on the wall
 
 When someone lights a problem, every other phone gets an **On wall** card naming it and who
-put it up. One tap opens that problem. It sits at the foot of the panel left of the board,
-and it settles into a plain label once you are looking at the problem that is up.
+put it up. One tap opens that problem. It sits in the strip over the board, after tonight's
+history and before the line, and it settles into a plain label once you are looking at the
+problem that is up.
 
 A custom route, lit from holds picked on the picture, has no name of its own, so the card
 reads **Custom route** with whoever lit it. A tap opens the picture in focus with those
@@ -876,19 +883,19 @@ older build the relay says nothing rather than guess.
 
 ### Next up
 
-A line for the wall, the chalkboard by a pool table. **Next up**, at the top of the panel
-left of the board, puts your name down with the problem that is open, and the lights do not
+A line for the wall, the chalkboard by a pool table. **Next up**, at the left-hand end of the
+strip over the board, puts your name down with the problem that is open, and the lights do not
 change. One spot each: tap it on another problem and you keep your place with that one
 instead; tap **In line** to give the place up.
 
-Under it the panel reads down towards the wall. A **History** bar, folded until it is
-tapped, holds the problems that have been up this session; each is there once, however often
-it was lit. Then the line, with whoever is next nearest the wall and **Put it up** on their
-card. Each card says what it is at its head, as the wall's card says *On wall*: **Up next**
-for whoever is next, then **Up next 2**, **Up next 3** and so on, each its own colour
-(violet, orange, green, and yellow for any after) beside the wall's blue. (Until 2026-10-11
-the cards carried a number and one band under them said *Next up*.) At the foot is what is
-on the wall now.
+After it the strip reads left to right in time order. A **History** button, folded until it
+is tapped, opens the problems that have been up this session; each is there once, however
+often it was lit. Then what is on the wall now, then the line, with whoever is next nearest
+the wall and a small **Put it up** on their card. Each card says what it is at its head, as
+the wall's card says *On wall*: **Next**, each its own colour (violet, orange, green, and
+yellow for any after) beside the wall's blue. (Until 2026-10-11 the cards carried a number
+and one band under them said *Next up*; until 2026-11-08 they said *Up next*, *Up next 2*
+and so on, and the panel ran down the left of the board, the wall at its foot.)
 
 Tapping a card, in the line or in the history, opens that problem on your phone and lights
 nothing. **Put it up** is the one tap that changes the wall. Anyone can tap it, and the problem

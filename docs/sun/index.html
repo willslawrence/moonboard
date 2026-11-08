@@ -872,6 +872,22 @@
   #gestHow li span{display:block;margin-top:1px;font-size:12.5px;line-height:1.4;color:var(--dim)}
   #gestHow button{margin-top:14px}
   #helpBtns button{padding:11px 8px;font-size:13px}
+
+  /* ==== Since 2026-11-08, matching the MoonBoard page's wide board (see its note) so nothing moves when you go from
+     one wall to the other (Will: "the sunboard when I switch to the sunboard that banner moves slightly"): the header
+     a few pixels shorter (its buttons 32px), and the page buttons a quarter narrower, floating, with the page going
+     on behind them. ==== */
+  header{padding:calc(env(safe-area-inset-top) + 2px) 0 3px}
+  header #me,header #addRoute{height:32px}
+  header #addRoute{width:32px;font-size:21px}
+  #pgDots{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 4px);margin:0;z-index:20;
+          gap:1px;padding:2px;border-radius:11px;box-shadow:0 2px 12px rgba(40,30,20,.22)}
+  #pgDots button{flex:none;width:auto;height:26px;padding:0 5px;font-size:10.5px;border-radius:8px}
+  #pgDots button[data-go="set"]{width:30px;padding:0}
+  #pgDots button[data-go="set"] svg{width:15px;height:15px}
+  @media (max-width:360px){ #pgDots{margin:0} }
+  #scroll{padding-bottom:calc(env(safe-area-inset-bottom) + 44px)}
+  body.bookPage #bookSheet,body.logPage #logPage,body.setPage #setPanel{padding-bottom:calc(env(safe-area-inset-bottom) + 50px)}
 </style>
 </head>
 <body>
@@ -1301,7 +1317,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-11-08 23:43';
+const BUILD = '2026-11-08 23:57';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
