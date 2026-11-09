@@ -1320,7 +1320,6 @@
   .nrow.n4{border-color:var(--next4-edge) !important;background:var(--next4-bg)} .nrow.n4 .cap{color:var(--next4-cap)}
   .nrow.n2.mine{border-color:var(--next2-cap) !important} .nrow.n3.mine{border-color:var(--next3-cap) !important} .nrow.n4.mine{border-color:var(--next4-cap) !important}
   .nrow{border-style:dashed !important;border-width:1.5px !important}
-  .nrow .put{align-self:flex-start;width:auto !important;padding:3px 8px !important;font-size:8.5px !important}
   #nowBtn{border-width:2px !important}
   #nowBtn .cap{align-self:center;font-size:10px !important;font-weight:700;letter-spacing:.08em !important}
   #histBar{flex:none;display:flex;align-items:center;justify-content:center;gap:5px;width:100%;height:22px;
@@ -1350,7 +1349,6 @@
   .nrow .by span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .nrow.mine .by span{color:var(--ink)}
   .nrow b{font-size:11px;font-weight:700}
-  .nrow .put{margin-top:3px;padding:4px 2px;font-size:10.5px}
   #ver{font:10px ui-monospace,Menlo,monospace;color:var(--dimmer);margin-top:14px}
   .panel{border-top:1px solid var(--edge);padding-top:14px;margin-bottom:22px}
 
@@ -1501,10 +1499,6 @@
   body:not(.betaEdit) #histBar,body:not(.betaEdit) #wallCol #nextBtn{border-radius:8px}
   body:not(.betaEdit) .hrow b,body:not(.betaEdit) .nrow b,
   body:not(.betaEdit) #nowBtn .nm3,body:not(.betaEdit) #nowBtn .nm4{-webkit-line-clamp:1;white-space:nowrap;text-overflow:ellipsis;display:block}
-  /* Put it up stays on the first card, small, at its right-hand end (it lights their problem under their name) */
-  body:not(.betaEdit) .nrow:has(.put){position:relative;width:166px;padding-right:58px}
-  body:not(.betaEdit) .nrow .put{position:absolute;right:4px;top:50%;transform:translateY(-50%);margin:0;
-        height:22px;padding:0 7px !important;font-size:9.5px !important;line-height:1;border-radius:6px;align-self:auto}
   body:not(.betaEdit) .hrow{display:flex;align-items:center;padding:3px 8px}
   body:not(.compact):not(.betaEdit):not(.focus) #board{margin:0 auto;
         width:min(calc(100vw - 2 * var(--pad)),calc((100dvh - 242px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * .65))}
@@ -2162,7 +2156,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-11-09 08:23';        // bumped every deploy, shown bottom left
+const BUILD = '2026-11-09 10:54';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -3970,6 +3964,7 @@ let lineKnown = false;     // false on a relay that predates the line: everythin
 let lineNow = [];          // [{id, by, board, t}] next first
 let histNow = [];          // [{id, by, board, t}] oldest first
 let stackSig = '';         // what the rows were last drawn from, so a look that changes nothing redraws nothing
+let stackFrom = null;      // {id, by}: the Next card whose problem is open here, so a swipe up lights it for them (stackOpen)
 let wallKnown = false;     // the relay is new enough to say what is on the wall
 let lastWrite = null;      // {payload, meta} this phone last put up over Bluetooth
 let told = '';             // what the relay has been told, so a game's frames aren't each reported
@@ -4952,6 +4947,7 @@ function loadRoute(r, look){
   for (const k in state) delete state[k];
   parseHolds(r.s, 'S'); parseHolds(r.m, 'P'); parseHolds(r.e, 'E');
   current = r;
+  if (stackFrom && stackFrom.id !== r.id) stackFrom = null;   // a Next card's name goes with its own problem only
   paintWall();
   applyGradeBar();
   paint();
@@ -5411,8 +5407,11 @@ function gotoWall(){
 /* ---------- next up ----------
    A line for the wall - the chalkboard by a pool table. You put your name down with
    the problem you want and the lights do not change. Everyone sees who is waiting;
-   the wall only changes when someone taps Put it up, and then it goes up under the
-   name of whoever was waiting, so "on the wall" says whose go it is.
+   the wall only changes when someone taps a Next card and swipes the picture up, and
+   then it goes up under the name of whoever was waiting, so "on the wall" says whose
+   go it is. A Put it up button on the first card did that in one tap until 2026-11-09,
+   when Will took it out: "all they need to do is click on it and then swipe up... it
+   takes up space".
 
    The relay keeps the line and the list of what has been up tonight, and hands both
    out in /status. A relay that predates this hands out neither, and every part of
@@ -5520,16 +5519,8 @@ function paintStack(){
     row.querySelector('.by span').textContent = e.by;
     row.querySelector('b').textContent = r.name;
     paintPill(row.querySelector('.gd'), r.grade);
-    row.title = 'Open ' + r.name + ' \u2014 ' + e.by + ' is waiting with it';
-    row.onclick = () => stackOpen(r);
-    if (!i){
-      const put = document.createElement('button');
-      put.className = 'mini solid put';
-      put.textContent = 'Put it up';
-      put.title = 'Light ' + r.name + ' for ' + e.by;
-      put.onclick = ev => { ev.stopPropagation(); putUp(e); };
-      row.appendChild(put);
-    }
+    row.title = 'Open ' + r.name + ' \u2014 ' + e.by + ' is waiting with it; tap, then swipe up to light it for them';
+    row.onclick = () => stackOpen(r, e);
     nbox.appendChild(row);
   });
   hist.forEach(h => {
@@ -5546,24 +5537,27 @@ function paintStack(){
   if (histOpen) hbox.scrollTop = hbox.scrollHeight;    // the latest, nearest the wall
 }
 
-/* A look: the problem opens on this phone and nothing is sent. */
-function stackOpen(r){
+/* A look: the problem opens on this phone and nothing is sent. A Next card also says
+   whose problem it is, and that is kept while the problem stays open (stackFrom). */
+function stackOpen(r, e){
   if (betaDraft) return;
   if (!current || current.id !== r.id) loadRoute(r, true);
+  stackFrom = e ? { id: r.id, by: e.by } : null;
   const row = $('results').querySelector('.rt.sel');
   rowShow(row);
 }
 
-/* The one tap that changes the wall. It goes up under the name of whoever was
-   waiting with it, which is also what uses up their spot in the line. */
-function putUp(e){
-  const r = byId[e.id];
-  if (!r || r.board !== boardKey || betaDraft || !canSend()) return;
-  loadRoute(r, true);
-  const again = !!wallNow && wallNow.id === r.id && sameName(wallNow.by, e.by);
-  write(buildPayload(), false, { id: r.id, by: e.by, board: boardKey });
-  // Already up there under their name: the relay hears nothing new, so say their go has come.
-  if (again) lineCall({ op: 'leave', by: e.by });
+/* Whose name a swipe up puts the open problem under, when a Next card opened it: the
+   climber who was waiting with it, which is also what uses up their spot in the line,
+   as Put it up did. Lit again while it is up there under their name, it stays theirs.
+   null when the problem did not come from a Next card, or they have left the line since. */
+function stackMeta(){
+  const f = stackFrom;
+  if (!f || !current || current.id !== f.id || current.board !== boardKey) return null;
+  const waiting = lineOn() && lineNow.some(e => e.id === f.id && sameName(e.by, f.by));
+  const theirs = !!wallNow && wallNow.id === f.id && sameName(wallNow.by, f.by);
+  if (!waiting && !theirs) return null;
+  return { id: f.id, by: f.by, board: boardKey, waiting, theirs };
 }
 
 
@@ -7475,8 +7469,11 @@ async function lightHere(){
   const say = (txt, bad) => focusOn ? focusSay(txt, bad) : quickSay(txt, bad ? 'bad' : '');
   if (!canSend()) return say('Not reaching the board', true);
   const payload = buildPayload();
-  log('lit from the picture: "' + current.name + '"');
-  await write(payload, false, routeMeta());
+  const their = stackMeta();
+  log('lit from the picture: "' + current.name + '"' + (their ? ' for ' + their.by : ''));
+  await write(payload, false, their ? { id: their.id, by: their.by, board: their.board } : routeMeta());
+  // Already up there under their name: the relay hears nothing new, so say their go has come.
+  if (their && their.waiting && their.theirs) lineCall({ op: 'leave', by: their.by });
   // this phone hears at once whether it went up: it wrote it, or the relay said who did
   const up = !!wallNow && wallNow.payload === payload;
   say(up ? 'On the wall' : 'Not reaching the board', !up);

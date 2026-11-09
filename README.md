@@ -891,16 +891,18 @@ instead; tap **In line** to give the place up.
 After it the strip reads left to right in time order. A **History** button, folded until it
 is tapped, opens the problems that have been up this session; each is there once, however
 often it was lit. Then what is on the wall now, then the line, with whoever is next nearest
-the wall and a small **Put it up** on their card. Each card says what it is at its head, as
+the wall. Each card says what it is at its head, as
 the wall's card says *On wall*: **Next**, each its own colour (violet, orange, green, and
 yellow for any after) beside the wall's blue. (Until 2026-10-11 the cards carried a number
 and one band under them said *Next up*; until 2026-11-08 they said *Up next*, *Up next 2*
 and so on, and the panel ran down the left of the board, the wall at its foot.)
 
 Tapping a card, in the line or in the history, opens that problem on your phone and lights
-nothing. **Put it up** is the one tap that changes the wall. Anyone can tap it, and the problem
-goes up under the name of the climber who was waiting, so *On wall* says whose go it is.
-That is also what uses their spot: lighting your own queued problem with the bulb does the same.
+nothing. Swiping the picture up then lights it. Anyone can do that from a **Next** card, and
+the problem goes up under the name of the climber who was waiting, so *On wall* says whose go
+it is. That is also what uses their spot. (Until 2026-11-09 a small **Put it up** button on
+the first card did this in one tap. Will took it out: tapping the card and swiping up does the
+same, and the button took room in the strip.)
 
 The relay keeps the line and the history, because the phone at the wall drops off every time
 its screen sleeps and a line that vanished with it would be no line at all. A spot nobody has
