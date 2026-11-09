@@ -241,6 +241,13 @@ had again from **Help** in Settings.
 For logging without leaving the board. A tap on **Quick log** dims the screen and swings
 out two round buttons: red logs a try at once, green is a send. The finger can also go
 down on the button, slide on to one, and let go. A short line says what was logged.
+With the board stepped aside the two hang down from the button, into the list, since the
+button is then near the top (2026-11-09). Until then they went up over the header, and the
+dimming covered them, so neither could be tapped.
+
+A strip in the page's own colour holds the very top of the screen, under the phone's clock,
+because a Home Screen app on iOS 26 otherwise blurs whatever sits there (Will, 2026-11-09: "can
+we lose that fade or blur always"). Both walls have it.
 
 ### A timed session
 

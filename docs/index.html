@@ -1532,16 +1532,35 @@
      beside it has less than about 180px. */
   :root{--small:min(calc(100vw - 200px),21.3vh)}
   body.compact:not(.betaEdit):not(.focus) #board{width:var(--small)}
-  body.compact:not(.betaEdit) #top{overflow:visible;position:relative;z-index:4;border-bottom:0}
+  body.compact:not(.betaEdit) #top{overflow:visible;position:relative;border-bottom:0}
   body.compact:not(.betaEdit) #boardWrap{position:relative}
   body.compact:not(.betaEdit):not(.focus) #boardCol{position:absolute;right:0;top:calc(var(--strip) + 11px);z-index:4}
   body.compact:not(.betaEdit) #board{box-shadow:0 3px 14px rgba(40,30,20,.3)}
   body.compact:not(.betaEdit) #bar{margin-right:calc(var(--small) + 6px)}
   body.compact:not(.betaEdit) #barTxt{flex-wrap:wrap;row-gap:5px}
   body.compact:not(.betaEdit) #qBox{flex:1 0 100%}
+  /* Quick log beside the small board (2026-11-09, Will: "the screen kind of grays out and those try or send buttons
+     don't work. They also go up. I feel like they should cascade down so there's more space"). #top had z-index 4
+     here, which made it a layer of its own under the dimming (#quickScrim, 5), so the dimming covered the button and
+     its two as well. The small board keeps its own z-index, which is all it needs to stand in front of the list. And
+     the two hang down from the button into the list, not up over the header. */
+  body.compact:not(.betaEdit) #quickFan{bottom:auto;top:100%}
+  body.compact:not(.betaEdit) #quickFan .arm{bottom:auto;top:0;transform-origin:50% 0}
+  body.compact:not(.betaEdit) #quickFan .arm.l{transform:rotate(30deg)}
+  body.compact:not(.betaEdit) #quickFan .arm.r{transform:rotate(-30deg)}
+  body.compact:not(.betaEdit) #quickFan button{bottom:auto;top:40px}
+  body.compact:not(.betaEdit) #quickTry{transform-origin:120% -60%}
+  body.compact:not(.betaEdit) #quickSend{transform-origin:-20% -60%}
+  /* The top edge, under the phone's clock (2026-11-09, Will: "there's this fade out on the top of the screen... when I
+     click Quick Log and the screen goes dark, actually I lose that fade or blur... can we lose that fade or blur
+     always"). On a Home Screen app iOS 26 blurs what sits under the status bar, unless a fixed layer holds that
+     edge, which the dimming does. This strip, the page's own colour and the status bar's height, holds it always.
+     It sits under every dimming, sheet and focus layer, so those still reach the top. */
+  #edgeTop{position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top);z-index:4;background:var(--bg);pointer-events:none}
 </style>
 </head>
 <body>
+<div id="edgeTop" aria-hidden="true"></div>
 
 <!-- Shown only by the copy of the page at the address the app has left: see "moved" in
      the first lines of the page. -->
@@ -2177,7 +2196,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-11-09 11:04';        // bumped every deploy, shown bottom left
+const BUILD = '2026-11-09 11:24';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.

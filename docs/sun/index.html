@@ -888,9 +888,16 @@
   @media (max-width:360px){ #pgDots{margin:0} }
   #scroll{padding-bottom:calc(env(safe-area-inset-bottom) + 44px)}
   body.bookPage #bookSheet,body.logPage #logPage,body.setPage #setPanel{padding-bottom:calc(env(safe-area-inset-bottom) + 50px)}
+  /* The top edge, under the phone's clock (2026-11-09, Will: "there's this fade out on the top of the screen... when I
+     click Quick Log and the screen goes dark, actually I lose that fade or blur... can we lose that fade or blur
+     always"). On a Home Screen app iOS 26 blurs what sits under the status bar, unless a fixed layer holds that
+     edge, which the dimming does. This strip, the page's own colour and the status bar's height, holds it always.
+     It sits under every dimming, sheet and focus layer, so those still reach the top. */
+  #edgeTop{position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top);z-index:4;background:var(--bg);pointer-events:none}
 </style>
 </head>
 <body>
+<div id="edgeTop" aria-hidden="true"></div>
 
 <div id="top">
 <header>
@@ -1317,7 +1324,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-11-08 23:57';
+const BUILD = '2026-11-09 11:24';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
