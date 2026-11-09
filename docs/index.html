@@ -1524,12 +1524,17 @@
   @media (max-width:360px){ #pgDots{margin:0} }
   #scroll{padding-bottom:calc(env(safe-area-inset-bottom) + 44px)}
   body.logPage #logPage,body.setPage #setPanel,body.bookPage #logPanel{padding-bottom:calc(env(safe-area-inset-bottom) + 50px)}
-  /* ---- the list scrolled: the board steps aside in front of the list ---- */
+  /* ---- the list scrolled: the board steps aside in front of the list ----
+     About a third bigger than it was since 2026-11-09 (Will drew the size on a screenshot: "the wall should not
+     shrink quite so much"): 21.3% of the screen's height where it was 16.56%, and never so wide that the search
+     beside it has less than about 180px. */
+  :root{--small:min(calc(100vw - 200px),21.3vh)}
+  body.compact:not(.betaEdit):not(.focus) #board{width:var(--small)}
   body.compact:not(.betaEdit) #top{overflow:visible;position:relative;z-index:4;border-bottom:0}
   body.compact:not(.betaEdit) #boardWrap{position:relative}
   body.compact:not(.betaEdit):not(.focus) #boardCol{position:absolute;right:0;top:calc(var(--strip) + 11px);z-index:4}
   body.compact:not(.betaEdit) #board{box-shadow:0 3px 14px rgba(40,30,20,.3)}
-  body.compact:not(.betaEdit) #bar{margin-right:calc(min(calc(100vw - 108px),16.56vh) + 6px)}
+  body.compact:not(.betaEdit) #bar{margin-right:calc(var(--small) + 6px)}
   body.compact:not(.betaEdit) #barTxt{flex-wrap:wrap;row-gap:5px}
   body.compact:not(.betaEdit) #qBox{flex:1 0 100%}
 </style>
@@ -2157,7 +2162,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-11-08 23:57';        // bumped every deploy, shown bottom left
+const BUILD = '2026-11-09 08:23';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
