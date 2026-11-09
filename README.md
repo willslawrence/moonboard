@@ -245,9 +245,11 @@ With the board stepped aside the two hang down from the button, into the list, s
 button is then near the top (2026-11-09). Until then they went up over the header, and the
 dimming covered them, so neither could be tapped.
 
-A strip in the page's own colour holds the very top of the screen, under the phone's clock,
-because a Home Screen app on iOS 26 otherwise blurs whatever sits there (Will, 2026-11-09: "can
-we lose that fade or blur always"). Both walls have it.
+A Home Screen app on iOS 26 blurs whatever sits under the phone's clock (Will, 2026-11-09:
+"can we lose that fade or blur always"). It stops when a dimming layer covers the screen, as
+the Quick log dimming does, so both walls carry one too faint to see (`#edgeTop`, 2% dark, over
+everything, taps going through it). A strip in the page's colour at the top, tried first, did not
+do it: WebKit takes that for a header.
 
 ### A timed session
 

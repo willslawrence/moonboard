@@ -890,10 +890,12 @@
   body.bookPage #bookSheet,body.logPage #logPage,body.setPage #setPanel{padding-bottom:calc(env(safe-area-inset-bottom) + 50px)}
   /* The top edge, under the phone's clock (2026-11-09, Will: "there's this fade out on the top of the screen... when I
      click Quick Log and the screen goes dark, actually I lose that fade or blur... can we lose that fade or blur
-     always"). On a Home Screen app iOS 26 blurs what sits under the status bar, unless a fixed layer holds that
-     edge, which the dimming does. This strip, the page's own colour and the status bar's height, holds it always.
-     It sits under every dimming, sheet and focus layer, so those still reach the top. */
-  #edgeTop{position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top);z-index:4;background:var(--bg);pointer-events:none}
+     always"). On a Home Screen app iOS 26 blurs what sits under the status bar. WebKit looks 4px down from the top,
+     in the middle, for a fixed layer; a strip there the page's colour (tried at 11:24) only counts as a header and
+     the blur stays, but a dimming layer - fixed, the whole screen, no children, a see-through background, as the
+     Quick log dimming is - takes it away. So this is one, too faint to see (2%), over everything, and taps go
+     through it. */
+  #edgeTop{position:fixed;inset:0;z-index:2147483000;background:rgba(8,8,10,.02);pointer-events:none}
 </style>
 </head>
 <body>
@@ -1324,7 +1326,7 @@
      { v: 'overhang', x: .42, y: .13, r: 'h' }   a spot nobody has outlined yet, as a point on a picture
    A volume is a hold, each edge of a wooden volume is a hold, and a hold bolted to a volume
    is a hold: they are all entries on the map, and a tap picks the smallest one under it. */
-const BUILD = '2026-11-09 11:24';
+const BUILD = '2026-11-09 11:42';
 const WALL = 'sun';
 const API = '/api/w/' + WALL;
 const CREW = 'https://moonboard-relay.willslawrence.workers.dev/lists';   // where the crew's names are, for the first visit
