@@ -812,12 +812,12 @@
      it, as on the Sun board's page. It filled the screen until 2026-10-12 (Will: "the time session pop up on the sun
      board is good but on the moon board it take up the whole acreen. I like the sun board one better"). A tap on the
      dimmed board shuts it, as Close does. */
-  #rsScrim,#faceScrim,#cmtScrim{position:fixed;left:0;top:0;right:0;bottom:0;z-index:60;background:rgba(0,0,0,.45)}
-  #rsScrim[hidden],#faceScrim[hidden],#cmtScrim[hidden]{display:none}
-  #rsPanel,#facePanel,#cmtPanel{position:fixed;left:0;right:0;bottom:0;z-index:61;max-height:92vh;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;
+  #rsScrim,#faceScrim,#cmtScrim,#impScrim{position:fixed;left:0;top:0;right:0;bottom:0;z-index:60;background:rgba(0,0,0,.45)}
+  #rsScrim[hidden],#faceScrim[hidden],#cmtScrim[hidden],#impScrim[hidden]{display:none}
+  #rsPanel,#facePanel,#cmtPanel,#impPanel{position:fixed;left:0;right:0;bottom:0;z-index:61;max-height:92vh;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;
            background:var(--bg);border-radius:16px 16px 0 0;border-top:1px solid var(--edge);
            padding:14px var(--pad) calc(env(safe-area-inset-bottom) + 14px)}
-  #rsPanel[hidden],#facePanel[hidden],#cmtPanel[hidden]{display:none}
+  #rsPanel[hidden],#facePanel[hidden],#cmtPanel[hidden],#impPanel[hidden]{display:none}
   #cmtFor{display:flex;align-items:center;gap:8px;min-width:0;margin-bottom:10px}
   #cmtFor b{min-width:0;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #cmtFor .gd{font-size:10px}
@@ -860,6 +860,14 @@
   .shHead{display:flex;align-items:center;gap:10px;margin:0 0 8px}
   .shHead h2{flex:1 1 auto;min-width:0;margin:0;font-size:18px}
   .shHead button{flex:none;width:auto;padding:6px 12px;font-size:13px}
+  /* Import logbook (2026-11-09): a file from the phone, or Will brings the MoonBoard logbook over */
+  #impFile{display:block;width:100%;margin:4px 0 6px}
+  #impPanel .say{font-size:13px;color:var(--dim);line-height:1.4;margin:0 2px}
+  #impOr{display:flex;align-items:center;gap:10px;margin:14px 2px;font-size:12px;color:var(--dimmer);text-transform:uppercase;letter-spacing:.08em}
+  #impOr::before,#impOr::after{content:"";flex:1;height:1px;background:var(--edge)}
+  #impWill{padding:12px 14px;border-radius:12px;border:1px solid var(--edge);background:var(--panel)}
+  #impWill b{display:block;font-size:15px;margin-bottom:4px}
+  #impWill span{display:block;font-size:14px;line-height:1.45}
   #rsPanel .opt{min-height:40px;padding:4px 0;margin:0 0 6px}
   #rsPanel .opt > label{font-size:13.5px;color:var(--dim)}
   /* ---- videos of the open route: a sheet ----
@@ -1943,13 +1951,13 @@
   <select id="logWho" aria-label="Whose logbook"></select>
   <div class="bookBtns">
     <button id="logCsv" class="ghost mini" disabled>Export CSV</button>
-    <button id="logImp" class="ghost mini" disabled>Import CSV</button>
+    <button id="logImp" class="ghost mini" disabled>Import logbook</button>
     <button id="logLock" class="ghost mini" disabled>Lock my entries</button>
-    <button type="button" class="tipBtn" aria-label="About: the file, and the lock" aria-expanded="false">i</button><span class="tipTxt"><b>Export CSV</b> makes a file of the logbook that is showing, a line a go. <b>Import CSV</b> reads a file laid out the same way and adds its goes to your own logbook. To bring an old logbook in: export first (an empty logbook gives a sample, the headings and a few example lines), put a line for each go under them, and import the file. The example lines are left out. A line needs a date (2026-10-12), the route's name as the list has it, and how it went: try, flash, 2nd go, 3rd go or 4+ goes. The time and the other columns may be left empty; the hold set, if empty, is the one on the wall. Goes come in locked. Several sends of a route in a day are all kept, and a go the logbook already has is not added again. <b>Lock my entries</b> locks every go of yours, so that none can be deleted by a slip.</span>
+    <button type="button" class="tipBtn" aria-label="About: the file, and the lock" aria-expanded="false">i</button><span class="tipTxt"><b>Export CSV</b> makes a file of the logbook that is showing, a line a go. <b>Import logbook</b> gives two ways in. <b>Choose a CSV file</b> reads a file laid out the same way and adds its goes to your own logbook; or Will can bring your logbook over from the MoonBoard app for you. To bring an old logbook in: export first (an empty logbook gives a sample, the headings and a few example lines), put a line for each go under them, and import the file. The example lines are left out. A line needs a date (2026-10-12), the route's name as the list has it, and how it went: try, flash, 2nd go, 3rd go or 4+ goes. The time and the other columns may be left empty; the hold set, if empty, is the one on the wall. Goes come in locked. Several sends of a route in a day are all kept, and a go the logbook already has is not added again. <b>Lock my entries</b> locks every go of yours, so that none can be deleted by a slip.</span>
   </div>
   <div class="rankHead"><button type="button" id="rankTog" class="rankTog" aria-expanded="false" aria-controls="ptsRank">Ranking<i></i></button><button type="button" class="tipBtn" aria-label="About: the points" aria-expanded="false">i</button><span class="tipTxt">MoonBoard scoring: 350 at 5+, 50 more for each grade above it, by the community grade (the one the climbers voted for), whichever grade this phone shows; then 53 more for a flash, 2 for a second go, 1 for a third. Benchmarks only, and only the first time you send a route.</span></div>
   <div id="ptsRank" hidden></div>
-  <div class="rankHead" id="storyHead" hidden><button type="button" id="storyTog" class="rankTog" aria-expanded="false" aria-controls="story"><span id="storyLbl">Your story</span><i></i></button><button type="button" class="tipBtn" aria-label="About: the story" aria-expanded="false">i</button><span class="tipTxt">Worked out from the goes in the logbook that is showing: the grades you have sent, how often first go, the route that took longest, the ones that got away, your days and your holds. <b>Flash grade</b>: the hardest grade at which half or more of the routes you have tried went first go. <b>Edge grade</b>: the hardest at which half or more went in the end, however many goes it took. <b>Average send</b>: the middle of all your sends. On your own logbook, a tap on any of the three opens a route of that grade you have not sent, on the hold set now on the wall. <b>Next up</b> counts what the next grade would take. <b>Head to head</b> puts you beside another climber, and its button lists the routes they have sent that you have not. <b>Share my story as a picture</b> makes one picture of it all to send on. The more of your logbook is in here, the more it can tell. <b>Import CSV</b> brings an old logbook over.</span></div>
+  <div class="rankHead" id="storyHead" hidden><button type="button" id="storyTog" class="rankTog" aria-expanded="false" aria-controls="story"><span id="storyLbl">Your story</span><i></i></button><button type="button" class="tipBtn" aria-label="About: the story" aria-expanded="false">i</button><span class="tipTxt">Worked out from the goes in the logbook that is showing: the grades you have sent, how often first go, the route that took longest, the ones that got away, your days and your holds. <b>Flash grade</b>: the hardest grade at which half or more of the routes you have tried went first go. <b>Edge grade</b>: the hardest at which half or more went in the end, however many goes it took. <b>Average send</b>: the middle of all your sends. On your own logbook, a tap on any of the three opens a route of that grade you have not sent, on the hold set now on the wall. <b>Next up</b> counts what the next grade would take. <b>Head to head</b> puts you beside another climber, and its button lists the routes they have sent that you have not. <b>Share my story as a picture</b> makes one picture of it all to send on. The more of your logbook is in here, the more it can tell. <b>Import logbook</b> brings an old logbook over.</span></div>
   <div id="story" hidden></div>
   <input type="file" id="logFile" accept=".csv,text/csv,text/comma-separated-values,text/plain" tabindex="-1" aria-hidden="true">
   <p id="logHint"></p>
@@ -2082,6 +2090,19 @@
   <div id="cmtKb" hidden></div>
 </div>
 
+<!-- Import logbook (Will, 2026-11-09): "the option like to choose a file, like a CSV from their documents or files app,
+     or another option would be to like a note that says send Will your Moonboard login information, and he will use
+     AI to capture your logbook and import it for you." Signing in on his phone is the way it went for the first one,
+     on 2026-10-22, and keeps a password out of a message. The Sun board has no second way: it is not a MoonBoard. -->
+<div id="impScrim" hidden></div>
+<div id="impPanel" hidden role="dialog" aria-label="Import logbook">
+  <div class="shHead"><h2>Import logbook</h2><button id="impShut" class="ghost">Close</button></div>
+  <button id="impFile" class="solid">&#128196; Choose a CSV file</button>
+  <p class="say">From Files or Documents on your phone, laid out as Export CSV makes it. The i beside the buttons says how.</p>
+  <div id="impOr">or</div>
+  <div id="impWill"><b>&#129302; Let Will bring it over</b><span>Send Will your MoonBoard login, or sign in to the MoonBoard app on his phone, and he will use AI to capture your logbook and import it for you.</span></div>
+</div>
+
 <!-- One entry of the logbook, in a card over it: keep it, take it out, or lock it. -->
 <div id="entryPanel" hidden role="dialog" aria-label="Log entry">
   <div class="card">
@@ -2156,7 +2177,7 @@ if (MB_MOVED) throw new Error('Will\'s Wall has moved to ' + MB_NEW_HOME);
 const NUS  = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
-const BUILD = '2026-11-09 10:54';        // bumped every deploy, shown bottom left
+const BUILD = '2026-11-09 11:04';        // bumped every deploy, shown bottom left
 const COLS = 11, ROWS = 18;
 /* Settled against the wall on 2026-08-26 and unchanged since, so these are
    constants rather than controls - the pickers were calibration scaffolding.
@@ -6463,7 +6484,10 @@ async function importCsv(text){
   }
   finally{ importBusy = false; paintLogBtns(); }
 }
-$('logImp').onclick = () => { logNote(''); $('logFile').value = ''; $('logFile').click(); };
+$('logImp').onclick = () => { logNote(''); showPanel('imp'); };        // two ways in, since 2026-11-09 (#impPanel)
+// The file picker opens first, inside the tap, as a phone insists; then the sheet goes.
+$('impFile').onclick = () => { $('logFile').value = ''; $('logFile').click(); showPanel(null); };
+$('impShut').onclick = $('impScrim').onclick = () => showPanel(null);
 $('logFile').onchange = async () => {
   const f = $('logFile').files && $('logFile').files[0];
   if (!f) return;
@@ -8324,7 +8348,7 @@ document.body.addEventListener('animationend', e => {
 
 (function pageSwipe(){
   let x0 = null, y0 = null;
-  const off = '#board, #wallCol, #kb, select, #quick, #gSlide, #sendFan, #setPanel input, #log, #logPanel input, #pairPanel, #snakePanel, #entryPanel, #gamePanel, #rsPanel, #rsScrim, #facePanel, #faceScrim, #cmtPanel, #cmtScrim, #tipBox, #a2hs, #a2hsHow, #gestHow, #connWait';
+  const off = '#board, #wallCol, #kb, select, #quick, #gSlide, #sendFan, #setPanel input, #log, #logPanel input, #pairPanel, #snakePanel, #entryPanel, #gamePanel, #rsPanel, #rsScrim, #facePanel, #faceScrim, #cmtPanel, #cmtScrim, #impPanel, #impScrim, #tipBox, #a2hs, #a2hsHow, #gestHow, #connWait';
   document.addEventListener('pointerdown', e => {
     x0 = null;
     if (betaDraft || panelOpen || focusOn) return;
@@ -9780,7 +9804,7 @@ window.addEventListener('resize', tipShut);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') tipShut(); });
 
 const PANELS = { game: 'gamePanel', ig: 'igPanel',
-                 snake: 'snakePanel', entry: 'entryPanel', pair: 'pairPanel', rs: 'rsPanel', face: 'facePanel', cmt: 'cmtPanel' };
+                 snake: 'snakePanel', entry: 'entryPanel', pair: 'pairPanel', rs: 'rsPanel', face: 'facePanel', cmt: 'cmtPanel', imp: 'impPanel' };
 
 function showPanel(which, fromBack){  // a key of PANELS, or null for none (the Logbook, a page since 2026-10-21, is not one)
   $('gamePanel').hidden = which !== 'game';
@@ -9791,6 +9815,7 @@ function showPanel(which, fromBack){  // a key of PANELS, or null for none (the 
   $('rsPanel').hidden = $('rsScrim').hidden = which !== 'rs';
   $('facePanel').hidden = $('faceScrim').hidden = which !== 'face';
   $('cmtPanel').hidden = $('cmtScrim').hidden = which !== 'cmt';
+  $('impPanel').hidden = $('impScrim').hidden = which !== 'imp';
   if (which !== 'snake' && which !== 'entry' && sn) snStop();          // don't leave it running unseen, or a finished one on the wall
   if (PANELS[which]) $(PANELS[which]).scrollTop = 0;   // open at the top, always
   // One step in the history for "a sheet is open", however many are swapped through.
@@ -10059,9 +10084,9 @@ function paintStory(){
   const more = G ? storyMore(logShown.who, logShown.entries, G, own) : [];
   const rowsAll = sample ? STORY_SAMPLE : more.filter(f => f.k === 'Next up').concat(facts, more.filter(f => f.k !== 'Next up'));
   const note = tiles.includes('<button') ? '<p class="sgNote">Tap a grade for a route of that grade you have not sent.</p>' : '';
-  box.innerHTML = (sample ? '<div class="smp"><b>A sample.</b> This is what your logbook can tell you once your climbs are in it. Bring your MoonBoard logbook over with <b>Import CSV</b>, above, and these become yours.</div>' : '') + tiles + note +
+  box.innerHTML = (sample ? '<div class="smp"><b>A sample.</b> This is what your logbook can tell you once your climbs are in it. Bring your MoonBoard logbook over with <b>Import logbook</b>, above, and these become yours.</div>' : '') + tiles + note +
     rowsAll.map(f => '<div class="st' + (f.wide ? ' wide' : '') + '">' + (f.wide ? '' : '<span class="ic">' + f.ic + '</span>') + '<div class="tx"><b>' + (f.wide ? f.ic + ' ' : '') + f.k + '</b>' + f.v + '</div></div>').join('') +
-    (!sample && own && sends < 20 ? '<p class="more">The more of your logbook is in here, the more this can tell. <b>Import CSV</b>, above, brings an old logbook over.</p>' : '') +
+    (!sample && own && sends < 20 ? '<p class="more">The more of your logbook is in here, the more this can tell. <b>Import logbook</b>, above, brings an old logbook over.</p>' : '') +
     (!sample && own && G ? '<button type="button" id="storyShare" class="ghost">Share my story as a picture</button>' : '');
   box.querySelectorAll('.h2h .fc').forEach(el => chipPaint(el, el.dataset.n));
   if ($('storyRivalSel')) $('storyRivalSel').onchange = () => { storyRival = $('storyRivalSel').value; paintStory(); };

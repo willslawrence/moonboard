@@ -982,7 +982,7 @@ with its heading pinned at the top (since 2026-10-21; Will: "add the Logbook as 
 page"). Before that it was a sheet that rose from the foot of the screen, laid out as the Sun
 board's is (2026-10-12), and before that a whole screen listing a day to a line. Top to
 bottom: whose logbook it is;
-**Export CSV**, **Import CSV** and **Lock my entries** on one line, with an i that explains
+**Export CSV**, **Import logbook** and **Lock my entries** on one line, with an i that explains
 them; a line that sums the logbook up; every go, a session to a line with the newest open,
 each go with its time, the route and its grade, how it went, and a padlock if it is locked;
 then everyone's points, with how they are worked out behind an i. It opens on whoever is
@@ -1013,7 +1013,12 @@ at its head, and a name that a sheet would take for a sum has an apostrophe put 
 of it. The Sun board's Logbook has the same button, with that wall's columns (how far a go
 against the clock got and how long it took, the feet rule, the tape).
 
-**Import CSV** reads a file laid out the same way and adds its goes to the logbook of
+**Import logbook** opens a sheet with two ways in (Will, 2026-11-09): **Choose a CSV file**, and a note
+to send Will your MoonBoard login, or sign in to the MoonBoard app on his phone, so that he can
+capture the logbook with AI and import it. The Sun board's page keeps a plain **Import CSV**: its
+wall is not a MoonBoard. (Until 2026-11-09 the button said Import CSV and went straight to the file.)
+
+**Choose a CSV file** reads a file laid out the same way and adds its goes to the logbook of
 whoever is climbing, and to nobody else's (Will, 2026-10-12: "can we add a logbook import
 button. if they use the same csv format. to get started, they can click the button Export
 CSV and it exports whatever is in their app"). So the way to bring an old logbook in is to
